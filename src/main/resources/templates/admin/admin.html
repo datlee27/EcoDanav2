@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
+<div th:fragment="content">
+  <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="flex justify-between items-center mb-8">
+          <h2 class="text-2xl font-bold text-gray-800">Admin Dashboard</h2>
+          <a th:href="@{/logout}" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+          </a>
+        </div>
+        <div class="bg-primary text-white p-4 rounded-lg mb-6 text-center">Admin Mode Active</div>
+
+        <!-- Tabs -->
+        <div class="mb-6">
+          <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+              <a th:href="@{/admin(tab=user-management)}" class="admin-tab-button py-2 px-1 border-b-2 border-primary text-primary font-medium">User Management</a>
+              <a th:href="@{/admin(tab=booking-overview)}" class="admin-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Booking Overview</a>
+              <a th:href="@{/admin(tab=system-reports)}" class="admin-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">System Reports</a>
+              <a th:href="@{/admin(tab=role-management)}" class="admin-tab-button py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">Role Management</a>
+            </nav>
+          </div>
+        </div>
+
+        <!-- User Management Tab -->
+        <div th:if="${param.tab == 'user-management' or not #strings.hasText(param.tab)}" class="admin-tab-content">
+          <h3 class="text-lg font-semibold mb-4">User Management</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th class="px-4 py-2">ID</th>
+                <th class="px-4 py-2">Username</th>
+                <th class="px-4 py-2">Email</th>
+                <th class="px-4 py-2">Role</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2">License</th>
+                <th class="px-4 py-2">Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="user : ${users}" class="bg-white border-b hover:bg-gray-50">
+                <td class="px-4 py-2" th:text="${user.id}">1</td>
+                <td class="px-4 py-2" th:text="${user.username}">john_doe</td>
+                <td class="px-4 py-2" th:text="${user.email}">john@example.com</td>
+                <td class="px-4 py-2" th:text="${user.role}">Customer</td>
+                <td class="px-4 py-2">Active</td>
+                <td class="px-4 py-2" th:text="${user.hasLicense ? 'Yes' : 'No'}">Yes</td>
+                <td class="px-4 py-2">
+                  <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                  <button class="text-red-500 hover:text-red-700 ml-2"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Booking Overview Tab -->
+        <div th:if="${param.tab == 'booking-overview'}" class="admin-tab-content hidden">
+          <h3 class="text-lg font-semibold mb-4">Booking Overview</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th class="px-4 py-2">ID</th>
+                <th class="px-4 py-2">User</th>
+                <th class="px-4 py-2">Vehicle</th>
+                <th class="px-4 py-2">Dates</th>
+                <th class="px-4 py-2">Amount</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2">Handled By</th>
+                <th class="px-4 py-2">Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr th:each="booking : ${bookings}" class="bg-white border-b hover:bg-gray-50">
+                <td class="px-4 py-2" th:text="${booking.id}">1</td>
+                <td class="px-4 py-2" th:text="${booking.user.username}">John Doe</td>
+                <td class="px-4 py-2" th:text="${booking.vehicle.name}">Tesla Model 3</td>
+                <td class="px-4 py-2" th:text="'Dec 15-18'">Dec 15-18</td>
+                <td class="px-4 py-2">$<span th:text="${booking.amount}"></span></td>
+                <td class="px-4 py-2" th:text="${booking.status}">Pending</td>
+                <td class="px-4 py-2">Staff1</td>
+                <td class="px-4 py-2">
+                  <button class="text-green-500 hover:text-green-700"><i class="fas fa-check"></i></button>
+                  <button class="text-red-500 hover:text-red-700 ml-2"><i class="fas fa-times"></i></button>
+                  <button class="text-blue-500 hover:text-blue-700 ml-2"><i class="fas fa-download"></i></button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- System Reports Tab -->
+        <div th:if="${param.tab == 'system-reports'}" class="admin-tab-content hidden">
+          <h3 class="text-lg font-semibold mb-4">System Reports</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Total Rentals This Month</p>
+              <p class="text-2xl font-bold text-primary">15</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Total Revenue</p>
+              <p class="text-2xl font-bold text-primary">$5,000</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Top Vehicle</p>
+              <p class="text-2xl font-bold text-primary">Tesla Model 3</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Avg. Feedback Rating</p>
+              <p class="text-2xl font-bold text-primary">4.5</p>
+            </div>
+          </div>
+          <div class="mt-4">
+            <form th:action="@{/generate-report}" method="get">
+              <input type="date" name="date" class="border border-gray-300 rounded-lg px-3 py-2 mr-2">
+              <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">Generate Report</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Role Management Tab -->
+        <div th:if="${param.tab == 'role-management'}" class="admin-tab-content hidden">
+          <h3 class="text-lg font-semibold mb-4">Role Management</h3>
+          <form th:action="@{/add-role}" method="post" class="bg-gray-50 p-6 rounded-lg mb-6">
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Role Name</label>
+              <input type="text" name="roleName" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+            </div>
+            <div class="mb-4">
+              <label class="block text-sm font-medium mb-2">Permissions</label>
+              <label class="flex items-center mb-2"><input type="checkbox" name="permissions" value="manageVehicles" class="mr-2"> Manage Vehicles</label>
+              <label class="flex items-center mb-2"><input type="checkbox" name="permissions" value="approveBookings" class="mr-2"> Approve Bookings</label>
+              <label class="flex items-center"><input type="checkbox" name="permissions" value="viewReports" class="mr-2"> View Reports</label>
+            </div>
+            <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-accent transition-colors">Add Role</button>
+          </form>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left text-gray-500">
+              <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th class="px-4 py-2">Role</th>
+                <th class="px-4 py-2">Permissions</th>
+                <th class="px-4 py-2">Actions</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr class="bg-white border-b hover:bg-gray-50">
+                <td class="px-4 py-2">Customer</td>
+                <td class="px-4 py-2">View Vehicles, Book</td>
+                <td class="px-4 py-2">
+                  <button class="text-blue-500 hover:text-blue-700"><i class="fas fa-edit"></i></button>
+                  <button class="text-red-500 hover:text-red-700 ml-2"><i class="fas fa-trash"></i></button>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</html>

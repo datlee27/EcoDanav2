@@ -1,0 +1,35 @@
+<div th:fragment="nav" class="bg-white shadow-lg fixed w-full top-0 z-50" id="nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+                <div class="text-2xl font-bold text-primary">
+                    <i class="fas fa-leaf mr-2"></i>EvoDana
+                </div>
+            </div>
+            <div class="hidden md:flex space-x-8" id="nav-links">
+                <a th:href="@{/}" class="text-gray-700 hover:text-primary transition-colors">Home</a>
+                <a th:href="@{/vehicles}" class="text-gray-700 hover:text-primary transition-colors">Vehicles</a>
+                <th:block th:if="${#httpSession.getAttribute('currentUser') != null}">
+                    <th:block th:if="${#httpSession.getAttribute('currentUser').role == 'customer'}">
+                        <a th:href="@{/dashboard}" class="text-gray-700 hover:text-primary transition-colors">Dashboard</a>
+                    </th:block>
+                    <th:block th:if="${#httpSession.getAttribute('currentUser').role == 'staff'}">
+                        <a th:href="@{/staff}" class="text-gray-700 hover:text-primary transition-colors">Staff Panel</a>
+                    </th:block>
+                    <th:block th:if="${#httpSession.getAttribute('currentUser').role == 'admin'}">
+                        <a th:href="@{/admin}" class="text-gray-700 hover:text-primary transition-colors">Admin Portal</a>
+                    </th:block>
+                </th:block>
+            </div>
+            <div class="flex items-center space-x-4" id="auth-links">
+                <th:block th:if="${#httpSession.getAttribute('currentUser') == null}">
+                    <a th:href="@{/login}" class="text-primary hover:text-accent transition-colors">Login</a>
+                    <a th:href="@{/register}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">Sign Up</a>
+                </th:block>
+                <th:block th:if="${#httpSession.getAttribute('currentUser') != null}">
+                    <a th:href="@{/logout}" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">Logout</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</div>

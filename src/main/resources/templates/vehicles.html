@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
+<div th:fragment="content">
+    <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Sidebar Filters -->
+                <div class="lg:w-1/4">
+                    <div class="bg-white p-6 rounded-xl shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Filters</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Vehicle Type</label>
+                                <select name="type" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">All Types</option>
+                                    <option value="Electric Car">Electric Car</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="Electric Motorcycle">Electric Motorcycle</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Price Range</label>
+                                <select name="priceRange" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">All Prices</option>
+                                    <option value="0-30">$0 - $30</option>
+                                    <option value="30-60">$30 - $60</option>
+                                    <option value="60+">$60+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Brand</label>
+                                <select name="brand" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    <option value="">All Brands</option>
+                                    <option value="Tesla">Tesla</option>
+                                    <option value="VinFast">VinFast</option>
+                                    <option value="Honda">Honda</option>
+                                    <option value="Yamaha">Yamaha</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="flex items-center">
+                                    <input type="checkbox" name="noLicense" class="mr-2">
+                                    <span class="text-sm">No License Required</span>
+                                </label>
+                            </div>
+                            <button th:action="@{/vehicles}" type="submit" class="w-full bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors mt-4">Apply Filters</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Grid -->
+                <div class="lg:w-3/4">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Available Vehicles</h2>
+                        <select name="sort" class="border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="price">Sort by Price</option>
+                            <option value="rating">Sort by Rating</option>
+                            <option value="newest">Sort by Newest</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6" id="vehicle-grid">
+                        <div th:each="vehicle : ${vehicles}" class="vehicle-card bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer">
+                            <div th:class="'h-48 bg-gradient-to-br ' + ${vehicle.gradient} + ' flex items-center justify-center'">
+                                <i th:class="${vehicle.icon} + ' text-6xl text-white'"></i>
+                            </div>
+                            <div class="p-6">
+                                <h3 class="text-xl font-semibold mb-2" th:text="${vehicle.name}">Tesla Model 3</h3>
+                                <p class="text-gray-600 mb-2" th:text="${vehicle.type}">Electric Car</p>
+                                <div th:if="${not vehicle.requiresLicense}" class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full mb-2">No License Required</div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-2xl font-bold text-primary">$" + ${vehicle.price} + '/day'</span>
+                                    <a th:href="@{/vehicle-detail(id=${vehicle.id})}" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors">Book Now</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-center">
+                        <div class="flex space-x-2">
+                            <a th:href="@{/vehicles(page=1)}" class="px-4 py-2 bg-primary text-white rounded-lg">1</a>
+                            <a th:href="@{/vehicles(page=2)}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">2</a>
+                            <a th:href="@{/vehicles(page=3)}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">3</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</html>

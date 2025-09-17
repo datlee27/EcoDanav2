@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
+<div th:fragment="content">
+  <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden" th:if="${vehicle}">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 p-8">
+          <!-- Vehicle Images -->
+          <div>
+            <div class="mb-4">
+              <div id="main-vehicle-image" th:class="'h-80 bg-gradient-to-br ' + ${vehicle.gradient} + ' rounded-lg flex items-center justify-center'" th:utext="${#strings.toHtml('<i class=\"' + vehicle.icon + ' text-8xl text-white\"></i>')}"></div>
+          </div>
+          <div class="grid grid-cols-4 gap-2">
+            <div class="h-20 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center cursor-pointer" th:onclick="'showImage(1)'">
+              <i class="fas fa-car text-2xl text-white"></i>
+            </div>
+            <!-- Thêm 3 thumbnail khác tương tự -->
+          </div>
+        </div>
+
+        <!-- Vehicle Details -->
+        <div>
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2" th:text="${vehicle.name}">Tesla Model 3</h1>
+            <p class="text-gray-600 mb-4" th:text="${vehicle.type} + ' • 4 Seats • 75 kWh Battery'">Electric Car • 4 Seats • 75 kWh Battery</p>
+            <div class="flex items-center space-x-4">
+              <span class="text-3xl font-bold text-primary">$<span th:text="${vehicle.price}"></span>/day</span>
+              <span class="text-gray-500">$12/hour</span>
+              <span class="text-gray-500">$2,400/month</span>
+            </div>
+          </div>
+
+          <!-- Features -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold mb-3">Features</h3>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex items-center">
+                <i class="fas fa-bolt text-primary mr-2"></i>
+                <span class="text-sm">Fast Charging</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-map-marker-alt text-primary mr-2"></i>
+                <span class="text-sm">GPS Navigation</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-wifi text-primary mr-2"></i>
+                <span class="text-sm">WiFi Hotspot</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fas fa-snowflake text-primary mr-2"></i>
+                <span class="text-sm">Air Conditioning</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Form -->
+          <div class="bg-gray-50 p-6 rounded-lg">
+            <h3 class="text-lg font-semibold mb-4">Book This Vehicle</h3>
+            <form th:action="@{/book}" method="post">
+              <input type="hidden" name="vehicleId" th:value="${vehicle.id}" />
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label class="block text-sm font-medium mb-2">Pickup Date</label>
+                  <input type="date" name="pickupDate" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium mb-2">Return Date</label>
+                  <input type="date" name="returnDate" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+                </div>
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Rental Type</label>
+                <select name="rentalType" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                  <option>Daily</option>
+                  <option>Hourly</option>
+                  <option>Monthly</option>
+                </select>
+              </div>
+              <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Driver's License (Required)</label>
+                <input type="file" name="license" class="w-full border border-gray-300 rounded-lg px-3 py-2" required>
+              </div>
+              <div class="flex space-x-4">
+                <button type="button" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                  <i class="fas fa-heart mr-2"></i>Add to Favorites
+                </button>
+                <button type="submit" class="flex-1 bg-primary text-white py-3 rounded-lg font-semibold hover:bg-accent transition-colors">Book Now</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4">
+      <a th:href="@{/vehicles}" class="text-gray-500 hover:text-gray-700">← Back to Vehicles</a>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+  function showImage(index) {
+    // Mock image switch
+    alert('Switch to image ' + index);
+  }
+</script>
+</html>

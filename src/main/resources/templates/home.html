@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
+<div th:fragment="content">
+    <!-- Hero Section -->
+    <section class="hero-bg min-h-screen flex items-center justify-center text-white pt-16">
+        <div class="text-center max-w-4xl mx-auto px-4">
+            <h1 class="text-5xl md:text-6xl font-bold mb-6 fade-in">Rent Electric Vehicles & Motorcycles with EvoDana</h1>
+            <p class="text-xl mb-8 fade-in">Sustainable transportation for the modern world</p>
+            <a th:href="@{/vehicles}" class="bg-white text-primary px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-colors fade-in">Browse Vehicles</a>
+        </div>
+    </section>
+</div>
+</html>
