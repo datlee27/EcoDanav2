@@ -1,24 +1,23 @@
-<div th:fragment="nav" class="bg-white shadow-lg fixed w-full top-0 z-50" id="nav">
+<div th:fragment="nav" class="bg-white shadow-lg fixed w-full top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-                <div class="text-2xl font-bold text-primary">
-                    <i class="fas fa-leaf mr-2"></i>EvoDana
-                </div>
+                <a href="#" class="logo flex items-center">
+                    <div class="logo-icon bg-primary w-8 h-8 rounded-lg mr-2"></div>
+                    <span class="logo-text font-bold text-xl text-primary">RENTCARS</span>
+                </a>
             </div>
-            <div class="hidden md:flex space-x-8" id="nav-links">
-                <a th:href="@{/}" class="text-gray-700 hover:text-primary transition-colors">Home</a>
-                <a th:href="@{/vehicles}" class="text-gray-700 hover:text-primary transition-colors">Vehicles</a>
 
-                <a th:href="@{/dashboard}" class="text-gray-700 hover:text-primary transition-colors">Dashboard (Cust)</a>
-                <a th:href="@{/staff}" class="text-gray-700 hover:text-primary transition-colors">Staff Panel</a>
-                <a th:href="@{/admin}" class="text-gray-700 hover:text-primary transition-colors">Admin Portal</a>
-
+            <div class="hidden md:flex space-x-8">
+                <a href="#" class="text-gray-700 hover:text-primary transition-colors">Become a renter</a>
+                <a href="#" class="text-gray-700 hover:text-primary transition-colors">Rental deals</a>
+                <a href="#" class="text-gray-700 hover:text-primary transition-colors">How it work</a>
+                <a href="#" class="text-gray-700 hover:text-primary transition-colors">Why choose us</a>
             </div>
-            <div class="flex items-center space-x-4" id="auth-links">
-                <a th:href="@{/login}" class="text-primary hover:text-accent transition-colors">Login</a>
-                <a th:href="@{/register}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">Sign Up</a>
-                <a th:href="@{/logout}" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">Logout</a>
+
+            <div class="flex items-center space-x-4">
+                <a href="#" class="text-primary hover:text-accent transition-colors">Sign in</a>
+                <a href="#" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">Sign up</a>
             </div>
         </div>
     </div>
