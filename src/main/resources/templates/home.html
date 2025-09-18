@@ -1,7 +1,6 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: layout(~{::content})}">
 <div th:fragment="content">
-    <!-- Hero Section -->
     <section class="hero-bg min-h-screen flex items-center justify-center text-white pt-16">
         <div class="text-center max-w-4xl mx-auto px-4">
             <h1 class="text-5xl md:text-6xl font-bold mb-6 fade-in">Rent Electric Vehicles & Motorcycles with EvoDana</h1>
