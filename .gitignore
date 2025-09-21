@@ -1,28 +1,49 @@
-# Maven
+# ===============================
+# = MAVEN
+# ===============================
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# Spring Boot sensitive files
+# ===============================
+# = ENVIRONMENT & SECRETS
+# ===============================
+# Environment files (NEVER commit these)
 .env
 .env.local
 .env.*.local
-application.properties
-application-*.properties
-application.yml
-application-*.yml
+.env.development
+.env.production
+.env.test
+
+# Sensitive configuration files
+application-local.properties
+application-dev.properties
+application-prod.properties
+application-local.yml
+application-dev.yml
+application-prod.yml
+
+# Security files
 *.key
 *.pem
 *.secret
 *.keystore
 *.jks
+*.p12
 
-# Logs
+# ===============================
+# = LOGS
+# ===============================
 *.log
 logs/
+log/
 
-# STS
+# ===============================
+# = IDE FILES
+# ===============================
+### STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -31,13 +52,14 @@ logs/
 .springBeans
 .sts4-cache
 
-# IntelliJ IDEA
+### IntelliJ IDEA ###
 .idea/
 *.iws
 *.iml
 *.ipr
+out/
 
-# NetBeans
+### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -47,15 +69,53 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# VS Code
+### VS Code ###
 .vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
 
-# Temporary files
+# ===============================
+# = TEMPORARY FILES
+# ===============================
 *.swp
 *.swo
 *.tmp
+*.temp
 .DS_Store
+Thumbs.db
 
-# Database files
+# ===============================
+# = DATABASE FILES
+# ===============================
+# Local database files
 *.db
-*.sql
+*.sqlite
+*.sqlite3
+
+# Database dumps (add specific patterns if needed)
+# *-dump.sql
+# backup-*.sql
+
+# ===============================
+# = APPLICATION SPECIFIC
+# ===============================
+# Upload directories
+uploads/
+files/
+storage/
+temp/
+
+# Generated documentation
+docs/generated/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
