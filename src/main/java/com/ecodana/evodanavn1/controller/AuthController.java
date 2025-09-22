@@ -51,16 +51,8 @@ public class AuthController {
                 session.setAttribute("currentUser", user);
                 redirectAttributes.addFlashAttribute("success", "Welcome back, " + user.getUsername() + "!");
                 
-                // Redirect based on role
-                if (User.Role.CUSTOMER.equals(user.getRole())) {
-                    return "redirect:/dashboard";
-                } else if (User.Role.STAFF.equals(user.getRole())) {
-                    return "redirect:/staff";
-                } else if (User.Role.ADMIN.equals(user.getRole())) {
-                    return "redirect:/admin";
-                } else {
-                    return "redirect:/";
-                }
+                // Always redirect to home after login
+                return "redirect:/";
             } else {
                 model.addAttribute("error", "Invalid username/email or password. Please check your credentials and try again.");
                 return "user/login";
