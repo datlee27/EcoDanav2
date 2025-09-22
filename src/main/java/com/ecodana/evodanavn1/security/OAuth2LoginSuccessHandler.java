@@ -56,9 +56,31 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 user.setEmail(email);
                 user.setPassword(""); // No password for OAuth users
                 user.setPhoneNumber("");
-                user.setRole(User.Role.CUSTOMER);
+                // Role will be set via roleId, not the role field
                 user.setHasLicense(false);
                 user.setActive(true);
+                
+                // Set additional fields for database compatibility
+                if (name != null && !name.isEmpty()) {
+                    String[] nameParts = name.split(" ", 2);
+                    user.setFirstName(nameParts[0]);
+                    if (nameParts.length > 1) {
+                        user.setLastName(nameParts[1]);
+                    }
+                }
+                
+                // Set required database fields
+                user.setRoleId("customer-role-id");
+                user.setNormalizedUserName(user.getUsername().toUpperCase());
+                user.setNormalizedEmail(user.getEmail().toUpperCase());
+                user.setSecurityStamp(UUID.randomUUID().toString());
+                user.setConcurrencyStamp(UUID.randomUUID().toString());
+                user.setStatus("Active");
+                user.setEmailVerified(true);
+                user.setTwoFactorEnabled(false);
+                user.setLockoutEnabled(false);
+                user.setAccessFailedCount(0);
+                user.setCreatedDate(java.time.LocalDateTime.now());
                 
                 // Save user to database
                 userService.register(user);

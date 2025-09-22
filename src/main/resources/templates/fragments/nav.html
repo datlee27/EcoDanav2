@@ -46,15 +46,15 @@
                                 <p class="text-xs text-gray-500" th:text="${session.currentUser.email}">email@example.com</p>
                             </div>
                             
-                            <a th:href="@{/dashboard}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role.name() == 'CUSTOMER'}">
+                            <a th:href="@{/dashboard}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role != null and session.currentUser.role.roleName == 'Customer'}">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                             </a>
                             
-                            <a th:href="@{/staff}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role.name() == 'STAFF'}">
+                            <a th:href="@{/staff}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role != null and session.currentUser.role.roleName == 'Staff'}">
                                 <i class="fas fa-cogs mr-2"></i>Staff Panel
                             </a>
                             
-                            <a th:href="@{/admin}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role.name() == 'ADMIN'}">
+                            <a th:href="@{/admin}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" th:if="${session.currentUser.role != null and session.currentUser.role.roleName == 'Admin'}">
                                 <i class="fas fa-shield-alt mr-2"></i>Admin Panel
                             </a>
                             
