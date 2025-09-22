@@ -3,10 +3,10 @@ package com.ecodana.evodanavn1;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
+import org.springframework.security.web.SecurityFilterChain;
 
 import com.ecodana.evodanavn1.security.OAuth2LoginSuccessHandler;
 
@@ -29,13 +29,6 @@ public class SecurityConfig {
                 .anyRequest().permitAll()
             )
             .csrf(csrf -> csrf.disable())
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
-                .failureUrl("/login?error=true")
-                .permitAll()
-            )
             .oauth2Login(oauth -> oauth
                 .loginPage("/login")
                 .successHandler(successHandler)

@@ -74,7 +74,7 @@ public class DashboardController {
         user1.setEmail("john@example.com");
         user1.setPassword("password123");
         user1.setPhoneNumber("0123456789");
-        user1.setRole(User.Role.CUSTOMER);
+        // Role will be set via roleId, not the role field
         
         User user2 = new User();
         user2.setId("user2-id");
@@ -82,7 +82,7 @@ public class DashboardController {
         user2.setEmail("jane@example.com");
         user2.setPassword("password123");
         user2.setPhoneNumber("0987654321");
-        user2.setRole(User.Role.CUSTOMER);
+        // Role will be set via roleId, not the role field
         
         return List.of(user1, user2);
     }

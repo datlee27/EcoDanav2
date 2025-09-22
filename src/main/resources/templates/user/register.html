@@ -17,13 +17,6 @@
             <div th:if="${error}" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" th:text="${error}">Error message</div>
             
             <form th:action="@{/register}" th:object="${user}" method="post">
-                <!-- Username -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Tên đăng nhập *</label>
-                    <input type="text" th:field="*{username}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Chọn tên đăng nhập" required>
-                    <div th:if="${#fields.hasErrors('username')}" class="text-red-500 text-sm mt-1" th:errors="*{username}">Username error</div>
-                </div>
-                
                 <!-- Email -->
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-medium mb-2">Email *</label>
@@ -33,8 +26,8 @@
                 
                 <!-- Phone Number -->
                 <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Số điện thoại</label>
-                    <input type="tel" th:field="*{phoneNumber}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Nhập số điện thoại">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Số điện thoại *</label>
+                    <input type="tel" name="phoneNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Nhập số điện thoại" required>
                 </div>
                 
                 <!-- Password -->
@@ -50,13 +43,6 @@
                     <input type="password" name="confirmPassword" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Xác nhận mật khẩu" required>
                 </div>
                 
-                <!-- Driver's License -->
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">Bằng lái xe (Tùy chọn)</label>
-                    <input type="file" name="license" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
-                    <p class="text-xs text-gray-500 mt-1">Bắt buộc cho xe điện và một số xe máy</p>
-                </div>
-                
                 <!-- Terms -->
                 <div class="mb-6">
                     <label class="flex items-center">
@@ -65,8 +51,8 @@
                     </label>
                 </div>
                 
-                    <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-accent transition-colors mb-4">Đăng Ký</button>
-                </form>
+                <button type="submit" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-accent transition-colors mb-4">Đăng Ký</button>
+            </form>
                 
                 <!-- Google Register Button -->
                 <div class="mt-6">
