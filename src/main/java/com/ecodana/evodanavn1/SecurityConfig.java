@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
@@ -28,7 +29,7 @@ public class SecurityConfig {
                 .requestMatchers("/", "/register", "/login", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
                 .anyRequest().permitAll()
             )
-            .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
             .oauth2Login(oauth -> oauth
                 .successHandler(successHandler)
                 .authorizationEndpoint(authorization -> authorization
