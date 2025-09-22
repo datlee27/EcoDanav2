@@ -1,25 +1,75 @@
 package com.ecodana.evodanavn1.service;
 
-import com.ecodana.evodanavn1.model.User;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.repository.UserRepository;
 
 @Service
 public class UserService {
-    // Mock login method
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public User login(String username, String password, String secretKey) {
-        if ("demo".equals(username) && "demo".equals(password)) {
-            return new User("1", "demo", "demo@example.com", "customer", true);
-        } else if ("staff".equals(username) && "staff123".equals(password)) {
-            return new User("2", "staff", "staff@example.com", "staff", true);
-        } else if ("admin".equals(username) && "admin123".equals(password) && "secretadmin".equals(secretKey)) {
-            return new User("3", "admin", "admin@example.com", "admin", true);
+        // Try to find user by username first
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        
+        // If not found by username, try to find by email
+        if (!userOpt.isPresent()) {
+            userOpt = userRepository.findByEmail(username);
+        }
+        
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                return user;
+            }
         }
         return null;
     }
 
-    // Mock register (chỉ alert trong demo, sau này lưu DB)
     public boolean register(User user) {
-        // Simulate success
-        return true;
+        try {
+            // Check if username or email already exists
+            if (userRepository.existsByUsername(user.getUsername())) {
+                return false; // Username already exists
+            }
+            if (userRepository.existsByEmail(user.getEmail())) {
+                return false; // Email already exists
+            }
+            
+            // Generate UUID for id if not set
+            if (user.getId() == null || user.getId().isEmpty()) {
+                user.setId(java.util.UUID.randomUUID().toString());
+            }
+            
+            // Encode password before saving (only if password is not empty)
+            if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(user.getPassword()));
+            }
+            
+            // Save user to database
+            userRepository.save(user);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
+    }
+    
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
     }
 }

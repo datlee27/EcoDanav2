@@ -1,17 +1,19 @@
 package com.ecodana.evodanavn1.controller;
 
-import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.service.BookingService;
-import com.ecodana.evodanavn1.service.UserService;
-import com.ecodana.evodanavn1.service.VehicleService;
-import jakarta.servlet.http.HttpSession;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.util.List;
+import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.service.BookingService;
+import com.ecodana.evodanavn1.service.UserService;
+import com.ecodana.evodanavn1.service.VehicleService;
+
+import jakarta.servlet.http.HttpSession;
 
 @Controller
 public class DashboardController {
@@ -28,7 +30,7 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !"customer".equals(user.getRole())) {
+        if (user == null || !User.Role.CUSTOMER.equals(user.getRole())) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
@@ -40,7 +42,7 @@ public class DashboardController {
     @GetMapping("/staff")
     public String staff(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !"staff".equals(user.getRole())) {
+        if (user == null || !User.Role.STAFF.equals(user.getRole())) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
@@ -53,7 +55,7 @@ public class DashboardController {
     @GetMapping("/admin")
     public String admin(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !"admin".equals(user.getRole())) {
+        if (user == null || !User.Role.ADMIN.equals(user.getRole())) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
@@ -66,9 +68,22 @@ public class DashboardController {
 
     // Mock users cho admin
     private List<User> getMockUsers() {
-        return List.of(
-                new User("1", "john_doe", "john@example.com", "customer", true),
-                new User("2", "jane_smith", "jane@example.com", "staff", true)
-        );
+        User user1 = new User();
+        user1.setId("user1-id");
+        user1.setUsername("john_doe");
+        user1.setEmail("john@example.com");
+        user1.setPassword("password123");
+        user1.setPhoneNumber("0123456789");
+        user1.setRole(User.Role.CUSTOMER);
+        
+        User user2 = new User();
+        user2.setId("user2-id");
+        user2.setUsername("jane_smith");
+        user2.setEmail("jane@example.com");
+        user2.setPassword("password123");
+        user2.setPhoneNumber("0987654321");
+        user2.setRole(User.Role.CUSTOMER);
+        
+        return List.of(user1, user2);
     }
 }

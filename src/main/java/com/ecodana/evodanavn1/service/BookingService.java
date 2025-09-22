@@ -1,13 +1,14 @@
 package com.ecodana.evodanavn1.service;
 
-import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.Vehicle;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.ecodana.evodanavn1.model.Booking;
+import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.Vehicle;
 
 @Service
 public class BookingService {
@@ -18,10 +19,18 @@ public class BookingService {
 
     public BookingService() {
         // Mock data cho dashboard
-        bookings.add(new Booking("1", new User("1", "demo", "demo@example.com", "customer", true),
+        User demoUser = new User();
+        demoUser.setId("demo-user-id");
+        demoUser.setUsername("demo");
+        demoUser.setEmail("demo@example.com");
+        demoUser.setPassword("password123");
+        demoUser.setPhoneNumber("0123456789");
+        demoUser.setRole(User.Role.CUSTOMER);
+        
+        bookings.add(new Booking("1", demoUser,
                 new Vehicle("tesla-model-3", "Tesla Model 3", "Electric Car", "Tesla", 89, true, "fas fa-car", "from-primary to-secondary"),
                 LocalDate.of(2024, 12, 15), LocalDate.of(2024, 12, 18), 267, "Confirmed"));
-        bookings.add(new Booking("2", new User("1", "demo", "demo@example.com", "customer", true),
+        bookings.add(new Booking("2", demoUser,
                 new Vehicle("vinfast-klara", "VinFast Klara", "Electric Motorcycle", "VinFast", 25, false, "fas fa-motorcycle", "from-secondary to-primary"),
                 LocalDate.of(2024, 12, 10), LocalDate.of(2024, 12, 12), 50, "Completed"));
     }
