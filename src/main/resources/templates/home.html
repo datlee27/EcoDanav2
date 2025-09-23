@@ -6,16 +6,26 @@
 
     <!-- Success Notification -->
     <div th:if="${success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-3"></i>
-            <span th:text="${success}">Đăng ký thành công!</span>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                <span th:text="${success}">Registration successful!</span>
+            </div>
+            <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
     
     <div th:if="${session.flash_success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-3"></i>
-            <span th:text="${session.flash_success}">Đăng ký thành công!</span>
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                <span th:text="${session.flash_success}">Registration successful!</span>
+            </div>
+            <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
     </div>
 
@@ -348,18 +358,25 @@
                     notification.classList.add('translate-x-0');
                 }, 100);
                 
-                // Tự động ẩn thông báo sau 10 giây
+                // Tự động ẩn thông báo sau 8 giây
                 setTimeout(() => {
-                    notification.classList.remove('translate-x-0');
-                    notification.classList.add('translate-x-full');
-                    
-                    // Xóa thông báo khỏi DOM sau khi animation hoàn thành
-                    setTimeout(() => {
-                        notification.remove();
-                    }, 300);
-                }, 10000);
+                    closeNotification(notification.querySelector('button'));
+                }, 8000);
             }
         });
+
+        function closeNotification(button) {
+            const notification = button.closest('#success-notification');
+            if (notification) {
+                notification.classList.remove('translate-x-0');
+                notification.classList.add('translate-x-full');
+                
+                // Xóa thông báo khỏi DOM sau khi animation hoàn thành
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        }
     </script>
 </body>
 </html>

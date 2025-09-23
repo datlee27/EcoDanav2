@@ -27,44 +27,42 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String doLogin(@RequestParam String username, @RequestParam String password, @RequestParam(required = false) String secretKey, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
-        // Validate input
-        if (username == null || username.trim().isEmpty()) {
-            model.addAttribute("error", "Username or email is required");
-            return "user/login";
-        }
-        
-        if (password == null || password.trim().isEmpty()) {
-            model.addAttribute("error", "Password is required");
-            return "user/login";
-        }
-        
+    public String doLogin(@RequestParam String username, @RequestParam String password, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
-            System.out.println("=== AUTH CONTROLLER LOGIN ===");
-            System.out.println("Username: " + username);
-            System.out.println("Password: " + password);
+            // Try to find user by username or email
+            User user = userService.findByUsername(username);
+            if (user == null) {
+                user = userService.findByEmail(username);
+            }
             
-            User user = userService.login(username.trim(), password, secretKey != null ? secretKey : "");
-            System.out.println("User returned from service: " + (user != null ? user.getUsername() : "null"));
-            
-            if (user != null) {
-                session.setAttribute("currentUser", user);
-                redirectAttributes.addFlashAttribute("success", "Welcome back, " + user.getUsername() + "!");
-                
-                System.out.println("Login successful, redirecting to home");
-                // Always redirect to home after login
-                return "redirect:/";
+            if (user != null && userService.login(user.getEmail(), password, null) != null) {
+                // Reload user with role information
+                User userWithRole = userService.findByEmailWithRole(user.getEmail());
+                if (userWithRole != null) {
+                    session.setAttribute("currentUser", userWithRole);
+                    redirectAttributes.addFlashAttribute("success", "Login successful! Welcome back to EvoDana.");
+                    return "redirect:/";
+                } else {
+                    redirectAttributes.addFlashAttribute("error", "Login successful but unable to load user information. Please try again.");
+                    return "redirect:/login";
+                }
             } else {
-                System.out.println("User is null, login failed");
-                model.addAttribute("error", "Invalid username/email or password. Please check your credentials and try again.");
-                return "user/login";
+                redirectAttributes.addFlashAttribute("error", "Invalid username or password.");
+                return "redirect:/login";
             }
         } catch (Exception e) {
-            System.out.println("Exception in login: " + e.getMessage());
-            System.out.println("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
-            model.addAttribute("error", "Login failed due to a system error. Please try again later.");
-            return "user/login";
+            System.err.println("Login error: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "An error occurred during login. Please try again.");
+            return "redirect:/login";
         }
+    }
+
+    @GetMapping("/login-success")
+    public String loginSuccess(HttpSession session, RedirectAttributes redirectAttributes) {
+        // This method will be called after successful authentication
+        // We can add user to session here if needed
+        redirectAttributes.addFlashAttribute("success", "Login successful! Welcome back to EvoDana.");
+        return "redirect:/";
     }
 
     @GetMapping("/register")
@@ -75,13 +73,24 @@ public class AuthController {
 
     @PostMapping("/register")
     public String doRegister(@Valid User user, BindingResult bindingResult, @RequestParam String confirmPassword, @RequestParam String phoneNumber, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        // Sanitize input
+        if (user.getEmail() != null) {
+            user.setEmail(user.getEmail().trim().toLowerCase());
+        }
+        if (phoneNumber != null) {
+            phoneNumber = phoneNumber.trim();
+        }
+        if (confirmPassword != null) {
+            confirmPassword = confirmPassword.trim();
+        }
+        
         // Check password confirmation
-        if (!user.getPassword().equals(confirmPassword)) {
+        if (user.getPassword() != null && confirmPassword != null && !user.getPassword().equals(confirmPassword)) {
             bindingResult.rejectValue("password", "error.user", "Passwords do not match");
         }
         
         // Check if email already exists
-        if (userService.findByEmail(user.getEmail()) != null) {
+        if (user.getEmail() != null && userService.findByEmail(user.getEmail()) != null) {
             bindingResult.rejectValue("email", "error.user", "Email already exists");
         }
         
@@ -92,10 +101,16 @@ public class AuthController {
         
         if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
             bindingResult.rejectValue("phoneNumber", "error.user", "Phone number is required");
+        } else if (!phoneNumber.matches("^[0-9]*$")) {
+            bindingResult.rejectValue("phoneNumber", "error.user", "Phone number must contain only digits");
+        } else if (phoneNumber.length() > 11) {
+            bindingResult.rejectValue("phoneNumber", "error.user", "Phone number must not exceed 11 digits");
         }
         
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
             bindingResult.rejectValue("password", "error.user", "Password is required");
+        } else if (user.getPassword().length() < 6) {
+            bindingResult.rejectValue("password", "error.user", "Password must be at least 6 characters");
         }
         
         if (bindingResult.hasErrors()) {
@@ -112,9 +127,17 @@ public class AuthController {
         
         try {
             if (userService.register(user)) {
-                session.setAttribute("currentUser", user);
-                redirectAttributes.addFlashAttribute("success", "Đăng ký thành công! Chào mừng bạn đến EvoDana.");
-                return "redirect:/";
+                // Reload user with role information
+                User savedUser = userService.findByEmailWithRole(user.getEmail());
+                if (savedUser != null) {
+                    session.setAttribute("currentUser", savedUser);
+                    redirectAttributes.addFlashAttribute("success", "Registration successful! Welcome to EvoDana.");
+                    return "redirect:/";
+                } else {
+                    System.err.println("Failed to reload user after registration: " + user.getEmail());
+                    model.addAttribute("error", "Registration completed but failed to load user data. Please try logging in.");
+                    return "user/register";
+                }
             } else {
                 System.err.println("Registration failed for user: " + user.getEmail());
                 model.addAttribute("error", "Registration failed. Please try again.");
@@ -122,7 +145,6 @@ public class AuthController {
             }
         } catch (Exception e) {
             System.err.println("Exception in registration: " + e.getMessage());
-            System.err.println("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
             model.addAttribute("error", "Registration failed due to system error. Please try again.");
             return "user/register";
         }
@@ -136,7 +158,18 @@ public class AuthController {
             username = user.getUsername();
         }
         
+        // Clear all session attributes before invalidating
+        session.removeAttribute("currentUser");
+        session.removeAttribute("user");
+        session.removeAttribute("userId");
+        session.removeAttribute("username");
+        session.removeAttribute("email");
+        session.removeAttribute("SPRING_SECURITY_CONTEXT");
+        session.removeAttribute("SPRING_SECURITY_SAVED_REQUEST");
+        
+        // Invalidate the entire session
         session.invalidate();
+        
         redirectAttributes.addFlashAttribute("success", "Goodbye, " + username + "! You have been logged out successfully.");
         return "redirect:/";
     }

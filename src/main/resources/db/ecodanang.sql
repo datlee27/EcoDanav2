@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 8.0.42, for macos15 (x86_64)
 --
--- Host: localhost    Database: ecodana
+-- Host: localhost    Database: ecodanav2
 -- ------------------------------------------------------
 -- Server version	8.0.42
 
