@@ -31,6 +31,12 @@
     </properties>
     <dependencies>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+
             <!-- Other dependencies (Spring Web, JPA, etc.) -->
         <dependency>
             <groupId>io.github.cdimascio</groupId>

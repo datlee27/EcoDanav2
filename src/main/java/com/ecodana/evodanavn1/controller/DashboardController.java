@@ -30,7 +30,7 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !User.Role.CUSTOMER.equals(user.getRole())) {
+        if (user == null || !user.hasRole("Customer")) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
@@ -42,7 +42,7 @@ public class DashboardController {
     @GetMapping("/staff")
     public String staff(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !User.Role.STAFF.equals(user.getRole())) {
+        if (user == null || !user.hasRole("Staff")) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);
@@ -55,7 +55,7 @@ public class DashboardController {
     @GetMapping("/admin")
     public String admin(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !User.Role.ADMIN.equals(user.getRole())) {
+        if (user == null || !user.hasRole("Admin")) {
             return "redirect:/login";
         }
         model.addAttribute("user", user);

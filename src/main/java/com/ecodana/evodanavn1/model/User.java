@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
@@ -27,8 +28,6 @@ public class User {
     @Column(name = "UserDOB")
     private LocalDate userDOB;
     
-    @Column(name = "PhoneNumber", length = 11)
-    private String phoneNumber;
     
     @Column(name = "AvatarUrl", length = 255)
     private String avatarUrl;
@@ -48,9 +47,9 @@ public class User {
     @Column(name = "RoleId", length = 36, nullable = false)
     private String roleId;
     
-    @ManyToOne
+    @ManyToOne(fetch = jakarta.persistence.FetchType.EAGER)
     @JoinColumn(name = "RoleId", referencedColumnName = "RoleId", insertable = false, updatable = false)
-    private com.ecodana.evodanavn1.model.Role role;
+    private Role role;
     
     @Column(name = "CreatedDate")
     private LocalDateTime createdDate;
@@ -67,12 +66,17 @@ public class User {
     private String normalizedEmail;
     
     @Column(name = "EmailVerifed", nullable = false)
-    private boolean emailVerified = false;
+    private boolean emailVerifed = false;
     
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     @Column(name = "PasswordHash", nullable = false, length = 255)
     private String password;
+    
+    @Column(name = "PhoneNumber", length = 11)
+    @Size(max = 11, message = "Phone number must not exceed 11 characters")
+    @Pattern(regexp = "^[0-9]*$", message = "Phone number must contain only digits")
+    private String phoneNumber;
     
     @Column(name = "SecurityStamp", columnDefinition = "TEXT")
     private String securityStamp;
@@ -96,15 +100,12 @@ public class User {
     
     @Transient
     private boolean hasLicense = false;
-    
-    @Transient
-    private boolean isActive = true; // Used in setActive method
 
     // Constructors
     public User() {
         this.createdDate = LocalDateTime.now();
         this.status = "Active";
-        this.emailVerified = false;
+        this.emailVerifed = false;
         this.twoFactorEnabled = false;
         this.lockoutEnabled = false;
         this.accessFailedCount = 0;
@@ -118,7 +119,6 @@ public class User {
         this.phoneNumber = phoneNumber;
         // Role will be set via roleId, not the role field
         this.hasLicense = false;
-        this.isActive = true;
     }
 
     // Getters/Setters
@@ -164,8 +164,8 @@ public class User {
     public String getNormalizedEmail() { return normalizedEmail; }
     public void setNormalizedEmail(String normalizedEmail) { this.normalizedEmail = normalizedEmail; }
     
-    public boolean isEmailVerified() { return emailVerified; }
-    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
+    public boolean isEmailVerifed() { return emailVerifed; }
+    public void setEmailVerifed(boolean emailVerifed) { this.emailVerifed = emailVerifed; }
     
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
@@ -194,18 +194,40 @@ public class User {
     public void setHasLicense(boolean hasLicense) { this.hasLicense = hasLicense; }
     
     public boolean isActive() { 
-        return "Active".equals(this.status);
+        return "Active".equalsIgnoreCase(this.status);
     }
     public void setActive(boolean active) { 
-        this.isActive = active;
         this.status = active ? "Active" : "Inactive";
     }
     
-    public com.ecodana.evodanavn1.model.Role getRole() { return role; }
-    public void setRole(com.ecodana.evodanavn1.model.Role role) { this.role = role; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
     
-    // Enum for roles
-    public enum Role {
-        CUSTOMER, STAFF, ADMIN
+    // Helper method to get role name for template
+    public String getRoleName() {
+        if (role != null) {
+            return role.getRoleName();
+        }
+        return "CUSTOMER"; // Default role
+    }
+    
+    // Helper method to check if user has specific role
+    public boolean hasRole(String roleName) {
+        if (role != null) {
+            return role.getRoleName().equalsIgnoreCase(roleName);
+        }
+        return false;
+    }
+    
+    @Override
+    public String toString() {
+        return "User{" +
+                "id='" + id + '\'' +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", lastName='" + lastName + '\'' +
+                ", roleName='" + getRoleName() + '\'' +
+                '}';
     }
 }

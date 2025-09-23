@@ -1,5 +1,5 @@
 -- Insert sample data for Roles table
-USE ecodana;
+USE ecodanav2;
 
 -- Insert roles if they don't exist
 INSERT IGNORE INTO Roles (RoleId, RoleName, NormalizedName) VALUES 
