@@ -37,7 +37,9 @@
 </head>
 <body>
     <div th:replace="~{fragments/nav :: nav}"></div>
-    <div th:replace="~{content}"></div> <!-- Nơi thay thế nội dung từ các trang con -->
+    <div th:fragment="content">
+        <!-- Nội dung sẽ được thay thế ở đây -->
+    </div>
     <div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>

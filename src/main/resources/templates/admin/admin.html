@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout :: content}">
-<div th:fragment="content">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout}">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <div th:replace="~{fragments/nav :: nav}"></div>
+    <div th:fragment="content">
   <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4">
       <div class="bg-white rounded-xl shadow-lg p-8">
@@ -165,5 +168,7 @@
       </div>
     </div>
   </div>
-</div>
+    </div>
+    <div th:replace="~{fragments/footer :: footer}"></div>
+</body>
 </html>

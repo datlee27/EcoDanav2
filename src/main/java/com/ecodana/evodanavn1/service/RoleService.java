@@ -1,26 +1,59 @@
 package com.ecodana.evodanavn1.service;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.ecodana.evodanavn1.model.Role;
+import com.ecodana.evodanavn1.repository.RoleRepository;
 
 @Service
 public class RoleService {
     
-    // Valid role IDs from database (these should match the actual UUIDs in database)
-    private static final List<String> VALID_ROLE_IDS = Arrays.asList(
-        "customer-role-id",
-        "staff-role-id", 
-        "admin-role-id"
-    );
+    @Autowired
+    private RoleRepository roleRepository;
     
-    // Valid role names
-    private static final List<String> VALID_ROLE_NAMES = Arrays.asList(
-        "Customer",
-        "Staff",
-        "Admin"
-    );
+    // Default role names - will be loaded from database
+    private static final String CUSTOMER_ROLE_NAME = "Customer";
+    private static final String STAFF_ROLE_NAME = "Staff";
+    private static final String ADMIN_ROLE_NAME = "Admin";
+    
+    /**
+     * Find role by role ID
+     * @param roleId the role ID to search for
+     * @return Optional containing the role if found
+     */
+    public Optional<Role> findById(String roleId) {
+        return roleRepository.findById(roleId);
+    }
+    
+    /**
+     * Find role by role name
+     * @param roleName the role name to search for
+     * @return Optional containing the role if found
+     */
+    public Optional<Role> findByRoleName(String roleName) {
+        return roleRepository.findByRoleName(roleName);
+    }
+    
+    /**
+     * Find role by normalized name
+     * @param normalizedName the normalized name to search for
+     * @return Optional containing the role if found
+     */
+    public Optional<Role> findByNormalizedName(String normalizedName) {
+        return roleRepository.findByNormalizedName(normalizedName);
+    }
+    
+    /**
+     * Get all roles
+     * @return list of all roles
+     */
+    public List<Role> getAllRoles() {
+        return roleRepository.findAll();
+    }
     
     /**
      * Validates if the given role ID is valid
@@ -31,7 +64,7 @@ public class RoleService {
         if (roleId == null || roleId.trim().isEmpty()) {
             return false;
         }
-        return VALID_ROLE_IDS.contains(roleId.trim());
+        return roleRepository.existsById(roleId.trim());
     }
     
     /**
@@ -43,46 +76,97 @@ public class RoleService {
         if (roleName == null || roleName.trim().isEmpty()) {
             return false;
         }
-        return VALID_ROLE_NAMES.contains(roleName.trim());
+        return roleRepository.existsByRoleName(roleName.trim());
     }
     
     /**
      * Gets the default role ID for customers
-     * @return the default customer role ID
+     * @return the default customer role ID from database
      */
     public String getDefaultCustomerRoleId() {
-        return "customer-role-id";
+        Role role = getCustomerRole();
+        return role != null ? role.getRoleId() : null;
     }
     
     /**
      * Gets the default role ID for staff
-     * @return the default staff role ID
+     * @return the default staff role ID from database
      */
     public String getDefaultStaffRoleId() {
-        return "staff-role-id";
+        Role role = getStaffRole();
+        return role != null ? role.getRoleId() : null;
     }
     
     /**
      * Gets the default role ID for admin
-     * @return the default admin role ID
+     * @return the default admin role ID from database
      */
     public String getDefaultAdminRoleId() {
-        return "admin-role-id";
+        Role role = getAdminRole();
+        return role != null ? role.getRoleId() : null;
     }
     
     /**
-     * Gets all valid role IDs
-     * @return list of valid role IDs
+     * Get customer role from database
+     * @return customer role or null if not found
      */
-    public List<String> getAllValidRoleIds() {
-        return VALID_ROLE_IDS;
+    public Role getCustomerRole() {
+        return findByRoleName(CUSTOMER_ROLE_NAME).orElse(null);
     }
     
     /**
-     * Gets all valid role names
-     * @return list of valid role names
+     * Get staff role from database
+     * @return staff role or null if not found
      */
-    public List<String> getAllValidRoleNames() {
-        return VALID_ROLE_NAMES;
+    public Role getStaffRole() {
+        return findByRoleName(STAFF_ROLE_NAME).orElse(null);
+    }
+    
+    /**
+     * Get admin role from database
+     * @return admin role or null if not found
+     */
+    public Role getAdminRole() {
+        return findByRoleName(ADMIN_ROLE_NAME).orElse(null);
+    }
+    
+    /**
+     * Check if user has specific role by role name
+     * @param userRole the user's role
+     * @param roleName the role name to check
+     * @return true if user has the role, false otherwise
+     */
+    public boolean hasRole(Role userRole, String roleName) {
+        if (userRole == null || roleName == null) {
+            return false;
+        }
+        return roleName.equalsIgnoreCase(userRole.getRoleName());
+    }
+    
+    /**
+     * Check if user is admin
+     * @param userRole the user's role
+     * @return true if user is admin, false otherwise
+     */
+    public boolean isAdmin(Role userRole) {
+        return hasRole(userRole, ADMIN_ROLE_NAME);
+    }
+    
+    /**
+     * Check if user is staff
+     * @param userRole the user's role
+     * @return true if user is staff, false otherwise
+     */
+    public boolean isStaff(Role userRole) {
+        return hasRole(userRole, STAFF_ROLE_NAME);
+    }
+    
+    /**
+     * Check if user is customer
+     * @param userRole the user's role
+     * @return true if user is customer, false otherwise
+     */
+    public boolean isCustomer(Role userRole) {
+        return hasRole(userRole, CUSTOMER_ROLE_NAME);
     }
 }

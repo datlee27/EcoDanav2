@@ -10,8 +10,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.RoleService;
+import com.ecodana.evodanavn1.service.UserService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -98,7 +98,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     }
                     
                     // Set required database fields
-                    user.setRoleId(roleService.getDefaultCustomerRoleId());
+                    String customerRoleId = roleService.getDefaultCustomerRoleId();
+                    System.out.println("OAuth2 Login - Setting customer role ID: " + customerRoleId);
+                    user.setRoleId(customerRoleId);
                     user.setNormalizedUserName(user.getUsername().toUpperCase());
                     user.setNormalizedEmail(user.getEmail().toUpperCase());
                     user.setSecurityStamp(UUID.randomUUID().toString());
@@ -118,6 +120,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                         return;
                     }
                     System.out.println("OAuth2 Login - New user created: " + user.getEmail());
+                    System.out.println("OAuth2 Login - User role ID: " + user.getRoleId());
                 }
 
                 // Check if user is active
@@ -131,14 +134,35 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 User fullUser = userService.findByEmailWithRole(user.getEmail());
                 if (fullUser != null) {
                     user = fullUser;
+                    System.out.println("OAuth2 Login - User reloaded with role: " + user.getRoleName());
+                } else {
+                    System.out.println("OAuth2 Login - Could not reload user with role, using original user");
                 }
                 
                 // Set user in session
                 HttpSession session = request.getSession(true);
                 session.setAttribute("currentUser", user);
-                session.setAttribute("flash_success", "Đăng nhập bằng Google thành công!");
                 System.out.println("OAuth2 Login successful: " + user.getEmail());
                 System.out.println("User role: " + user.getRoleName());
+                System.out.println("User role object: " + (user.getRole() != null ? user.getRole().getRoleName() : "null"));
+                System.out.println("Session ID: " + session.getId());
+                System.out.println("User set in session: " + (session.getAttribute("currentUser") != null));
+                
+                // Redirect based on role
+                String roleName = user.getRoleName();
+                if ("Admin".equalsIgnoreCase(roleName)) {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập bằng Google thành công! Chào mừng Admin " + user.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                    response.sendRedirect("/admin");
+                } else if ("Staff".equalsIgnoreCase(roleName)) {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập bằng Google thành công! Chào mừng " + user.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    response.sendRedirect("/owner/dashboard");
+                } else if ("Customer".equalsIgnoreCase(roleName)) {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập bằng Google thành công! Chào mừng " + user.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                    response.sendRedirect("/");
+                } else {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập bằng Google thành công! Chào mừng " + user.getFirstName() + " trở lại EvoDana.");
+                    response.sendRedirect("/");
+                }
             } else {
                 System.err.println("OAuth2 Login failed: Invalid principal type");
                 response.sendRedirect("/login?error=invalid_principal");
@@ -149,7 +173,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             response.sendRedirect("/login?error=oauth_error");
             return;
         }
-        response.sendRedirect("/?login=success");
     }
 
 }

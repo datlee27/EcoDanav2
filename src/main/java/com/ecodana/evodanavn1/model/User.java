@@ -96,6 +96,8 @@ public class User {
     @Column(name = "AccessFailedCount", nullable = false)
     private int accessFailedCount = 0;
     
+    
+    
     // Computed fields for easier access
     
     @Transient
@@ -187,6 +189,8 @@ public class User {
     
     public int getAccessFailedCount() { return accessFailedCount; }
     public void setAccessFailedCount(int accessFailedCount) { this.accessFailedCount = accessFailedCount; }
+    
+    
     
     // Computed field getters/setters
     

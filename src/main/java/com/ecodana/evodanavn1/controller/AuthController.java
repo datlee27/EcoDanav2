@@ -29,29 +29,48 @@ public class AuthController {
     @PostMapping("/login")
     public String doLogin(@RequestParam String username, @RequestParam String password, HttpSession session, RedirectAttributes redirectAttributes) {
         try {
-            // Try to find user by username or email
-            User user = userService.findByUsername(username);
-            if (user == null) {
-                user = userService.findByEmail(username);
-            }
+            System.out.println("Login attempt: " + username);
             
-            if (user != null && userService.login(user.getEmail(), password, null) != null) {
+            // Use UserService.login() directly - it handles both username and email lookup
+            User user = userService.login(username, password, null);
+            
+            if (user != null) {
+                System.out.println("Login successful for: " + user.getEmail());
+                
                 // Reload user with role information
-                User userWithRole = userService.findByEmailWithRole(user.getEmail());
+                User userWithRole = userService.getUserWithRole(user.getEmail());
                 if (userWithRole != null) {
                     session.setAttribute("currentUser", userWithRole);
-                    redirectAttributes.addFlashAttribute("success", "Login successful! Welcome back to EvoDana.");
-                    return "redirect:/";
+                    
+                    // Redirect based on role
+                    String roleName = userWithRole.getRoleName();
+                    System.out.println("User role: " + roleName);
+                    
+                    if ("Admin".equalsIgnoreCase(roleName)) {
+                        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                        return "redirect:/admin";
+                    } else if ("Staff".equalsIgnoreCase(roleName)) {
+                        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                        return "redirect:/owner/dashboard";
+                    } else if ("Customer".equalsIgnoreCase(roleName)) {
+                        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                        return "redirect:/";
+                    } else {
+                        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại EvoDana.");
+                        return "redirect:/";
+                    }
                 } else {
                     redirectAttributes.addFlashAttribute("error", "Login successful but unable to load user information. Please try again.");
                     return "redirect:/login";
                 }
             } else {
+                System.out.println("Login failed for: " + username);
                 redirectAttributes.addFlashAttribute("error", "Invalid username or password.");
                 return "redirect:/login";
             }
         } catch (Exception e) {
             System.err.println("Login error: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "An error occurred during login. Please try again.");
             return "redirect:/login";
         }
@@ -59,9 +78,37 @@ public class AuthController {
 
     @GetMapping("/login-success")
     public String loginSuccess(HttpSession session, RedirectAttributes redirectAttributes) {
-        // This method will be called after successful authentication
-        // We can add user to session here if needed
-        redirectAttributes.addFlashAttribute("success", "Login successful! Welcome back to EvoDana.");
+        // This method will be called after successful Spring Security authentication
+        User currentUser = (User) session.getAttribute("currentUser");
+        
+        if (currentUser != null) {
+            // Reload user with role information
+            User userWithRole = userService.getUserWithRole(currentUser.getEmail());
+            if (userWithRole != null) {
+                session.setAttribute("currentUser", userWithRole);
+                
+                // Redirect based on role
+                String roleName = userWithRole.getRoleName();
+                System.out.println("Login success - User role: " + roleName);
+                
+                if ("Admin".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                    return "redirect:/admin";
+                } else if ("Staff".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    return "redirect:/owner/dashboard";
+                } else if ("Customer".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                    return "redirect:/";
+                } else {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại EvoDana.");
+                    return "redirect:/";
+                }
+            }
+        }
+        
+        // Fallback to home page if no user or role found
+        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng trở lại EvoDana.");
         return "redirect:/";
     }
 

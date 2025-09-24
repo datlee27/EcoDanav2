@@ -36,16 +36,16 @@
             <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h1 class="text-3xl font-bold text-gray-800">Owner Dashboard</h1>
-                        <p class="text-gray-600 mt-2">Vehicle & Booking Management - <span th:text="${user.firstName != null ? user.firstName + ' ' + user.lastName : user.username}">Owner</span></p>
+                        <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+                        <p class="text-gray-600 mt-2">System Administration - <span th:text="${user.firstName != null ? user.firstName + ' ' + user.lastName : user.username}">Admin</span></p>
                     </div>
                     <div class="flex items-center space-x-4">
                         <div class="text-right">
                             <p class="text-sm text-gray-600">Role</p>
                             <span th:if="${user.role != null}" 
                                   th:text="${user.role.roleName}" 
-                                  class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                Staff
+                                  class="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                                Admin
                             </span>
                         </div>
                         <a th:href="@{/logout}" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
@@ -55,93 +55,54 @@
                 </div>
             </div>
 
-            <!-- Stats Overview -->
+            <!-- System Overview Stats -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Users</p>
+                            <p class="text-2xl font-semibold text-gray-900" th:text="${totalUsers != null ? totalUsers.size() : 0}">0</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-100 text-green-600">
                             <i class="fas fa-car text-xl"></i>
                         </div>
                         <div class="ml-4">
                             <p class="text-sm font-medium text-gray-600">Total Vehicles</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${totalVehicles != null ? totalVehicles.size() : 0}">0</p>
-                            <p class="text-xs text-green-600">+2 this month</p>
+                            <p class="text-2xl font-semibold text-gray-900" th:text="${totalVehicles != null ? totalVehicles.size() : 0}">0</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 text-green-600">
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
                             <i class="fas fa-calendar-check text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Active Bookings</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${activeBookings != null ? activeBookings.size() : 0}">0</p>
-                            <p class="text-xs text-green-600">+15% vs last month</p>
+                            <p class="text-sm font-medium text-gray-600">Total Bookings</p>
+                            <p class="text-2xl font-semibold text-gray-900" th:text="${totalBookings != null ? totalBookings.size() : 0}">0</p>
                         </div>
                     </div>
                 </div>
                 
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                            <i class="fas fa-clock text-xl"></i>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Pending Bookings</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${pendingBookings != null ? pendingBookings.size() : 0}">0</p>
-                            <p class="text-xs text-yellow-600">Needs attention</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-purple-100 text-purple-600">
                             <i class="fas fa-dollar-sign text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Today's Revenue</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${todayRevenue != null ? #numbers.formatCurrency(todayRevenue) : '0'}">0</p>
-                            <p class="text-xs text-green-600">+12% vs yesterday</p>
+                            <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                            <p class="text-2xl font-semibold text-gray-900" th:text="${totalRevenue != null ? #numbers.formatDecimal(totalRevenue, 0, 0) : '0'}">0</p>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h2>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <a href="#" class="flex items-center p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all">
-                        <i class="fas fa-plus-circle text-blue-600 text-xl mr-3"></i>
-                        <div>
-                            <span class="text-gray-700 font-medium">Add Vehicle</span>
-                            <p class="text-xs text-gray-500">Add new vehicle to fleet</p>
-                        </div>
-                    </a>
-                    <a href="#" class="flex items-center p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all">
-                        <i class="fas fa-calendar-plus text-green-600 text-xl mr-3"></i>
-                        <div>
-                            <span class="text-gray-700 font-medium">View Bookings</span>
-                            <p class="text-xs text-gray-500">Manage all bookings</p>
-                        </div>
-                    </a>
-                    <a href="#" class="flex items-center p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all">
-                        <i class="fas fa-chart-bar text-purple-600 text-xl mr-3"></i>
-                        <div>
-                            <span class="text-gray-700 font-medium">Reports</span>
-                            <p class="text-xs text-gray-500">View analytics</p>
-                        </div>
-                    </a>
-                    <a href="#" class="flex items-center p-4 border-2 border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all">
-                        <i class="fas fa-cog text-orange-600 text-xl mr-3"></i>
-                        <div>
-                            <span class="text-gray-700 font-medium">Settings</span>
-                            <p class="text-xs text-gray-500">Configure system</p>
-                        </div>
-                    </a>
                 </div>
             </div>
 
@@ -150,7 +111,13 @@
                 <!-- Tab Navigation -->
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex space-x-8 px-8">
-                        <button onclick="showTab('vehicles')" class="tab-button py-4 px-1 border-b-2 border-primary text-primary font-medium">
+                        <button onclick="showTab('overview')" class="tab-button py-4 px-1 border-b-2 border-primary text-primary font-medium">
+                            <i class="fas fa-tachometer-alt mr-2"></i>System Overview
+                        </button>
+                        <button onclick="showTab('users')" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-users mr-2"></i>User Management
+                        </button>
+                        <button onclick="showTab('vehicles')" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
                             <i class="fas fa-car mr-2"></i>Vehicle Management
                         </button>
                         <button onclick="showTab('bookings')" class="tab-button py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
@@ -167,8 +134,124 @@
 
                 <!-- Tab Content -->
                 <div class="p-8">
+                    <!-- Overview Tab -->
+                    <div id="overview-tab" class="tab-content">
+                        <h3 class="text-lg font-semibold mb-6">System Overview</h3>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            <!-- Recent Activity -->
+                            <div class="border border-gray-200 rounded-lg p-6">
+                                <h4 class="text-lg font-semibold mb-4">Recent Activity</h4>
+                                <div class="space-y-4">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium">New booking created</p>
+                                            <p class="text-xs text-gray-500">2 minutes ago</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium">User registered</p>
+                                            <p class="text-xs text-gray-500">15 minutes ago</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium">Vehicle maintenance scheduled</p>
+                                            <p class="text-xs text-gray-500">1 hour ago</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- System Health -->
+                            <div class="border border-gray-200 rounded-lg p-6">
+                                <h4 class="text-lg font-semibold mb-4">System Health</h4>
+                                <div class="space-y-4">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium">Database Status</span>
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Healthy</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium">Server Load</span>
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Normal</span>
+                                    </div>
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-sm font-medium">Active Sessions</span>
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs" th:text="${activeSessions != null ? activeSessions : 0}">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Users Tab -->
+                    <div id="users-tab" class="tab-content hidden">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-semibold">User Management</h3>
+                            <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Add User
+                            </button>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr th:each="user : ${users}" class="hover:bg-gray-50">
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                                    <i class="fas fa-user text-gray-400"></i>
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900" th:text="${user.firstName != null ? user.firstName + ' ' + user.lastName : user.username}">User Name</div>
+                                                    <div class="text-sm text-gray-500" th:text="${user.email}">user@example.com</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                  th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
+                                                             (user.role != null and user.role.roleName == 'Admin' ? 'bg-red-100 text-red-800' : 
+                                                              user.role != null and user.role.roleName == 'Staff' ? 'bg-blue-100 text-blue-800' : 
+                                                              'bg-green-100 text-green-800')}"
+                                                  th:text="${user.role != null ? user.role.roleName : 'Customer'}">Customer</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 py-1 rounded-full text-xs font-medium"
+                                                  th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
+                                                             (user.status == 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800')}"
+                                                  th:text="${user.status}">Active</span>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${user.createdDate != null ? #temporals.format(user.createdDate, 'dd/MM/yyyy') : 'N/A'}">15/12/2024</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <button class="text-primary hover:text-accent mr-3">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="text-red-600 hover:text-red-800">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- Vehicles Tab -->
-                    <div id="vehicles-tab" class="tab-content">
+                    <div id="vehicles-tab" class="tab-content hidden">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="text-lg font-semibold">Vehicle Management</h3>
                             <button class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">
@@ -185,7 +268,7 @@
                                     <h4 class="font-semibold" th:text="${vehicle.vehicleModel}">Vehicle Model</h4>
                                     <p class="text-sm text-gray-600" th:text="${vehicle.licensePlate}">License Plate</p>
                                     <div class="mt-2 flex justify-between items-center">
-                                        <span class="text-primary font-semibold" th:text="${#numbers.formatCurrency(vehicle.pricePerDay)}">89</span>
+                                        <span class="text-primary font-semibold" th:text="${#numbers.formatDecimal(vehicle.pricePerDay, 0, 0)}">89</span>
                                         <span class="px-2 py-1 rounded-full text-xs font-medium"
                                               th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
                                                          (vehicle.status == 'Available' ? 'bg-green-100 text-green-800' : 
@@ -202,11 +285,6 @@
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div th:if="${vehicles == null or vehicles.empty}" class="col-span-full text-center py-12 text-gray-500">
-                                <i class="fas fa-car text-6xl mb-4"></i>
-                                <p class="text-xl">No vehicles found</p>
-                                <p class="text-sm">Add your first vehicle to get started</p>
                             </div>
                         </div>
                     </div>
@@ -256,7 +334,7 @@
                                             <div class="text-sm text-gray-900" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy')}">15/12/2024</div>
                                             <div class="text-sm text-gray-500" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy')}">18/12/2024</div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatCurrency(booking.totalAmount)}">267,000</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 0)}">267,000</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span class="px-2 py-1 rounded-full text-xs font-medium"
                                                   th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
@@ -273,12 +351,6 @@
                                             <button class="text-red-600 hover:text-red-800">
                                                 <i class="fas fa-ban"></i>
                                             </button>
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${bookings == null or bookings.empty}">
-                                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                            <i class="fas fa-calendar-times text-4xl mb-4"></i>
-                                            <p class="text-xl">No bookings found</p>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -312,6 +384,13 @@
                             </div>
                             
                             <div class="border border-gray-200 rounded-lg p-6">
+                                <h4 class="text-lg font-semibold mb-4">User Growth</h4>
+                                <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
+                                    <i class="fas fa-chart-area text-4xl text-gray-400"></i>
+                                </div>
+                            </div>
+                            
+                            <div class="border border-gray-200 rounded-lg p-6">
                                 <h4 class="text-lg font-semibold mb-4">Vehicle Utilization</h4>
                                 <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
                                     <i class="fas fa-chart-pie text-4xl text-gray-400"></i>
@@ -324,49 +403,57 @@
                                     <i class="fas fa-chart-bar text-4xl text-gray-400"></i>
                                 </div>
                             </div>
-                            
-                            <div class="border border-gray-200 rounded-lg p-6">
-                                <h4 class="text-lg font-semibold mb-4">Customer Satisfaction</h4>
-                                <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
-                                    <i class="fas fa-star text-4xl text-gray-400"></i>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
                     <!-- Settings Tab -->
                     <div id="settings-tab" class="tab-content hidden">
-                        <h3 class="text-lg font-semibold mb-6">Settings</h3>
+                        <h3 class="text-lg font-semibold mb-6">System Settings</h3>
                         
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             <div class="border border-gray-200 rounded-lg p-6">
-                                <h4 class="text-lg font-semibold mb-4">Vehicle Settings</h4>
+                                <h4 class="text-lg font-semibold mb-4">General Settings</h4>
                                 <div class="space-y-4">
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Default Rental Price (per day)</label>
-                                        <input type="number" value="500000" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Site Name</label>
+                                        <input type="text" value="EvoDana" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-2">Maintenance Reminder (days)</label>
-                                        <input type="number" value="30" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Default Currency</label>
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option>VND</option>
+                                            <option>USD</option>
+                                            <option>EUR</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                            <option>Asia/Ho_Chi_Minh</option>
+                                            <option>UTC</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="border border-gray-200 rounded-lg p-6">
-                                <h4 class="text-lg font-semibold mb-4">Notification Settings</h4>
+                                <h4 class="text-lg font-semibold mb-4">Security Settings</h4>
                                 <div class="space-y-4">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium">Email Notifications</span>
+                                        <span class="text-sm font-medium">Two-Factor Authentication</span>
+                                        <button class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
+                                            <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm font-medium">Email Verification Required</span>
                                         <button class="relative inline-flex h-6 w-11 items-center rounded-full bg-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
                                             <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform translate-x-6"></span>
                                         </button>
                                     </div>
                                     <div class="flex items-center justify-between">
-                                        <span class="text-sm font-medium">SMS Notifications</span>
-                                        <button class="relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-                                            <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"></span>
-                                        </button>
+                                        <span class="text-sm font-medium">Session Timeout (minutes)</span>
+                                        <input type="number" value="30" class="w-20 px-2 py-1 border border-gray-300 rounded text-sm">
                                     </div>
                                 </div>
                             </div>

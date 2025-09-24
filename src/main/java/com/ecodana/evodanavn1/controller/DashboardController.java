@@ -30,41 +30,102 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !user.hasRole("Customer")) {
+        System.out.println("DashboardController - Session ID: " + session.getId());
+        System.out.println("DashboardController - User in session: " + (user != null));
+        if (user != null) {
+            System.out.println("DashboardController - User email: " + user.getEmail());
+            System.out.println("DashboardController - User role: " + user.getRoleName());
+        }
+        if (user == null) {
+            System.out.println("DashboardController - No user in session, redirecting to login");
             return "redirect:/login";
         }
-        model.addAttribute("user", user);
-        model.addAttribute("bookings", bookingService.getBookingsByUser(user));
-        model.addAttribute("tab", tab != null ? tab : "bookings");
-        return "dashboard";
+        
+        // Reload user with role information
+        User userWithRole = userService.getUserWithRole(user.getEmail());
+        if (userWithRole == null) {
+            return "redirect:/login";
+        }
+        
+        // Check if user has customer role
+        if (!userService.isCustomer(userWithRole)) {
+            return "redirect:/login";
+        }
+        
+        try {
+            // Load customer-specific data from database
+            var userBookings = bookingService.getBookingsByUser(userWithRole);
+            model.addAttribute("user", userWithRole);
+            model.addAttribute("currentUser", userWithRole);  // Add currentUser for template
+            model.addAttribute("bookings", userBookings);
+            model.addAttribute("activeBookings", bookingService.getActiveBookingsByUser(userWithRole));
+            model.addAttribute("totalBookings", userBookings.size());
+            model.addAttribute("favoriteVehicles", vehicleService.getFavoriteVehiclesByUser(userWithRole));
+            model.addAttribute("reviewsGiven", bookingService.getReviewsByUser(userWithRole));
+            model.addAttribute("tab", tab != null ? tab : "bookings");
+            
+            return "customer/customer-dashboard";
+        } catch (Exception e) {
+            // Fallback to empty data if database is not available
+            model.addAttribute("user", userWithRole);
+            model.addAttribute("bookings", List.of());
+            model.addAttribute("activeBookings", List.of());
+            model.addAttribute("totalBookings", List.of());
+            model.addAttribute("favoriteVehicles", List.of());
+            model.addAttribute("reviewsGiven", List.of());
+            model.addAttribute("tab", tab != null ? tab : "bookings");
+            
+            return "customer/customer-dashboard";
+        }
     }
 
     @GetMapping("/staff")
     public String staff(@RequestParam(required = false) String tab, HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
-        if (user == null || !user.hasRole("Staff")) {
+        if (user == null) {
             return "redirect:/login";
         }
-        model.addAttribute("user", user);
-        model.addAttribute("vehicles", vehicleService.getAllVehicles());
-        model.addAttribute("bookings", bookingService.getAllBookings());  // Thêm method getAllBookings() trong BookingService
-        model.addAttribute("tab", tab != null ? tab : "manage-vehicles");
-        return "staff";
+        
+        // Reload user with role information
+        User userWithRole = userService.getUserWithRole(user.getEmail());
+        if (userWithRole == null) {
+            return "redirect:/login";
+        }
+        
+        // Check if user has staff role
+        if (!userService.isStaff(userWithRole)) {
+            return "redirect:/login";
+        }
+        
+        try {
+            // Load staff-specific data from database
+            var allVehicles = vehicleService.getAllVehicles();
+            var allBookings = bookingService.getAllBookings();
+            model.addAttribute("user", userWithRole);
+            model.addAttribute("vehicles", allVehicles);
+            model.addAttribute("totalVehicles", allVehicles.size());
+            model.addAttribute("bookings", allBookings);
+            model.addAttribute("activeBookings", bookingService.getActiveBookings());
+            model.addAttribute("pendingBookings", bookingService.getPendingBookings());
+            model.addAttribute("todayRevenue", bookingService.getTodayRevenue());
+            model.addAttribute("tab", tab != null ? tab : "vehicles");
+            
+            return "staff/staff-dashboard";
+        } catch (Exception e) {
+            // Fallback to empty data if database is not available
+            model.addAttribute("user", userWithRole);
+            model.addAttribute("vehicles", List.of());
+            model.addAttribute("totalVehicles", List.of());
+            model.addAttribute("bookings", List.of());
+            model.addAttribute("activeBookings", List.of());
+            model.addAttribute("pendingBookings", List.of());
+            model.addAttribute("todayRevenue", 0.0);
+            model.addAttribute("tab", tab != null ? tab : "vehicles");
+            
+            return "staff/staff-dashboard";
+        }
     }
 
-    @GetMapping("/admin")
-    public String admin(@RequestParam(required = false) String tab, HttpSession session, Model model) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !user.hasRole("Admin")) {
-            return "redirect:/login";
-        }
-        model.addAttribute("user", user);
-        model.addAttribute("vehicles", vehicleService.getAllVehicles());
-        model.addAttribute("bookings", bookingService.getAllBookings());
-        model.addAttribute("users", getMockUsers());  // Mock list users
-        model.addAttribute("tab", tab != null ? tab : "user-management");
-        return "admin";
-    }
 
     // Mock users cho admin
     private List<User> getMockUsers() {
