@@ -16,7 +16,7 @@
             </button>
         </div>
     </div>
-    
+
     <div th:if="${session.flash_success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
@@ -30,24 +30,15 @@
     </div>
 
     <section class="hero pt-16">
-        <!-- Hero section content from original home.html -->
-        <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center">
-            <div class="md:w-1/2 mb-10 md:mb-0">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find, book and rent a car Easily</h1>
-                <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android device.</p>
+        <div class="container mx-auto px-4 py-12 flex flex-col items-center text-center">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find, book and rent a car Easily</h1>
+            <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android device.</p>
 
-                <div class="flex space-x-4">
-                    <div class="app-btn bg-gray-800 text-white px-6 py-3 rounded-lg">App Store</div>
-                    <div class="app-btn bg-gray-800 text-white px-6 py-3 rounded-lg">Google Play</div>
-                </div>
-            </div>
-
-            <div class="md:w-1/2">
-                <img src="https://via.placeholder.com/600x400" alt="Car rental app" class="rounded-lg shadow-xl">
+            <div class="w-full md:w-3/4 lg:w-1/2 mt-8">
+                <img src="/images/tripview.jpg" alt="Car rental app" class="rounded-lg shadow-xl mx-auto">
             </div>
         </div>
 
-        <!-- Search box section -->
         <div class="container mx-auto px-4 bg-white rounded-xl shadow-lg p-6 -mb-16 relative z-10 max-w-5xl">
             <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
                 <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1">
@@ -357,7 +348,7 @@
                     notification.classList.remove('translate-x-full');
                     notification.classList.add('translate-x-0');
                 }, 100);
-                
+
                 // Tự động ẩn thông báo sau 8 giây
                 setTimeout(() => {
                     closeNotification(notification.querySelector('button'));
@@ -370,7 +361,7 @@
             if (notification) {
                 notification.classList.remove('translate-x-0');
                 notification.classList.add('translate-x-full');
-                
+
                 // Xóa thông báo khỏi DOM sau khi animation hoàn thành
                 setTimeout(() => {
                     notification.remove();
