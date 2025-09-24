@@ -93,33 +93,59 @@ nav a {
 
 /* Hero Section */
 .hero {
-    background-color: #fff;
-    padding: 80px 0;
     position: relative;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+    height: 700px; /* Điều chỉnh chiều cao của phần hero */
+}
+
+
+.hero-bg-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.hero-background-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(0.6); /* Giảm độ sáng của ảnh nền để chữ trắng nổi bật */
 }
 
 .hero-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    text-align: center;
+    color: #fff;
+    padding: 0 20px;
 }
 
-.hero-text {
-    max-width: 500px;
+.hero-text-container {
+    margin-bottom: 20px; /* Điều chỉnh khoảng cách giữa văn bản và hộp tìm kiếm */
 }
 
 .hero-title {
     font-size: 48px;
-    font-weight: 600;
-    color: #242424;
-    margin-bottom: 30px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 20px;
     line-height: 1.2;
 }
 
 .hero-subtitle {
     font-size: 18px;
-    color: #272727;
-    margin-bottom: 40px;
+    color: #fff;
 }
 
 .app-buttons {
@@ -139,11 +165,19 @@ nav a {
     position: relative;
 }
 
-.hero-image img {
-    max-width: 100%;
-    height: auto;
-}
+/*!* Tăng kích thước ảnh *!*/
+/*.hero-image img {*/
+/*    !* Tăng kích thước tối đa của ảnh *!*/
+/*    max-width: 80%; !* hoặc một giá trị khác bạn muốn *!*/
+/*    height: auto;*/
+/*    !* Đặt ảnh ở giữa *!*/
+/*    margin-left: auto;*/
+/*    margin-right: auto;*/
+/*    !* Thêm khoảng cách với phần văn bản *!*/
+/*    margin-top: 40px;*/
+/*}*/
 
+/* Search Box */
 .search-box {
     background: #fff;
     box-shadow: 0 6px 12px rgba(19, 94, 172, 0.12);
@@ -151,7 +185,9 @@ nav a {
     padding: 20px;
     display: flex;
     gap: 20px;
-    margin-top: 40px;
+    width: 90%; /* Điều chỉnh chiều rộng của hộp tìm kiếm */
+    max-width: 900px; /* Giới hạn chiều rộng tối đa */
+    margin-top: 100px; /* Điều chỉnh khoảng cách với phần văn bản */
 }
 
 .search-field {
@@ -160,7 +196,7 @@ nav a {
     align-items: center;
     gap: 16px;
     padding-right: 20px;
-    border-right: 1px solid #ACACAC;
+    border-right: 1px solid #E0E0E0; /* Màu viền của các trường tìm kiếm */
 }
 
 .search-field:last-child {
@@ -192,7 +228,7 @@ nav a {
 .search-btn {
     background: #1572D3;
     color: #fff;
-    padding: 8px 20px;
+    padding: 16px 32px; /* Tăng kích thước nút tìm kiếm */
     border-radius: 8px;
     border: none;
     font-weight: 500;
@@ -200,6 +236,7 @@ nav a {
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: background 0.3s ease;
 }
 
 /* How it works section */
@@ -671,7 +708,7 @@ footer {
 
     .search-field {
         border-right: none;
-        border-bottom: 1px solid #ACACAC;
+        border-bottom: 1px solid #E0E0E0;
         padding-right: 0;
         padding-bottom: 20px;
     }
