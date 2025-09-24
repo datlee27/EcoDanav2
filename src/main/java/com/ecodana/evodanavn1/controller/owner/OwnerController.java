@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.owner;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

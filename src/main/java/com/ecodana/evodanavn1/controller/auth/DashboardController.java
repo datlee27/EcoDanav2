@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.auth;
 
 import java.util.List;
 
