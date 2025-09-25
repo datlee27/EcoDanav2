@@ -52,8 +52,8 @@ public class OwnerController {
         // Add currentUser to model for template
         model.addAttribute("currentUser", currentUser);
         
-        if (!userService.isAdmin(currentUser) && !userService.isStaff(currentUser)) {
-            redirectAttributes.addFlashAttribute("error", "Access denied. Owner/Staff role required.");
+        if (!userService.isAdmin(currentUser) && !userService.isStaff(currentUser) && !userService.isOwner(currentUser)) {
+            redirectAttributes.addFlashAttribute("error", "Access denied. Owner/Staff/Admin role required.");
             return "redirect:/login";
         }
         

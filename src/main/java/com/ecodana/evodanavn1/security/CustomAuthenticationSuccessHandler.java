@@ -49,9 +49,12 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                 if ("Admin".equalsIgnoreCase(roleName)) {
                     session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
                     response.sendRedirect("/admin");
-                } else if ("Staff".equalsIgnoreCase(roleName)) {
-                    session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                } else if ("Owner".equalsIgnoreCase(roleName)) {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng Owner " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
                     response.sendRedirect("/owner/dashboard");
+                } else if ("Staff".equalsIgnoreCase(roleName)) {
+                    session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng Staff " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    response.sendRedirect("/staff");
                 } else if ("Customer".equalsIgnoreCase(roleName)) {
                     session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
                     response.sendRedirect("/");

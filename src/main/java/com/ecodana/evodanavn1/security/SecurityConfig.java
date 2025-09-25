@@ -14,8 +14,6 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2Authorization
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
-import com.ecodana.evodanavn1.security.CustomAuthenticationSuccessHandler;
-import com.ecodana.evodanavn1.security.OAuth2LoginSuccessHandler;
 import com.ecodana.evodanavn1.service.UserService;
 
 @Configuration
@@ -78,7 +76,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF")
+                .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                 .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                 .anyRequest().authenticated()
             )

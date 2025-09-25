@@ -213,7 +213,7 @@ public class User {
             return role.getRoleName();
         }
         return "CUSTOMER"; // Default role
-    }
+    } 
     
     // Helper method to check if user has specific role
     public boolean hasRole(String roleName) {

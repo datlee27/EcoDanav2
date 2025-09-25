@@ -5,6 +5,7 @@ USE ecodanav2;
 INSERT IGNORE INTO Roles (RoleId, RoleName, NormalizedName) VALUES 
 ('customer-role-id', 'Customer', 'CUSTOMER'),
 ('staff-role-id', 'Staff', 'STAFF'),
+('owner-role-id', 'Owner', 'OWNER'),
 ('admin-role-id', 'Admin', 'ADMIN');
 
 -- Insert test users
@@ -49,7 +50,7 @@ INSERT IGNORE INTO Users (
     '0987654321',
     'Owner',
     'Test',
-    'staff-role-id',
+    'owner-role-id',
     'Active',
     NOW(),
     'OWNER123',

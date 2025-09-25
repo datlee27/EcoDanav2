@@ -218,6 +218,15 @@ public class UserService {
     }
     
     /**
+     * Check if user is owner
+     * @param user the user to check
+     * @return true if user is owner, false otherwise
+     */
+    public boolean isOwner(User user) {
+        return hasRole(user, "Owner");
+    }
+    
+    /**
      * Check if user is customer
      * @param user the user to check
      * @return true if user is customer, false otherwise
