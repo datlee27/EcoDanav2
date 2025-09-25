@@ -17,7 +17,6 @@
                 <a th:href="@{/contact}" class="text-gray-700 hover:text-primary transition-colors">Contact</a>
             </div>
 
-            
             <!-- User Menu -->
             <div class="flex items-center space-x-4" th:if="${currentUser == null}">
                 <a th:href="@{/login}" class="text-primary hover:text-accent transition-colors flex items-center">
@@ -38,7 +37,7 @@
                         <span th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</span>
                         <i class="fas fa-chevron-down text-xs"></i>
                     </button>
-                    
+
                     <!-- Dropdown Menu -->
                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                         <div class="py-2">
@@ -62,19 +61,19 @@
                                th:if="${currentUser.role != null and currentUser.role.roleName == 'Admin'}">
                                 <i class="fas fa-shield-alt mr-2"></i>Admin Panel
                             </a>
-                            
+
                             <div class="border-t border-gray-100"></div>
-                            
+
                             <a th:href="@{/profile}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-user-edit mr-2"></i>Profile
                             </a>
-                            
+
                             <a th:href="@{/settings}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-cog mr-2"></i>Settings
                             </a>
-                            
+
                             <div class="border-t border-gray-100"></div>
-                            
+
                             <a th:href="@{/logout}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
                                 <i class="fas fa-sign-out-alt mr-2"></i>Logout
                             </a>

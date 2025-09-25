@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.user;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;

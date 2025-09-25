@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1;
+package com.ecodana.evodanavn1.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

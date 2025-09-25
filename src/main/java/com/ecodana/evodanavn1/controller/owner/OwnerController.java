@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.owner;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,120 +1,120 @@
-<div th:fragment="overview" id="dashboard-section" class="dashboard-section" xmlns:th="http://www.thymeleaf.org">
-  <div class="mb-8">
-    <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">OVERVIEW</div>
-    <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome back, <span th:text="${owner?.firstName ?: 'John'}">John</span>!</h2>
-    <p class="text-gray-600">Here's what's happening with your rental business today.</p>
-  </div>
+<!--<div th:fragment="overview" id="dashboard-section" class="dashboard-section" xmlns:th="http://www.thymeleaf.org">-->
+<!--  <div class="mb-8">-->
+<!--    <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">OVERVIEW</div>-->
+<!--    <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome back, <span th:text="${owner?.firstName ?: 'John'}">John</span>!</h2>-->
+<!--    <p class="text-gray-600">Here's what's happening with your rental business today.</p>-->
+<!--  </div>-->
 
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-600 text-sm font-medium">Total Cars</p>
-          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.totalCars ?: 12}">12</p>
-          <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span></p>
-        </div>
-        <div class="bg-blue-100 p-3 rounded-full">
-          <i class="fas fa-car text-2xl text-blue-600"></i>
-        </div>
-      </div>
-    </div>
+<!--  &lt;!&ndash; Stats Cards &ndash;&gt;-->
+<!--  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">-->
+<!--    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">-->
+<!--      <div class="flex items-center justify-between">-->
+<!--        <div>-->
+<!--          <p class="text-gray-600 text-sm font-medium">Total Cars</p>-->
+<!--          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.totalCars ?: 12}">12</p>-->
+<!--          <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span></p>-->
+<!--        </div>-->
+<!--        <div class="bg-blue-100 p-3 rounded-full">-->
+<!--          <i class="fas fa-car text-2xl text-blue-600"></i>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
-    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-600 text-sm font-medium">Monthly Income</p>
-          <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">$8,450</p>
-          <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span></p>
-        </div>
-        <div class="bg-green-100 p-3 rounded-full">
-          <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
-        </div>
-      </div>
-    </div>
+<!--    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">-->
+<!--      <div class="flex items-center justify-between">-->
+<!--        <div>-->
+<!--          <p class="text-gray-600 text-sm font-medium">Monthly Income</p>-->
+<!--          <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">$8,450</p>-->
+<!--          <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span></p>-->
+<!--        </div>-->
+<!--        <div class="bg-green-100 p-3 rounded-full">-->
+<!--          <i class="fas fa-dollar-sign text-2xl text-green-600"></i>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
-    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-600 text-sm font-medium">Active Bookings</p>
-          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>
-          <p class="text-blue-500 text-sm"><i class="fas fa-info-circle mr-1"></i><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span></p>
-        </div>
-        <div class="bg-yellow-100 p-3 rounded-full">
-          <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>
-        </div>
-      </div>
-    </div>
+<!--    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">-->
+<!--      <div class="flex items-center justify-between">-->
+<!--        <div>-->
+<!--          <p class="text-gray-600 text-sm font-medium">Active Bookings</p>-->
+<!--          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>-->
+<!--          <p class="text-blue-500 text-sm"><i class="fas fa-info-circle mr-1"></i><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span></p>-->
+<!--        </div>-->
+<!--        <div class="bg-yellow-100 p-3 rounded-full">-->
+<!--          <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
-    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-gray-600 text-sm font-medium">Available Cars</p>
-          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.availableCars ?: 7}">7</p>
-          <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>
-        </div>
-        <div class="bg-purple-100 p-3 rounded-full">
-          <i class="fas fa-check-circle text-2xl text-purple-600"></i>
-        </div>
-      </div>
-    </div>
-  </div>
+<!--    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">-->
+<!--      <div class="flex items-center justify-between">-->
+<!--        <div>-->
+<!--          <p class="text-gray-600 text-sm font-medium">Available Cars</p>-->
+<!--          <p class="text-3xl font-bold text-gray-800" th:text="${stats?.availableCars ?: 7}">7</p>-->
+<!--          <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>-->
+<!--        </div>-->
+<!--        <div class="bg-purple-100 p-3 rounded-full">-->
+<!--          <i class="fas fa-check-circle text-2xl text-purple-600"></i>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
 
-  <!-- Recent Activity & Quick Actions -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-    <!-- Recent Bookings -->
-    <div class="bg-white rounded-xl shadow-md p-6">
-      <div class="flex items-center justify-between mb-6">
-        <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>
-        <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">View All</button>
-      </div>
-      <div class="space-y-4">
-        <div th:each="booking : ${recentBookings}" class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-          <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-            <i class="fas fa-car text-white"></i>
-          </div>
-          <div class="flex-1">
-            <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
-            <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>
-            <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
-          </div>
-          <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
-        </div>
-      </div>
-    </div>
+<!--  &lt;!&ndash; Recent Activity & Quick Actions &ndash;&gt;-->
+<!--  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">-->
+<!--    &lt;!&ndash; Recent Bookings &ndash;&gt;-->
+<!--    <div class="bg-white rounded-xl shadow-md p-6">-->
+<!--      <div class="flex items-center justify-between mb-6">-->
+<!--        <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>-->
+<!--        <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">View All</button>-->
+<!--      </div>-->
+<!--      <div class="space-y-4">-->
+<!--        <div th:each="booking : ${recentBookings}" class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">-->
+<!--          <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">-->
+<!--            <i class="fas fa-car text-white"></i>-->
+<!--          </div>-->
+<!--          <div class="flex-1">-->
+<!--            <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>-->
+<!--            <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>-->
+<!--            <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>-->
+<!--          </div>-->
+<!--          <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>-->
+<!--        </div>-->
+<!--      </div>-->
+<!--    </div>-->
 
-    <!-- Quick Actions -->
-    <div class="bg-white rounded-xl shadow-md p-6">
-      <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>
-      <div class="grid grid-cols-2 gap-4">
-        <button onclick="showAddCarModal()" class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center">
-          <i class="fas fa-plus text-2xl mb-3"></i>
-          <p class="font-medium">Add New Car</p>
-        </button>
-        <button onclick="showSection('bookings')" class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center">
-          <i class="fas fa-calendar text-2xl mb-3"></i>
-          <p class="font-medium">View Bookings</p>
-        </button>
-        <button onclick="showSection('income')" class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center">
-          <i class="fas fa-chart-bar text-2xl mb-3"></i>
-          <p class="font-medium">Income Report</p>
-        </button>
-        <button onclick="showSection('chat')" class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center">
-          <i class="fas fa-comments text-2xl mb-3"></i>
-          <p class="font-medium">Messages</p>
-        </button>
-      </div>
-    </div>
-  </div>
+<!--    &lt;!&ndash; Quick Actions &ndash;&gt;-->
+<!--    <div class="bg-white rounded-xl shadow-md p-6">-->
+<!--      <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>-->
+<!--      <div class="grid grid-cols-2 gap-4">-->
+<!--        <button onclick="showAddCarModal()" class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center">-->
+<!--          <i class="fas fa-plus text-2xl mb-3"></i>-->
+<!--          <p class="font-medium">Add New Car</p>-->
+<!--        </button>-->
+<!--        <button onclick="showSection('bookings')" class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center">-->
+<!--          <i class="fas fa-calendar text-2xl mb-3"></i>-->
+<!--          <p class="font-medium">View Bookings</p>-->
+<!--        </button>-->
+<!--        <button onclick="showSection('income')" class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center">-->
+<!--          <i class="fas fa-chart-bar text-2xl mb-3"></i>-->
+<!--          <p class="font-medium">Income Report</p>-->
+<!--        </button>-->
+<!--        <button onclick="showSection('chat')" class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center">-->
+<!--          <i class="fas fa-comments text-2xl mb-3"></i>-->
+<!--          <p class="font-medium">Messages</p>-->
+<!--        </button>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
 
-  <!-- Performance Chart Area -->
-  <div class="bg-white rounded-xl shadow-md p-6">
-    <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>
-    <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-      <div class="text-center text-gray-500">
-        <i class="fas fa-chart-area text-4xl mb-4"></i>
-        <p>Performance chart will be displayed here</p>
-      </div>
-    </div>
-  </div>
-</div>
+<!--  &lt;!&ndash; Performance Chart Area &ndash;&gt;-->
+<!--  <div class="bg-white rounded-xl shadow-md p-6">-->
+<!--    <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>-->
+<!--    <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">-->
+<!--      <div class="text-center text-gray-500">-->
+<!--        <i class="fas fa-chart-area text-4xl mb-4"></i>-->
+<!--        <p>Performance chart will be displayed here</p>-->
+<!--      </div>-->
+<!--    </div>-->
+<!--  </div>-->
+<!--</div>-->

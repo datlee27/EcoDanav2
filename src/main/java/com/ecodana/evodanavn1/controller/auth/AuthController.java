@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.auth;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,7 +23,7 @@ public class AuthController {
 
     @GetMapping("/login")
     public String login() {
-        return "user/login";
+        return "auth/login";
     }
 
     @PostMapping("/login")
@@ -115,7 +115,7 @@ public class AuthController {
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("user", new User());
-        return "user/register";
+        return "auth/register";
     }
 
     @PostMapping("/register")
@@ -161,7 +161,7 @@ public class AuthController {
         }
         
         if (bindingResult.hasErrors()) {
-            return "user/register";
+            return "auth/register";
         }
         
         // Set phone number from request parameter
@@ -183,17 +183,17 @@ public class AuthController {
                 } else {
                     System.err.println("Failed to reload user after registration: " + user.getEmail());
                     model.addAttribute("error", "Registration completed but failed to load user data. Please try logging in.");
-                    return "user/register";
+                    return "auth/register";
                 }
             } else {
                 System.err.println("Registration failed for user: " + user.getEmail());
                 model.addAttribute("error", "Registration failed. Please try again.");
-                return "user/register";
+                return "auth/register";
             }
         } catch (Exception e) {
             System.err.println("Exception in registration: " + e.getMessage());
             model.addAttribute("error", "Registration failed due to system error. Please try again.");
-            return "user/register";
+            return "auth/register";
         }
     }
 
