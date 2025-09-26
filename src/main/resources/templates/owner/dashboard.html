@@ -1,534 +1,541 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Owner Dashboard</title>
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome for icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <style>
-    .primary { color: #1572D3; }
-    .bg-primary { background-color: #1572D3; }
-    .hidden { display: none; }
-    .dashboard-section { display: block; }
-    .section-badge { background-color: #dbeafe; color: #1d4ed8; }
-  </style>
-</head>
-<body class="bg-gray-50">
-<!-- Header -->
-<div class="bg-white shadow-sm border-b">
-  <div class="container mx-auto px-4 py-4">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">Owner Dashboard</h1>
-        <p class="text-gray-600">Manage your rental business</p>
-      </div>
-      <div class="flex items-center space-x-4">
-        <button class="relative p-2 text-gray-600 hover:text-primary">
-          <i class="fas fa-bell text-xl"></i>
-          <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" th:text="${notificationCount ?: 3}">3</span>
-        </button>
-        <div class="flex items-center space-x-3">
-          <div class="w-10 h-10 bg-gray-300 rounded-full">
-            <img th:if="${owner?.avatar}" th:src="${owner.avatar}" th:alt="${owner.name}" class="w-full h-full rounded-full object-cover">
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800" th:text="${owner?.name ?: 'John Smith'}">John Smith</p>
-            <p class="text-sm text-gray-600">Car Owner</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Main Content -->
-<div class="container mx-auto px-4 py-6">
-  <!-- Navigation Tabs -->
-  <div class="flex space-x-4 mb-6 overflow-x-auto">
-    <button onclick="showSection('dashboard')" class="px-4 py-2 bg-primary text-white rounded-lg">Overview</button>
-    <button onclick="showSection('cars')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Cars</button>
-    <button onclick="showSection('bookings')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Bookings</button>
-    <button onclick="showSection('income')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Income</button>
-    <button onclick="showSection('profile')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Profile</button>
-    <button onclick="showSection('driving')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Driving Services</button>
-    <button onclick="showSection('chat')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Messages</button>
-    <button onclick="showSection('analytics')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-primary hover:text-white transition-colors">Analytics</button>
-  </div>
-
-  <!-- Dashboard Content -->
-  <div id="dashboard-content">
-    <!-- 1. Overview Section -->
-    <div id="dashboard-section" class="dashboard-section">
-      <div class="mb-8">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">OVERVIEW</div>
-        <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome back, <span th:text="${owner?.firstName ?: 'John'}">John</span>!</h2>
-        <p class="text-gray-600">Here's what's happening with your rental business today.</p>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 text-sm font-medium">Total Cars</p>
-              <p class="text-3xl font-bold text-gray-800" th:text="${stats?.totalCars ?: 12}">12</p>
-              <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span></p>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <style>
+        .primary { color: #1572D3; }
+        .bg-primary { background-color: #1572D3; }
+        .hidden { display: none; }
+        .dashboard-section { display: block; }
+        .section-badge { background-color: #dbeafe; color: #2563eb; }
+    </style>
+    <div th:replace="~{fragments/nav :: nav}"></div>
+    
+    <!-- Success Notification -->
+    <div th:if="${success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                <span th:text="${success}">Login successful!</span>
             </div>
-            <div class="bg-blue-100 p-3 rounded-full">
-              <i class="fas fa-car text-2xl text-blue-600"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 text-sm font-medium">Monthly Income</p>
-              <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">$8,450</p>
-              <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span></p>
-            </div>
-            <div class="bg-green-100 p-3 rounded-full">
-              <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 text-sm font-medium">Active Bookings</p>
-              <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>
-              <p class="text-blue-500 text-sm"><i class="fas fa-info-circle mr-1"></i><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span></p>
-            </div>
-            <div class="bg-yellow-100 p-3 rounded-full">
-              <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-gray-600 text-sm font-medium">Available Cars</p>
-              <p class="text-3xl font-bold text-gray-800" th:text="${stats?.availableCars ?: 7}">7</p>
-              <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>
-            </div>
-            <div class="bg-purple-100 p-3 rounded-full">
-              <i class="fas fa-check-circle text-2xl text-purple-600"></i>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Recent Activity & Quick Actions -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- Recent Bookings -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>
-            <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">View All</button>
-          </div>
-          <div class="space-y-4">
-            <div th:each="booking : ${recentBookings}" class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                <i class="fas fa-car text-white"></i>
-              </div>
-              <div class="flex-1">
-                <p class="font-semibold text-gray-800" th:text="${booking.carModel ?: 'BMW X5'}">BMW X5</p>
-                <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>
-                <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate ?: 320} + '/day'">$320/day</p>
-              </div>
-              <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status ?: 'Active'}">Active</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>
-          <div class="grid grid-cols-2 gap-4">
-            <button onclick="showAddCarModal()" class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center">
-              <i class="fas fa-plus text-2xl mb-3"></i>
-              <p class="font-medium">Add New Car</p>
+            <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
+                <i class="fas fa-times"></i>
             </button>
-            <button onclick="showSection('bookings')" class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center">
-              <i class="fas fa-calendar text-2xl mb-3"></i>
-              <p class="font-medium">View Bookings</p>
-            </button>
-            <button onclick="showSection('income')" class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center">
-              <i class="fas fa-chart-bar text-2xl mb-3"></i>
-              <p class="font-medium">Income Report</p>
-            </button>
-            <button onclick="showSection('chat')" class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center">
-              <i class="fas fa-comments text-2xl mb-3"></i>
-              <p class="font-medium">Messages</p>
-            </button>
-          </div>
         </div>
-      </div>
-
-      <!-- Performance Chart Area -->
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>
-        <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-          <div class="text-center text-gray-500">
-            <i class="fas fa-chart-area text-4xl mb-4"></i>
-            <p>Performance chart will be displayed here</p>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- 2. Cars Management Section -->
-    <div id="cars-section" class="dashboard-section hidden">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CAR MANAGEMENT</div>
-          <h2 class="text-2xl font-bold text-gray-800">My Cars</h2>
-        </div>
-        <button onclick="showAddCarModal()" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
-          <i class="fas fa-plus mr-2"></i>Add New Car
-        </button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div th:each="car : ${cars}" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-          <div class="h-48 bg-gray-200 flex items-center justify-center">
-            <img th:src="${car.imageUrl ?: 'https://via.placeholder.com/300x200/1572D3/FFFFFF?text=' + car.model}" th:alt="${car.model}" class="w-full h-full object-cover">
-          </div>
-          <div class="p-6">
-            <h3 class="font-bold text-lg mb-2 text-gray-800" th:text="${car.brand + ' ' + car.model}">BMW X5</h3>
-            <div class="flex items-center text-yellow-400 mb-3">
-              <th:block th:each="i : ${#numbers.sequence(1, 5)}">
-                <i th:class="${i <= car.rating} ? 'fas fa-star' : 'far fa-star'"></i>
-              </th:block>
-              <span class="ml-2 text-gray-600 text-sm" th:text="'(' + ${car.rating} + ')'">(4.9)</span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 mb-4 text-sm text-gray-600">
-              <div class="flex items-center"><i class="fas fa-user mr-2 text-primary"></i><span th:text="${car.seats + ' Passengers'}">5 Passengers</span></div>
-              <div class="flex items-center"><i class="fas fa-cog mr-2 text-primary"></i><span th:text="${car.transmission}">Automatic</span></div>
-              <div class="flex items-center"><i class="fas fa-gas-pump mr-2 text-primary"></i><span th:text="${car.fuelType}">Petrol</span></div>
-              <div class="flex items-center"><i class="fas fa-calendar mr-2 text-primary"></i><span th:text="${car.year}">2023</span></div>
-            </div>
-            <div class="flex justify-between items-center mb-4 pt-4 border-t">
-              <span class="text-2xl font-bold text-primary" th:text="'$' + ${car.dailyRate} + '/day'">$320/day</span>
-              <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${car.statusClass}" th:text="${car.status}">Available</span>
-            </div>
-            <div class="flex space-x-2">
-              <button th:onclick="'editCar(' + ${car.id} + ')'" class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
-                <i class="fas fa-edit mr-1"></i>Edit
-              </button>
-              <button th:onclick="'deleteCar(' + ${car.id} + ')'" class="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center">
-                <i class="fas fa-trash mr-1"></i>Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. Bookings Management Section -->
-    <div id="bookings-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">BOOKING MANAGEMENT</div>
-        <h2 class="text-2xl font-bold text-gray-800">Booking Management</h2>
-      </div>
-      <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="p-6 border-b">
-          <div class="flex flex-wrap gap-4">
-            <button class="px-4 py-2 bg-primary text-white rounded-lg font-medium filter-btn" data-status="all">All Bookings</button>
-            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="pending">Pending</button>
-            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="active">Active</button>
-            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="completed">Completed</button>
-            <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="cancelled">Cancelled</button>
-          </div>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-            <tr>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Car</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rental Period</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-              <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-            <tr th:each="booking : ${bookings}" class="hover:bg-gray-50" th:attr="data-status=${booking.status.toLowerCase()}">
-              <td class="px-6 py-4">
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-gray-300 rounded-full">
-                    <img th:if="${booking.customer.avatar}" th:src="${booking.customer.avatar}" th:alt="${booking.customer.name}" class="w-full h-full rounded-full object-cover">
-                  </div>
-                  <div>
-                    <p class="font-semibold text-gray-800" th:text="${booking.customer.name ?: 'Sarah Johnson'}">Sarah Johnson</p>
-                    <p class="text-sm text-gray-600" th:text="${booking.customer.email ?: 'sarah@example.com'}">sarah@example.com</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-6 py-4">
+    <!-- Owner Header -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
                 <div>
-                  <p class="font-medium text-gray-800" th:text="${booking.car.brand + ' ' + booking.car.model}">BMW X5</p>
-                  <p class="text-sm text-gray-600" th:text="${booking.car.type + ' • ' + booking.car.year}">SUV • 2023</p>
+                    <h1 class="text-2xl font-bold text-gray-800">Owner Dashboard</h1>
+                    <p class="text-gray-600">Manage your rental business</p>
                 </div>
-              </td>
-              <td class="px-6 py-4">
+                <div class="flex items-center space-x-4">
+                    <button class="relative p-2 text-gray-600 hover:text-primary">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
+                    </button>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}">Owner</p>
+                            <p class="text-sm text-gray-600">Car Owner</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- Navigation Tabs -->
+        <div class="flex space-x-4 mb-6 overflow-x-auto">
+            <button onclick="showSection('dashboard')" class="px-4 py-2 bg-primary text-white rounded-lg">Overview</button>
+            <button onclick="showSection('cars')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Cars</button>
+            <button onclick="showSection('bookings')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Bookings</button>
+            <button onclick="showSection('income')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Income</button>
+            <button onclick="showSection('chat')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Chat</button>
+            <button onclick="showSection('analytics')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Analytics</button>
+            <button onclick="showSection('driving')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Driving Services</button>
+            <button onclick="showSection('profile')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Profile</button>
+        </div>
+
+        <!-- Overview Section (Dashboard Content) -->
+        <div id="dashboard-section" class="dashboard-section">
+            <div class="mb-8">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">OVERVIEW</div>
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!</h2>
+                <p class="text-gray-600">Here's what's happening with your rental business today.</p>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Total Cars</p>
+                            <p class="text-3xl font-bold text-gray-800" th:text="${stats?.totalCars ?: 12}">12</p>
+                            <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span></p>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full">
+                            <i class="fas fa-car text-2xl text-blue-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Monthly Income</p>
+                            <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">$8,450</p>
+                            <p class="text-green-500 text-sm"><i class="fas fa-arrow-up mr-1"></i><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span></p>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full">
+                            <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Active Bookings</p>
+                            <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>
+                            <p class="text-blue-500 text-sm"><i class="fas fa-info-circle mr-1"></i><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span></p>
+                        </div>
+                        <div class="bg-yellow-100 p-3 rounded-full">
+                            <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-600 text-sm font-medium">Available Cars</p>
+                            <p class="text-3xl font-bold text-gray-800" th:text="${stats?.availableCars ?: 7}">7</p>
+                            <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>
+                        </div>
+                        <div class="bg-purple-100 p-3 rounded-full">
+                            <i class="fas fa-check-circle text-2xl text-purple-600"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity & Quick Actions -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Recent Bookings -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>
+                        <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">View All</button>
+                    </div>
+                    <div class="space-y-4">
+                        <div th:each="booking : ${recentBookings}" class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                                <i class="fas fa-car text-white"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
+                                <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>
+                                <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
+                            </div>
+                            <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="showAddCarModal()" class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center">
+                            <i class="fas fa-plus text-2xl mb-3"></i>
+                            <p class="font-medium">Add New Car</p>
+                        </button>
+                        <button onclick="showSection('bookings')" class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center">
+                            <i class="fas fa-calendar text-2xl mb-3"></i>
+                            <p class="font-medium">View Bookings</p>
+                        </button>
+                        <button onclick="showSection('income')" class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center">
+                            <i class="fas fa-chart-bar text-2xl mb-3"></i>
+                            <p class="font-medium">Income Report</p>
+                        </button>
+                        <button onclick="showSection('chat')" class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center">
+                            <i class="fas fa-comments text-2xl mb-3"></i>
+                            <p class="font-medium">Messages</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Chart Area -->
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>
+                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-chart-area text-4xl mb-4"></i>
+                        <p>Performance chart will be displayed here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cars Section -->
+        <div id="cars-section" class="dashboard-section hidden">
+            <div class="flex justify-between items-center mb-6">
                 <div>
-                  <p class="font-medium text-gray-800" th:text="${booking.dateRange ?: 'Feb 15-18, 2025'}">Feb 15-18, 2025</p>
-                  <p class="text-sm text-gray-600" th:text="${booking.duration + ' days' ?: '3 days'}">3 days</p>
+                    <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CAR MANAGEMENT</div>
+                    <h2 class="text-2xl font-bold text-gray-800">My Cars</h2>
                 </div>
-              </td>
-              <td class="px-6 py-4">
-                <p class="font-semibold text-primary" th:text="'$' + ${booking.totalAmount ?: 960}">$960</p>
-              </td>
-              <td class="px-6 py-4">
-                <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status ?: 'Active'}">Active</span>
-              </td>
-              <td class="px-6 py-4">
-                <div class="flex space-x-3">
-                  <button th:onclick="'viewBooking(' + ${booking.id} + ')'" class="text-primary hover:text-blue-600" title="View Details">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button th:if="${booking.status == 'PENDING'}" th:onclick="'acceptBooking(' + ${booking.id} + ')'" class="text-green-500 hover:text-green-600" title="Accept">
-                    <i class="fas fa-check"></i>
-                  </button>
-                  <button th:if="${booking.status == 'PENDING'}" th:onclick="'declineBooking(' + ${booking.id} + ')'" class="text-red-500 hover:text-red-600" title="Decline">
-                    <i class="fas fa-times"></i>
-                  </button>
+                <button onclick="showAddCarModal()" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                    <i class="fas fa-plus mr-2"></i>Add New Car
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div th:each="car : ${cars}" class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                    <div class="h-48 bg-gray-200 flex items-center justify-center">
+                        <img th:src="${car.imageUrl ?: 'https://via.placeholder.com/300x200/1572D3/FFFFFF?text=' + car.model}" th:alt="${car.model}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="font-bold text-lg mb-2 text-gray-800" th:text="${car.brand + ' ' + car.model}">BMW X5</h3>
+                        <div class="flex items-center text-yellow-400 mb-3">
+                            <th:block th:each="i : ${#numbers.sequence(1, 5)}">
+                                <i th:class="${i <= car.rating} ? 'fas fa-star' : 'far fa-star'"></i>
+                            </th:block>
+                            <span class="ml-2 text-gray-600 text-sm" th:text="'(' + ${car.rating} + ')'">(4.9)</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-4 text-sm text-gray-600">
+                            <div class="flex items-center"><i class="fas fa-user mr-2 text-primary"></i><span th:text="${car.seats + ' Passengers'}">5 Passengers</span></div>
+                            <div class="flex items-center"><i class="fas fa-cog mr-2 text-primary"></i><span th:text="${car.transmission}">Automatic</span></div>
+                            <div class="flex items-center"><i class="fas fa-gas-pump mr-2 text-primary"></i><span th:text="${car.fuelType}">Petrol</span></div>
+                            <div class="flex items-center"><i class="fas fa-calendar mr-2 text-primary"></i><span th:text="${car.year}">2023</span></div>
+                        </div>
+                        <div class="flex justify-between items-center mb-4 pt-4 border-t">
+                            <span class="text-2xl font-bold text-primary" th:text="'$' + ${car.dailyRate} + '/day'">$320/day</span>
+                            <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${car.statusClass}" th:text="${car.status}">Available</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button th:onclick="'editCar(' + ${car.id} + ')'" class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button th:onclick="'deleteCar(' + ${car.id} + ')'" class="flex-1 bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center justify-center">
+                                <i class="fas fa-trash mr-1"></i>Delete
+                            </button>
+                        </div>
+                    </div>
                 </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- 4. Income Reports Section -->
-    <div id="income-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">INCOME REPORTS</div>
-        <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="bg-white p-6 rounded-xl shadow-md">
-          <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>
-          <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md">
-          <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
-          <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>
-        </div>
-        <div class="bg-white p-6 rounded-xl shadow-md">
-          <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>
-          <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>
-        <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-          <div class="text-center text-gray-500">
-            <i class="fas fa-chart-line text-4xl mb-4"></i>
-            <p>Income chart will be displayed here</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. Profile Settings Section -->
-    <div id="profile-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">PROFILE SETTINGS</div>
-        <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <form th:action="@{/owner/profile}" method="post" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-              <input type="text" name="firstName" th:value="${owner?.firstName ?: 'John'}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-              <input type="text" name="lastName" th:value="${owner?.lastName ?: 'Smith'}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input type="email" name="email" th:value="${owner?.email ?: 'john@example.com'}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-              <input type="tel" name="phone" th:value="${owner?.phone ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
-            <input type="text" name="address" th:value="${owner?.address ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
-            <input type="text" name="paymentInfo" th:value="${owner?.paymentInfo ?: ''}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Bank account or payment details">
-          </div>
-          <div class="flex space-x-4">
-            <button type="submit" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-              <i class="fas fa-save mr-2"></i>Update Profile
-            </button>
-            <button type="button" onclick="showSection('dashboard')" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors">
-              <i class="fas fa-times mr-2"></i>Cancel
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- 6. Driving Services Section -->
-    <div id="driving-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">DRIVING SERVICES</div>
-        <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="text-center py-12">
-          <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>
-          <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>
-          <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-            <i class="fas fa-plus mr-2"></i>Add Driving Service
-          </button>
         </div>
-      </div>
-    </div>
 
-    <!-- 7. Customer Chat Section -->
-    <div id="chat-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CUSTOMER CHAT</div>
-        <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="text-center py-12">
-          <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>
-          <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>
-          <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-            <i class="fas fa-comment mr-2"></i>Start New Chat
-          </button>
+        <!-- Bookings Section -->
+        <div id="bookings-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">BOOKING MANAGEMENT</div>
+                <h2 class="text-2xl font-bold text-gray-800">Booking Management</h2>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                <div class="p-6 border-b">
+                    <div class="flex flex-wrap gap-4">
+                        <button class="px-4 py-2 bg-primary text-white rounded-lg font-medium filter-btn" data-status="all">All Bookings</button>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="pending">Pending</button>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="active">Active</button>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="completed">Completed</button>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="cancelled">Cancelled</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Car</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rental Period</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                            <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                        <tr th:each="booking : ${bookings}" class="hover:bg-gray-50" th:attr="data-status=${booking.status.toLowerCase()}">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 bg-gray-300 rounded-full">
+                                        <img th:if="${booking.customer.avatar}" th:src="${booking.customer.avatar}" th:alt="${booking.customer.name}" class="w-full h-full rounded-full object-cover">
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800" th:text="${booking.customer.name}">Sarah Johnson</p>
+                                        <p class="text-sm text-gray-600" th:text="${booking.customer.email}">sarah@example.com</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <p class="font-medium text-gray-800" th:text="${booking.car.brand + ' ' + booking.car.model}">BMW X5</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.car.type + ' • ' + booking.car.year}">SUV • 2023</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div>
+                                    <p class="font-medium text-gray-800" th:text="${booking.dateRange}">Feb 15-18, 2025</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.duration + ' days'}">3 days</p>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <p class="font-semibold text-primary" th:text="'$' + ${booking.totalAmount}">$960</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex space-x-3">
+                                    <button th:onclick="'viewBooking(' + ${booking.id} + ')'" class="text-primary hover:text-blue-600" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button th:if="${booking.status == 'PENDING'}" th:onclick="'acceptBooking(' + ${booking.id} + ')'" class="text-green-500 hover:text-green-600" title="Accept">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button th:if="${booking.status == 'PENDING'}" th:onclick="'declineBooking(' + ${booking.id} + ')'" class="text-red-500 hover:text-red-600" title="Decline">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
 
-    <!-- 8. Analytics Section -->
-    <div id="analytics-section" class="dashboard-section hidden">
-      <div class="mb-6">
-        <div class="section-badge px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">ANALYTICS</div>
-        <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <div class="text-center py-12">
-          <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>
-          <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>
-          <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-            <i class="fas fa-chart-line mr-2"></i>View Full Analytics
-          </button>
+        <!-- Driving Services Section -->
+        <div id="driving-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">DRIVING SERVICES</div>
+                <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="text-center py-12">
+                    <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>
+                    <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>
+                    <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Driving Service
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- Income Reports Section -->
+        <div id="income-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">INCOME REPORTS</div>
+                <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>
+                    <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
+                    <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                    <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>
+                    <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>
+                </div>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>
+                <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-chart-line text-4xl mb-4"></i>
+                        <p>Income chart will be displayed here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Chat Section -->
+        <div id="chat-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CUSTOMER CHAT</div>
+                <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="text-center py-12">
+                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>
+                    <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>
+                    <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-comment mr-2"></i>Start New Chat
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Section -->
+        <div id="analytics-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">ANALYTICS</div>
+                <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="text-center py-12">
+                    <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>
+                    <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>
+                    <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i>View Full Analytics
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Settings Section -->
+        <div id="profile-section" class="dashboard-section hidden">
+            <div class="mb-6">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">PROFILE SETTINGS</div>
+                <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <form th:action="@{/owner/profile}" method="post" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                            <input type="text" name="firstName" th:value="${currentUser?.firstName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                            <input type="text" name="lastName" th:value="${currentUser?.lastName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                            <input type="email" name="email" th:value="${currentUser?.email}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                            <input type="tel" name="phone" th:value="${currentUser?.phoneNumber}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                        </div>
+                    </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                            <input type="text" name="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Enter your address">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
+                            <input type="text" name="paymentInfo" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Bank account or payment details">
+                        </div>
+                    <div class="flex space-x-4">
+                        <button type="submit" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-save mr-2"></i>Update Profile
+                        </button>
+                        <button type="button" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-times mr-2"></i>Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<!-- JavaScript for interactions -->
-<script th:inline="javascript">
-  /*<![CDATA[*/
-  function showSection(sectionId) {
-    document.querySelectorAll('.dashboard-section').forEach(section => {
-      section.classList.add('hidden');
-    });
-    const target = document.getElementById(sectionId + '-section');
-    if (target) {
-      target.classList.remove('hidden');
-    }
-    document.querySelectorAll('button[onclick*="showSection"]').forEach(btn => {
-      btn.classList.remove('bg-primary', 'text-white');
-      btn.classList.add('bg-gray-200', 'text-gray-700');
-    });
-    if (event && event.target) {
-      event.target.classList.remove('bg-gray-200', 'text-gray-700');
-      event.target.classList.add('bg-primary', 'text-white');
-    }
-  }
+    <!-- JavaScript for interactions -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        function showSection(sectionId) {
+            document.querySelectorAll('.dashboard-section').forEach(section => {
+                section.classList.add('hidden');
+            });
+            const target = document.getElementById(sectionId + '-section');
+            if (target) target.classList.remove('hidden');
+            
+            // Update tab buttons
+            document.querySelectorAll('.flex.space-x-4 button').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            event.target.classList.remove('bg-gray-200', 'text-gray-700');
+            event.target.classList.add('bg-primary', 'text-white');
+        }
+        
+        // Initial load: show dashboard
+        showSection('dashboard');
 
-  function showAddCarModal() {
-    alert('Add new car modal would open here.');
-  }
+        function showAddCarModal() {
+            alert('Add new car modal opened');
+        }
 
-  function editCar(carId) {
-    fetch(`/owner/cars/${carId}/edit`, { method: 'GET' })
-            .then(response => response.json())
-            .then(data => {
-              alert(`Edit car: ${data.brand} ${data.model}`);
-            })
-            .catch(() => alert('Error fetching car data'));
-  }
+        function editCar(carId) {
+            alert(`Edit car ID: ${carId}`);
+        }
 
-  function deleteCar(carId) {
-    if (confirm('Are you sure you want to delete this car?')) {
-      fetch(`/owner/cars/${carId}`, { method: 'DELETE' })
-              .then(() => {
-                alert('Car deleted successfully!');
+        function deleteCar(carId) {
+            if (confirm('Are you sure you want to delete this car?')) {
+                alert('Car deleted successfully');
                 location.reload();
-              })
-              .catch(() => alert('Error deleting car'));
-    }
-  }
+            }
+        }
 
-  function acceptBooking(bookingId) {
-    fetch(`/owner/bookings/${bookingId}/accept`, { method: 'POST' })
-            .then(() => {
-              alert('Booking accepted!');
-              location.reload();
-            })
-            .catch(() => alert('Error accepting booking'));
-  }
+        function viewBooking(bookingId) {
+            alert(`View booking ID: ${bookingId}`);
+        }
 
-  function declineBooking(bookingId) {
-    if (confirm('Are you sure you want to decline this booking?')) {
-      fetch(`/owner/bookings/${bookingId}/decline`, { method: 'POST' })
-              .then(() => {
-                alert('Booking declined!');
+        function acceptBooking(bookingId) {
+            alert('Booking accepted');
+            location.reload();
+        }
+
+        function declineBooking(bookingId) {
+            if (confirm('Are you sure you want to decline this booking?')) {
+                alert('Booking declined');
                 location.reload();
-              })
-              .catch(() => alert('Error declining booking'));
-    }
-  }
+            }
+        }
 
-  function viewBooking(bookingId) {
-    alert(`View details for booking ID: ${bookingId}`);
-  }
+        // Filter bookings
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                const status = button.getAttribute('data-status');
+                document.querySelectorAll('#bookings-section tbody tr').forEach(row => {
+                    if (status === 'all' || row.getAttribute('data-status') === status) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.replace('bg-primary', 'bg-gray-100'));
+                button.classList.replace('bg-gray-100', 'bg-primary');
+            });
+        });
 
-  document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.filter-btn').forEach(button => {
-      button.addEventListener('click', () => {
-        const status = button.getAttribute('data-status');
-        document.querySelectorAll('#bookings-section tbody tr').forEach(row => {
-          if (status === 'all' || row.getAttribute('data-status') === status) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
-          }
-        });
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-          btn.classList.remove('bg-primary', 'text-white');
-          btn.classList.add('bg-gray-100', 'text-gray-700');
-        });
-        button.classList.remove('bg-gray-100', 'text-gray-700');
-        button.classList.add('bg-primary', 'text-white');
-      });
-    });
-    showSection('dashboard');
-  });
-  /*]]>*/
-</script>
+        // Close notification
+        function closeNotification(button) {
+            const notification = button.closest('#success-notification');
+            if (notification) {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }
+
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => {
+            const notification = document.getElementById('success-notification');
+            if (notification) {
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => notification.remove(), 300);
+            }
+        }, 5000);
+        /*]]>*/
+    </script>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
 </body>
 </html>

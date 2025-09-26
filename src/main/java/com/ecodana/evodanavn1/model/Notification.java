@@ -32,6 +32,12 @@ public class Notification {
         this.isRead = false;
     }
     
+    public Notification(String userId, String message) {
+        this();
+        this.userId = userId;
+        this.message = message;
+    }
+    
     // Getters/Setters
     public String getNotificationId() { return notificationId; }
     public void setNotificationId(String notificationId) { this.notificationId = notificationId; }

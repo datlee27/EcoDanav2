@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body class="bg-gray-50">
+    <div th:replace="~{fragments/nav :: nav}"></div>
+
+    <div class="pt-20 pb-8">
+        <div class="max-w-7xl mx-auto px-4">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800">Vehicles Management</h1>
+                    <p class="text-gray-600">Manage your vehicle fleet and inventory</p>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="openAddVehicleModal()" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Add Vehicle
+                    </button>
+                    <button class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-car text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Total Vehicles</p>
+                            <p class="text-2xl font-bold text-gray-800" th:text="${totalVehicles}">24</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-check-circle text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Available</p>
+                            <p class="text-2xl font-bold text-gray-800" th:text="${availableVehicles}">18</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-clock text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">In Use</p>
+                            <p class="text-2xl font-bold text-gray-800" th:text="${inUseVehicles}">4</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex items-center">
+                        <div class="w-12 h-12 bg-red-100 text-red-600 rounded-lg flex items-center justify-center mr-4">
+                            <i class="fas fa-wrench text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-600">Maintenance</p>
+                            <p class="text-2xl font-bold text-gray-800" th:text="${maintenanceVehicles}">2</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters and Search -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                        <input type="text" placeholder="Search vehicles..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="">All Types</option>
+                            <option value="ElectricCar">Electric Car</option>
+                            <option value="Motorcycle">Motorcycle</option>
+                            <option value="ElectricMotorcycle">Electric Motorcycle</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="">All Status</option>
+                            <option value="Available">Available</option>
+                            <option value="InUse">In Use</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Unavailable">Unavailable</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                        <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <option value="">All Brands</option>
+                            <option value="Tesla">Tesla</option>
+                            <option value="VinFast">VinFast</option>
+                            <option value="Honda">Honda</option>
+                            <option value="Yamaha">Yamaha</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button class="w-full bg-primary text-white py-2 rounded-lg hover:bg-accent transition-colors">
+                            <i class="fas fa-search mr-2"></i>Filter
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div th:each="vehicle : ${vehicles}" class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                    <div class="h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' : 
+                                     vehicle.vehicleType == 'Motorcycle' ? 'fas fa-motorcycle text-6xl text-white' : 
+                                     'fas fa-bicycle text-6xl text-white'}"></i>
+                    </div>
+                    <div class="p-6">
+                        <div class="flex justify-between items-start mb-3">
+                            <h3 class="text-xl font-semibold" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
+                            <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
+                                           (vehicle.status == 'Available' ? 'bg-green-100 text-green-800' : 
+                                            vehicle.status == 'InUse' ? 'bg-yellow-100 text-yellow-800' : 
+                                            vehicle.status == 'Maintenance' ? 'bg-red-100 text-red-800' : 
+                                            'bg-gray-100 text-gray-800')}" 
+                                  th:text="${vehicle.status}">Available</span>
+                        </div>
+                        
+                        <div class="space-y-2 mb-4">
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-tag mr-2 text-primary"></i>
+                                <span th:text="${vehicle.licensePlate}">License Plate</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-user mr-2 text-primary"></i>
+                                <span th:text="${vehicle.seats} + ' Passengers'">4 Passengers</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600" th:if="${vehicle.batteryCapacity != null}">
+                                <i class="fas fa-battery-half mr-2 text-primary"></i>
+                                <span th:text="${vehicle.batteryCapacity} + ' kWh'">Battery</span>
+                            </div>
+                            <div class="flex items-center text-sm text-gray-600">
+                                <i class="fas fa-tachometer-alt mr-2 text-primary"></i>
+                                <span th:text="${vehicle.odometer} + ' km'">Odometer</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <span class="text-2xl font-bold text-primary" th:text="'$' + ${vehicle.pricePerDay}">$89</span>
+                                <span class="text-gray-600">/day</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm text-gray-600">Revenue</div>
+                                <div class="font-semibold" th:text="'$' + ${vehicle.totalRevenue}">$2,450</div>
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-2">
+                            <button class="flex-1 bg-primary text-white py-2 rounded-lg hover:bg-accent transition-colors text-sm">
+                                <i class="fas fa-edit mr-1"></i>Edit
+                            </button>
+                            <button class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm">
+                                <i class="fas fa-eye mr-1"></i>View
+                            </button>
+                            <button class="bg-red-100 text-red-600 py-2 px-3 rounded-lg hover:bg-red-200 transition-colors text-sm">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="mt-8 flex justify-center">
+                <div class="flex space-x-2">
+                    <a href="#" class="px-4 py-2 bg-primary text-white rounded-lg">1</a>
+                    <a href="#" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">2</a>
+                    <a href="#" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">3</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Vehicle Modal -->
+    <div id="addVehicleModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Add New Vehicle</h2>
+                        <button onclick="closeAddVehicleModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <form class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Model</label>
+                                <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                                <select required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="">Select Type</option>
+                                    <option value="ElectricCar">Electric Car</option>
+                                    <option value="Motorcycle">Motorcycle</option>
+                                    <option value="ElectricMotorcycle">Electric Motorcycle</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
+                                <input type="text" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                                <select required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                                    <option value="">Select Brand</option>
+                                    <option value="Tesla">Tesla</option>
+                                    <option value="VinFast">VinFast</option>
+                                    <option value="Honda">Honda</option>
+                                    <option value="Yamaha">Yamaha</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
+                                <input type="number" min="1" max="8" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer (km)</label>
+                                <input type="number" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price Per Day ($)</label>
+                                <input type="number" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price Per Hour ($)</label>
+                                <input type="number" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Price Per Month ($)</label>
+                                <input type="number" step="0.01" min="0" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
+                                <input type="number" step="0.1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" id="requiresLicense" class="mr-2">
+                            <label for="requiresLicense" class="text-sm text-gray-700">Requires Driver's License</label>
+                        </div>
+
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" onclick="closeAddVehicleModal()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-accent transition-colors">
+                                Add Vehicle
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script>
+        function openAddVehicleModal() {
+            document.getElementById('addVehicleModal').classList.remove('hidden');
+        }
+
+        function closeAddVehicleModal() {
+            document.getElementById('addVehicleModal').classList.add('hidden');
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('addVehicleModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAddVehicleModal();
+            }
+        });
+
+        // Filter functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterButton = document.querySelector('button[class*="bg-primary"]');
+            if (filterButton) {
+                filterButton.addEventListener('click', function() {
+                    console.log('Applying filters...');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,80 +1,51 @@
 # 🚀 Git Workflow cho Team EcoDana_v1.1
 
-## 1️⃣ Clone repo lần đầu
-Mỗi thành viên chỉ cần làm 1 lần:
-```bash
-git clone https://github.com/datlee27/EcoDanav2.git
-cd EcoDanav2
-```
-
----
-
-## 2️⃣ Setup môi trường (.env)
-⚠️ **QUAN TRỌNG**: Phải làm ngay sau khi clone!
--- .env.example ở đâu thì tạo .env ở đó!!!
-### Tạo file .env từ template:
-```bash
-# Copy file mẫu
-cp .env.example .env
-
-# Mở file để chỉnh sửa
-nano .env
-# hoặc dùng IDE/editor yêu thích
-```
+| Role | Email | Password   | Dashboard |
+|------|------|------------|-----|
+| **Admin** | `admin@ecodana.com` | `password` | `/admin` |
+| **Owner** | `owner@ecodana.com` | `password` | `/owner/dashboard` |
+| **Customer** | `customer@ecodana.com` | `password` | `/` |
 
 
-### Điền thông tin thực vào .env:
-```env
-# ===============================
-# = DATABASE CONFIGURATION  
-# ===============================
-DB_URL=jdbc:mysql://localhost:3306/ecodanav2?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-DB_USERNAME=root
-DB_PASSWORD=your_actual_password_here
 
-# ===============================
-# = GOOGLE API CONFIGURATION
-# ===============================
-GOOGLE_API_KEY=your_real_google_api_key_here
 
-# ===============================
-# = JWT SECURITY CONFIGURATION
-# ===============================
-JWT_SECRET=your_super_secure_jwt_secret_key_at_least_256_bits
-JWT_EXPIRATION=86400000
 
-# ===============================
-# = JASYPT ENCRYPTION
-# ===============================
-JASYPT_PASSWORD=your_jasypt_master_password
+## 🚀 Deployment
 
-# ===============================
-# = APPLICATION SETTINGS
-# ===============================
-APP_PORT=8080
-LOG_LEVEL=INFO
-```
+### Production Setup
+1. Configure production database
+2. Update `application.properties`
+3. Set environment variables
+4. Build and deploy JAR file
 
-### 🗄️ Setup Database:
-```sql
--- Tạo database trong MySQL
-CREATE DATABASE ecodanav2;
+## 🚀 Quick Start
 
--- Tạo user riêng (tùy chọn)
-CREATE USER 'ecodana_user'@'localhost' IDENTIFIED BY 'your_password';
-GRANT ALL PRIVILEGES ON ecodanav2.* TO 'ecodana_user'@'localhost';
-FLUSH PRIVILEGES;
-```
+### 1. Prerequisites
+- Java 17+
+- MySQL 8.0+
+- Maven 3.6+
 
-### ✅ Test ứng dụng:
-```bash
-# Chạy thử
-mvn spring-boot:run
+## 🏗️ Architecture
 
-# Nếu thành công sẽ thấy:
-# ✅ Started EvoDanavn1Application in X.X seconds
-# ✅ Tomcat started on port 8080
-```
+### Backend
+- **Spring Boot 3.x** - Main framework
+- **Spring Security** - Authentication & authorization
+- **Spring Data JPA** - Database operations
+- **MySQL** - Database
+- **OAuth2** - Google login support
+
+### Frontend
+- **Thymeleaf** - Template engine
+- **Tailwind CSS** - Styling
+- **Font Awesome** - Icons
+- **JavaScript** - Interactive features
+
+## 🔐 Authentication System
+
+### Roles
+- **Admin:** Full system access, user management
+- **Staff/Owner:** Vehicle management, booking management
+- **Customer:** Browse vehicles, make bookings
 
 ---
 

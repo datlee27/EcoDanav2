@@ -1,83 +1,28 @@
 package com.ecodana.evodanavn1.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.repository.BookingRepository;
 
 @Service
 public class BookingService {
-    private List<Booking> bookings = new ArrayList<>();
+    
+    @Autowired
+    private BookingRepository bookingRepository;
     
     public List<Booking> getAllBookings() {
-        return bookings;
-    }
-
-    public BookingService() {
-        // Mock data cho dashboard
-        User demoUser = new User();
-        demoUser.setId("demo-user-id");
-        demoUser.setUsername("demo");
-        demoUser.setEmail("demo@example.com");
-        demoUser.setPassword("password123");
-        demoUser.setPhoneNumber("0123456789");
-        // Role will be set via roleId, not the role field
-        
-        // Create mock vehicles
-        Vehicle tesla = new Vehicle();
-        tesla.setVehicleId("tesla-model-3");
-        tesla.setVehicleModel("Tesla Model 3");
-        tesla.setVehicleType("ElectricCar");
-        tesla.setPricePerDay(new BigDecimal("89"));
-        tesla.setStatus("Available");
-        tesla.setSeats(5);
-        tesla.setRequiresLicense(true);
-        
-        Vehicle vinfast = new Vehicle();
-        vinfast.setVehicleId("vinfast-klara");
-        vinfast.setVehicleModel("VinFast Klara");
-        vinfast.setVehicleType("ElectricMotorcycle");
-        vinfast.setPricePerDay(new BigDecimal("25"));
-        vinfast.setStatus("Available");
-        vinfast.setSeats(2);
-        vinfast.setRequiresLicense(false);
-        
-        // Create mock bookings
-        Booking booking1 = new Booking();
-        booking1.setBookingId("1");
-        booking1.setUserId(demoUser.getId());
-        booking1.setVehicleId(tesla.getVehicleId());
-        booking1.setPickupDateTime(LocalDate.of(2024, 12, 15).atStartOfDay());
-        booking1.setReturnDateTime(LocalDate.of(2024, 12, 18).atStartOfDay());
-        booking1.setTotalAmount(new BigDecimal("267"));
-        booking1.setStatus("Confirmed");
-        booking1.setBookingCode("BK001");
-        booking1.setRentalType("daily");
-        
-        Booking booking2 = new Booking();
-        booking2.setBookingId("2");
-        booking2.setUserId(demoUser.getId());
-        booking2.setVehicleId(vinfast.getVehicleId());
-        booking2.setPickupDateTime(LocalDate.of(2024, 12, 10).atStartOfDay());
-        booking2.setReturnDateTime(LocalDate.of(2024, 12, 12).atStartOfDay());
-        booking2.setTotalAmount(new BigDecimal("50"));
-        booking2.setStatus("Completed");
-        booking2.setBookingCode("BK002");
-        booking2.setRentalType("daily");
-        
-        bookings.add(booking1);
-        bookings.add(booking2);
+        return bookingRepository.findAll();
     }
 
     public List<Booking> getBookingsByUser(User user) {
-        return bookings.stream().filter(b -> b.getUserId().equals(user.getId())).toList();
+        return bookingRepository.findByUserId(user.getId());
     }
 
     public void addBooking(Booking booking) {
@@ -87,6 +32,90 @@ public class BookingService {
         if (booking.getBookingCode() == null) {
             booking.setBookingCode("BK" + System.currentTimeMillis());
         }
-        bookings.add(booking);
+        bookingRepository.save(booking);
+    }
+    
+    /**
+     * Get active bookings for a user
+     * @param user the user
+     * @return list of active bookings
+     */
+    public List<Booking> getActiveBookingsByUser(User user) {
+        return bookingRepository.findActiveBookingsByUserId(user.getId());
+    }
+    
+    /**
+     * Get all active bookings
+     * @return list of active bookings
+     */
+    public List<Booking> getActiveBookings() {
+        return bookingRepository.findAllActiveBookings();
+    }
+    
+    /**
+     * Get all pending bookings
+     * @return list of pending bookings
+     */
+    public List<Booking> getPendingBookings() {
+        return bookingRepository.findAllPendingBookings();
+    }
+    
+    /**
+     * Get today's revenue
+     * @return today's revenue
+     */
+    public BigDecimal getTodayRevenue() {
+        List<Booking> confirmedBookings = bookingRepository.findByStatus("Confirmed");
+        return confirmedBookings.stream()
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    /**
+     * Get total revenue
+     * @return total revenue
+     */
+    public BigDecimal getTotalRevenue() {
+        List<Booking> revenueBookings = bookingRepository.findAll();
+        return revenueBookings.stream()
+                .filter(b -> "Confirmed".equals(b.getStatus()) || "Completed".equals(b.getStatus()))
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    /**
+     * Get reviews by user (mock implementation)
+     * @param user the user
+     * @return list of reviews
+     */
+    public List<Object> getReviewsByUser(User user) {
+        // Mock implementation - return empty list
+        return List.of();
+    }
+    
+    /**
+     * Find booking by ID
+     * @param bookingId the booking ID
+     * @return optional booking
+     */
+    public java.util.Optional<Booking> findById(String bookingId) {
+        return bookingRepository.findById(bookingId);
+    }
+    
+    /**
+     * Update booking
+     * @param booking the booking to update
+     * @return updated booking
+     */
+    public Booking updateBooking(Booking booking) {
+        return bookingRepository.save(booking);
+    }
+    
+    /**
+     * Delete booking
+     * @param bookingId the booking ID to delete
+     */
+    public void deleteBooking(String bookingId) {
+        bookingRepository.deleteById(bookingId);
     }
 }
