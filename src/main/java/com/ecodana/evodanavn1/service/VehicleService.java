@@ -1,7 +1,9 @@
 package com.ecodana.evodanavn1.service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -122,5 +124,81 @@ public class VehicleService {
     public List<Vehicle> getFavoriteVehiclesByUser(User user) {
         // Mock implementation - return first 2 available vehicles as favorites
         return vehicleRepository.findAvailableVehicles().stream().limit(2).toList();
+    }
+    
+    /**
+     * Get vehicle statistics for admin dashboard
+     * @return map containing vehicle statistics
+     */
+    public Map<String, Object> getVehicleStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        
+        List<Vehicle> allVehicles = getAllVehicles();
+        List<Vehicle> availableVehicles = getAvailableVehicles();
+        
+        long inUseVehicles = allVehicles.stream().mapToLong(v -> "In Use".equals(v.getStatus()) ? 1 : 0).sum();
+        long maintenanceVehicles = allVehicles.stream().mapToLong(v -> "Maintenance".equals(v.getStatus()) ? 1 : 0).sum();
+        
+        stats.put("totalVehicles", allVehicles.size());
+        stats.put("availableVehicles", availableVehicles.size());
+        stats.put("inUseVehicles", inUseVehicles);
+        stats.put("maintenanceVehicles", maintenanceVehicles);
+        
+        return stats;
+    }
+    
+    /**
+     * Get vehicles by status
+     * @param status the vehicle status
+     * @return list of vehicles with the status
+     */
+    public List<Vehicle> getVehiclesByStatus(String status) {
+        return vehicleRepository.findByStatus(status);
+    }
+    
+    /**
+     * Update vehicle status
+     * @param vehicleId the vehicle ID
+     * @param status the new status
+     * @return updated vehicle or null if not found
+     */
+    public Vehicle updateVehicleStatus(String vehicleId, String status) {
+        return vehicleRepository.findById(vehicleId)
+                .map(vehicle -> {
+                    vehicle.setStatus(status);
+                    return vehicleRepository.save(vehicle);
+                })
+                .orElse(null);
+    }
+    
+    /**
+     * Search vehicles by keyword
+     * @param keyword the search keyword
+     * @return list of matching vehicles
+     */
+    public List<Vehicle> searchVehicles(String keyword) {
+        return vehicleRepository.searchVehicles(keyword);
+    }
+    
+    /**
+     * Get vehicle analytics for charts
+     * @return map containing chart data
+     */
+    public Map<String, Object> getVehicleAnalytics() {
+        Map<String, Object> analytics = new HashMap<>();
+        
+        // Vehicle status distribution
+        List<Map<String, Object>> statusDistribution = vehicleRepository.findStatusDistribution();
+        analytics.put("statusDistribution", statusDistribution);
+        
+        // Vehicle category distribution
+        List<Map<String, Object>> categoryDistribution = vehicleRepository.findCategoryDistribution();
+        analytics.put("categoryDistribution", categoryDistribution);
+        
+        // Vehicle brand distribution
+        List<Map<String, Object>> brandDistribution = vehicleRepository.findBrandDistribution();
+        analytics.put("brandDistribution", brandDistribution);
+        
+        return analytics;
     }
 }

@@ -1,6 +1,7 @@
 package com.ecodana.evodanavn1.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -99,4 +100,43 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
      * @return list of vehicles based on license requirement
      */
     List<Vehicle> findByRequiresLicense(Boolean requiresLicense);
+    
+    /**
+     * Search vehicles by keyword (brand, model, or license plate)
+     * @param keyword the search keyword
+     * @return list of matching vehicles
+     */
+    @Query(value = "SELECT v.* FROM Vehicle v " +
+           "JOIN CarBrand cb ON v.BrandId = cb.BrandId " +
+           "WHERE LOWER(cb.BrandName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(v.VehicleModel) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+           "LOWER(v.LicensePlate) LIKE LOWER(CONCAT('%', :keyword, '%'))", nativeQuery = true)
+    List<Vehicle> searchVehicles(@Param("keyword") String keyword);
+    
+    /**
+     * Find vehicle status distribution
+     * @return list of status distribution data
+     */
+    @Query(value = "SELECT v.Status as status, COUNT(v.VehicleId) as count FROM Vehicle v GROUP BY v.Status", nativeQuery = true)
+    List<Map<String, Object>> findStatusDistribution();
+    
+    /**
+     * Find vehicle category distribution
+     * @return list of category distribution data
+     */
+    @Query(value = "SELECT vc.CategoryName as category, COUNT(v.VehicleId) as count " +
+           "FROM Vehicle v " +
+           "JOIN VehicleCategories vc ON v.CategoryId = vc.CategoryId " +
+           "GROUP BY vc.CategoryName", nativeQuery = true)
+    List<Map<String, Object>> findCategoryDistribution();
+    
+    /**
+     * Find vehicle brand distribution
+     * @return list of brand distribution data
+     */
+    @Query(value = "SELECT cb.BrandName as brand, COUNT(v.VehicleId) as count " +
+           "FROM Vehicle v " +
+           "JOIN CarBrand cb ON v.BrandId = cb.BrandId " +
+           "GROUP BY cb.BrandName ORDER BY count DESC", nativeQuery = true)
+    List<Map<String, Object>> findBrandDistribution();
 }

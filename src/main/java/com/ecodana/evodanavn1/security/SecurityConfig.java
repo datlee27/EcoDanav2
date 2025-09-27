@@ -2,6 +2,8 @@ package com.ecodana.evodanavn1.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -57,11 +59,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public DaoAuthenticationProvider authenticationProvider() {
+    public AuthenticationManager authenticationManager() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService());
         authProvider.setPasswordEncoder(passwordEncoder);
-        return authProvider;
+        authProvider.setUserDetailsService(userDetailsService());
+        return new ProviderManager(authProvider);
     }
 
     @Bean
@@ -72,16 +74,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authenticationProvider(authenticationProvider())
+            .authenticationManager(authenticationManager())
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/test/**", "/admin-simple", "/admin-test").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                 .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/oauth2/**", "/api/**")
+                .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/api/**", "/test/**")
             )
             .formLogin(form -> form
                 .loginPage("/login")

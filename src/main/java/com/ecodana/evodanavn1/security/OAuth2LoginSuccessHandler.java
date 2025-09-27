@@ -38,7 +38,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 // Get user info from Google
                 String email = oauth2User.getAttribute("email");
                 String name = oauth2User.getAttribute("name");
-                String sub = oauth2User.getAttribute("sub");
                 
                 System.out.println("OAuth2 Login - Email: " + email + ", Name: " + name);
                 System.out.println("OAuth2 Login - All attributes: " + oauth2User.getAttributes());
@@ -169,12 +168,10 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             } else {
                 System.err.println("OAuth2 Login failed: Invalid principal type");
                 response.sendRedirect("/login?error=invalid_principal");
-                return;
             }
         } catch (IOException e) {
             System.err.println("OAuth2 Login error: " + e.getMessage());
             response.sendRedirect("/login?error=oauth_error");
-            return;
         }
     }
 

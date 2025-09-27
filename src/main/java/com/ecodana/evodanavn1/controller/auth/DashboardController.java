@@ -54,7 +54,7 @@ public class DashboardController {
         
         try {
             // Load customer-specific data from database
-            var userBookings = bookingService.getBookingsByUser(userWithRole);
+            List<?> userBookings = bookingService.getBookingsByUser(userWithRole);
             model.addAttribute("user", userWithRole);
             model.addAttribute("currentUser", userWithRole);  // Add currentUser for template
             model.addAttribute("bookings", userBookings);
@@ -99,8 +99,8 @@ public class DashboardController {
         
         try {
             // Load staff-specific data from database
-            var allVehicles = vehicleService.getAllVehicles();
-            var allBookings = bookingService.getAllBookings();
+            List<?> allVehicles = vehicleService.getAllVehicles();
+            List<?> allBookings = bookingService.getAllBookings();
             model.addAttribute("user", userWithRole);
             model.addAttribute("vehicles", allVehicles);
             model.addAttribute("totalVehicles", allVehicles.size());
@@ -127,24 +127,4 @@ public class DashboardController {
     }
 
 
-    // Mock users cho admin
-    private List<User> getMockUsers() {
-        User user1 = new User();
-        user1.setId("user1-id");
-        user1.setUsername("john_doe");
-        user1.setEmail("john@example.com");
-        user1.setPassword("password123");
-        user1.setPhoneNumber("0123456789");
-        // Role will be set via roleId, not the role field
-        
-        User user2 = new User();
-        user2.setId("user2-id");
-        user2.setUsername("jane_smith");
-        user2.setEmail("jane@example.com");
-        user2.setPassword("password123");
-        user2.setPhoneNumber("0987654321");
-        // Role will be set via roleId, not the role field
-        
-        return List.of(user1, user2);
-    }
 }
