@@ -34,29 +34,55 @@ public class BookingController {
             return "redirect:/login";
         }
         
-        Vehicle vehicle = vehicleService.getVehicleById(vehicleId).orElse(null);
-        if (vehicle != null) {
-            long days = java.time.temporal.ChronoUnit.DAYS.between(pickupDate, returnDate);
-            BigDecimal amount = vehicle.getPricePerDay().multiply(new BigDecimal(days));
-            
-            Booking booking = new Booking();
-            booking.setBookingId(UUID.randomUUID().toString());
-            booking.setUserId(user.getId());
-            booking.setVehicleId(vehicle.getVehicleId());
-            booking.setPickupDateTime(pickupDate.atStartOfDay());
-            booking.setReturnDateTime(returnDate.atStartOfDay());
-            booking.setTotalAmount(amount);
-            booking.setStatus("Pending");
-            booking.setBookingCode("BK" + System.currentTimeMillis());
-            booking.setRentalType("daily");
-            booking.setCustomerName(user.getFirstName() + " " + user.getLastName());
-            booking.setCustomerEmail(user.getEmail());
-            booking.setCustomerPhone(user.getPhoneNumber());
-            
-            bookingService.addBooking(booking);
-            model.addAttribute("booking", booking);
-            return "booking-confirmation";
+        // Validate dates
+        if (pickupDate.isBefore(LocalDate.now())) {
+            model.addAttribute("error", "Pickup date cannot be in the past");
+            return "redirect:/vehicles";
         }
-        return "redirect:/vehicles";
+        
+        if (returnDate.isBefore(pickupDate)) {
+            model.addAttribute("error", "Return date must be after pickup date");
+            return "redirect:/vehicles";
+        }
+        
+        Vehicle vehicle = vehicleService.getVehicleById(vehicleId).orElse(null);
+        if (vehicle == null) {
+            model.addAttribute("error", "Vehicle not found");
+            return "redirect:/vehicles";
+        }
+        
+        // Check if vehicle is available
+        if (!"Available".equals(vehicle.getStatus())) {
+            model.addAttribute("error", "Vehicle is not available for booking");
+            return "redirect:/vehicles";
+        }
+        
+        long days = java.time.temporal.ChronoUnit.DAYS.between(pickupDate, returnDate);
+        if (days <= 0) {
+            model.addAttribute("error", "Booking duration must be at least 1 day");
+            return "redirect:/vehicles";
+        }
+        
+        BigDecimal amount = vehicle.getPricePerDay().multiply(new BigDecimal(days));
+        
+        Booking booking = new Booking();
+        booking.setBookingId(UUID.randomUUID().toString());
+        booking.setUserId(user.getId());
+        booking.setVehicleId(vehicle.getVehicleId());
+        booking.setPickupDateTime(pickupDate.atStartOfDay());
+        booking.setReturnDateTime(returnDate.atStartOfDay());
+        booking.setTotalAmount(amount);
+        booking.setStatus("Pending");
+        booking.setBookingCode("BK" + System.currentTimeMillis());
+        booking.setRentalType("daily");
+        booking.setCustomerName(user.getFirstName() + " " + user.getLastName());
+        booking.setCustomerEmail(user.getEmail());
+        booking.setCustomerPhone(user.getPhoneNumber());
+        booking.setCustomerAddress(""); // Address not available in User model
+        booking.setCreatedDate(java.time.LocalDateTime.now());
+        
+        bookingService.addBooking(booking);
+        model.addAttribute("booking", booking);
+        return "booking-confirmation";
     }
 }

@@ -18,18 +18,6 @@
     </div>
 </div>
 
-<div th:if="${session.flash_success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-    <div class="flex items-center justify-between">
-        <div class="flex items-center">
-            <i class="fas fa-check-circle mr-3"></i>
-            <span th:text="${session.flash_success}">Registration successful!</span>
-        </div>
-        <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
-            <i class="fas fa-times"></i>
-        </button>
-    </div>
-</div>
-
 <section class="hero pt-16">
     <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center">
         <div class="md:w-1/2 mb-10 md:mb-0">
@@ -37,7 +25,6 @@
             <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android
                 device.</p>
         </div>
-
         <div class="md:w-1/2">
             <img src="/images/tripview.jpg" alt="Car rental app" class="rounded-lg shadow-xl">
         </div>
@@ -189,12 +176,23 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <div class="car-image h-40 bg-gray-200">
-                    <img src="https://via.placeholder.com/200x100" alt="Jaguar XE L P250" class="w-full h-full object-cover">
+            <!-- Dynamic vehicle cards from database -->
+            <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="car-image h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' :
+                                     vehicle.vehicleType == 'Motorcycle' ? 'fas fa-motorcycle text-6xl text-white' :
+                                     'fas fa-bicycle text-6xl text-white'}"></i>
                 </div>
                 <div class="car-details p-6">
-                    <h3 class="car-title text-xl font-semibold mb-2">Jaguar XE L P250</h3>
+                    <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
+
+                    <div class="car-type mb-2">
+                            <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' +
+                                           (vehicle.vehicleType == 'ElectricCar' ? 'bg-blue-100 text-blue-800' :
+                                            vehicle.vehicleType == 'Motorcycle' ? 'bg-green-100 text-green-800' :
+                                            'bg-purple-100 text-purple-800')}"
+                                  th:text="${vehicle.vehicleType}">Type</span>
+                    </div>
 
                     <div class="car-rating flex items-center mb-4">
                         <div class="stars text-yellow-400 mr-2">
@@ -210,59 +208,51 @@
                     <div class="car-specs grid grid-cols-2 gap-2 mb-4">
                         <div class="spec flex items-center text-sm text-gray-600">
                             <i class="fas fa-user mr-2 text-primary"></i>
-                            <span>4 Passagers</span>
+                            <span th:text="${vehicle.seats} + ' Passengers'">4 Passengers</span>
                         </div>
                         <div class="spec flex items-center text-sm text-gray-600">
-                            <i class="fas fa-cog mr-2 text-primary"></i>
-                            <span>Auto</span>
+                            <i th:class="${vehicle.requiresLicense ? 'fas fa-id-card mr-2 text-primary' : 'fas fa-ban mr-2 text-primary'}"></i>
+                            <span th:text="${vehicle.requiresLicense ? 'License Required' : 'No License'}">License</span>
+                        </div>
+                        <div class="spec flex items-center text-sm text-gray-600" th:if="${vehicle.batteryCapacity != null}">
+                            <i class="fas fa-battery-half mr-2 text-primary"></i>
+                            <span th:text="${vehicle.batteryCapacity} + ' kWh'">Battery</span>
                         </div>
                         <div class="spec flex items-center text-sm text-gray-600">
-                            <i class="fas fa-snowflake mr-2 text-primary"></i>
-                            <span>Air Conditioning</span>
-                        </div>
-                        <div class="spec flex items-center text-sm text-gray-600">
-                            <i class="fas fa-door-open mr-2 text-primary"></i>
-                            <span>4 Doors</span>
+                            <i class="fas fa-tachometer-alt mr-2 text-primary"></i>
+                            <span th:text="${vehicle.odometer} + ' km'">Odometer</span>
                         </div>
                     </div>
 
                     <div class="price-container flex justify-between items-center mb-4">
                         <span class="price-label text-gray-600">Price:</span>
-                        <span class="price font-bold text-lg">$1,800 / day</span>
+                        <span class="price font-bold text-lg" th:text="'$' + ${vehicle.pricePerDay} + ' / day'">$89 / day</span>
                     </div>
 
-                    <button class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
-                        Rent Now
+                    <a th:href="@{/vehicles/detail(id=${vehicle.vehicleId})}"
+                       class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
+                        View Details
                         <i class="fas fa-arrow-right ml-2"></i>
-                    </button>
+                    </a>
                 </div>
-            </div>
-
-            <div class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-            </div>
-
-            <div class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-            </div>
-
-            <div class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
             </div>
         </div>
 
         <div class="text-center mt-12">
-            <button class="view-all-btn bg-transparent border border-primary text-primary px-6 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center mx-auto">
+            <a th:href="@{/vehicles}"
+               class="view-all-btn bg-transparent border border-primary text-primary px-6 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center mx-auto">
                 Show all vehicles
                 <i class="fas fa-arrow-right ml-2"></i>
-            </button>
+            </a>
         </div>
     </div>
 </section>
 
+<!-- Testimonials section -->
 <section class="py-20 bg-gray-50">
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
-            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
-                TESTIMONIALS
-            </div>
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">TESTIMONIALS</div>
             <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">What people say about us?</h2>
         </div>
 

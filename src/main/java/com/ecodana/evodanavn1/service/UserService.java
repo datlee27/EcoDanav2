@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -8,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.Role;
 import com.ecodana.evodanavn1.repository.UserRepository;
 
 @Service
@@ -39,7 +39,7 @@ public class UserService {
             
             if (passwordMatches) {
                 // Access role to trigger JPA loading
-                Role role = user.getRole();
+                user.getRole();
                 return user;
             }
         }
@@ -137,14 +137,118 @@ public class UserService {
     }
     
     public User findByIdWithRole(String id) {
-        return userRepository.findById(id).orElse(null);
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Trigger role loading by accessing the role field
+            user.getRole();
+            return user;
+        }
+        return null;
     }
     
     public User findByUsernameWithRole(String username) {
-        return userRepository.findByUsername(username).orElse(null);
+        Optional<User> userOpt = userRepository.findByUsername(username);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Trigger role loading by accessing the role field
+            user.getRole();
+            return user;
+        }
+        return null;
     }
     
     public User findByEmailWithRole(String email) {
-        return userRepository.findByEmail(email).orElse(null);
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Trigger role loading by accessing the role field
+            user.getRole();
+            return user;
+        }
+        return null;
+    }
+    
+    /**
+     * Get user with role information for authentication
+     * @param usernameOrEmail username or email
+     * @return User with role loaded, or null if not found
+     */
+    public User getUserWithRole(String usernameOrEmail) {
+        // Try username first
+        User user = findByUsernameWithRole(usernameOrEmail);
+        if (user != null) {
+            return user;
+        }
+        
+        // Try email if username not found
+        user = findByEmailWithRole(usernameOrEmail);
+        return user;
+    }
+    
+    /**
+     * Check if user has specific role
+     * @param user the user to check
+     * @param roleName the role name to check
+     * @return true if user has the role, false otherwise
+     */
+    public boolean hasRole(User user, String roleName) {
+        if (user == null || user.getRole() == null) {
+            return false;
+        }
+        return roleName.equalsIgnoreCase(user.getRole().getRoleName());
+    }
+    
+    /**
+     * Check if user is admin
+     * @param user the user to check
+     * @return true if user is admin, false otherwise
+     */
+    public boolean isAdmin(User user) {
+        return hasRole(user, "Admin");
+    }
+    
+    /**
+     * Check if user is staff
+     * @param user the user to check
+     * @return true if user is staff, false otherwise
+     */
+    public boolean isStaff(User user) {
+        return hasRole(user, "Staff");
+    }
+    
+    /**
+     * Check if user is owner
+     * @param user the user to check
+     * @return true if user is owner, false otherwise
+     */
+    public boolean isOwner(User user) {
+        return hasRole(user, "Owner");
+    }
+    
+    /**
+     * Check if user is customer
+     * @param user the user to check
+     * @return true if user is customer, false otherwise
+     */
+    public boolean isCustomer(User user) {
+        return hasRole(user, "Customer");
+    }
+    
+    /**
+     * Get all users from database
+     * @return list of all users
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+    
+    /**
+     * Update user in database
+     * @param user the user to update
+     * @return updated user
+     */
+    public User updateUser(User user) {
+        return userRepository.save(user);
     }
 }

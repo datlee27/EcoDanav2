@@ -2,15 +2,17 @@ package com.ecodana.evodanavn1.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.SecurityFilterChain;
 
 import com.ecodana.evodanavn1.service.UserService;
 
@@ -19,15 +21,18 @@ import com.ecodana.evodanavn1.service.UserService;
 public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler successHandler;
+    private final CustomAuthenticationSuccessHandler customSuccessHandler;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(OAuth2LoginSuccessHandler successHandler, 
+    public SecurityConfig(OAuth2LoginSuccessHandler successHandler,
+                         CustomAuthenticationSuccessHandler customSuccessHandler,
                          ClientRegistrationRepository clientRegistrationRepository,
                          UserService userService,
                          PasswordEncoder passwordEncoder) {
         this.successHandler = successHandler;
+        this.customSuccessHandler = customSuccessHandler;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
@@ -46,7 +51,7 @@ public class SecurityConfig {
             return org.springframework.security.core.userdetails.User.builder()
                 .username(user.getUsername())
                 .password(user.getPassword())
-                .roles(user.getRoleName())
+                .roles(user.getRoleName().toUpperCase())
                 .build();
         };
     }
@@ -60,13 +65,19 @@ public class SecurityConfig {
     }
 
     @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authenticationProvider(authenticationProvider())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF")
+                .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
+                .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf
@@ -75,13 +86,16 @@ public class SecurityConfig {
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/", true)
+                .successHandler(customSuccessHandler)
                 .failureUrl("/login?error=true")
                 .permitAll()
-                .disable() // Disable Spring Security form login, use custom controller
             )
             .logout(logout -> logout
-                .disable() // Disable Spring Security logout, use custom controller
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
             )
             .oauth2Login(oauth -> oauth
                 .loginPage("/login")
@@ -93,6 +107,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .maximumSessions(1)
                 .maxSessionsPreventsLogin(false)
+                .sessionRegistry(sessionRegistry())
             );
         return http.build();
     }

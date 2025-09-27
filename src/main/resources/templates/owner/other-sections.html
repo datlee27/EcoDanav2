@@ -1,132 +1,132 @@
-<!--<div th:fragment="sections" xmlns:th="http://www.thymeleaf.org">-->
-<!--    &lt;!&ndash; Driving Services Section &ndash;&gt;-->
-<!--    <div id="driving-section" class="dashboard-section hidden">-->
-<!--        <div class="mb-6">-->
-<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">DRIVING SERVICES</div>-->
-<!--            <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>-->
-<!--        </div>-->
-<!--        <div class="bg-white rounded-xl shadow-md p-6">-->
-<!--            <div class="text-center py-12">-->
-<!--                <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>-->
-<!--                <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>-->
-<!--                <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>-->
-<!--                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">-->
-<!--                    <i class="fas fa-plus mr-2"></i>Add Driving Service-->
-<!--                </button>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
+<div th:fragment="sections" xmlns:th="http://www.thymeleaf.org">
+    <!-- Driving Services Section -->
+    <div id="driving-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">DRIVING SERVICES</div>
+            <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>
+                <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Driving Service
+                </button>
+            </div>
+        </div>
+    </div>
 
-<!--    &lt;!&ndash; Income Reports Section &ndash;&gt;-->
-<!--    <div id="income-section" class="dashboard-section hidden">-->
-<!--        <div class="mb-6">-->
-<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">INCOME REPORTS</div>-->
-<!--            <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>-->
-<!--        </div>-->
-<!--        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">-->
-<!--            <div class="bg-white p-6 rounded-xl shadow-md">-->
-<!--                <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>-->
-<!--                <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>-->
-<!--            </div>-->
-<!--            <div class="bg-white p-6 rounded-xl shadow-md">-->
-<!--                <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>-->
-<!--                <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>-->
-<!--            </div>-->
-<!--            <div class="bg-white p-6 rounded-xl shadow-md">-->
-<!--                <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>-->
-<!--                <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="bg-white rounded-xl shadow-md p-6">-->
-<!--            <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>-->
-<!--            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">-->
-<!--                <div class="text-center text-gray-500">-->
-<!--                    <i class="fas fa-chart-line text-4xl mb-4"></i>-->
-<!--                    <p>Income chart will be displayed here</p>-->
-<!--                </div>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
+    <!-- Income Reports Section -->
+    <div id="income-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">INCOME REPORTS</div>
+            <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>
+                <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
+                <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>
+                <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>
+            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-chart-line text-4xl mb-4"></i>
+                    <p>Income chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<!--    &lt;!&ndash; Customer Chat Section &ndash;&gt;-->
-<!--    <div id="chat-section" class="dashboard-section hidden">-->
-<!--        <div class="mb-6">-->
-<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CUSTOMER CHAT</div>-->
-<!--            <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>-->
-<!--        </div>-->
-<!--        <div class="bg-white rounded-xl shadow-md p-6">-->
-<!--            <div class="text-center py-12">-->
-<!--                <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>-->
-<!--                <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>-->
-<!--                <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>-->
-<!--                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">-->
-<!--                    <i class="fas fa-comment mr-2"></i>Start New Chat-->
-<!--                </button>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
+    <!-- Customer Chat Section -->
+    <div id="chat-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">CUSTOMER CHAT</div>
+            <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>
+                <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-comment mr-2"></i>Start New Chat
+                </button>
+            </div>
+        </div>
+    </div>
 
-<!--    &lt;!&ndash; Analytics Section &ndash;&gt;-->
-<!--    <div id="analytics-section" class="dashboard-section hidden">-->
-<!--        <div class="mb-6">-->
-<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">ANALYTICS</div>-->
-<!--            <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>-->
-<!--        </div>-->
-<!--        <div class="bg-white rounded-xl shadow-md p-6">-->
-<!--            <div class="text-center py-12">-->
-<!--                <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>-->
-<!--                <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>-->
-<!--                <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>-->
-<!--                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">-->
-<!--                    <i class="fas fa-chart-line mr-2"></i>View Full Analytics-->
-<!--                </button>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
+    <!-- Analytics Section -->
+    <div id="analytics-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">ANALYTICS</div>
+            <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>
+                <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-chart-line mr-2"></i>View Full Analytics
+                </button>
+            </div>
+        </div>
+    </div>
 
-<!--    &lt;!&ndash; Profile Settings Section &ndash;&gt;-->
-<!--    <div id="profile-section" class="dashboard-section hidden">-->
-<!--        <div class="mb-6">-->
-<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">PROFILE SETTINGS</div>-->
-<!--            <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>-->
-<!--        </div>-->
-<!--        <div class="bg-white rounded-xl shadow-md p-6">-->
-<!--            <form th:action="@{/owner/profile}" method="post" class="space-y-6">-->
-<!--                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">-->
-<!--                    <div>-->
-<!--                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>-->
-<!--                        <input type="text" name="firstName" th:value="${owner?.firstName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">-->
-<!--                    </div>-->
-<!--                    <div>-->
-<!--                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>-->
-<!--                        <input type="text" name="lastName" th:value="${owner?.lastName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">-->
-<!--                    </div>-->
-<!--                    <div>-->
-<!--                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>-->
-<!--                        <input type="email" name="email" th:value="${owner?.email}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">-->
-<!--                    </div>-->
-<!--                    <div>-->
-<!--                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>-->
-<!--                        <input type="tel" name="phone" th:value="${owner?.phone}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">-->
-<!--                    </div>-->
-<!--                </div>-->
-<!--                <div>-->
-<!--                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>-->
-<!--                    <input type="text" name="address" th:value="${owner?.address}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">-->
-<!--                </div>-->
-<!--                <div>-->
-<!--                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>-->
-<!--                    <input type="text" name="paymentInfo" th:value="${owner?.paymentInfo}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Bank account or payment details">-->
-<!--                </div>-->
-<!--                <div class="flex space-x-4">-->
-<!--                    <button type="submit" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">-->
-<!--                        <i class="fas fa-save mr-2"></i>Update Profile-->
-<!--                    </button>-->
-<!--                    <button type="button" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors">-->
-<!--                        <i class="fas fa-times mr-2"></i>Cancel-->
-<!--                    </button>-->
-<!--                </div>-->
-<!--            </form>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
+    <!-- Profile Settings Section -->
+    <div id="profile-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2">PROFILE SETTINGS</div>
+            <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <form th:action="@{/owner/profile}" method="post" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input type="text" name="firstName" th:value="${currentUser?.firstName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input type="text" name="lastName" th:value="${currentUser?.lastName}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" name="email" th:value="${currentUser?.email}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input type="tel" name="phone" th:value="${currentUser?.phoneNumber}" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <input type="text" name="address" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Enter your address">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
+                    <input type="text" name="paymentInfo" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Bank account or payment details">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Update Profile
+                    </button>
+                    <button type="button" class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,49 +1,126 @@
 package com.ecodana.evodanavn1.service;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.repository.VehicleRepository;
 
 @Service
 public class VehicleService {
-    private List<Vehicle> vehicles = new ArrayList<>();
-
-    public VehicleService() {
-        // Mock data từ demo JS
-        vehicles.add(createVehicle("tesla-model-3", "Tesla Model 3", "ElectricCar", "Tesla", new BigDecimal("89"), true, 5));
-        vehicles.add(createVehicle("vinfast-klara", "VinFast Klara", "ElectricMotorcycle", "VinFast", new BigDecimal("25"), false, 2));
-        vehicles.add(createVehicle("honda-cbr", "Honda CBR 150R", "Motorcycle", "Honda", new BigDecimal("35"), true, 2));
-        vehicles.add(createVehicle("yamaha-nmax", "Yamaha NMAX", "Motorcycle", "Yamaha", new BigDecimal("30"), true, 2));
-        vehicles.add(createVehicle("tesla-model-y", "Tesla Model Y", "ElectricCar", "Tesla", new BigDecimal("95"), true, 7));
-        vehicles.add(createVehicle("gogoro-viva", "Gogoro Viva", "ElectricMotorcycle", "Gogoro", new BigDecimal("20"), false, 2));
-    }
     
-    private Vehicle createVehicle(String id, String model, String type, String brand, BigDecimal pricePerDay, boolean requiresLicense, int seats) {
-        Vehicle vehicle = new Vehicle();
-        vehicle.setVehicleId(id);
-        vehicle.setVehicleModel(model);
-        vehicle.setVehicleType(type);
-        vehicle.setPricePerDay(pricePerDay);
-        vehicle.setPricePerHour(pricePerDay.divide(new BigDecimal("24"), 2, BigDecimal.ROUND_HALF_UP));
-        vehicle.setPricePerMonth(pricePerDay.multiply(new BigDecimal("30")));
-        vehicle.setRequiresLicense(requiresLicense);
-        vehicle.setSeats(seats);
-        vehicle.setStatus("Available");
-        vehicle.setOdometer(0);
-        vehicle.setDescription("High-quality " + type.toLowerCase() + " from " + brand);
-        return vehicle;
-    }
+    @Autowired
+    private VehicleRepository vehicleRepository;
 
     public List<Vehicle> getAllVehicles() {
-        return vehicles;
+        return vehicleRepository.findAll();
     }
 
     public Optional<Vehicle> getVehicleById(String id) {
-        return vehicles.stream().filter(v -> v.getVehicleId().equals(id)).findFirst();
+        return vehicleRepository.findById(id);
+    }
+    
+    /**
+     * Get available vehicles
+     * @return list of available vehicles
+     */
+    public List<Vehicle> getAvailableVehicles() {
+        return vehicleRepository.findAvailableVehicles();
+    }
+    
+    /**
+     * Get vehicles by type
+     * @param vehicleType the vehicle type
+     * @return list of vehicles of the type
+     */
+    public List<Vehicle> getVehiclesByType(String vehicleType) {
+        return vehicleRepository.findByVehicleType(vehicleType);
+    }
+    
+    /**
+     * Get vehicles by brand
+     * @param brandId the brand ID
+     * @return list of vehicles from the brand
+     */
+    public List<Vehicle> getVehiclesByBrand(String brandId) {
+        return vehicleRepository.findByBrandId(brandId);
+    }
+    
+    /**
+     * Get vehicles by category
+     * @param categoryId the category ID
+     * @return list of vehicles in the category
+     */
+    public List<Vehicle> getVehiclesByCategory(String categoryId) {
+        return vehicleRepository.findByCategoryId(categoryId);
+    }
+    
+    /**
+     * Get vehicles by price range
+     * @param minPrice minimum price per day
+     * @param maxPrice maximum price per day
+     * @return list of vehicles in price range
+     */
+    public List<Vehicle> getVehiclesByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        return vehicleRepository.findByPriceRange(minPrice, maxPrice);
+    }
+    
+    /**
+     * Get vehicles by seats
+     * @param seats the number of seats
+     * @return list of vehicles with the number of seats
+     */
+    public List<Vehicle> getVehiclesBySeats(Integer seats) {
+        return vehicleRepository.findBySeats(seats);
+    }
+    
+    /**
+     * Get vehicles that require license
+     * @param requiresLicense whether license is required
+     * @return list of vehicles based on license requirement
+     */
+    public List<Vehicle> getVehiclesByLicenseRequirement(Boolean requiresLicense) {
+        return vehicleRepository.findByRequiresLicense(requiresLicense);
+    }
+    
+    /**
+     * Save vehicle
+     * @param vehicle the vehicle to save
+     * @return saved vehicle
+     */
+    public Vehicle saveVehicle(Vehicle vehicle) {
+        return vehicleRepository.save(vehicle);
+    }
+    
+    /**
+     * Update vehicle
+     * @param vehicle the vehicle to update
+     * @return updated vehicle
+     */
+    public Vehicle updateVehicle(Vehicle vehicle) {
+        return vehicleRepository.save(vehicle);
+    }
+    
+    /**
+     * Delete vehicle
+     * @param vehicleId the vehicle ID to delete
+     */
+    public void deleteVehicle(String vehicleId) {
+        vehicleRepository.deleteById(vehicleId);
+    }
+    
+    /**
+     * Get favorite vehicles by user (mock implementation)
+     * @param user the user
+     * @return list of favorite vehicles
+     */
+    public List<Vehicle> getFavoriteVehiclesByUser(User user) {
+        // Mock implementation - return first 2 available vehicles as favorites
+        return vehicleRepository.findAvailableVehicles().stream().limit(2).toList();
     }
 }
