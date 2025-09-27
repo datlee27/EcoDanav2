@@ -1,379 +1,1292 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head th:replace="~{fragments/layout :: head}"></head>
+
 <body>
-    <div th:replace="~{fragments/nav :: nav}"></div>
+<div th:replace="~{fragments/nav :: nav}"></div>
 
-    <!-- Success Notification -->
-    <div th:if="${success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-3"></i>
-                <span th:text="${success}">Registration successful!</span>
-            </div>
-            <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
+<div th:if="${success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-3"></i>
+            <span th:text="${success}">Registration successful!</span>
+        </div>
+        <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
+
+<section class="hero pt-16">
+    <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center">
+        <div class="md:w-1/2 mb-10 md:mb-0">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find, book and rent a car Easily</h1>
+            <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android
+                device.</p>
+        </div>
+        <div class="md:w-1/2">
+            <img src="/images/tripview.jpg" alt="Car rental app" class="rounded-lg shadow-xl">
         </div>
     </div>
-    
-    <div th:if="${session.flash_success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
-        <div class="flex items-center justify-between">
-            <div class="flex items-center">
-                <i class="fas fa-check-circle mr-3"></i>
-                <span th:text="${session.flash_success}">Registration successful!</span>
-            </div>
-            <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
 
-    <section class="hero pt-16">
-        <!-- Hero section content from original home.html -->
-        <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center">
-            <div class="md:w-1/2 mb-10 md:mb-0">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find, book and rent a car Easily</h1>
-                <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android device.</p>
-
-                <div class="flex space-x-4">
-                    <div class="app-btn bg-gray-800 text-white px-6 py-3 rounded-lg">App Store</div>
-                    <div class="app-btn bg-gray-800 text-white px-6 py-3 rounded-lg">Google Play</div>
+    <div class="container mx-auto px-4 bg-white rounded-xl shadow-lg p-6 -mb-16 relative z-10 max-w-5xl">
+        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+            <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1 cursor-pointer" onclick="openPopup('search-popup')">
+                <div class="search-icon text-primary text-xl">
+                    <i class="fas fa-map-marker-alt"></i>
                 </div>
-                
+                <div class="search-details flex-grow">
+                    <h4 class="font-semibold">Location</h4>
+                    <p class="text-gray-500">Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng</p>
+                </div>
+                <div class="search-icon text-primary text-xl ml-auto">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
+            <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1 cursor-pointer" onclick="openDateTimePopup()">
+                <div class="search-icon text-primary text-xl">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <div class="search-details flex-grow">
+                    <h4 class="font-semibold">Pickup & Return Date</h4>
+                    <p class="text-gray-500" id="date-time-display">Tue 15 Feb, 09:00 - Thu 16 Feb, 11:00</p>
+                </div>
+                <div class="search-icon text-primary text-xl ml-auto">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+
+            <button class="search-btn bg-primary text-white px-6 py-4 rounded-lg hover:bg-accent transition-colors flex items-center">
+                Search
+                <i class="fas fa-arrow-right ml-2"></i>
+            </button>
+        </div>
+    </div>
+</section>
+
+<section class="py-20 mt-20">
+    <div class="container mx-auto px-4">
+        <div class="text-center">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
+                HOW IT WORK
+            </div>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-12">Rent with following 3 working
+                steps</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
+                <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <h3 class="step-title text-xl font-semibold mb-2">Choose location</h3>
+                <p class="step-description text-gray-600">Enter your location and find nearby cars</p>
+            </div>
+
+            <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
+                <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <h3 class="step-title text-xl font-semibold mb-2">Pick-up date</h3>
+                <p class="step-description text-gray-600">Select your pick up date and time to book your car</p>
+            </div>
+
+            <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
+                <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
+                    <i class="fas fa-car"></i>
+                </div>
+                <h3 class="step-title text-xl font-semibold mb-2">Book your car</h3>
+                <p class="step-description text-gray-600">Book your car and we will deliver it directly to you</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-10 md:mb-0">
+                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
+                    WHY CHOOSE US
+                </div>
+                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-8">We offer the best experience
+                    with our rental deals</h2>
+
+                <div class="space-y-6">
+                    <div class="feature flex items-start space-x-4">
+                        <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4 class="font-semibold text-lg mb-1">Best price guaranteed</h4>
+                            <p class="text-gray-600">Find a lower price? We'll refund you 100% of the difference.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature flex items-start space-x-4">
+                        <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4 class="font-semibold text-lg mb-1">Experience driver</h4>
+                            <p class="text-gray-600">Don't have driver? Don't worry, we have many experienced driver for
+                                you.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature flex items-start space-x-4">
+                        <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4 class="font-semibold text-lg mb-1">24 hour car delivery</h4>
+                            <p class="text-gray-600">Book your car anytime and we will deliver it directly to you.</p>
+                        </div>
+                    </div>
+
+                    <div class="feature flex items-start space-x-4">
+                        <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="feature-text">
+                            <h4 class="font-semibold text-lg mb-1">24/7 technical support</h4>
+                            <p class="text-gray-600">Have a question? Contact Rentcars support any time when you have
+                                problem.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="md:w-1/2">
-                <img src="https://via.placeholder.com/600x400" alt="Car rental app" class="rounded-lg shadow-xl">
+                <img src="https://via.placeholder.com/500x400" alt="Why choose us" class="rounded-lg shadow-xl">
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="py-20">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
+                POPULAR RENTAL DEALS
+            </div>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Most popular cars rental deals</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Dynamic vehicle cards from database -->
+            <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                <div class="car-image h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                    <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' :
+                                     vehicle.vehicleType == 'Motorcycle' ? 'fas fa-motorcycle text-6xl text-white' :
+                                     'fas fa-bicycle text-6xl text-white'}"></i>
+                </div>
+                <div class="car-details p-6">
+                    <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
+
+                    <div class="car-type mb-2">
+                            <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' +
+                                           (vehicle.vehicleType == 'ElectricCar' ? 'bg-blue-100 text-blue-800' :
+                                            vehicle.vehicleType == 'Motorcycle' ? 'bg-green-100 text-green-800' :
+                                            'bg-purple-100 text-purple-800')}"
+                                  th:text="${vehicle.vehicleType}">Type</span>
+                    </div>
+
+                    <div class="car-rating flex items-center mb-4">
+                        <div class="stars text-yellow-400 mr-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <span class="rating-text text-sm text-gray-500">4.8 (4,485 reviews)</span>
+                    </div>
+
+                    <div class="car-specs grid grid-cols-2 gap-2 mb-4">
+                        <div class="spec flex items-center text-sm text-gray-600">
+                            <i class="fas fa-user mr-2 text-primary"></i>
+                            <span th:text="${vehicle.seats} + ' Passengers'">4 Passengers</span>
+                        </div>
+                        <div class="spec flex items-center text-sm text-gray-600">
+                            <i th:class="${vehicle.requiresLicense ? 'fas fa-id-card mr-2 text-primary' : 'fas fa-ban mr-2 text-primary'}"></i>
+                            <span th:text="${vehicle.requiresLicense ? 'License Required' : 'No License'}">License</span>
+                        </div>
+                        <div class="spec flex items-center text-sm text-gray-600" th:if="${vehicle.batteryCapacity != null}">
+                            <i class="fas fa-battery-half mr-2 text-primary"></i>
+                            <span th:text="${vehicle.batteryCapacity} + ' kWh'">Battery</span>
+                        </div>
+                        <div class="spec flex items-center text-sm text-gray-600">
+                            <i class="fas fa-tachometer-alt mr-2 text-primary"></i>
+                            <span th:text="${vehicle.odometer} + ' km'">Odometer</span>
+                        </div>
+                    </div>
+
+                    <div class="price-container flex justify-between items-center mb-4">
+                        <span class="price-label text-gray-600">Price:</span>
+                        <span class="price font-bold text-lg" th:text="'$' + ${vehicle.pricePerDay} + ' / day'">$89 / day</span>
+                    </div>
+
+                    <a th:href="@{/vehicles/detail(id=${vehicle.vehicleId})}"
+                       class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
+                        View Details
+                        <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
             </div>
         </div>
 
-        <!-- Search box section -->
-        <div class="container mx-auto px-4 bg-white rounded-xl shadow-lg p-6 -mb-16 relative z-10 max-w-5xl">
-            <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1">
-                    <div class="search-icon text-primary text-xl">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <div class="search-details">
-                        <h4 class="font-semibold">Location</h4>
-                        <p class="text-gray-500">Search your location</p>
-                    </div>
-                </div>
+        <div class="text-center mt-12">
+            <a th:href="@{/vehicles}"
+               class="view-all-btn bg-transparent border border-primary text-primary px-6 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center mx-auto">
+                Show all vehicles
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
 
-                <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1">
-                    <div class="search-icon text-primary text-xl">
-                        <i class="fas fa-calendar"></i>
-                    </div>
-                    <div class="search-details">
-                        <h4 class="font-semibold">Pickup date</h4>
-                        <p class="text-gray-500">Tue 15 Feb, 09:00</p>
-                    </div>
-                </div>
+<!-- Testimonials section -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <div class="text-center mb-12">
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">TESTIMONIALS</div>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">What people say about us?</h2>
+        </div>
 
-                <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1">
-                    <div class="search-icon text-primary text-xl">
-                        <i class="fas fa-calendar"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
+                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
+                <div class="testimonial-content">
+                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
+                    <div class="testimonial-stars text-yellow-400 mb-4">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
                     </div>
-                    <div class="search-details">
-                        <h4 class="font-semibold">Return date</h4>
-                        <p class="text-gray-500">Thu 16 Feb, 11:00</p>
-                    </div>
+                    <p class="testimonial-text text-gray-600 italic mb-4">"I have been using your services for 3 years.
+                        Your service is great, I will continue to use your service."</p>
+                    <h4 class="testimonial-author font-semibold text-lg">Jenny Wilson</h4>
+                    <p class="testimonial-location text-gray-500">From New York, US</p>
                 </div>
+            </div>
 
-                <button class="search-btn bg-primary text-white px-6 py-4 rounded-lg hover:bg-accent transition-colors flex items-center">
-                    Search
-                    <i class="fas fa-arrow-right ml-2"></i>
+            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
+                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
+                <div class="testimonial-content">
+                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
+                    <div class="testimonial-stars text-yellow-400 mb-4">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text text-gray-600 italic mb-4">"I feel very secure when using your services.
+                        Your customer care team is very enthusiastic and the driver is always on time."</p>
+                    <h4 class="testimonial-author font-semibold text-lg">Charlie Johnson</h4>
+                    <p class="testimonial-location text-gray-500">From New York, US</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div id="search-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-2xl w-full">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Tìm kiếm</h3>
+            <button onclick="closePopup('search-popup')" class="text-gray-500 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="search-field flex items-center space-x-4 p-4 border rounded-lg flex-1 mb-4 cursor-pointer" onclick="openLocationPopup()">
+            <div class="search-icon text-primary text-xl">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="search-details flex-grow">
+                <h4 class="font-semibold">Địa điểm</h4>
+                <p class="text-gray-500">Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng</p>
+            </div>
+            <div class="search-icon text-primary text-xl ml-auto">
+                <i class="fas fa-chevron-down"></i>
+            </div>
+        </div>
+
+        <div class="border rounded-lg p-4 mb-4 search-popup-section">
+            <h4 class="font-semibold text-gray-800">Theo nhu cầu</h4>
+            <div class="flex flex-wrap gap-2 mt-2 search-tags">
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Lái mới</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Công việc, đi lại</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Gia đình</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Cắm trại, chỗ đỗ</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Nhóm bạn</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Tiếp khách, dự tiệc</button>
+            </div>
+        </div>
+
+        <div class="border rounded-lg p-4 mb-4 search-popup-section">
+            <h4 class="font-semibold text-gray-800">Theo xu hướng</h4>
+            <div class="flex flex-wrap gap-2 mt-2 search-tags">
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe điện</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe hybrid</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe thể thao</button>
+            </div>
+        </div>
+
+        <div class="border rounded-lg p-4 mb-4 search-popup-section">
+            <h4 class="font-semibold text-gray-800">Ngân sách</h4>
+            <div class="flex flex-wrap gap-2 mt-2 search-tags">
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Giá rẻ</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Tiết kiệm</button>
+            </div>
+        </div>
+
+        <button onclick="closePopup('search-popup')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors">Tìm kiếm</button>
+    </div>
+</div>
+
+<div id="location-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-lg w-full">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Địa điểm</h3>
+            <button onclick="confirmLocationAndBackToSearch(event, false)" class="text-gray-500 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="mb-4 relative">
+            <label for="location-search-input" class="sr-only">Tìm kiếm địa điểm</label>
+            <input type="text" id="location-search-input" placeholder="Tìm kiếm địa điểm (ví dụ: FPT City, Hồ Chí Minh...)"
+                   class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary">
+            <div id="search-results" class="absolute w-full max-w-lg bg-white shadow-lg rounded-lg mt-1 z-10 hidden border">
+                <div class="search-result-item location-option p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-100"
+                     data-location-text="Khu đô thị FPT City, Phường Ngũ Hành Sơn, Đà Nẵng">
+                    <i class="fas fa-map-marker-alt text-green-500"></i>
+                    <p class="font-semibold">Khu đô thị FPT City, Phường Ngũ Hành Sơn, Đà Nẵng</p>
+                </div>
+                <div class="search-result-item location-option p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-100"
+                     data-location-text="Sở hữu kỳ nghỉ FPT City, Đà Nẵng">
+                    <i class="fas fa-map-marker-alt text-green-500"></i>
+                    <p class="font-semibold">Sở hữu kỳ nghỉ FPT City, Đà Nẵng</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4 location-popup-options">
+            <div class="location-option current-location-option border rounded-lg p-4 flex items-center space-x-4 cursor-pointer"
+                 data-location-text="Vị trí hiện tại"
+                 onclick="getAndSelectCurrentLocation(this)">
+                <i class="fas fa-location-arrow text-green-500"></i>
+                <p class="text-gray-700 font-semibold" id="current-location-display">Vị trí hiện tại</p>
+            </div>
+
+            <h4 class="font-semibold text-gray-800 mt-4">Giao xe sân bay</h4>
+            <div class="flex flex-wrap gap-2 airport-options-container">
+                <button class="airport-btn bg-gray-200 px-4 py-2 rounded-full text-sm hover:bg-gray-300 transition-colors" data-airport-text="Sân bay Tân Sơn Nhất" onclick="selectAirportButton(this)">
+                    Tân Sơn Nhất
+                </button>
+                <button class="airport-btn bg-gray-200 px-4 py-2 rounded-full text-sm hover:bg-gray-300 transition-colors" data-airport-text="Sân bay Nội Bài" onclick="selectAirportButton(this)">
+                    Nội Bài
+                </button>
+                <button class="airport-btn bg-gray-200 px-4 py-2 rounded-full text-sm hover:bg-gray-300 transition-colors" data-airport-text="Sân bay Đà Nẵng" onclick="selectAirportButton(this)">
+                    Đà Nẵng
+                </button>
+                <button class="airport-btn bg-gray-200 px-4 py-2 rounded-full text-sm hover:bg-gray-300 transition-colors" data-airport-text="Sân bay Cam Ranh" onclick="selectAirportButton(this)">
+                    Cam Ranh
                 </button>
             </div>
         </div>
-    </section>
 
-    <!-- Rest of the content from original home.html -->
-    <!-- How it works section -->
-    <section class="py-20 mt-20">
-        <div class="container mx-auto px-4">
-            <div class="text-center">
-                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">HOW IT WORK</div>
-                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-12">Rent with following 3 working steps</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Step 1 -->
-                <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
-                    <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
-                        <i class="fas fa-map-marker-alt"></i>
-                    </div>
-                    <h3 class="step-title text-xl font-semibold mb-2">Choose location</h3>
-                    <p class="step-description text-gray-600">Choose your location and find your best car</p>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
-                    <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
-                        <i class="fas fa-calendar"></i>
-                    </div>
-                    <h3 class="step-title text-xl font-semibold mb-2">Pick-up date</h3>
-                    <p class="step-description text-gray-600">Select your pick up date and time to book your car</p>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
-                    <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
-                        <i class="fas fa-car"></i>
-                    </div>
-                    <h3 class="step-title text-xl font-semibold mb-2">Book your car</h3>
-                    <p class="step-description text-gray-600">Book your car and we will deliver it directly to you</p>
-                </div>
+        <div class="recent-searches-container hidden mt-6 border-t pt-4">
+            <h4 class="font-semibold text-gray-800 mb-2 flex justify-between items-center">
+                Tìm kiếm gần đây
+                <button onclick="clearRecentLocations(event)" class="text-xs text-red-500 hover:text-red-700">
+                    Xóa tất cả
+                </button>
+            </h4>
+            <div id="recent-locations-list" class="space-y-2">
             </div>
         </div>
-    </section>
-
-    <!-- Why choose us section -->
-    <section class="py-20 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row items-center">
-                <div class="md:w-1/2 mb-10 md:mb-0">
-                    <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">WHY CHOOSE US</div>
-                    <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-8">We offer the best experience with our rental deals</h2>
-
-                    <div class="space-y-6">
-                        <!-- Feature 1 -->
-                        <div class="feature flex items-start space-x-4">
-                            <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
-                                <i class="fas fa-wallet"></i>
-                            </div>
-                            <div class="feature-text">
-                                <h4 class="font-semibold text-lg mb-1">Best price guaranteed</h4>
-                                <p class="text-gray-600">Find a lower price? We'll refund you 100% of the difference.</p>
-                            </div>
-                        </div>
-
-                        <!-- Feature 2 -->
-                        <div class="feature flex items-start space-x-4">
-                            <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
-                                <i class="fas fa-user-check"></i>
-                            </div>
-                            <div class="feature-text">
-                                <h4 class="font-semibold text-lg mb-1">Experience driver</h4>
-                                <p class="text-gray-600">Don't have driver? Don't worry, we have many experienced driver for you.</p>
-                            </div>
-                        </div>
-
-                        <!-- Feature 3 -->
-                        <div class="feature flex items-start space-x-4">
-                            <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
-                                <i class="fas fa-truck"></i>
-                            </div>
-                            <div class="feature-text">
-                                <h4 class="font-semibold text-lg mb-1">24 hour car delivery</h4>
-                                <p class="text-gray-600">Book your car anytime and we will deliver it directly to you.</p>
-                            </div>
-                        </div>
-
-                        <!-- Feature 4 -->
-                        <div class="feature flex items-start space-x-4">
-                            <div class="feature-icon bg-green-100 text-green-600 w-12 h-12 rounded-full flex items-center justify-center text-xl">
-                                <i class="fas fa-headset"></i>
-                            </div>
-                            <div class="feature-text">
-                                <h4 class="font-semibold text-lg mb-1">24/7 technical support</h4>
-                                <p class="text-gray-600">Have a question? Contact Rentcars support any time when you have problem.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="md:w-1/2">
-                    <img src="https://via.placeholder.com/500x400" alt="Why choose us" class="rounded-lg shadow-xl">
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Popular deals section -->
-    <section class="py-20">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">POPULAR RENTAL DEALS</div>
-                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Most popular cars rental deals</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <!-- Dynamic vehicle cards from database -->
-                <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                    <div class="car-image h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                        <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' : 
-                                     vehicle.vehicleType == 'Motorcycle' ? 'fas fa-motorcycle text-6xl text-white' : 
-                                     'fas fa-bicycle text-6xl text-white'}"></i>
-                    </div>
-                    <div class="car-details p-6">
-                        <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
-                        
-                        <div class="car-type mb-2">
-                            <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' + 
-                                           (vehicle.vehicleType == 'ElectricCar' ? 'bg-blue-100 text-blue-800' : 
-                                            vehicle.vehicleType == 'Motorcycle' ? 'bg-green-100 text-green-800' : 
-                                            'bg-purple-100 text-purple-800')}" 
-                                  th:text="${vehicle.vehicleType}">Type</span>
-                        </div>
-
-                        <div class="car-rating flex items-center mb-4">
-                            <div class="stars text-yellow-400 mr-2">
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                                <i class="fas fa-star"></i>
-                            </div>
-                            <span class="rating-text text-sm text-gray-500">4.8 (4,485 reviews)</span>
-                        </div>
-
-                        <div class="car-specs grid grid-cols-2 gap-2 mb-4">
-                            <div class="spec flex items-center text-sm text-gray-600">
-                                <i class="fas fa-user mr-2 text-primary"></i>
-                                <span th:text="${vehicle.seats} + ' Passengers'">4 Passengers</span>
-                            </div>
-                            <div class="spec flex items-center text-sm text-gray-600">
-                                <i th:class="${vehicle.requiresLicense ? 'fas fa-id-card mr-2 text-primary' : 'fas fa-ban mr-2 text-primary'}"></i>
-                                <span th:text="${vehicle.requiresLicense ? 'License Required' : 'No License'}">License</span>
-                            </div>
-                            <div class="spec flex items-center text-sm text-gray-600" th:if="${vehicle.batteryCapacity != null}">
-                                <i class="fas fa-battery-half mr-2 text-primary"></i>
-                                <span th:text="${vehicle.batteryCapacity} + ' kWh'">Battery</span>
-                            </div>
-                            <div class="spec flex items-center text-sm text-gray-600">
-                                <i class="fas fa-tachometer-alt mr-2 text-primary"></i>
-                                <span th:text="${vehicle.odometer} + ' km'">Odometer</span>
-                            </div>
-                        </div>
-
-                        <div class="price-container flex justify-between items-center mb-4">
-                            <span class="price-label text-gray-600">Price:</span>
-                            <span class="price font-bold text-lg" th:text="'$' + ${vehicle.pricePerDay} + ' / day'">$89 / day</span>
-                        </div>
-
-                        <a th:href="@{/vehicles/detail(id=${vehicle.vehicleId})}" 
-                           class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
-                            View Details
-                            <i class="fas fa-arrow-right ml-2"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-12">
-                <a th:href="@{/vehicles}" 
-                   class="view-all-btn bg-transparent border border-primary text-primary px-6 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center mx-auto">
-                    Show all vehicles
-                    <i class="fas fa-arrow-right ml-2"></i>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Testimonials section -->
-    <section class="py-20 bg-gray-50">
-        <div class="container mx-auto px-4">
-            <div class="text-center mb-12">
-                <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">TESTIMONIALS</div>
-                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">What people say about us?</h2>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Testimonial 1 -->
-                <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
-                    <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
-                    <div class="testimonial-content">
-                        <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
-                        <div class="testimonial-stars text-yellow-400 mb-4">
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <p class="testimonial-text text-gray-600 italic mb-4">"I have been using your services for 3 years. Your service is great, I will continue to use your service."</p>
-                        <h4 class="testimonial-author font-semibold text-lg">Jenny Wilson</h4>
-                        <p class="testimonial-location text-gray-500">From New York, US</p>
-                    </div>
-                </div>
-
-                <!-- Testimonial 2 -->
-                <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
-                    <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
-                    <div class="testimonial-content">
-                        <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
-                        <div class="testimonial-stars text-yellow-400 mb-4">
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
-                        </div>
-                        <p class="testimonial-text text-gray-600 italic mb-4">"I feel very secure when using your services. Your customer care team is very enthusiastic and the driver is always on time."</p>
-                        <h4 class="testimonial-author font-semibold text-lg">Charlie Johnson</h4>
-                        <p class="testimonial-location text-gray-500">From New York, US</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Download app section -->
-    <section class="py-20 bg-primary text-white">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row items-center">
-                <div class="md:w-1/2 mb-10 md:mb-0">
-                    <div class="section-badge bg-white text-primary px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">DOWNLOAD</div>
-                    <h2 class="download-title text-3xl md:text-4xl font-bold mb-4">Download Rentcars App for FREE</h2>
-                    <p class="download-subtitle text-xl mb-8">For faster, easier booking and exclusive deals.</p>
-
-                    <div class="flex space-x-4">
-                        <div class="app-btn bg-white text-primary px-6 py-3 rounded-lg">App Store</div>
-                        <div class="app-btn bg-white text-primary px-6 py-3 rounded-lg">Google Play</div>
-                    </div>
-                </div>
-
-                <div class="md:w-1/2 flex justify-center">
-                    <img src="https://via.placeholder.com/400x500" alt="Download app" class="rounded-lg shadow-xl">
-                </div>
-            </div>
+        <button onclick="confirmLocationAndBackToSearch(event, true)" class="w-full mt-6 bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors font-semibold">
+            Xác nhận
+        </button>
+    </div>
 </div>
-    </section>
 
-    <div th:replace="~{fragments/footer :: footer}"></div>
+<div id="date-time-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Thời gian</h3>
+            <button onclick="closePopup('date-time-popup')" class="text-gray-500 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
 
-    <!-- Success Notification Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const notification = document.getElementById('success-notification');
-            if (notification) {
-                // Hiển thị thông báo với hiệu ứng slide in
-                setTimeout(() => {
-                    notification.classList.remove('translate-x-full');
-                    notification.classList.add('translate-x-0');
-                }, 100);
-                
-                // Tự động ẩn thông báo sau 8 giây
-                setTimeout(() => {
-                    closeNotification(notification.querySelector('button'));
-                }, 3000);
+        <div class="flex border-b mb-6">
+            <button class="py-2 px-4 font-semibold text-primary border-b-2 border-primary">Thuê theo ngày</button>
+            <button class="py-2 px-4 font-semibold text-gray-500 cursor-not-allowed hover:text-gray-500">Thuê theo giờ</button>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="changeMonthOffset(-1)" class="p-2 rounded-full hover:bg-gray-200 text-gray-700">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <div class="flex space-x-8" id="calendar-month-titles">
+            </div>
+            <button onclick="changeMonthOffset(1)" class="p-2 rounded-full hover:bg-gray-200 text-gray-700">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div id="calendar-container" class="flex justify-center space-x-8">
+        </div>
+
+        <div class="flex space-x-4 mt-6">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Nhận xe</label>
+                <select id="pickup-time" class="w-full p-3 border rounded-lg mt-1 focus:ring-primary focus:border-primary">
+                </select>
+            </div>
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700">Trả xe</label>
+                <select id="return-time" class="w-full p-3 border rounded-lg mt-1 focus:ring-primary focus:border-primary">
+                </select>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-6 pt-4 border-t">
+            <p id="rental-summary" class="text-sm text-gray-600">Chọn ngày nhận và trả xe</p>
+            <button onclick="confirmDateTime()" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-accent transition-colors font-semibold">
+                Tiếp tục
+            </button>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    // Biến toàn cục để lưu trạng thái
+    let selectedTagsState = []; // <-- Lưu trữ các Tag được chọn (như "Giao tại nhà", "Tiết kiệm")
+    // Giá trị mặc định ban đầu hiển thị
+    let selectedLocationText = 'Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng';
+    let selectedAirportTexts = []; // Giá trị mặc định cho multiple airport
+
+    // Khóa localStorage - Đã bỏ sử dụng nhưng giữ lại để tránh lỗi code
+    const RECENT_LOCATIONS_KEY = 'recentLocations';
+
+    // --- Dữ liệu giả lập cho Đà Nẵng ---
+    const DA_NANG_LOCATIONS = [
+        "Sân bay Quốc tế Đà Nẵng (DAD)",
+        "Ga Đà Nẵng",
+        "Khu đô thị FPT City, Ngũ Hành Sơn",
+        "Tòa nhà Đà Nẵng Plaza, Hải Châu",
+        "InterContinental Danang Sun Peninsula Resort",
+        "Cầu Rồng, Sông Hàn",
+    ];
+
+    // --- Hàm chung ---
+    function closeNotification(button) {
+        const notification = button.closest('#success-notification');
+        if (notification) {
+            notification.classList.remove('translate-x-0');
+            notification.classList.add('translate-x-full');
+
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }
+    }
+
+    function openPopup(id) {
+        document.getElementById(id).classList.remove('hidden');
+        // Đặc biệt: Nếu mở Location Popup, khôi phục trạng thái
+        if (id === 'location-popup') {
+            restoreLocationState();
+        }
+    }
+
+    function closePopup(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    // --- Logic Flow (Cập nhật để lưu Tag khi mở Location Popup) ---
+    function openLocationPopup() {
+        // 1. Lưu trạng thái của tất cả các tag đã được chọn TRƯỚC KHI mở Location Popup
+        const tagButtons = document.querySelectorAll('.tag-btn');
+        selectedTagsState = [];
+        tagButtons.forEach(button => {
+            if (button.classList.contains('selected')) {
+                selectedTagsState.push(button.textContent.trim());
             }
         });
 
-        function closeNotification(button) {
-            const notification = button.closest('#success-notification');
-            if (notification) {
-                notification.classList.remove('translate-x-0');
-                notification.classList.add('translate-x-full');
-                
-                // Xóa thông báo khỏi DOM sau khi animation hoàn thành
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
+        // 2. Mở Location Popup và đóng Search Popup
+        openPopup('location-popup');
+        closePopup('search-popup');
+    }
+
+    function backToSearchPopup() {
+        closePopup('location-popup');
+        openPopup('search-popup');
+        restoreTagsState();
+    }
+
+    function restoreTagsState() {
+        const tagButtons = document.querySelectorAll('.tag-btn');
+        tagButtons.forEach(button => {
+            const buttonText = button.textContent.trim();
+            const isSelected = selectedTagsState.includes(buttonText);
+
+            button.classList.toggle('selected', isSelected);
+            button.classList.toggle('bg-primary', isSelected);
+            button.classList.toggle('text-white', isSelected);
+            button.classList.toggle('bg-gray-200', !isSelected);
+        });
+    }
+
+    // --- Logic Geolocation (Vị trí hiện tại) ---
+    function getAddressFromCoords(lat, lon) {
+        return "295 Nguyễn Tất Thành, Phường Hòa Hiệp Bắc, Quận Liên Chiểu, Đà Nẵng";
+    }
+
+    function getAndSelectCurrentLocation(element) {
+        const displayElement = document.getElementById('current-location-display');
+        const iconElement = element.querySelector('i');
+
+        const isCurrentlySelected = element.classList.contains('selected');
+
+        if (isCurrentlySelected) {
+            selectLocationOption(element);
+
+            displayElement.textContent = 'Vị trí hiện tại';
+            if (iconElement) {
+                iconElement.className = 'fas fa-location-arrow text-green-500';
+            }
+            element.setAttribute('data-location-text', 'Vị trí hiện tại');
+            return;
+        }
+
+        selectLocationOption(element);
+
+        displayElement.textContent = 'Đang tìm vị trí...';
+        if (iconElement) {
+            iconElement.className = 'fas fa-spinner fa-spin text-white';
+        }
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const readableAddress = getAddressFromCoords(position.coords.latitude, position.coords.longitude);
+                    const locationText = readableAddress;
+
+                    if(!element.classList.contains('selected')) return;
+
+                    displayElement.textContent = locationText;
+                    element.setAttribute('data-location-text', locationText);
+
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-location-arrow text-white';
+                    }
+
+                    document.getElementById('location-search-input').value = '';
+                },
+                (error) => {
+                    let errorText = 'Không thể lấy vị trí hiện tại.';
+                    if (error.code === error.PERMISSION_DENIED) {
+                        errorText = 'Vui lòng cấp quyền truy cập vị trí.';
+                    } else if (error.code === error.TIMEOUT) {
+                        errorText = 'Quá thời gian chờ.';
+                    }
+
+                    if(!element.classList.contains('selected')) return;
+
+                    displayElement.textContent = errorText;
+                    element.setAttribute('data-location-text', errorText);
+
+                    if (iconElement) {
+                        iconElement.className = 'fas fa-location-arrow text-white';
+                    }
+                }
+            );
+        } else {
+            const errorText = 'Trình duyệt không hỗ trợ Geolocation.';
+            displayElement.textContent = errorText;
+            element.setAttribute('data-location-text', errorText);
+            if (iconElement) {
+                iconElement.className = 'fas fa-location-arrow text-white';
             }
         }
-    </script>
+    }
+
+
+    // --- Logic Popup Địa điểm: Xử lý chọn Độc Lập ---
+    function selectLocationOption(element) {
+        const locationOptions = document.querySelectorAll('.location-option');
+        const currentIcon = element.querySelector('i');
+        const locationSearchInput = document.getElementById('location-search-input');
+
+        const isCurrentlySelected = element.classList.contains('selected');
+
+        if (isCurrentlySelected && !element.classList.contains('current-location-option')) {
+            element.classList.remove('selected', 'bg-primary', 'text-white');
+
+            if (!element.classList.contains('search-result-item')) {
+                element.classList.add('border');
+            }
+
+            if (currentIcon) {
+                const defaultColor = 'text-green-500';
+                currentIcon.classList.remove('text-white');
+                currentIcon.classList.add(defaultColor);
+            }
+
+            if (locationSearchInput.value === element.getAttribute('data-location-text')) {
+                locationSearchInput.value = '';
+            }
+
+            return;
+        }
+
+        locationOptions.forEach(opt => {
+            if (opt !== element) {
+                opt.classList.remove('selected', 'bg-primary', 'text-white');
+                opt.classList.add('border');
+
+                if (opt.classList.contains('search-result-item')) {
+                    opt.classList.remove('border');
+                }
+
+                const icon = opt.querySelector('i');
+                if (icon) {
+                    const defaultColor = 'text-green-500';
+                    icon.classList.remove('text-white', 'text-green-500', 'fa-spin', 'fa-spinner');
+                    icon.classList.add(defaultColor);
+                }
+
+                if (opt.classList.contains('current-location-option')) {
+                    document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
+                }
+            }
+        });
+
+        element.classList.add('selected', 'bg-primary', 'text-white');
+        element.classList.remove('border');
+
+        if (currentIcon) {
+            currentIcon.classList.remove('text-green-500');
+            currentIcon.classList.add('text-white');
+        }
+
+        if (locationSearchInput && !element.classList.contains('current-location-option')) {
+            locationSearchInput.value = element.getAttribute('data-location-text');
+        } else if (locationSearchInput && element.classList.contains('current-location-option')) {
+            locationSearchInput.value = '';
+        }
+    }
+
+    // Hàm chọn nhiều sân bay (Airport)
+    function selectAirportButton(button) {
+        const isSelected = button.classList.toggle('selected');
+        button.classList.toggle('bg-primary', isSelected);
+        button.classList.toggle('text-white', isSelected);
+        button.classList.toggle('bg-gray-200', !isSelected);
+    }
+
+    // Khôi phục trạng thái khi quay lại Location Popup
+    function restoreLocationState() {
+        const locationSearchInput = document.getElementById('location-search-input');
+
+        // 1. Khôi phục Location Option & Search Result (chọn đơn)
+        document.querySelectorAll('.location-option').forEach(option => {
+            let isSelected = false;
+            let currentText = option.getAttribute('data-location-text');
+
+            if (option.classList.contains('current-location-option')) {
+                let display = document.getElementById('current-location-display').textContent;
+                if (display !== 'Vị trí hiện tại' && display === selectedLocationText) {
+                    isSelected = true;
+                    currentText = selectedLocationText;
+                    document.getElementById('current-location-display').textContent = selectedLocationText;
+                } else {
+                    document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
+                }
+            } else {
+                isSelected = currentText === selectedLocationText;
+            }
+
+            option.classList.remove('selected', 'bg-primary', 'text-white', 'border');
+            option.classList.toggle('selected', isSelected);
+            option.classList.toggle('bg-primary', isSelected);
+            option.classList.toggle('text-white', isSelected);
+
+            if (!isSelected) {
+                if (!option.classList.contains('search-result-item')) {
+                    option.classList.add('border');
+                }
+            }
+
+            const icon = option.querySelector('i');
+            if (icon) {
+                const defaultColor = 'text-green-500';
+                icon.classList.remove('text-white', 'text-green-500', 'fa-spin', 'fa-spinner');
+                icon.classList.toggle('text-white', isSelected);
+                icon.classList.toggle(defaultColor, !isSelected);
+            }
+
+            if (isSelected && locationSearchInput) {
+                locationSearchInput.value = '';
+            }
+        });
+
+        // 2. Kiểm tra Search Input
+        if (locationSearchInput && selectedLocationText) {
+            const isCombinedSelection = selectedLocationText.includes('+');
+
+            const isLocationOptionSelected = Array.from(document.querySelectorAll('.location-option.selected'))
+                .some(opt => opt.getAttribute('data-location-text') === selectedLocationText);
+
+            if (!isLocationOptionSelected && !isCombinedSelection) {
+                locationSearchInput.value = selectedLocationText;
+            } else {
+                locationSearchInput.value = '';
+            }
+        } else {
+            if (locationSearchInput) locationSearchInput.value = '';
+        }
+
+        // 3. Khôi phục Airport Buttons (chọn nhiều)
+        const airportButtons = document.querySelectorAll('.airport-btn');
+        airportButtons.forEach(button => {
+            const buttonText = button.getAttribute('data-airport-text');
+            const isSelected = selectedAirportTexts.includes(buttonText);
+
+            button.classList.toggle('selected', isSelected);
+            button.classList.toggle('bg-primary', isSelected);
+            button.classList.toggle('text-white', isSelected);
+            button.classList.toggle('bg-gray-200', !isSelected);
+        });
+    }
+
+    // --- Hàm Chính: Lưu Địa điểm và quay lại Search Popup (ĐÃ CẬP NHẬT) ---
+    function confirmLocationAndBackToSearch(event, isConfirmed = false) {
+        if (event) event.stopPropagation();
+
+        const locationSearchInput = document.getElementById('location-search-input');
+
+        // 1. Lấy trạng thái Tags MỚI NHẤT (vì Tags được chọn trong Search Popup)
+        selectedTagsState = Array.from(document.querySelectorAll('.tag-btn.selected')).map(btn => btn.textContent.trim());
+
+        if (isConfirmed) {
+            let displayLocationText = 'Chọn địa điểm của bạn';
+
+            // 2. Lấy Location (Search Input, Location Option)
+            let currentLocationText = '';
+
+            const selectedLocationOption = document.querySelector('.location-option.selected');
+
+            // A. Ưu tiên Location Option (Vị trí hiện tại, Search Results)
+            if (selectedLocationOption) {
+                currentLocationText = selectedLocationOption.getAttribute('data-location-text');
+            }
+            // B. Ưu tiên Search Input nếu Location Option trống
+            else if (locationSearchInput && locationSearchInput.value.trim() !== '') {
+                currentLocationText = locationSearchInput.value.trim();
+            }
+
+            // C. Lấy Airport
+            const selectedAirportButtons = document.querySelectorAll('.airport-btn.selected');
+            selectedAirportTexts = Array.from(selectedAirportButtons).map(btn => btn.getAttribute('data-airport-text'));
+
+            // 3. Cập nhật Text Hiển thị (KẾT HỢP CẢ 3)
+            let parts = [];
+
+            // Location / Airport
+            if (currentLocationText && selectedAirportTexts.length > 0) {
+                parts.push(`${currentLocationText} + ${selectedAirportTexts.join(', ')}`);
+            } else if (currentLocationText) {
+                parts.push(currentLocationText);
+            } else if (selectedAirportTexts.length > 0) {
+                parts.push(selectedAirportTexts.join(', '));
+            }
+
+            // Tags
+            if (selectedTagsState.length > 0) {
+                parts.push(`[${selectedTagsState.join(', ')}]`);
+            }
+
+            // Kết hợp tất cả
+            if (parts.length > 0) {
+                displayLocationText = parts.join(' ');
+            } else {
+                // Nếu không chọn gì, giữ nguyên text đang hiển thị trên thanh search chính
+                const mainSearchFieldP = document.querySelector('.search-field:first-child .search-details p');
+                if (mainSearchFieldP) {
+                    displayLocationText = mainSearchFieldP.textContent;
+                }
+            }
+
+            selectedLocationText = currentLocationText; // Lưu lại location riêng (dùng cho restore state)
+
+            // 4. Cập nhật text hiển thị trên trang chủ và Search Popup
+            const mainSearchFieldP = document.querySelector('.search-field:first-child .search-details p');
+            const searchPopupFieldP = document.querySelector('#search-popup .search-field .search-details p');
+            if (mainSearchFieldP) {
+                mainSearchFieldP.textContent = displayLocationText;
+            }
+            if (searchPopupFieldP) {
+                searchPopupFieldP.textContent = displayLocationText;
+            }
+
+            // 5. Quay lại Search Popup
+            backToSearchPopup();
+
+        } else {
+            // Trường hợp ấn nút 'X' (Hủy bỏ), chỉ quay lại Search Popup
+            backToSearchPopup();
+        }
+    }
+
+    // --- Logic Giả lập kết quả tìm kiếm ---
+    function simulateSearchResults(query) {
+        const searchResultsDiv = document.getElementById('search-results-list');
+        if (!searchResultsDiv) return;
+
+        searchResultsDiv.innerHTML = '';
+
+        const filteredResults = DA_NANG_LOCATIONS.filter(location =>
+            location.toLowerCase().includes(query.toLowerCase())
+        );
+
+        if (filteredResults.length === 0 || query.trim() === '') {
+            document.getElementById('search-results').classList.add('hidden');
+            return;
+        }
+
+        document.getElementById('search-results').classList.remove('hidden');
+
+        filteredResults.forEach(locationText => {
+            const item = document.createElement('div');
+            item.className = 'location-option search-result-item p-4 flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-colors';
+            item.setAttribute('data-location-text', locationText);
+            item.innerHTML = `
+                <i class="fas fa-map-marker-alt text-green-500"></i>
+                <p class="text-gray-700">${locationText}</p>
+            `;
+
+            item.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectLocationOption(this);
+                document.getElementById('location-search-input').value = locationText;
+                document.getElementById('search-results').classList.add('hidden');
+            });
+
+            searchResultsDiv.appendChild(item);
+        });
+
+        restoreLocationState();
+    }
+
+
+    // --- Logic Popup Lịch (Giữ nguyên) ---
+    let selectedDates = [];
+    let currentMonthOffset = 0;
+
+    function openDateTimePopup() {
+        openPopup('date-time-popup');
+        currentMonthOffset = 0;
+        renderCalendar();
+        populateTimeSelects();
+    }
+
+    function changeMonthOffset(delta) {
+        if (currentMonthOffset + delta < 0) return;
+
+        currentMonthOffset += delta;
+        renderCalendar();
+    }
+
+    function isSameDate(d1, d2) {
+        return d1.getFullYear() === d2.getFullYear() &&
+            d1.getMonth() === d2.getMonth() &&
+            d1.getDate() === d2.getDate();
+    }
+
+    function isPastDate(date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const checkDate = new Date(date);
+        checkDate.setHours(0, 0, 0, 0);
+        return checkDate.getTime() < today.getTime();
+    }
+
+    function isDateBetween(date, start, end) {
+        return date.getTime() > start.getTime() && date.getTime() < end.getTime();
+    }
+
+    function formatDateForDisplay(date) {
+        const options = { weekday: 'short', month: 'short', day: 'numeric' };
+        let formatted = date.toLocaleDateString('vi-VN', options);
+        formatted = formatted.replace(/,/g, '');
+        formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+        return formatted;
+    }
+
+    function renderCalendar() {
+        const today = new Date();
+        const startMonth = new Date(today.getFullYear(), today.getMonth() + currentMonthOffset, 1);
+
+        const calendarContainer = document.getElementById('calendar-container');
+        const titleContainer = document.getElementById('calendar-month-titles');
+
+        if (!calendarContainer || !titleContainer) return;
+
+        calendarContainer.innerHTML = '';
+        titleContainer.innerHTML = '';
+
+        for (let i = 0; i < 2; i++) {
+            const date = new Date(startMonth.getFullYear(), startMonth.getMonth() + i, 1);
+            const month = date.getMonth();
+            const year = date.getFullYear();
+
+            const monthName = date.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+
+            titleContainer.innerHTML += `<h4 class="text-center font-bold mb-3 w-[150px]">${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</h4>`;
+
+            const monthDiv = document.createElement('div');
+            monthDiv.className = 'w-1/2 p-2';
+            monthDiv.innerHTML = `
+                <div class="grid grid-cols-7 text-center text-sm font-semibold text-gray-500 mb-1">
+                    <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                </div>
+                <div class="grid grid-cols-7 text-center text-sm" id="month-${i}"></div>
+            `;
+            calendarContainer.appendChild(monthDiv);
+
+            const daysContainer = document.getElementById(`month-${i}`);
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            let startDayOffset = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1;
+
+            for (let j = 0; j < startDayOffset; j++) {
+                daysContainer.innerHTML += '<div></div>';
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                date.setHours(0, 0, 0, 0);
+
+                let dayClass = 'p-2 rounded-full cursor-pointer hover:bg-gray-200 transition-colors';
+                const isPast = isPastDate(date);
+
+                let isPickup = selectedDates[0] && isSameDate(date, selectedDates[0]);
+                let isReturn = selectedDates[1] && isSameDate(date, selectedDates[1]);
+                let isBetween = selectedDates.length === 2 && isDateBetween(date, selectedDates[0], selectedDates[1]);
+
+                if (isPast) {
+                    dayClass = 'p-2 text-gray-400 cursor-not-allowed';
+                } else {
+                    if (isPickup || isReturn) {
+                        dayClass += ' bg-primary text-white font-bold hover:bg-primary';
+
+                        if (isPickup && isReturn) {
+                            // nothing
+                        } else if (isPickup && selectedDates.length === 2) {
+                            dayClass = dayClass.replace('rounded-full', 'rounded-l-full');
+                        } else if (isReturn && selectedDates.length === 2) {
+                            dayClass = dayClass.replace('rounded-full', 'rounded-r-full');
+                        }
+                    } else if (isBetween) {
+                        dayClass = 'p-2 bg-green-100 text-gray-800 rounded-none cursor-pointer hover:bg-green-200 transition-colors';
+                    }
+                }
+
+                if (isPast) {
+                    daysContainer.innerHTML += `<div class="${dayClass}">${day}</div>`;
+                } else {
+                    daysContainer.innerHTML += `
+                        <div class="${dayClass}" data-date="${date.toISOString()}" onclick="selectDate(this)">
+                            ${day}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        const prevButton = document.querySelector('.fa-chevron-left').parentNode;
+        prevButton.disabled = currentMonthOffset <= 0;
+        prevButton.classList.toggle('opacity-50', currentMonthOffset <= 0);
+        prevButton.classList.toggle('cursor-not-allowed', currentMonthOffset <= 0);
+
+        updateSummary();
+    }
+
+    function selectDate(element) {
+        const dateStr = element.getAttribute('data-date');
+        const date = new Date(dateStr);
+        date.setHours(0, 0, 0, 0);
+
+        if (isPastDate(date)) {
+            return;
+        }
+
+        if (selectedDates.length === 0) {
+            selectedDates = [date];
+        } else if (selectedDates.length === 1) {
+            const pickupDate = selectedDates[0];
+            if (date.getTime() < pickupDate.getTime()) {
+                selectedDates = [date];
+            } else if (isSameDate(date, pickupDate)) {
+                selectedDates = [];
+            } else {
+                selectedDates.push(date);
+                selectedDates.sort((a, b) => a.getTime() - b.getTime());
+            }
+        } else if (selectedDates.length === 2) {
+            selectedDates = [date];
+        }
+
+        renderCalendar();
+    }
+
+    function calculateRentalDays() {
+        if (selectedDates.length !== 2) return 0;
+
+        const start = selectedDates[0];
+        const end = selectedDates[1];
+
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        return diffDays;
+    }
+
+    function updateSummary() {
+        const summaryElement = document.getElementById('rental-summary');
+        const timeElement = document.getElementById('date-time-display');
+        const pickupTimeSelect = document.getElementById('pickup-time');
+        const returnTimeSelect = document.getElementById('return-time');
+
+        if (!summaryElement || !timeElement || !pickupTimeSelect || !returnTimeSelect) return;
+
+        const pickupTime = pickupTimeSelect.value;
+        const returnTime = returnTimeSelect.value;
+
+        if (selectedDates.length === 2) {
+            const pickupDateDisplay = formatDateForDisplay(selectedDates[0]);
+            const returnDateDisplay = formatDateForDisplay(selectedDates[1]);
+            const rentalDays = calculateRentalDays();
+
+            summaryElement.innerHTML = `${pickupDateDisplay}, ${pickupTime} - ${returnDateDisplay}, ${returnTime} | **Thời gian thuê: ${rentalDays} ngày**`;
+            timeElement.textContent = `${pickupDateDisplay}, ${pickupTime} - ${returnDateDisplay}, ${returnTime}`;
+        } else if (selectedDates.length === 1) {
+            const pickupDateDisplay = formatDateForDisplay(selectedDates[0]);
+            summaryElement.innerHTML = `${pickupDateDisplay}, ${pickupTime} - Chọn ngày trả xe...`;
+            timeElement.textContent = `Chọn ngày trả xe...`;
+        } else {
+            summaryElement.innerHTML = `Chọn ngày nhận và trả xe`;
+            timeElement.textContent = `Chọn ngày nhận và trả xe`;
+        }
+    }
+
+    function populateTimeSelects() {
+        const pickupSelect = document.getElementById('pickup-time');
+        const returnSelect = document.getElementById('return-time');
+
+        if (!pickupSelect || !returnSelect) return;
+
+        pickupSelect.innerHTML = '';
+        returnSelect.innerHTML = '';
+
+        for (let h = 0; h < 24; h++) {
+            for (let m = 0; m < 60; m += 30) {
+                const hour = h.toString().padStart(2, '0');
+                const minute = m.toString().padStart(2, '0');
+                const time = `${hour}:${minute}`;
+
+                const option = document.createElement('option');
+                option.value = time;
+                option.textContent = time;
+
+                if (time === '09:00') {
+                    option.selected = true;
+                }
+
+                const returnOption = option.cloneNode(true);
+                if (time === '11:00') {
+                    returnOption.selected = true;
+                }
+
+                returnSelect.appendChild(returnOption);
+                pickupSelect.appendChild(option);
+            }
+        }
+
+        pickupSelect.onchange = updateSummary;
+        returnSelect.onchange = updateSummary;
+    }
+
+    function confirmDateTime() {
+        if (selectedDates.length !== 2) {
+            alert('Vui lòng chọn đủ ngày nhận và trả xe.');
+            return;
+        }
+
+        updateSummary();
+        closePopup('date-time-popup');
+    }
+
+    // --- DOMContentLoaded ---
+    document.addEventListener('DOMContentLoaded', function() {
+        const notification = document.getElementById('success-notification');
+        if (notification) {
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            setTimeout(() => {
+                if (notification.querySelector('button')) {
+                    closeNotification(notification.querySelector('button'));
+                }
+            }, 5000);
+        }
+
+        // Xử lý chọn các tag trong popup tìm kiếm (cho phép chọn nhiều)
+        const tagButtons = document.querySelectorAll('.tag-btn');
+        tagButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const isSelected = this.classList.toggle('selected');
+                this.classList.toggle('bg-primary', isSelected);
+                this.classList.toggle('text-white', isSelected);
+                this.classList.toggle('bg-gray-200', !isSelected);
+                this.classList.add('pulse-animation');
+
+                setTimeout(() => {
+                    this.classList.remove('pulse-animation');
+                }, 300);
+            });
+        });
+
+        // ===============================================
+        // LOGIC CHO LOCATION POPUP
+        // ===============================================
+
+        const locationSearchInput = document.getElementById('location-search-input');
+        const searchResultsDivContainer = document.getElementById('search-results');
+
+        // 1. Xử lý Search Input
+        if (locationSearchInput) {
+            locationSearchInput.addEventListener('input', function() {
+                document.querySelectorAll('.location-option').forEach(opt => {
+                    opt.classList.remove('selected', 'bg-primary', 'text-white');
+
+                    const icon = opt.querySelector('i');
+                    if (icon) {
+                        const defaultColor = 'text-green-500';
+                        icon.classList.remove('text-white', 'fa-spin', 'fa-spinner');
+                        icon.classList.add(defaultColor);
+                    }
+
+                    if (opt.classList.contains('current-location-option')) {
+                        document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
+                    }
+
+                    if (!opt.classList.contains('search-result-item')) {
+                        opt.classList.add('border');
+                    }
+                });
+
+                simulateSearchResults(this.value.trim());
+            });
+
+            simulateSearchResults('');
+        }
+
+        // 2. Xử lý click vào Location Option
+        const locationOptions = document.querySelectorAll('.location-option');
+        locationOptions.forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                if (!this.classList.contains('current-location-option')) {
+                    selectLocationOption(this);
+                }
+
+                this.classList.add('pulse-animation');
+                setTimeout(() => {
+                    this.classList.remove('pulse-animation');
+                }, 300);
+            });
+        });
+
+        // Xử lý hover cho các section tìm kiếm
+        const searchSections = document.querySelectorAll('.border.rounded-lg');
+        searchSections.forEach(section => {
+            section.addEventListener('mouseenter', function() {
+                this.style.borderColor = '#2F855A';
+                this.style.boxShadow = '0 2px 8px rgba(47, 133, 90, 0.1)';
+            });
+
+            section.addEventListener('mouseleave', function() {
+                this.style.borderColor = '#e2e8f0';
+                this.style.boxShadow = 'none';
+            });
+        });
+
+        // --- Logic mới để đóng popup khi click ra khoảng đen (lớp phủ) ---
+        document.addEventListener('click', function(event) {
+            const searchPopup = document.getElementById('search-popup');
+            const locationPopup = document.getElementById('location-popup');
+            const dateTimePopup = document.getElementById('date-time-popup');
+
+            // 1. Xử lý Popup Địa điểm (#location-popup) - Đóng và quay lại Search Popup
+            if (locationPopup && !locationPopup.classList.contains('hidden')) {
+                const popupContent = locationPopup.querySelector('.bg-white');
+                if (event.target === locationPopup && !popupContent.contains(event.target)) {
+                    backToSearchPopup();
+                    return;
+                }
+            }
+
+            // Xử lý ẩn Search Results khi click ra ngoài input
+            if(searchResultsDivContainer && !searchResultsDivContainer.classList.contains('hidden')) {
+                if(event.target !== locationSearchInput && !searchResultsDivContainer.contains(event.target)) {
+                    searchResultsDivContainer.classList.add('hidden');
+                }
+            }
+
+
+            // 2. Xử lý Popup Lịch (#date-time-popup)
+            if (dateTimePopup && !dateTimePopup.classList.contains('hidden')) {
+                const popupContent = dateTimePopup.querySelector('.bg-white');
+                if (event.target === dateTimePopup && !popupContent.contains(event.target)) {
+                    closePopup('date-time-popup');
+                    return;
+                }
+            }
+
+            // 3. Xử lý Popup Tìm kiếm (#search-popup)
+            const isOtherPopupActive = (locationPopup && !locationPopup.classList.contains('hidden')) ||
+                (dateTimePopup && !dateTimePopup.classList.contains('hidden'));
+
+            if (searchPopup && !searchPopup.classList.contains('hidden') && !isOtherPopupActive) {
+                const popupContent = searchPopup.querySelector('.bg-white');
+                if (event.target === searchPopup && !popupContent.contains(event.target)) {
+                    closePopup('search-popup');
+                }
+            }
+        });
+
+        restoreLocationState();
+    });
+</script>
 </body>
+
 </html>

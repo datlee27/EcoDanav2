@@ -39,7 +39,7 @@ header {
 .logo-icon {
     width: 24px;
     height: 25.72px;
-    background: #1572D3;
+    background: #2F855A;
     position: relative;
     border-radius: 4px;
 }
@@ -48,587 +48,239 @@ header {
 .logo-icon::after {
     content: '';
     position: absolute;
-    background: #1572D3;
+    background: #2F855A;
 }
 
 .logo-text {
     font-weight: 600;
     font-size: 16px;
-    color: #1572D3;
+    color: #2F855A;
 }
 
 nav ul {
     display: flex;
+    gap: 20px;
     list-style: none;
-    gap: 40px;
 }
 
 nav a {
     text-decoration: none;
     color: #484848;
     font-weight: 500;
-    font-size: 16px;
 }
 
-.auth-buttons {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-}
-
-.sign-in {
-    color: #484848;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.sign-up {
-    background: #1572D3;
-    color: #fff;
-    padding: 16px 32px;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-/* Hero Section */
+/* Hero Section Styles */
 .hero {
-    background-color: #fff;
-    padding: 80px 0;
     position: relative;
-}
-
-.hero-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.hero-text {
-    max-width: 500px;
-}
-
-.hero-title {
-    font-size: 48px;
-    font-weight: 600;
-    color: #242424;
-    margin-bottom: 30px;
-    line-height: 1.2;
-}
-
-.hero-subtitle {
-    font-size: 18px;
-    color: #272727;
-    margin-bottom: 40px;
-}
-
-.app-buttons {
-    display: flex;
-    gap: 15px;
-}
-
-.app-btn {
-    display: inline-block;
-    width: 140px;
-    height: 45px;
-    background: #000;
-    border-radius: 7px;
-}
-
-.hero-image {
-    position: relative;
-}
-
-.hero-image img {
-    max-width: 100%;
-    height: auto;
+    background-color: #F7FAFC;
 }
 
 .search-box {
-    background: #fff;
-    box-shadow: 0 6px 12px rgba(19, 94, 172, 0.12);
+    background-color: #fff;
     border-radius: 12px;
-    padding: 20px;
-    display: flex;
-    gap: 20px;
-    margin-top: 40px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    position: relative;
+    z-index: 10;
+    margin-top: -80px;
 }
 
 .search-field {
-    flex: 1;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 16px;
     display: flex;
     align-items: center;
     gap: 16px;
-    padding-right: 20px;
-    border-right: 1px solid #ACACAC;
+    cursor: pointer;
 }
 
-.search-field:last-child {
-    border-right: none;
+.search-field:hover {
+    border-color: #2F855A;
 }
 
 .search-icon {
-    width: 32px;
-    height: 32px;
-    background: #f2f2f2;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    color: #2F855A;
+    font-size: 24px;
 }
 
 .search-details h4 {
+    font-weight: 600;
     font-size: 16px;
-    font-weight: 500;
-    color: #3E3E3E;
-    margin-bottom: 5px;
 }
 
 .search-details p {
+    color: #718096;
     font-size: 14px;
-    color: #B6B6B6;
 }
 
 .search-btn {
-    background: #1572D3;
+    background-color: #2F855A;
     color: #fff;
-    padding: 8px 20px;
     border-radius: 8px;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    padding: 16px 24px;
+    font-weight: 600;
+    transition: background-color 0.3s;
 }
 
-/* How it works section */
-.how-it-works {
-    background: #fff;
-    padding: 100px 0;
-    text-align: center;
+.search-btn:hover {
+    background-color: #0E56A0;
 }
 
+/* How It Works Section */
 .section-badge {
-    background: rgba(21, 114, 211, 0.1);
-    color: #1572D3;
-    padding: 16px 32px;
-    border-radius: 8px;
-    display: inline-block;
-    margin-bottom: 30px;
-    font-weight: 500;
+    background-color: #EBF8FF;
+    color: #2F855A;
+    padding: 4px 16px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 12px;
 }
 
 .section-title {
-    font-size: 38px;
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 80px;
-}
-
-.steps {
-    display: flex;
-    justify-content: center;
-    gap: 100px;
-}
-
-.step {
-    max-width: 230px;
+    font-weight: 800;
+    font-size: 36px;
+    color: #1A202C;
 }
 
 .step-icon {
-    width: 112px;
-    height: 112px;
-    background: #ECF5FF;
-    border-radius: 16px;
+    background-color: #EBF8FF;
+    color: #2F855A;
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 40px;
-}
-
-.step-icon i {
-    font-size: 48px;
-    color: #1572D3;
+    margin: 0 auto 16px;
+    font-size: 24px;
 }
 
 .step-title {
+    font-weight: 700;
     font-size: 20px;
-    font-weight: 500;
-    margin-bottom: 15px;
+    color: #1A202C;
 }
 
 .step-description {
-    color: #6D6D6D;
-    font-size: 14px;
+    color: #718096;
 }
 
-/* Why choose us section */
-.why-choose-us {
-    background: #fff;
-    padding: 100px 0;
-    position: relative;
-}
-
-.why-choose-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.why-choose-text {
-    max-width: 576px;
-}
-
-.features {
-    margin-top: 56px;
-}
-
-.feature {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 40px;
-}
-
+/* Why Choose Us Section */
 .feature-icon {
-    width: 64px;
-    height: 64px;
-    background: #ECF5FF;
-    border-radius: 16px;
+    background-color: #D1F0E7;
+    color: #2F855A;
+    width: 48px;
+    height: 48px;
+    border-radius: 9999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-}
-
-.feature-icon i {
-    font-size: 24px;
-    color: #1572D3;
+    font-size: 20px;
 }
 
 .feature-text h4 {
-    font-size: 20px;
-    font-weight: 500;
-    margin-bottom: 10px;
+    font-weight: 600;
+    font-size: 18px;
 }
 
 .feature-text p {
-    color: #6D6D6D;
+    color: #718096;
 }
 
-.why-choose-image {
-    position: relative;
-}
-
-.why-choose-image img {
-    max-width: 100%;
-    height: auto;
-}
-
-/* Popular deals section */
-.popular-deals {
-    background: #fff;
-    padding: 100px 0;
-}
-
-.cars {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 32px;
-    margin-bottom: 64px;
-}
-
+/* Popular Deals Section */
 .car-card {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 12px 24px rgba(16, 76, 139, 0.16);
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.car-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .car-image {
-    height: 155px;
-    background: #f5f5f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.car-image img {
-    max-width: 80%;
-    height: auto;
-}
-
-.car-details {
-    padding: 24px;
-}
-
-.car-title {
-    font-size: 16px;
-    font-weight: 500;
-    margin-bottom: 12px;
-}
-
-.car-rating {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-bottom: 16px;
-}
-
-.stars {
-    color: #EFBF14;
-}
-
-.rating-text {
-    font-size: 12px;
-    color: #000;
+    height: 160px;
+    background-color: #E2E8F0;
 }
 
 .car-specs {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 8px;
-    margin-bottom: 24px;
 }
 
-.spec {
+.car-specs .spec {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: #959595;
-}
-
-.price-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-    padding-top: 24px;
-    border-top: 1px solid #E0E0E0;
-}
-
-.price-label {
-    font-size: 14px;
-    color: #595959;
+    gap: 8px;
 }
 
 .price {
-    font-size: 16px;
-    font-weight: 600;
-    color: #292929;
+    font-weight: 700;
+    font-size: 24px;
 }
 
 .rent-btn {
-    background: #1572D3;
+    background-color: #2F855A;
     color: #fff;
-    width: 100%;
-    padding: 12px;
+    padding: 12px 24px;
     border-radius: 8px;
-    border: none;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
+    font-weight: 600;
+    transition: background-color 0.3s;
 }
 
-.view-all {
-    display: flex;
-    justify-content: center;
+.rent-btn:hover {
+    background-color: #0E56A0;
 }
 
 .view-all-btn {
-    border: 1px solid #E0E0E0;
-    color: #4E4E4E;
+    border: 1px solid #2F855A;
+    color: #2F855A;
     padding: 12px 24px;
     border-radius: 8px;
-    background: transparent;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
 }
 
-/* Testimonials section */
-.testimonials {
-    background: #F7FBFF;
-    padding: 100px 0;
+.view-all-btn:hover {
+    background-color: #2F855A;
+    color: #fff;
 }
 
-.testimonial-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 40px;
-}
-
+/* Testimonials Section */
 .testimonial-card {
-    background: #fff;
-    border-radius: 24px;
-    box-shadow: 0 12px 24px rgba(16, 76, 139, 0.16);
-    overflow: hidden;
-    display: flex;
-}
-
-.testimonial-image {
-    width: 50%;
-    background: #D9D9D9;
-}
-
-.testimonial-content {
-    width: 50%;
-    padding: 40px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .testimonial-rating {
-    font-size: 64px;
-    font-weight: 500;
-    color: #383838;
-    margin-bottom: 24px;
+    font-weight: 700;
+    font-size: 24px;
 }
 
 .testimonial-stars {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 48px;
+    color: #FFC107;
 }
 
-.testimonial-text {
-    font-size: 18px;
-    margin-bottom: 80px;
-    color: #282828;
-}
-
-.testimonial-author {
-    font-size: 24px;
-    font-weight: 500;
-    margin-bottom: 5px;
-    color: #252525;
-}
-
-.testimonial-location {
-    font-size: 14px;
-    color: #838383;
-}
-
-/* Download app section */
-.download-app {
-    background: #fff;
-    padding: 100px 0;
-}
-
-.download-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.download-text {
-    max-width: 480px;
-}
-
-.download-title {
-    font-size: 48px;
-    font-weight: 600;
-    color: #282828;
-    margin-bottom: 24px;
-    line-height: 1.2;
-}
-
-.download-subtitle {
-    font-size: 16px;
-    color: #3E3E3E;
-    margin-bottom: 40px;
-}
-
-.download-image {
-    position: relative;
-}
-
-.download-image img {
-    max-width: 100%;
-    height: auto;
-}
-
-/* Footer */
-footer {
-    background: #051C34;
-    color: #D6D6D6;
-    padding: 60px 0 30px;
-}
-
-.footer-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 40px;
-    margin-bottom: 60px;
-}
-
+/* Footer Styles */
 .footer-logo {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 32px;
 }
 
-.footer-logo-icon {
-    width: 24px;
-    height: 25.72px;
-    background: #fff;
-    position: relative;
-    border-radius: 4px;
-}
-
-.footer-logo-text {
-    font-weight: 600;
-    font-size: 16px;
-    color: #fff;
-}
-
-.footer-contact {
+.footer-nav ul {
+    list-style: none;
     display: flex;
-    flex-direction: column;
     gap: 24px;
 }
 
-.contact-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.contact-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.footer-links h4 {
-    color: #fff;
-    font-size: 16px;
-    font-weight: 500;
-    margin-bottom: 32px;
-}
-
-.footer-links ul {
-    list-style: none;
-}
-
-.footer-links li {
-    margin-bottom: 16px;
-}
-
-.footer-links a {
-    color: #D6D6D6;
-    text-decoration: none;
-    font-size: 14px;
-}
-
-.social-icons {
+.social-media {
     display: flex;
     gap: 16px;
 }
@@ -650,12 +302,16 @@ footer {
 
 /* Responsive styles */
 @media (max-width: 1024px) {
-    .hero-content, .why-choose-content, .download-content {
+    .hero-content,
+    .why-choose-content,
+    .download-content {
         flex-direction: column;
         text-align: center;
     }
 
-    .hero-text, .why-choose-text, .download-text {
+    .hero-text,
+    .why-choose-text,
+    .download-text {
         max-width: 100%;
         margin-bottom: 40px;
     }
@@ -680,7 +336,8 @@ footer {
         flex-direction: column;
     }
 
-    .testimonial-image, .testimonial-content {
+    .testimonial-image,
+    .testimonial-content {
         width: 100%;
     }
 }
@@ -691,30 +348,112 @@ footer {
         gap: 20px;
     }
 
-    nav ul {
-        gap: 20px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .section-title {
-        font-size: 32px;
-    }
-
-    .hero-title {
-        font-size: 36px;
-    }
-
-    .download-title {
-        font-size: 36px;
-    }
-
-    .footer-content {
-        grid-template-columns: 1fr;
+    .hero-text,
+    .why-choose-text,
+    .download-text {
         text-align: center;
     }
+}
 
-    .contact-item {
-        justify-content: center;
+/* Hiệu ứng sáng lên khi được chọn */
+.tag-btn.selected,
+.location-option.selected,
+.airport-btn.selected {
+    background-color: #2F855A !important;
+    color: #fff !important;
+    border-color: #2F855A !important;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(47, 133, 90, 0.3);
+}
+
+/* Hiệu ứng pulse animation */
+.pulse-animation {
+    animation: pulse 0.3s ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        /* Dùng màu #2F855A cho pulse animation */
+        box-shadow: 0 0 0 0 rgba(47, 133, 90, 0.7);
     }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 0 10px rgba(47, 133, 90, 0);
+    }
+
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(47, 133, 90, 0);
+    }
+}
+
+/* Hiệu ứng hover cải tiến */
+.tag-btn:hover,
+.location-option:hover,
+.airport-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease-in-out;
+}
+
+/* Style cơ bản cho các nút tag và sân bay */
+.tag-btn,
+.airport-btn {
+    transition: all 0.3s ease;
+    /* Border mặc định màu xám, nền được xử lý bằng Tailwind: bg-gray-200 */
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+}
+
+
+/* Style cơ bản cho tùy chọn địa điểm (nền trắng, có border) */
+.location-option {
+    transition: all 0.3s ease;
+    /* Nền trắng được ưu tiên bằng Tailwind (mặc định không có class nền) */
+    border: 1px solid #e2e8f0;
+    cursor: pointer;
+}
+
+.airport-btn {
+    /* Đảm bảo trạng thái mặc định: sử dụng màu nền từ Tailwind (bg-gray-200) được ưu tiên */
+    border: 1px solid #e2e8f0;
+    color: #484848;
+    /* Màu chữ mặc định */
+}
+
+/* Custom Styles for Interactive Elements */
+.search-field,
+.location-option,
+.tag-btn,
+.airport-btn {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.search-field:hover,
+.location-option:hover,
+.tag-btn:hover,
+.airport-btn:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.search-field:active,
+.location-option:active,
+.tag-btn:active,
+.airport-btn:active {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom Styles for Popup Z-Index */
+#location-popup {
+    z-index: 70 !important;
+    /* Đảm bảo nằm trên cùng */
+}
+
+#search-popup {
+    z-index: 55 !important;
+    /* Đặt cao hơn Header, thấp hơn location-popup */
 }
