@@ -25,17 +25,20 @@ public class SecurityConfig {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     public SecurityConfig(OAuth2LoginSuccessHandler successHandler,
                           CustomAuthenticationSuccessHandler customSuccessHandler,
                           ClientRegistrationRepository clientRegistrationRepository,
                           UserService userService,
-                          PasswordEncoder passwordEncoder) {
+                          PasswordEncoder passwordEncoder,
+                          CustomOAuth2UserService customOAuth2UserService) {
         this.successHandler = successHandler;
         this.customSuccessHandler = customSuccessHandler;
         this.clientRegistrationRepository = clientRegistrationRepository;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
 
     @Bean
@@ -99,6 +102,9 @@ public class SecurityConfig {
                 )
                 .oauth2Login(oauth -> oauth
                         .loginPage("/login")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .oidcUserService(customOAuth2UserService)
+                        )
                         .successHandler(successHandler)
                         .authorizationEndpoint(authorization -> authorization
                                 .authorizationRequestResolver(authorizationRequestResolver(clientRegistrationRepository))
