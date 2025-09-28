@@ -1,0 +1,65 @@
+<!-- Bookings Tab Content -->
+<div th:fragment="bookings-tab">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-900">Booking Management</h3>
+                <div class="flex space-x-2">
+                    <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option>All Status</option>
+                        <option>Pending</option>
+                        <option>Confirmed</option>
+                        <option>Completed</option>
+                        <option>Cancelled</option>
+                    </select>
+                    <input type="text" placeholder="Search bookings..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    <tr th:each="booking : ${bookings}" th:if="${bookings != null and !bookings.empty}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${booking.bookingCode}">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900" th:text="${booking.customerName}">-</div>
+                            <div class="text-sm text-gray-500" th:text="${booking.customerEmail}">-</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${booking.vehicleId}">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">-</div>
+                            <div class="text-xs text-gray-500" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">-</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span th:if="${booking.status == 'Confirmed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${booking.status}">-</span>
+                            <span th:if="${booking.status == 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${booking.status}">-</span>
+                            <span th:if="${booking.status == 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${booking.status}">-</span>
+                            <span th:if="${booking.status != 'Confirmed' and booking.status != 'Pending' and booking.status != 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${booking.status}">-</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${booking.totalAmount}">-</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
+                            <button th:if="${booking.status == 'Pending'}" class="text-green-600 hover:text-green-900 mr-3" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Confirmed">Confirm</button>
+                            <button th:if="${booking.status == 'Confirmed'}" class="text-blue-600 hover:text-blue-900 mr-3" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Completed">Complete</button>
+                            <button th:if="${booking.status != 'Completed' and booking.status != 'Cancelled'}" class="text-red-600 hover:text-red-900" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Cancelled">Cancel</button>
+                        </td>
+                    </tr>
+                    <tr th:if="${bookings == null or bookings.empty}">
+                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">No bookings found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -19,18 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         switchTab(tab);
     }
     
-    // Test Add User button
-    const addUserBtn = document.getElementById('addUserBtn');
-    if (addUserBtn) {
-        console.log('Add User button found');
-        addUserBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Add User button clicked via event listener');
-            showAddUserModal();
-        });
-    } else {
-        console.error('Add User button not found!');
-    }
+    // User management is now handled server-side
     
     // Simple user rows protection - Run once after page load
     setTimeout(() => {
@@ -81,20 +70,7 @@ function setupSidebar() {
         }
     });
     
-    // Close modal when clicking outside
-    document.addEventListener('click', function(event) {
-        const modal = document.getElementById('addUserModal');
-        if (modal && event.target === modal) {
-            closeAddUserModal();
-        }
-    });
-    
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            closeAddUserModal();
-        }
-    });
+    // Modal handling removed - using server-side forms
 }
 
 function openSidebar() {
@@ -125,8 +101,10 @@ function switchTab(tabName, event) {
     
     // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
+    console.log('Found', tabContents.length, 'tab contents');
     tabContents.forEach(content => {
         content.classList.remove('active');
+        console.log('Removed active from:', content.id);
     });
 
     // Remove active class from all sidebar items
@@ -137,11 +115,15 @@ function switchTab(tabName, event) {
 
     // Show selected tab content
     const targetTab = document.getElementById(tabName);
+    console.log('Target tab element:', targetTab);
     if (targetTab) {
         targetTab.classList.add('active');
         console.log('Tab', tabName, 'is now active');
     } else {
         console.error('Tab', tabName, 'not found!');
+        // List all available tabs for debugging
+        const allTabs = document.querySelectorAll('[id]');
+        console.log('Available elements with IDs:', Array.from(allTabs).map(el => el.id));
     }
 
     // Add active class to clicked sidebar item (if called from click event)
@@ -831,424 +813,7 @@ function updateDashboardData(data) {
     if (totalRevenue && data.totalRevenue) totalRevenue.textContent = data.totalRevenue;
 }
 
-// Add User Modal Functions
-function showAddUserModal() {
-    console.log('showAddUserModal called');
-    
-    // Debug: Check all elements with id containing 'addUser'
-    const allElements = document.querySelectorAll('[id*="addUser"]');
-    console.log('All elements with addUser in id:', allElements);
-    
-    // Debug: Check all divs with id
-    const allDivsWithId = document.querySelectorAll('div[id]');
-    console.log('All divs with id:', allDivsWithId);
-    
-    // Find the modal directly (it's now at the end of body)
-    const modal = document.getElementById('addUserModal');
-    console.log('Modal element:', modal);
-    
-    // Alternative search methods
-    const modalByQuery = document.querySelector('#addUserModal');
-    console.log('Modal by querySelector:', modalByQuery);
-    
-    const modalByClass = document.querySelector('.modal-hidden');
-    console.log('Modal by class modal-hidden:', modalByClass);
-    
-    if (!modal) {
-        console.error('Add User Modal not found!');
-        console.log('Available elements in DOM:');
-        console.log('Body children count:', document.body.children.length);
-        console.log('Last 5 body children:', Array.from(document.body.children).slice(-5));
-        
-        // Try to create modal dynamically
-        createModalDynamically();
-        return;
-    }
-    
-    try {
-        // Remove hidden classes and add visible class
-        modal.classList.remove('hidden', 'modal-hidden');
-        modal.classList.add('modal-visible');
-        modal.style.display = 'flex';
-        modal.style.visibility = 'visible';
-        modal.style.opacity = '1';
-        modal.style.zIndex = '9999';
-        document.body.style.overflow = 'hidden';
-        
-        // Focus on first input
-        setTimeout(() => {
-            const firstNameInput = document.getElementById('firstName');
-            if (firstNameInput) {
-                firstNameInput.focus();
-            }
-        }, 100);
-        
-        console.log('Modal shown successfully');
-        console.log('Modal classes:', modal.className);
-        console.log('Modal style display:', modal.style.display);
-    } catch (error) {
-        console.error('Error showing modal:', error);
-        alert('Lỗi khi hiển thị modal: ' + error.message);
-    }
-}
-
-// Create modal dynamically if not found
-function createModalDynamically() {
-    console.log('Creating modal dynamically...');
-    
-    const modal = document.createElement('div');
-    modal.id = 'addUserModal';
-    modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50';
-    modal.style.display = 'flex';
-    modal.style.zIndex = '9999';
-    
-    modal.innerHTML = `
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Thêm User Mới</h3>
-                    <button onclick="closeAddUserModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <!-- Modal Body -->
-                <form id="addUserForm" class="p-6 space-y-4">
-                    <!-- First Name -->
-                    <div>
-                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Họ</label>
-                        <input type="text" id="firstName" name="firstName" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Last Name -->
-                    <div>
-                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Tên</label>
-                        <input type="text" id="lastName" name="lastName" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Username -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
-                        <input type="text" id="username" name="username" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="email" name="email" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Phone Number -->
-                    <div>
-                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                        <input type="tel" id="phoneNumber" name="phoneNumber" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-                        <input type="password" id="password" name="password" required minlength="6"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Confirm Password -->
-                    <div>
-                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Role -->
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-                        <select id="role" name="role" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Chọn vai trò</option>
-                            <option value="Customer">Customer</option>
-                            <option value="Staff">Staff</option>
-                            <option value="Owner">Owner</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Status -->
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                        <select id="status" name="status" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="Active">Active</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                </form>
-                
-                <!-- Modal Footer -->
-                <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
-                    <button onclick="closeAddUserModal()" 
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                        Hủy
-                    </button>
-                    <button onclick="submitAddUser()" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
-                        <i class="fas fa-plus mr-1"></i>
-                        Thêm User
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-    console.log('Modal created and added to DOM');
-    
-    // Focus on first input
-    setTimeout(() => {
-        const firstNameInput = document.getElementById('firstName');
-        if (firstNameInput) {
-            firstNameInput.focus();
-        }
-    }, 100);
-}
-
-function closeAddUserModal() {
-    const modal = document.getElementById('addUserModal');
-    if (modal) {
-        // If modal was created dynamically, remove it completely
-        if (modal.parentNode) {
-            modal.parentNode.removeChild(modal);
-            console.log('Dynamic modal removed from DOM');
-        } else {
-            // If modal is in HTML, hide it
-            modal.classList.add('hidden', 'modal-hidden');
-            modal.classList.remove('modal-visible');
-            modal.style.display = 'none';
-        }
-        
-        document.body.style.overflow = '';
-        
-        // Reset form
-        const form = document.getElementById('addUserForm');
-        if (form) {
-            form.reset();
-        }
-    }
-}
-
-// Edit User Modal Functions
-function showEditUserModal(userId) {
-    console.log('Opening edit modal for user:', userId);
-    console.log('User ID type:', typeof userId);
-    console.log('User ID length:', userId ? userId.length : 'null');
-    
-    // Validate userId
-    if (!userId || userId === 'undefined' || userId === 'null') {
-        showNotification('User ID không hợp lệ', 'error');
-        return;
-    }
-    
-    // Get user data first
-    const url = `/admin/api/users/${userId}`;
-    console.log('API URL:', url);
-    makeApiCall(url, 'GET')
-        .then(data => {
-            if (data.success) {
-                const user = data.user;
-                
-                // Fill form with user data
-                document.getElementById('editUserId').value = user.id;
-                document.getElementById('editFirstName').value = user.firstName || '';
-                document.getElementById('editLastName').value = user.lastName || '';
-                document.getElementById('editUsername').value = user.username || '';
-                document.getElementById('editEmail').value = user.email || '';
-                document.getElementById('editPhoneNumber').value = user.phoneNumber || '';
-                document.getElementById('editRole').value = user.roleName || '';
-                document.getElementById('editStatus').value = user.status || 'Active';
-                
-                // Clear password fields
-                document.getElementById('editPassword').value = '';
-                document.getElementById('editConfirmPassword').value = '';
-                
-                // Show modal
-                const modal = document.getElementById('editUserModal');
-                if (modal) {
-                    modal.classList.remove('hidden', 'modal-hidden');
-                    modal.classList.add('modal-visible');
-                    modal.style.display = 'flex';
-                    document.body.style.overflow = 'hidden';
-                }
-            } else {
-                showNotification('Không thể tải thông tin user: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            showNotification('Lỗi khi tải thông tin user: ' + error.message, 'error');
-        });
-}
-
-function closeEditUserModal() {
-    const modal = document.getElementById('editUserModal');
-    if (modal) {
-        modal.classList.add('hidden', 'modal-hidden');
-        modal.classList.remove('modal-visible');
-        modal.style.display = 'none';
-        document.body.style.overflow = '';
-        // Reset form
-        const form = document.getElementById('editUserForm');
-        if (form) {
-            form.reset();
-        }
-    }
-}
-
-function submitEditUser() {
-    const form = document.getElementById('editUserForm');
-    const formData = new FormData(form);
-    
-    // Validate form
-    if (!validateEditUserForm()) {
-        return;
-    }
-    
-    // Prepare user data
-    const userData = {
-        userId: formData.get('userId'),
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        username: formData.get('username'),
-        email: formData.get('email'),
-        phoneNumber: formData.get('phoneNumber'),
-        password: formData.get('password'),
-        role: formData.get('role'),
-        status: formData.get('status')
-    };
-    
-    // Submit to API
-    console.log('Submitting edit user data:', userData);
-    makeApiCall('/admin/api/users/edit', 'POST', userData)
-        .then(data => {
-            if (data.success) {
-                showNotification('Cập nhật user thành công!', 'success');
-                closeEditUserModal();
-                // Refresh the page to show updated user
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                showNotification('Lỗi: ' + data.error, 'error');
-            }
-        })
-        .catch(error => {
-            showNotification('Lỗi: ' + error.message, 'error');
-        });
-}
-
-function validateEditUserForm() {
-    const form = document.getElementById('editUserForm');
-    const password = form.querySelector('#editPassword').value;
-    const confirmPassword = form.querySelector('#editConfirmPassword').value;
-    
-    // If password is provided, validate it
-    if (password && password.length < 6) {
-        showNotification('Mật khẩu phải có ít nhất 6 ký tự', 'error');
-        return false;
-    }
-    
-    if (password && password !== confirmPassword) {
-        showNotification('Mật khẩu xác nhận không khớp', 'error');
-        return false;
-    }
-    
-    return true;
-}
-
-function submitAddUser() {
-    console.log('submitAddUser called');
-    const form = document.getElementById('addUserForm');
-    console.log('Form element:', form);
-    
-    if (!form) {
-        console.error('Add User Form not found!');
-        showNotification('Lỗi: Không tìm thấy form thêm user', 'error');
-        return;
-    }
-    
-    const formData = new FormData(form);
-    
-    // Validate form
-    if (!validateAddUserForm()) {
-        console.log('Form validation failed');
-        return;
-    }
-    
-    // Show loading state
-    const submitBtn = document.querySelector('button[onclick="submitAddUser()"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Đang thêm...';
-    submitBtn.disabled = true;
-    
-    // Prepare data
-    const userData = {
-        firstName: formData.get('firstName'),
-        lastName: formData.get('lastName'),
-        username: formData.get('username'),
-        email: formData.get('email'),
-        phoneNumber: formData.get('phoneNumber'),
-        password: formData.get('password'),
-        role: formData.get('role'),
-        status: formData.get('status')
-    };
-    
-    // Submit to API
-    console.log('Submitting user data:', userData);
-    console.log('Form validation passed, making API call...');
-    makeApiCall('/admin/api/users/add', 'POST', userData)
-        .then(data => {
-            console.log('API response:', data);
-            if (data.success) {
-                showNotification('Thêm user thành công!', 'success');
-                closeAddUserModal();
-                // Refresh the page to show new user
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showNotification('Lỗi: ' + (data.error || 'Không thể thêm user'), 'error');
-            }
-        })
-        .catch(error => {
-            console.error('API call failed:', error);
-            showNotification('Lỗi: ' + error.message, 'error');
-        })
-        .finally(() => {
-            // Reset button state
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        });
-}
-
-function validateAddUserForm() {
-    const password = document.getElementById('password').value;
-    const confirmPassword = document.getElementById('confirmPassword').value;
-    
-    if (password !== confirmPassword) {
-        showNotification('Mật khẩu xác nhận không khớp!', 'error');
-        return false;
-    }
-    
-    if (password.length < 6) {
-        showNotification('Mật khẩu phải có ít nhất 6 ký tự!', 'error');
-        return false;
-    }
-    
-    return true;
-}
+// User management functions removed - now handled server-side
 
 // Logout functionality
 function logout() {
@@ -1305,12 +870,6 @@ function closeTestModal() {
 window.switchTab = switchTab;
 window.openSidebar = openSidebar;
 window.closeSidebar = closeSidebar;
-window.showAddUserModal = showAddUserModal;
-window.closeAddUserModal = closeAddUserModal;
-window.submitAddUser = submitAddUser;
-window.showEditUserModal = showEditUserModal;
-window.closeEditUserModal = closeEditUserModal;
-window.submitEditUser = submitEditUser;
 window.logout = logout;
 window.suspendUser = suspendUser;
 window.activateUser = activateUser;
@@ -1328,6 +887,5 @@ window.showSendNotificationModal = showSendNotificationModal;
 window.deleteNotification = deleteNotification;
 window.testModal = testModal;
 window.closeTestModal = closeTestModal;
-window.createModalDynamically = createModalDynamically;
 window.resetAllRows = resetAllRows;
 window.forceShowAllRows = forceShowAllRows;

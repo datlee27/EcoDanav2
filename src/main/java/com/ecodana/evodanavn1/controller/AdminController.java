@@ -1,8 +1,10 @@
 package com.ecodana.evodanavn1.controller;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,9 +18,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.Role;
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.repository.RoleRepository;
 import com.ecodana.evodanavn1.service.AnalyticsService;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.RoleService;
@@ -50,9 +54,12 @@ public class AdminController {
     private RoleService roleService;
     
     @Autowired
+    private RoleRepository roleRepository;
+    
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @GetMapping("/admin")
+    @GetMapping({"/admin", "/admin/dashboard"})
     public String adminDashboard(@RequestParam(required = false) String tab, HttpSession session, Model model, HttpServletResponse response) {
         System.out.println("Admin dashboard accessed");
         
@@ -67,6 +74,8 @@ public class AdminController {
                 System.out.println("Admin user not found, redirecting to login");
                 return "redirect:/login";
             }
+            // Set user in session for future requests
+            session.setAttribute("currentUser", user);
         }
         
         System.out.println("User found: " + user.getEmail());
@@ -85,6 +94,9 @@ public class AdminController {
             System.out.println("User is not admin, redirecting to login");
             return "redirect:/login";
         }
+        
+        // Set current user in model for template
+        model.addAttribute("currentUser", userWithRole);
         
         System.out.println("User is admin, loading dashboard data");
         
@@ -276,22 +288,231 @@ public class AdminController {
         }
     }
     
-    @GetMapping("/admin/api/users")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getUsers() {
-        try {
-            List<?> allUsers = userService.getAllUsersWithRole();
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("users", allUsers);
-            response.put("totalUsers", allUsers.size());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("error", e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
+    // API endpoint removed - using server-side rendering
+
+    // Add User Form Submission (Server-side)
+    @PostMapping("/admin/users/add")
+    public String addUser(@RequestParam Map<String, String> params, 
+                         HttpSession session, 
+                         RedirectAttributes redirectAttributes) {
+        System.out.println("Add user form submitted");
+        User currentUser = (User) session.getAttribute("currentUser");
+        
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "No user in session");
+            return "redirect:/admin/dashboard?tab=users";
         }
+        
+        // Check if user has admin role
+        String roleName = currentUser.getRoleName();
+        if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
+            redirectAttributes.addFlashAttribute("error", "Admin role required");
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        try {
+            // Validate required fields
+            if (params.get("firstName") == null || params.get("firstName").trim().isEmpty() ||
+                params.get("lastName") == null || params.get("lastName").trim().isEmpty() ||
+                params.get("username") == null || params.get("username").trim().isEmpty() ||
+                params.get("email") == null || params.get("email").trim().isEmpty() ||
+                params.get("password") == null || params.get("password").trim().isEmpty() ||
+                params.get("role") == null || params.get("role").trim().isEmpty()) {
+                
+                redirectAttributes.addFlashAttribute("error", "All required fields must be filled");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            // Check if username already exists
+            if (userService.existsByUsername(params.get("username"))) {
+                redirectAttributes.addFlashAttribute("error", "Username already exists");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            // Check if email already exists
+            if (userService.existsByEmail(params.get("email"))) {
+                redirectAttributes.addFlashAttribute("error", "Email already exists");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            // Create new user
+            User newUser = new User();
+            newUser.setId(java.util.UUID.randomUUID().toString()); // Generate UUID for ID
+            newUser.setFirstName(params.get("firstName"));
+            newUser.setLastName(params.get("lastName"));
+            newUser.setUsername(params.get("username"));
+            newUser.setEmail(params.get("email"));
+            newUser.setPhoneNumber(params.get("phoneNumber"));
+            newUser.setPassword(passwordEncoder.encode(params.get("password")));
+            newUser.setStatus(params.get("status"));
+            newUser.setCreatedDate(LocalDateTime.now());
+            
+            // Set normalized fields
+            newUser.setNormalizedUserName(params.get("username").toUpperCase());
+            newUser.setNormalizedEmail(params.get("email").toUpperCase());
+            newUser.setEmailVerifed(false);
+            newUser.setSecurityStamp(java.util.UUID.randomUUID().toString());
+            newUser.setConcurrencyStamp(java.util.UUID.randomUUID().toString());
+            
+            // Set role
+            Optional<Role> roleOpt = roleRepository.findByRoleName(params.get("role"));
+            if (roleOpt.isPresent()) {
+                newUser.setRoleId(roleOpt.get().getRoleId());
+                newUser.setRole(roleOpt.get());
+            } else {
+                // Default to Customer role if role not found
+                Optional<Role> customerRole = roleRepository.findByRoleName("Customer");
+                if (customerRole.isPresent()) {
+                    newUser.setRoleId(customerRole.get().getRoleId());
+                    newUser.setRole(customerRole.get());
+                }
+            }
+            
+            // Save user
+            userService.save(newUser);
+            
+            redirectAttributes.addFlashAttribute("success", "User added successfully!");
+            System.out.println("User added successfully: " + newUser.getUsername());
+            
+        } catch (Exception e) {
+            logger.error("Error adding user: " + e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error adding user: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/dashboard?tab=users";
+    }
+
+    // Edit User Form
+    @GetMapping("/admin/users/edit/{id}")
+    public String editUserForm(@PathVariable String id, Model model, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        
+        if (currentUser == null) {
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        // Check if user has admin role
+        String roleName = currentUser.getRoleName();
+        if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        try {
+            User user = userService.findById(id);
+            if (user != null) {
+                model.addAttribute("editUser", user);
+                model.addAttribute("tab", "users");
+                return "admin/edit-user";
+            } else {
+                return "redirect:/admin/dashboard?tab=users";
+            }
+        } catch (Exception e) {
+            logger.error("Error loading user for edit: " + e.getMessage(), e);
+            return "redirect:/admin/dashboard?tab=users";
+        }
+    }
+
+    // Update User
+    @PostMapping("/admin/users/update")
+    public String updateUser(@RequestParam Map<String, String> params, 
+                            HttpSession session, 
+                            RedirectAttributes redirectAttributes) {
+        System.out.println("Update user form submitted");
+        User currentUser = (User) session.getAttribute("currentUser");
+        
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "No user in session");
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        // Check if user has admin role
+        String roleName = currentUser.getRoleName();
+        if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
+            redirectAttributes.addFlashAttribute("error", "Admin role required");
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        try {
+            String userId = params.get("userId");
+            User user = userService.findById(userId);
+            
+            if (user == null) {
+                redirectAttributes.addFlashAttribute("error", "User not found");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            // Update user fields
+            user.setFirstName(params.get("firstName"));
+            user.setLastName(params.get("lastName"));
+            user.setUsername(params.get("username"));
+            user.setEmail(params.get("email"));
+            user.setPhoneNumber(params.get("phoneNumber"));
+            user.setStatus(params.get("status"));
+            
+            // Update password if provided
+            if (params.get("password") != null && !params.get("password").trim().isEmpty()) {
+                user.setPassword(passwordEncoder.encode(params.get("password")));
+            }
+            
+            // Update role
+            Optional<Role> roleOpt = roleRepository.findByRoleName(params.get("role"));
+            if (roleOpt.isPresent()) {
+                user.setRoleId(roleOpt.get().getRoleId());
+                user.setRole(roleOpt.get());
+            }
+            
+            // Save user
+            userService.save(user);
+            
+            redirectAttributes.addFlashAttribute("success", "User updated successfully!");
+            System.out.println("User updated successfully: " + user.getUsername());
+            
+        } catch (NumberFormatException e) {
+            logger.error("Invalid user ID format: " + e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Invalid user ID format");
+        } catch (Exception e) {
+            logger.error("Error updating user: " + e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error updating user: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/dashboard?tab=users";
+    }
+
+    // Delete User
+    @GetMapping("/admin/users/delete/{id}")
+    public String deleteUser(@PathVariable String id, 
+                           HttpSession session, 
+                           RedirectAttributes redirectAttributes) {
+        System.out.println("Delete user requested for ID: " + id);
+        User currentUser = (User) session.getAttribute("currentUser");
+        
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "No user in session");
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        // Check if user has admin role
+        String roleName = currentUser.getRoleName();
+        if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
+            redirectAttributes.addFlashAttribute("error", "Admin role required");
+            return "redirect:/admin/dashboard?tab=users";
+        }
+        
+        try {
+            User user = userService.findById(id);
+            if (user != null) {
+                userService.deleteById(id);
+                redirectAttributes.addFlashAttribute("success", "User deleted successfully!");
+                System.out.println("User deleted successfully: " + user.getUsername());
+            } else {
+                redirectAttributes.addFlashAttribute("error", "User not found");
+            }
+        } catch (Exception e) {
+            logger.error("Error deleting user: " + e.getMessage(), e);
+            redirectAttributes.addFlashAttribute("error", "Error deleting user: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/dashboard?tab=users";
     }
     
     @GetMapping("/test/users")
@@ -727,8 +948,10 @@ public class AdminController {
         
         // Check if user has admin role
         String roleName = currentUser.getRoleName();
+        System.out.println("Current user role: " + roleName);
+        System.out.println("Current user: " + currentUser.getEmail());
         if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Admin role required"));
+            return ResponseEntity.status(403).body(Map.of("error", "Admin role required. Current role: " + roleName));
         }
         
         try {
