@@ -11,28 +11,14 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/css/admin-dashboard.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/admin-dashboard.js"></script>
-    <script src="/js/user-management.js"></script>
+    <script th:src="@{/js/admin-dashboard.js}"></script>
     <style>
         body { font-family: 'Poppins', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .glass-effect { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.18); }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
-        .stat-card-1 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .stat-card-2 { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        .stat-card-3 { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        .stat-card-4 { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
-        /* Modal styles */
-        .modal-hidden { display: none !important; }
-        .modal-visible { display: flex !important; }
     </style>
 </head>
 <body class="bg-gray-100">
-
     <!-- Main Layout Container -->
     <div class="flex h-screen bg-gray-100">
         <!-- Sidebar -->
@@ -46,85 +32,55 @@
                 <button id="sidebar-close" class="text-white lg:hidden">
                     <i class="fas fa-times text-xl"></i>
                 </button>
-                    </div>
+            </div>
             
             <!-- Sidebar Navigation -->
             <nav class="mt-6 px-3">
                 <div class="space-y-1">
-                    <!-- Dashboard Overview -->
                     <button onclick="switchTab('overview')" data-tab="overview" class="sidebar-item active w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-chart-pie mr-3 text-lg"></i>
                         <span>Dashboard</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- User Management -->
-                    <button onclick="switchTab('users')" data-tab="users" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group" th:class="${tab == 'users' ? 'sidebar-item active w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group' : 'sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group'}">
+                    <button onclick="switchTab('users')" data-tab="users" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-users mr-3 text-lg"></i>
                         <span>User Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Vehicle Management -->
                     <button onclick="switchTab('vehicles')" data-tab="vehicles" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-car mr-3 text-lg"></i>
                         <span>Vehicle Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Booking Management -->
                     <button onclick="switchTab('bookings')" data-tab="bookings" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-calendar-check mr-3 text-lg"></i>
                         <span>Booking Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Contract Management -->
                     <button onclick="switchTab('contracts')" data-tab="contracts" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-file-contract mr-3 text-lg"></i>
                         <span>Contract Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Payment Management -->
                     <button onclick="switchTab('payments')" data-tab="payments" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-credit-card mr-3 text-lg"></i>
                         <span>Payment Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Discount Management -->
                     <button onclick="switchTab('discounts')" data-tab="discounts" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-tags mr-3 text-lg"></i>
                         <span>Discount Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Insurance Management -->
                     <button onclick="switchTab('insurance')" data-tab="insurance" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-shield-alt mr-3 text-lg"></i>
                         <span>Insurance Management</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Notifications -->
                     <button onclick="switchTab('notifications')" data-tab="notifications" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-bell mr-3 text-lg"></i>
                         <span>Notifications</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
-                    
-                    <!-- Reports & Analytics -->
                     <button onclick="switchTab('reports')" data-tab="reports" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
                         <i class="fas fa-chart-bar mr-3 text-lg"></i>
                         <span>Reports & Analytics</span>
-                        <span class="sidebar-item-indicator"></span>
                     </button>
                 </div>
                 
                 <!-- Sidebar Footer -->
                 <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-                    <!-- User Info -->
                     <div class="flex items-center px-3 py-2 mb-3">
                         <div class="flex-shrink-0">
                             <i class="fas fa-user-circle text-2xl text-gray-400"></i>
@@ -134,16 +90,11 @@
                             <p class="text-xs text-gray-500">Administrator</p>
                         </div>
                     </div>
-                    
-                    <!-- Action Buttons -->
                     <div class="space-y-2">
-                        <!-- Home Button -->
                         <a href="/" class="sidebar-footer-btn w-full flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition-all duration-200 group">
                             <i class="fas fa-home mr-3 text-lg"></i>
                             <span>Trang chủ</span>
                         </a>
-                        
-                        <!-- Logout Button -->
                         <button onclick="logout()" class="sidebar-footer-btn w-full flex items-center px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-all duration-200 group">
                             <i class="fas fa-sign-out-alt mr-3 text-lg"></i>
                             <span>Đăng xuất</span>
@@ -166,593 +117,443 @@
 
             <!-- Page Content -->
             <div class="flex-1 overflow-y-auto">
-    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-users text-white text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
-                                <dd class="text-lg font-medium text-gray-900" data-stat="users" th:text="${analytics?.totalUsers ?: 0}">0</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-car text-white text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Vehicles</dt>
-                                <dd class="text-lg font-medium text-gray-900" data-stat="vehicles" th:text="${analytics?.totalVehicles ?: 0}">0</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-calendar-check text-white text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Bookings</dt>
-                                <dd class="text-lg font-medium text-gray-900" data-stat="bookings" th:text="${analytics?.totalBookings ?: 0}">0</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
-                <div class="p-5">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                                <i class="fas fa-dollar-sign text-white text-sm"></i>
-                            </div>
-                        </div>
-                        <div class="ml-5 w-0 flex-1">
-                            <dl>
-                                <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
-                                <dd class="text-lg font-medium text-gray-900" data-stat="revenue" th:text="${analytics?.totalRevenue ?: 0}">0 VND</dd>
-                            </dl>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Tab Content -->
-        <!-- Overview Tab -->
-        <div id="overview" class="tab-content" th:class="${tab == 'overview' or tab == null ? 'tab-content active' : 'tab-content'}">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Revenue Chart -->
-                <div class="bg-white shadow rounded-lg p-4">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Revenue Overview</h3>
-                    <div class="relative" style="height: 250px;">
-                        <canvas id="revenueChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Recent Activity -->
-                <div class="bg-white shadow rounded-lg p-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
-                    <div class="space-y-4">
-                        <div th:each="booking : ${recentBookings}" th:if="${recentBookings != null and !recentBookings.empty}" class="flex items-center space-x-3">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-calendar text-blue-600 text-xs"></i>
+                <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                    <!-- Statistics Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-users text-white text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                                            <dd class="text-lg font-medium text-gray-900" data-stat="users" th:text="${totalUsers ?: 0}">0</dd>
+                                        </dl>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <p class="text-sm font-medium text-gray-900" th:text="${booking.bookingCode}">-</p>
-                                <p class="text-sm text-gray-500" th:text="${booking.customerName}">-</p>
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-car text-white text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Vehicles</dt>
+                                            <dd class="text-lg font-medium text-gray-900" data-stat="vehicles" th:text="${analytics?.totalVehicles ?: 0}">0</dd>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex-shrink-0">
-                                    <span th:if="${booking.status == 'Confirmed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${booking.status}">-</span>
-                                    <span th:if="${booking.status == 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${booking.status}">-</span>
-                                    <span th:if="${booking.status != 'Confirmed' and booking.status != 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${booking.status}">-</span>
+                        </div>
+                        <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-calendar-check text-white text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Bookings</dt>
+                                            <dd class="text-lg font-medium text-gray-900" data-stat="bookings" th:text="${analytics?.totalBookings ?: 0}">0</dd>
+                                        </dl>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div th:if="${recentBookings == null or recentBookings.empty}" class="text-center text-gray-500 py-4">
-                            No recent activity
+                        <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
+                            <div class="p-5">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-dollar-sign text-white text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-5 w-0 flex-1">
+                                        <dl>
+                                            <dt class="text-sm font-medium text-gray-500 truncate">Total Revenue</dt>
+                                            <dd class="text-lg font-medium text-gray-900" data-stat="revenue" th:text="${analytics?.totalRevenue ?: 0}">0 VND</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Users Tab -->
-        <div id="users" class="tab-content" th:class="${tab == 'users' ? 'tab-content active' : 'tab-content'}">
-            <!-- User Management Header -->
-            <div class="bg-white shadow rounded-lg mb-6">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">User Management</h3>
-                        <div class="flex space-x-2">
-                            <input type="text" id="userSearchInput" placeholder="Search users..." 
-                                   class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="showAddUserModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors">
-                                <i class="fas fa-plus mr-1"></i>Add User
-                            </button>
+                    <!-- Overview Tab -->
+                    <div id="overview" class="tab-content" th:class="${tab == 'overview' or tab == null ? 'tab-content active' : 'tab-content'}">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="bg-white shadow rounded-lg p-4">
+                                <h3 class="text-lg font-medium text-gray-900 mb-3">Revenue Overview</h3>
+                                <div class="relative" style="height: 250px;">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="bg-white shadow rounded-lg p-6">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
+                                <div class="space-y-4">
+                                    <div th:each="booking : ${recentBookings}" th:if="${recentBookings != null and !recentBookings.empty}" class="flex items-center space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <i class="fas fa-calendar text-blue-600 text-xs"></i>
+                                            </div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-gray-900" th:text="${booking.bookingCode}">-</p>
+                                            <p class="text-sm text-gray-500" th:text="${booking.customerName}">-</p>
+                                        </div>
+                                        <div class="flex-shrink-0">
+                                            <span th:if="${booking.status == 'Confirmed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${booking.status}">-</span>
+                                            <span th:if="${booking.status == 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${booking.status}">-</span>
+                                            <span th:if="${booking.status != 'Confirmed' and booking.status != 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${booking.status}">-</span>
+                                        </div>
+                                    </div>
+                                    <div th:if="${recentBookings == null or recentBookings.empty}" class="text-center text-gray-500 py-4">
+                                        No recent activity
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Users Table -->
-            <div class="bg-white shadow rounded-lg">
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Info</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200" id="usersTableBody">
-                            <!-- Users will be loaded here via JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                    <!-- User Management Tab -->
+                    <div id="users" class="tab-content" th:class="${tab == 'users' ? 'tab-content active' : 'tab-content'}">
+                        <!-- Success/Error Messages -->
+                        <div th:if="${success}" class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span th:text="${success}">Success message</span>
+                        </div>
+                        
+                        <div th:if="${error}" class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            <span th:text="${error}">Error message</span>
+                        </div>
 
-        <!-- Vehicles Tab -->
-        <div id="vehicles" class="tab-content" th:class="${tab == 'vehicles' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Vehicle Management</h3>
-                        <div class="flex space-x-2">
-                            <input type="text" placeholder="Search vehicles..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                                <i class="fas fa-plus mr-1"></i>Add Vehicle
-                            </button>
+                        <!-- Add User Form (Hidden by default) -->
+                        <div id="addUserForm" class="bg-white shadow rounded-lg mb-6" style="display: none;">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Thêm User Mới</h3>
+                                    <button type="button" onclick="hideAddUserForm()" class="text-gray-400 hover:text-gray-600">
+                                        <i class="fas fa-times text-xl"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <form th:action="@{/admin/users/add}" method="post" class="p-6">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div>
+                                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Họ</label>
+                                        <input type="text" id="firstName" name="firstName" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Tên</label>
+                                        <input type="text" id="lastName" name="lastName" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
+                                        <input type="text" id="username" name="username" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                        <input type="email" id="email" name="email" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                                        <input type="tel" id="phoneNumber" name="phoneNumber" required
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                                        <input type="password" id="password" name="password" required minlength="6"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                    <div>
+                                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                                        <select id="role" name="role" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="">Chọn vai trò</option>
+                                            <option value="Customer">Customer</option>
+                                            <option value="Staff">Staff</option>
+                                            <option value="Owner">Owner</option>
+                                            <option value="Admin">Admin</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
+                                        <select id="status" name="status" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option value="Active">Active</option>
+                                            <option value="Pending">Pending</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                            <i class="fas fa-plus mr-1"></i>Thêm User
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Users Table -->
+                        <div class="bg-white shadow rounded-lg">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Danh sách Users</h3>
+                                    <button onclick="showAddUserForm()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                                        <i class="fas fa-plus mr-1"></i>Thêm User
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User Info</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr th:each="user, iterStat : ${users}" th:if="${users != null and !users.empty}">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${iterStat.index + 1}">1</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <div class="flex items-center">
+                                                    <div class="flex-shrink-0 h-10 w-10">
+                                                        <i class="fas fa-user-circle text-2xl text-gray-400"></i>
+                                                    </div>
+                                                    <div class="ml-4">
+                                                        <div class="text-sm font-medium text-gray-900" th:text="${user.username}">username</div>
+                                                        <div class="text-sm text-gray-500" th:text="${user.firstName + ' ' + user.lastName}">Full Name</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${user.email}">email</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${user.phoneNumber}">phone</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${user.roleName}">role</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                                      th:class="${user.status == 'Active' ? 'bg-green-100 text-green-800' : 
+                                                               user.status == 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                                               'bg-red-100 text-red-800'}"
+                                                      th:text="${user.status}">status</span>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" 
+                                                th:text="${user.createdDate != null ? #temporals.format(user.createdDate, 'dd/MM/yyyy') : 'N/A'}">date</td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                <a th:href="@{/admin/users/edit/{id}(id=${user.id})}" 
+                                                   class="text-indigo-600 hover:text-indigo-900 mr-3">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <a th:href="@{/admin/users/delete/{id}(id=${user.id})}" 
+                                                   class="text-red-600 hover:text-red-900"
+                                                   onclick="return confirm('Bạn có chắc chắn muốn xóa user này?')">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${users == null or users.empty}">
+                                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                                                <div class="text-center">
+                                                    <i class="fas fa-users text-4xl text-gray-300 mb-2"></i>
+                                                    <p class="text-gray-500">No users found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and !vehicles.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
-                                    <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.brandId}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.vehicleType}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.seats}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${vehicle.status == 'Available'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${vehicle.status}">-</span>
-                                    <span th:if="${vehicle.status == 'InUse'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${vehicle.status}">-</span>
-                                    <span th:if="${vehicle.status != 'Available' and vehicle.status != 'InUse'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${vehicle.status}">-</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.pricePerDay}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                                    <button class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">Maintenance</button>
-                                    <button class="text-red-600 hover:text-red-900" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Unavailable">Remove</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${vehicles == null or vehicles.empty}">
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No vehicles found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bookings Tab -->
-        <div id="bookings" class="tab-content" th:class="${tab == 'bookings' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Booking Management</h3>
-                        <div class="flex space-x-2">
-                            <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>All Status</option>
-                                <option>Pending</option>
-                                <option>Confirmed</option>
-                                <option>Completed</option>
-                                <option>Cancelled</option>
-                            </select>
-                            <input type="text" placeholder="Search bookings..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    
+                    <!-- Vehicle Management Tab -->
+                    <div id="vehicles" class="tab-content" th:class="${tab == 'vehicles' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-vehicles :: vehicles-tab"></div>
+                    </div>
+                    
+                    <!-- Booking Management Tab -->
+                    <div id="bookings" class="tab-content" th:class="${tab == 'bookings' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-bookings :: bookings-tab"></div>
+                    </div>
+                    
+                    <!-- Contract Management Tab -->
+                    <div id="contracts" class="tab-content" th:class="${tab == 'contracts' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-contracts :: contracts-tab"></div>
+                    </div>
+                    
+                    <!-- Payment Management Tab -->
+                    <div id="payments" class="tab-content" th:class="${tab == 'payments' ? 'tab-content active' : 'tab-content'}">
+                        <div class="bg-white shadow rounded-lg">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Payment Management</h3>
+                                    <div class="flex space-x-2">
+                                        <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            <option>All Status</option>
+                                            <option>Pending</option>
+                                            <option>Completed</option>
+                                            <option>Failed</option>
+                                            <option>Refunded</option>
+                                        </select>
+                                        <input type="text" placeholder="Search payments..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">No payments found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="booking : ${bookings}" th:if="${bookings != null and !bookings.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${booking.bookingCode}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${booking.customerName}">-</div>
-                                    <div class="text-sm text-gray-500" th:text="${booking.customerEmail}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${booking.vehicleId}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <div th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">-</div>
-                                    <div class="text-xs text-gray-500" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${booking.status == 'Confirmed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${booking.status}">-</span>
-                                    <span th:if="${booking.status == 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${booking.status}">-</span>
-                                    <span th:if="${booking.status == 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${booking.status}">-</span>
-                                    <span th:if="${booking.status != 'Confirmed' and booking.status != 'Pending' and booking.status != 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${booking.status}">-</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${booking.totalAmount}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                                    <button th:if="${booking.status == 'Pending'}" class="text-green-600 hover:text-green-900 mr-3" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Confirmed">Confirm</button>
-                                    <button th:if="${booking.status == 'Confirmed'}" class="text-blue-600 hover:text-blue-900 mr-3" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Completed">Complete</button>
-                                    <button th:if="${booking.status != 'Completed' and booking.status != 'Cancelled'}" class="text-red-600 hover:text-red-900" data-action="booking-status" th:data-booking-id="${booking.bookingId}" data-status="Cancelled">Cancel</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${bookings == null or bookings.empty}">
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No bookings found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Contracts Tab -->
-        <div id="contracts" class="tab-content" th:class="${tab == 'contracts' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Contract Management</h3>
-                        <div class="flex space-x-2">
-                            <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>All Status</option>
-                                <option>Created</option>
-                                <option>Signed</option>
-                                <option>Completed</option>
-                                <option>Cancelled</option>
-                            </select>
-                            <input type="text" placeholder="Search contracts..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    
+                    <!-- Discount Management Tab -->
+                    <div id="discounts" class="tab-content" th:class="${tab == 'discounts' ? 'tab-content active' : 'tab-content'}">
+                        <div class="bg-white shadow rounded-lg">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Discount Management</h3>
+                                    <div class="flex space-x-2">
+                                        <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700" onclick="showAddDiscountModal()">
+                                            <i class="fas fa-plus mr-1"></i>Add Discount
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voucher Code</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="8" class="px-6 py-4 text-center text-gray-500">No discounts found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Signed Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="contract : ${contracts}" th:if="${contracts != null and !contracts.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${contract.contractCode}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${contract.userId}">-</div>
-                                    <div class="text-sm text-gray-500" th:text="${contract.bookingId}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${contract.bookingId}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${contract.status == 'Signed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${contract.status}">-</span>
-                                    <span th:if="${contract.status == 'Created'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${contract.status}">-</span>
-                                    <span th:if="${contract.status == 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${contract.status}">-</span>
-                                    <span th:if="${contract.status != 'Signed' and contract.status != 'Created' and contract.status != 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${contract.status}">-</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#temporals.format(contract.createdDate, 'dd/MM/yyyy')}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${contract.signedDate != null ? #temporals.format(contract.signedDate, 'dd/MM/yyyy') : 'Not signed'}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                                    <button th:if="${contract.status == 'Created'}" class="text-green-600 hover:text-green-900 mr-3" data-action="contract-status" th:data-contract-id="${contract.contractId}" data-status="Signed">Sign</button>
-                                    <button th:if="${contract.status == 'Signed'}" class="text-blue-600 hover:text-blue-900 mr-3" data-action="contract-status" th:data-contract-id="${contract.contractId}" data-status="Completed">Complete</button>
-                                    <button th:if="${contract.status != 'Completed' and contract.status != 'Cancelled'}" class="text-red-600 hover:text-red-900" data-action="contract-status" th:data-contract-id="${contract.contractId}" data-status="Cancelled">Cancel</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${contracts == null or contracts.empty}">
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No contracts found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Payments Tab -->
-        <div id="payments" class="tab-content" th:class="${tab == 'payments' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Payment Management</h3>
-                        <div class="flex space-x-2">
-                            <select class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                <option>All Status</option>
-                                <option>Pending</option>
-                                <option>Completed</option>
-                                <option>Failed</option>
-                                <option>Refunded</option>
-                            </select>
-                            <input type="text" placeholder="Search payments..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    
+                    <!-- Insurance Management Tab -->
+                    <div id="insurance" class="tab-content" th:class="${tab == 'insurance' ? 'tab-content active' : 'tab-content'}">
+                        <div class="bg-white shadow rounded-lg">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Insurance Management</h3>
+                                    <div class="flex space-x-2">
+                                        <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700" onclick="showAddInsuranceModal()">
+                                            <i class="fas fa-plus mr-1"></i>Add Insurance
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Name</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Rate/Day</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coverage Amount</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle Seats</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">No insurance policies found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment ID</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="payment : ${payments}" th:if="${payments != null and !payments.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${payment.paymentId}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${payment.bookingId}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} VND">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${payment.paymentMethod}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${payment.paymentType}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${payment.paymentStatus == 'Completed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${payment.paymentStatus}">-</span>
-                                    <span th:if="${payment.paymentStatus == 'Pending'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${payment.paymentStatus}">-</span>
-                                    <span th:if="${payment.paymentStatus == 'Failed'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${payment.paymentStatus}">-</span>
-                                    <span th:if="${payment.paymentStatus == 'Refunded'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${payment.paymentStatus}">-</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${payment.paymentDate != null ? #temporals.format(payment.paymentDate, 'dd/MM/yyyy HH:mm') : 'Not paid'}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                                    <button th:if="${payment.paymentStatus == 'Completed'}" class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="refund" th:data-payment-id="${payment.paymentId}">Refund</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${payments == null or payments.empty}">
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">No payments found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Discounts Tab -->
-        <div id="discounts" class="tab-content" th:class="${tab == 'discounts' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Discount Management</h3>
-                        <div class="flex space-x-2">
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700" onclick="showAddDiscountModal()">
-                                <i class="fas fa-plus mr-1"></i>Add Discount
-                            </button>
+                    
+                    <!-- Notification Management Tab -->
+                    <div id="notifications" class="tab-content" th:class="${tab == 'notifications' ? 'tab-content active' : 'tab-content'}">
+                        <div class="bg-white shadow rounded-lg">
+                            <div class="px-6 py-4 border-b border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-lg font-medium text-gray-900">Notification Management</h3>
+                                    <div class="flex space-x-2">
+                                        <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700" onclick="showSendNotificationModal()">
+                                            <i class="fas fa-plus mr-1"></i>Send Notification
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <tr>
+                                            <td colspan="5" class="px-6 py-4 text-center text-gray-500">No notifications found</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voucher Code</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="discount : ${discounts}" th:if="${discounts != null and !discounts.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${discount.discountName}">-</div>
-                                    <div class="text-sm text-gray-500" th:text="${discount.description}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${discount.discountType}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${discount.discountType == 'Percentage' ? discount.discountValue + '%' : #numbers.formatDecimal(discount.discountValue, 0, 'COMMA', 0, 'POINT') + ' VND'}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${discount.voucherCode}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    <div th:text="${#temporals.format(discount.startDate, 'dd/MM/yyyy')}">-</div>
-                                    <div th:text="${#temporals.format(discount.endDate, 'dd/MM/yyyy')}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${discount.usedCount + '/' + (discount.usageLimit != null ? discount.usageLimit : '∞')}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${discount.isActive}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                    <span th:if="${!discount.isActive}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3" data-action="edit-discount" th:data-discount-id="${discount.discountId}">Edit</button>
-                                    <button class="text-red-600 hover:text-red-900" data-action="delete-discount" th:data-discount-id="${discount.discountId}">Delete</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${discounts == null or discounts.empty}">
-                                <td colspan="8" class="px-6 py-4 text-center text-gray-500">No discounts found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Insurance Tab -->
-        <div id="insurance" class="tab-content" th:class="${tab == 'insurance' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Insurance Management</h3>
-                        <div class="flex space-x-2">
-                            <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700" onclick="showAddInsuranceModal()">
-                                <i class="fas fa-plus mr-1"></i>Add Insurance
-                            </button>
-                        </div>
+                    
+                    <!-- Reports Tab -->
+                    <div id="reports" class="tab-content" th:class="${tab == 'reports' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-reports :: reports-tab"></div>
                     </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Name</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Base Rate/Day</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Coverage Amount</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle Seats</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="insurance : ${insuranceList}" th:if="${insuranceList != null and !insuranceList.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${insurance.insuranceName}">-</div>
-                                    <div class="text-sm text-gray-500" th:text="${insurance.description}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${insurance.insuranceType}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatDecimal(insurance.baseRatePerDay, 0, 'COMMA', 0, 'POINT')} VND">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatDecimal(insurance.coverageAmount, 0, 'COMMA', 0, 'POINT')} VND">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${insurance.applicableVehicleSeats}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${insurance.isActive}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Active</span>
-                                    <span th:if="${!insurance.isActive}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3" data-action="edit-insurance" th:data-insurance-id="${insurance.insuranceId}">Edit</button>
-                                    <button class="text-red-600 hover:text-red-900" data-action="delete-insurance" th:data-insurance-id="${insurance.insuranceId}">Delete</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${insuranceList == null or insuranceList.empty}">
-                                <td colspan="7" class="px-6 py-4 text-center text-gray-500">No insurance policies found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Notifications Tab -->
-        <div id="notifications" class="tab-content" th:class="${tab == 'notifications' ? 'tab-content active' : 'tab-content'}">
-            <div class="bg-white shadow rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-medium text-gray-900">Notification Management</h3>
-                        <div class="flex space-x-2">
-                            <button class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700" onclick="showSendNotificationModal()">
-                                <i class="fas fa-plus mr-1"></i>Send Notification
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr th:each="notification : ${notifications}" th:if="${notifications != null and !notifications.empty}">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900" th:text="${notification.userId}">-</div>
-                                    <div class="text-sm text-gray-500">User ID</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-900" th:text="${notification.message}">-</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span th:if="${notification.isRead}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Read</span>
-                                    <span th:if="${!notification.isRead}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Unread</span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#temporals.format(notification.createdDate, 'dd/MM/yyyy HH:mm')}">-</td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                    <button class="text-indigo-600 hover:text-indigo-900 mr-3">View</button>
-                                    <button class="text-red-600 hover:text-red-900" data-action="delete-notification" th:data-notification-id="${notification.notificationId}">Delete</button>
-                                </td>
-                            </tr>
-                            <tr th:if="${notifications == null or notifications.empty}">
-                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No notifications found</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Reports Tab -->
-        <div id="reports" class="tab-content" th:class="${tab == 'reports' ? 'tab-content active' : 'tab-content'}">
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="bg-white shadow rounded-lg p-4">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Booking Trends</h3>
-                    <div class="relative" style="height: 250px;">
-                        <canvas id="bookingTrendsChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-white shadow rounded-lg p-4">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">Vehicle Status Distribution</h3>
-                    <div class="relative" style="height: 250px;">
-                        <canvas id="vehicleStatusChart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
                 </div>
             </div>
         </div>
@@ -761,231 +562,23 @@
     <!-- Overlay for mobile sidebar -->
     <div id="sidebar-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden"></div>
 
-    <!-- Test Modal (Simple) -->
-    <div id="testModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Test Modal</h3>
-                <p class="text-gray-600 mb-4">Modal này đang hoạt động!</p>
-                <button onclick="closeTestModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                    Đóng
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Modals removed - using server-side forms -->
 
+    <script>
+        // Function to show add user form
+        function showAddUserForm() {
+            document.getElementById('addUserForm').style.display = 'block';
+            // Scroll to form
+            document.getElementById('addUserForm').scrollIntoView({ behavior: 'smooth' });
+        }
 
-    <!-- Edit User Modal -->
-    <div id="editUserModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-hidden">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Chỉnh sửa User</h3>
-                    <button onclick="closeEditUserModal()" 
-                            class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <!-- Modal Body -->
-                <div class="p-6">
-                    <form id="editUserForm" class="space-y-4">
-                        <input type="hidden" id="editUserId" name="userId">
-                        
-                        <!-- First Name -->
-                        <div>
-                            <label for="editFirstName" class="block text-sm font-medium text-gray-700 mb-1">Họ</label>
-                            <input type="text" id="editFirstName" name="firstName" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Last Name -->
-                        <div>
-                            <label for="editLastName" class="block text-sm font-medium text-gray-700 mb-1">Tên</label>
-                            <input type="text" id="editLastName" name="lastName" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Username -->
-                        <div>
-                            <label for="editUsername" class="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
-                            <input type="text" id="editUsername" name="username" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Email -->
-                        <div>
-                            <label for="editEmail" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <input type="email" id="editEmail" name="email" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Phone Number -->
-                        <div>
-                            <label for="editPhoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                            <input type="tel" id="editPhoneNumber" name="phoneNumber" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Password -->
-                        <div>
-                            <label for="editPassword" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới (để trống nếu không đổi)</label>
-                            <input type="password" id="editPassword" name="password" minlength="6"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Confirm Password -->
-                        <div>
-                            <label for="editConfirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
-                            <input type="password" id="editConfirmPassword" name="confirmPassword" minlength="6"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        
-                        <!-- Role -->
-                        <div>
-                            <label for="editRole" class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-                            <select id="editRole" name="role" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">Chọn vai trò</option>
-                                <option value="Customer">Customer</option>
-                                <option value="Staff">Staff</option>
-                                <option value="Owner">Owner</option>
-                                <option value="Admin">Admin</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Status -->
-                        <div>
-                            <label for="editStatus" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                            <select id="editStatus" name="status" required
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="Active">Active</option>
-                                <option value="Inactive">Inactive</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Modal Footer -->
-                <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
-                    <button onclick="closeEditUserModal()" 
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                        Hủy
-                    </button>
-                    <button onclick="submitEditUser()" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md transition-colors">
-                        <i class="fas fa-save mr-1"></i>
-                        Cập nhật
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Add User Modal - Moved to end of body -->
-    <div id="addUserModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-hidden" style="display: none;">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-900">Thêm User Mới</h3>
-                    <button onclick="closeAddUserModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <!-- Modal Body -->
-                <form id="addUserForm" class="p-6 space-y-4">
-                    <!-- First Name -->
-                    <div>
-                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Họ</label>
-                        <input type="text" id="firstName" name="firstName" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Last Name -->
-                    <div>
-                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Tên</label>
-                        <input type="text" id="lastName" name="lastName" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Username -->
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Tên đăng nhập</label>
-                        <input type="text" id="username" name="username" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="email" name="email" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Phone Number -->
-                    <div>
-                        <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                        <input type="tel" id="phoneNumber" name="phoneNumber" required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Password -->
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-                        <input type="password" id="password" name="password" required minlength="6"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Confirm Password -->
-                    <div>
-                        <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu</label>
-                        <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    
-                    <!-- Role -->
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-                        <select id="role" name="role" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="">Chọn vai trò</option>
-                            <option value="Customer">Customer</option>
-                            <option value="Staff">Staff</option>
-                            <option value="Owner">Owner</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Status -->
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Trạng thái</label>
-                        <select id="status" name="status" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="Active">Active</option>
-                            <option value="Pending">Pending</option>
-                            <option value="Inactive">Inactive</option>
-                        </select>
-                    </div>
-                </form>
-                
-                <!-- Modal Footer -->
-                <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
-                    <button onclick="closeAddUserModal()" 
-                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
-                        Hủy
-                    </button>
-                    <button onclick="submitAddUser()" 
-                            class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors">
-                        <i class="fas fa-plus mr-1"></i>
-                        Thêm User
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+        // Function to hide add user form
+        function hideAddUserForm() {
+            document.getElementById('addUserForm').style.display = 'none';
+            // Reset form
+            document.querySelector('#addUserForm form').reset();
+        }
+    </script>
 
 </body>
 </html>

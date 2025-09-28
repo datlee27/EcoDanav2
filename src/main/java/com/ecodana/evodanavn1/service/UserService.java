@@ -417,4 +417,65 @@ public class UserService {
     public List<User> searchUsers(String keyword) {
         return userRepository.searchUsers(keyword);
     }
+    
+    /**
+     * Find user by ID
+     * @param id the user ID
+     * @return the user or null if not found
+     */
+    public User findById(String id) {
+        return userRepository.findById(id).orElse(null);
+    }
+    
+    /**
+     * Find user by ID (Long version for compatibility)
+     * @param id the user ID
+     * @return the user or null if not found
+     */
+    public User findById(Long id) {
+        return findById(String.valueOf(id));
+    }
+    
+    /**
+     * Save user
+     * @param user the user to save
+     * @return the saved user
+     */
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+    
+    /**
+     * Delete user by ID
+     * @param id the user ID
+     */
+    public void deleteById(String id) {
+        userRepository.deleteById(id);
+    }
+    
+    /**
+     * Delete user by ID (Long version for compatibility)
+     * @param id the user ID
+     */
+    public void deleteById(Long id) {
+        deleteById(String.valueOf(id));
+    }
+    
+    /**
+     * Check if username exists
+     * @param username the username to check
+     * @return true if exists, false otherwise
+     */
+    public boolean existsByUsername(String username) {
+        return userRepository.findByUsername(username).isPresent();
+    }
+    
+    /**
+     * Check if email exists
+     * @param email the email to check
+     * @return true if exists, false otherwise
+     */
+    public boolean existsByEmail(String email) {
+        return userRepository.findByEmail(email).isPresent();
+    }
 }
