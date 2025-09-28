@@ -107,6 +107,15 @@ public class RoleService {
     }
     
     /**
+     * Gets the default role ID for owner
+     * @return the default owner role ID from database
+     */
+    public String getDefaultOwnerRoleId() {
+        Role role = getOwnerRole();
+        return role != null ? role.getRoleId() : null;
+    }
+    
+    /**
      * Get customer role from database
      * @return customer role or null if not found
      */
@@ -128,6 +137,14 @@ public class RoleService {
      */
     public Role getAdminRole() {
         return findByRoleName(ADMIN_ROLE_NAME).orElse(null);
+    }
+    
+    /**
+     * Get owner role from database
+     * @return owner role or null if not found
+     */
+    public Role getOwnerRole() {
+        return findByRoleName("Owner").orElse(null);
     }
     
     /**
