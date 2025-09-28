@@ -2,8 +2,6 @@ package com.ecodana.evodanavn1.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,10 +27,10 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
 
     public SecurityConfig(OAuth2LoginSuccessHandler successHandler,
-                         CustomAuthenticationSuccessHandler customSuccessHandler,
-                         ClientRegistrationRepository clientRegistrationRepository,
-                         UserService userService,
-                         PasswordEncoder passwordEncoder) {
+                          CustomAuthenticationSuccessHandler customSuccessHandler,
+                          ClientRegistrationRepository clientRegistrationRepository,
+                          UserService userService,
+                          PasswordEncoder passwordEncoder) {
         this.successHandler = successHandler;
         this.customSuccessHandler = customSuccessHandler;
         this.clientRegistrationRepository = clientRegistrationRepository;
@@ -51,19 +49,19 @@ public class SecurityConfig {
                 throw new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found: " + username);
             }
             return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .roles(user.getRoleName().toUpperCase())
-                .build();
+                    .username(user.getUsername())
+                    .password(user.getPassword())
+                    .roles(user.getRoleName().toUpperCase())
+                    .build();
         };
     }
 
     @Bean
-    public AuthenticationManager authenticationManager() {
+    public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setPasswordEncoder(passwordEncoder);
         authProvider.setUserDetailsService(userDetailsService());
-        return new ProviderManager(authProvider);
+        authProvider.setPasswordEncoder(passwordEncoder);
+        return authProvider;
     }
 
     @Bean
@@ -74,54 +72,54 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .authenticationManager(authenticationManager())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/test/**", "/admin-simple", "/admin-test").permitAll()
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
-                .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
-                .anyRequest().authenticated()
-            )
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/api/**", "/test/**")
-            )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .loginProcessingUrl("/login")
-                .successHandler(customSuccessHandler)
-                .failureUrl("/login?error=true")
-                .permitAll()
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/login?logout=true")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-                .permitAll()
-            )
-            .oauth2Login(oauth -> oauth
-                .loginPage("/login")
-                .successHandler(successHandler)
-                .authorizationEndpoint(authorization -> authorization
-                    .authorizationRequestResolver(authorizationRequestResolver(clientRegistrationRepository))
+                .authenticationProvider(authenticationProvider())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
+                        .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
+                        .anyRequest().authenticated()
                 )
-            )
-            .sessionManagement(session -> session
-                .maximumSessions(1)
-                .maxSessionsPreventsLogin(false)
-                .sessionRegistry(sessionRegistry())
-            );
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/oauth2/**", "/api/**")
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .successHandler(customSuccessHandler)
+                        .failureUrl("/login?error=true")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID")
+                        .permitAll()
+                )
+                .oauth2Login(oauth -> oauth
+                        .loginPage("/login")
+                        .successHandler(successHandler)
+                        .authorizationEndpoint(authorization -> authorization
+                                .authorizationRequestResolver(authorizationRequestResolver(clientRegistrationRepository))
+                        )
+                )
+                .sessionManagement(session -> session
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
+                        .sessionRegistry(sessionRegistry())
+                );
         return http.build();
     }
 
     private OAuth2AuthorizationRequestResolver authorizationRequestResolver(ClientRegistrationRepository clientRegistrationRepository) {
         DefaultOAuth2AuthorizationRequestResolver authorizationRequestResolver =
-            new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
+                new DefaultOAuth2AuthorizationRequestResolver(clientRegistrationRepository, "/oauth2/authorization");
         authorizationRequestResolver.setAuthorizationRequestCustomizer(
-            customizer -> customizer.additionalParameters(params -> {
-                params.put("access_type", "offline");
-                params.put("prompt", "consent select_account");
-            })
+                customizer -> customizer.additionalParameters(params -> {
+                    params.put("access_type", "offline");
+                    params.put("prompt", "consent select_account");
+                })
         );
         return authorizationRequestResolver;
     }

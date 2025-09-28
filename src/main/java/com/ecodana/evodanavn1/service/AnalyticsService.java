@@ -47,8 +47,7 @@ public class AnalyticsService {
         analytics.putAll(revenueAnalytics);
         
         // User statistics
-        Map<String, Object> userStats = userService.getUserStatistics();
-        analytics.putAll(userStats);
+
         
         // Vehicle statistics
         Map<String, Object> vehicleStats = vehicleService.getVehicleStatistics();
