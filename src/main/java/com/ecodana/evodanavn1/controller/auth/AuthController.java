@@ -10,10 +10,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.service.EmailService;
 import com.ecodana.evodanavn1.service.UserService;
 
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import java.io.UnsupportedEncodingException;
 
 @Controller
 public class AuthController {
@@ -21,31 +24,28 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private EmailService emailService;
+
     @GetMapping("/login")
     public String login() {
         return "auth/login";
     }
 
-
     @GetMapping("/login-success")
     public String loginSuccess(HttpSession session, RedirectAttributes redirectAttributes) {
-        // This method will be called after successful Spring Security authentication
         User currentUser = (User) session.getAttribute("currentUser");
-        
+
         if (currentUser != null) {
-            // Reload user with role information
             User userWithRole = userService.getUserWithRole(currentUser.getEmail());
             if (userWithRole != null) {
                 session.setAttribute("currentUser", userWithRole);
-                
-                // Redirect based on role
                 String roleName = userWithRole.getRoleName();
                 System.out.println("Login success - User role: " + roleName);
-                
                 if ("Admin".equalsIgnoreCase(roleName)) {
                     redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
                     return "redirect:/admin";
-                } else if ("Staff".equalsIgnoreCase(roleName)) {
+                } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
                     redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
                     return "redirect:/owner/dashboard";
                 } else if ("Customer".equalsIgnoreCase(roleName)) {
@@ -57,118 +57,144 @@ public class AuthController {
                 }
             }
         }
-        
-        // Fallback to home page if no user or role found
         redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng trở lại EvoDana.");
         return "redirect:/";
     }
 
     @GetMapping("/register")
     public String register(Model model) {
-        model.addAttribute("user", new User());
+        if (!model.containsAttribute("user")) {
+            model.addAttribute("user", new User());
+        }
         return "auth/register";
     }
 
     @PostMapping("/register")
-    public String doRegister(@Valid User user, BindingResult bindingResult, @RequestParam String confirmPassword, @RequestParam String phoneNumber, Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        // Sanitize input
-        if (user.getEmail() != null) {
-            user.setEmail(user.getEmail().trim().toLowerCase());
+    public String processRegistration(@Valid User user, BindingResult bindingResult,
+                                      @RequestParam String confirmPassword, @RequestParam String phoneNumber,
+                                      Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+
+        // Sanitize and Validate input
+        if (user.getEmail() != null) user.setEmail(user.getEmail().trim().toLowerCase());
+        phoneNumber = phoneNumber.trim();
+
+        if (user.getPassword() != null && !user.getPassword().equals(confirmPassword)) {
+            bindingResult.rejectValue("password", "error.user", "Mật khẩu xác nhận không khớp.");
         }
-        if (phoneNumber != null) {
-            phoneNumber = phoneNumber.trim();
+        if (userService.findByEmail(user.getEmail()) != null) {
+            bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
         }
-        if (confirmPassword != null) {
-            confirmPassword = confirmPassword.trim();
-        }
-        
-        // Check password confirmation
-        if (user.getPassword() != null && confirmPassword != null && !user.getPassword().equals(confirmPassword)) {
-            bindingResult.rejectValue("password", "error.user", "Passwords do not match");
-        }
-        
-        // Check if email already exists
-        if (user.getEmail() != null && userService.findByEmail(user.getEmail()) != null) {
-            bindingResult.rejectValue("email", "error.user", "Email already exists");
-        }
-        
-        // Validate required fields
-        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            bindingResult.rejectValue("email", "error.user", "Email is required");
-        }
-        
-        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
-            bindingResult.rejectValue("phoneNumber", "error.user", "Phone number is required");
-        } else if (!phoneNumber.matches("^[0-9]*$")) {
-            bindingResult.rejectValue("phoneNumber", "error.user", "Phone number must contain only digits");
-        } else if (phoneNumber.length() > 11) {
-            bindingResult.rejectValue("phoneNumber", "error.user", "Phone number must not exceed 11 digits");
-        }
-        
-        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-            bindingResult.rejectValue("password", "error.user", "Password is required");
-        } else if (user.getPassword().length() < 6) {
-            bindingResult.rejectValue("password", "error.user", "Password must be at least 6 characters");
-        }
-        
+        // Thêm các validation khác nếu cần
+
         if (bindingResult.hasErrors()) {
+            model.addAttribute("user", user);
             return "auth/register";
         }
-        
-        // Set phone number from request parameter
-        user.setPhoneNumber(phoneNumber);
-        
-        // Generate username from email
-        String email = user.getEmail();
-        String username = email.split("@")[0] + "_" + System.currentTimeMillis();
-        user.setUsername(username);
-        
+
+        // Send OTP instead of saving user directly
         try {
-            if (userService.register(user)) {
-                // Reload user with role information
-                User savedUser = userService.findByEmailWithRole(user.getEmail());
-                if (savedUser != null) {
-                    session.setAttribute("currentUser", savedUser);
-                    redirectAttributes.addFlashAttribute("success", "Registration successful! Welcome to EvoDana.");
-                    return "redirect:/";
-                } else {
-                    System.err.println("Failed to reload user after registration: " + user.getEmail());
-                    model.addAttribute("error", "Registration completed but failed to load user data. Please try logging in.");
-                    return "auth/register";
-                }
-            } else {
-                System.err.println("Registration failed for user: " + user.getEmail());
-                model.addAttribute("error", "Registration failed. Please try again.");
-                return "auth/register";
-            }
-        } catch (Exception e) {
-            System.err.println("Exception in registration: " + e.getMessage());
-            model.addAttribute("error", "Registration failed due to system error. Please try again.");
+            String otp = generateOtp();
+            emailService.sendOtpEmail(user.getEmail(), otp);
+
+            // Prepare user object to store temporarily
+            user.setPhoneNumber(phoneNumber);
+            String email = user.getEmail();
+            String username = email.split("@")[0] + "_" + System.currentTimeMillis();
+            user.setUsername(username);
+
+            // Store temporary data in session
+            session.setAttribute("tempUser", user);
+            session.setAttribute("otp", otp);
+            session.setAttribute("otpTimestamp", System.currentTimeMillis());
+
+            // Redirect to OTP verification page
+            redirectAttributes.addFlashAttribute("email", user.getEmail());
+            return "redirect:/verify-otp";
+
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            System.err.println("Failed to send OTP email for: " + user.getEmail() + "; error: " + e.getMessage());
+            model.addAttribute("user", user);
+            model.addAttribute("error", "Không thể gửi email OTP. Vui lòng kiểm tra lại địa chỉ email hoặc thử lại sau.");
             return "auth/register";
+        } catch (Exception e) {
+            System.err.println("Exception during registration process: " + e.getMessage());
+            model.addAttribute("user", user);
+            model.addAttribute("error", "Đã xảy ra lỗi hệ thống trong quá trình đăng ký. Vui lòng thử lại.");
+            return "auth/register";
+        }
+    }
+
+    @GetMapping("/verify-otp")
+    public String showVerifyOtpPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        User tempUser = (User) session.getAttribute("tempUser");
+        if (tempUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Phiên của bạn đã hết hạn. Vui lòng bắt đầu lại quá trình đăng ký.");
+            return "redirect:/register";
+        }
+
+        if (!model.containsAttribute("email")) {
+            model.addAttribute("email", tempUser.getEmail());
+        }
+        return "auth/verify-otp";
+    }
+
+    @PostMapping("/verify-otp")
+    public String processVerifyOtp(@RequestParam("otp") String submittedOtp, HttpSession session, RedirectAttributes redirectAttributes, Model model) {
+        User tempUser = (User) session.getAttribute("tempUser");
+        String storedOtp = (String) session.getAttribute("otp");
+        Long otpTimestamp = (Long) session.getAttribute("otpTimestamp");
+
+        if (tempUser == null || storedOtp == null || otpTimestamp == null) {
+            redirectAttributes.addFlashAttribute("error", "Phiên của bạn đã hết hạn. Vui lòng đăng ký lại.");
+            return "redirect:/register";
+        }
+
+        if (System.currentTimeMillis() - otpTimestamp > 5 * 60 * 1000) { // 5 minutes validity
+            redirectAttributes.addFlashAttribute("error", "Mã OTP đã hết hạn. Vui lòng đăng ký lại để nhận mã mới.");
+            clearOtpSession(session);
+            return "redirect:/register";
+        }
+
+        if (submittedOtp.equals(storedOtp)) {
+            try {
+                // OTP is correct, now register the user permanently
+                userService.register(tempUser);
+                clearOtpSession(session);
+                redirectAttributes.addFlashAttribute("success", "Đăng ký tài khoản thành công! Bây giờ bạn có thể đăng nhập.");
+                return "redirect:/login";
+            } catch (Exception e) {
+                System.err.println("Failed to save user after OTP verification: " + e.getMessage());
+                model.addAttribute("error", "Đã xảy ra lỗi khi lưu tài khoản của bạn. Vui lòng thử lại.");
+                model.addAttribute("email", tempUser.getEmail());
+                return "auth/verify-otp";
+            }
+        } else {
+            model.addAttribute("error", "Mã OTP không hợp lệ. Vui lòng thử lại.");
+            model.addAttribute("email", tempUser.getEmail());
+            return "auth/verify-otp";
         }
     }
 
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
-        String username = "User";
+        String username = "Bạn";
         if (session.getAttribute("currentUser") != null) {
             User user = (User) session.getAttribute("currentUser");
-            username = user.getUsername();
+            username = user.getFirstName() != null ? user.getFirstName() : user.getUsername();
         }
-        
-        // Clear all session attributes before invalidating
-        session.removeAttribute("currentUser");
-        session.removeAttribute("user");
-        session.removeAttribute("userId");
-        session.removeAttribute("username");
-        session.removeAttribute("email");
-        session.removeAttribute("SPRING_SECURITY_CONTEXT");
-        session.removeAttribute("SPRING_SECURITY_SAVED_REQUEST");
-        
-        // Invalidate the entire session
+
         session.invalidate();
-        
-        redirectAttributes.addFlashAttribute("success", "Goodbye, " + username + "! You have been logged out successfully.");
+        redirectAttributes.addFlashAttribute("success", "Tạm biệt, " + username + "! Bạn đã đăng xuất thành công.");
         return "redirect:/";
+    }
+
+    private String generateOtp() {
+        return String.format("%06d", new java.util.Random().nextInt(999999));
+    }
+
+    private void clearOtpSession(HttpSession session) {
+        session.removeAttribute("tempUser");
+        session.removeAttribute("otp");
+        session.removeAttribute("otpTimestamp");
     }
 }

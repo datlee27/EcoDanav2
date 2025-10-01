@@ -54,6 +54,8 @@ public class SecurityConfig {
             return org.springframework.security.core.userdetails.User.builder()
                     .username(user.getUsername())
                     .password(user.getPassword())
+                    // Chú ý: Spring Security tự động thêm tiền tố "ROLE_"
+                    // nên ở đây chỉ cần tên vai trò.
                     .roles(user.getRoleName().toUpperCase())
                     .build();
         };
@@ -77,7 +79,9 @@ public class SecurityConfig {
         http
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                        // ===== THAY ĐỔI Ở DÒNG NÀY =====
+                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                        // ===============================
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
