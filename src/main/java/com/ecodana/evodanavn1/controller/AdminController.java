@@ -49,7 +49,7 @@ public class AdminController {
     @Autowired
     private AnalyticsService analyticsService;
     
-    
+
     @Autowired
     private RoleService roleService;
     

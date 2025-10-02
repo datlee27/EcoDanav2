@@ -8,7 +8,7 @@
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
             <div class="text-center mb-8">
                 <div class="text-3xl font-bold text-primary mb-2">
-                    <i class="fas fa-leaf mr-2"></i>EvoDana
+                    <i class="fas fa-leaf mr-2"></i>EcoDana
                 </div>
                 <h2 class="text-2xl font-semibold text-gray-800">Create Account</h2>
             </div>
@@ -17,6 +17,20 @@
             <div th:if="${error}" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" th:text="${error}">Error message</div>
             
             <form th:action="@{/register}" th:object="${user}" method="post" id="registerForm">
+                <!-- First Name -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">First Name *</label>
+                    <input type="text" th:field="*{firstName}" id="firstName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter your first name" required>
+                    <div th:if="${#fields.hasErrors('firstName')}" class="text-red-500 text-sm mt-1" th:errors="*{firstName}">First Name error</div>
+                </div>
+                
+                <!-- Last Name -->
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2">Last Name *</label>
+                    <input type="text" th:field="*{lastName}" id="lastName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter your last name" required>
+                    <div th:if="${#fields.hasErrors('lastName')}" class="text-red-500 text-sm mt-1" th:errors="*{lastName}">Last Name error</div>
+                </div>
+
                 <!-- Email -->
                 <div class="mb-4">
                     <label class="block text-gray-700 text-sm font-medium mb-2">Email *</label>
@@ -99,11 +113,35 @@
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('registerForm');
             const registerBtn = document.getElementById('registerBtn');
+            const firstNameInput = document.getElementById('firstName');
+            const lastNameInput = document.getElementById('lastName');
             const emailInput = document.getElementById('email');
             const phoneInput = document.getElementById('phoneNumber');
             const passwordInput = document.getElementById('password');
             const confirmPasswordInput = document.getElementById('confirmPassword');
             const termsCheckbox = document.querySelector('input[name="terms"]');
+
+            // First Name validation
+            firstNameInput.addEventListener('blur', function() {
+                const firstName = this.value.trim();
+                if (firstName === '') {
+                    this.classList.add('border-red-500');
+                } else {
+                    this.classList.remove('border-red-500');
+                    this.classList.add('border-green-500');
+                }
+            });
+
+            // Last Name validation
+            lastNameInput.addEventListener('blur', function() {
+                const lastName = this.value.trim();
+                if (lastName === '') {
+                    this.classList.add('border-red-500');
+                } else {
+                    this.classList.remove('border-red-500');
+                    this.classList.add('border-green-500');
+                }
+            });
 
             // Email validation
             emailInput.addEventListener('blur', function() {
@@ -200,6 +238,18 @@
             // Form submission validation
             form.addEventListener('submit', function(e) {
                 let isValid = true;
+
+                // Validate first name
+                if (firstNameInput.value.trim() === '') {
+                    firstNameInput.classList.add('border-red-500');
+                    isValid = false;
+                }
+
+                // Validate last name
+                if (lastNameInput.value.trim() === '') {
+                    lastNameInput.classList.add('border-red-500');
+                    isValid = false;
+                }
                 
                 // Validate email
                 const email = emailInput.value.trim();

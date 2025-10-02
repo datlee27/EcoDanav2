@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
-// You might need a JSON processing library like Jackson
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -41,7 +40,11 @@ public class VehicleService {
     }
 
     public List<Vehicle> getVehiclesByCategory(Integer categoryId) {
-        return vehicleRepository.findByCategoryId(categoryId);
+        return vehicleRepository.findByCategory_CategoryId(categoryId);
+    }
+
+    public List<Vehicle> getVehiclesByTransmissionType(Integer transmissionTypeId) {
+        return vehicleRepository.findByTransmissionType_TransmissionTypeId(transmissionTypeId);
     }
 
     public List<Vehicle> getVehiclesByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
@@ -72,7 +75,6 @@ public class VehicleService {
         return vehicleRepository.findAvailableVehicles().stream().limit(2).toList();
     }
 
-    // Helper to get price from JSON
     public BigDecimal getDailyPrice(Vehicle vehicle) {
         try {
             Map<String, Object> prices = objectMapper.readValue(vehicle.getRentalPrices(), new TypeReference<>() {});
@@ -83,15 +85,13 @@ public class VehicleService {
         } catch (Exception e) {
             // Log error
         }
-        return BigDecimal.ZERO; // Default price
+        return BigDecimal.ZERO;
     }
 
     public Map<String, Object> getVehicleStatistics() {
         Map<String, Object> stats = new HashMap<>();
-
         List<Vehicle> allVehicles = getAllVehicles();
         List<Vehicle> availableVehicles = getAvailableVehicles();
-
         long inUseVehicles = allVehicles.stream().filter(v -> "Rented".equals(v.getStatus())).count();
         long maintenanceVehicles = allVehicles.stream().filter(v -> "Maintenance".equals(v.getStatus())).count();
 
@@ -122,10 +122,8 @@ public class VehicleService {
 
     public Map<String, Object> getVehicleAnalytics() {
         Map<String, Object> analytics = new HashMap<>();
-
         analytics.put("statusDistribution", vehicleRepository.findStatusDistribution());
         analytics.put("categoryDistribution", vehicleRepository.findCategoryDistribution());
-
         return analytics;
     }
 }

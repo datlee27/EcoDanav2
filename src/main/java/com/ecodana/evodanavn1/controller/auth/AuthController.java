@@ -41,18 +41,19 @@ public class AuthController {
             if (userWithRole != null) {
                 session.setAttribute("currentUser", userWithRole);
                 String roleName = userWithRole.getRoleName();
+                String displayUserName = userWithRole.getFirstName() + " " + userWithRole.getLastName();
                 System.out.println("Login success - User role: " + roleName);
                 if ("Admin".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + displayUserName + "! Bạn có quyền truy cập đầy đủ hệ thống.");
                     return "redirect:/admin";
                 } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + displayUserName + "! Bạn có thể quản lý xe và đặt chỗ.");
                     return "redirect:/owner/dashboard";
                 } else if ("Customer".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + displayUserName + "! Hãy khám phá và đặt xe ngay.");
                     return "redirect:/";
                 } else {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại EvoDana.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + displayUserName + " trở lại EvoDana.");
                     return "redirect:/";
                 }
             }
@@ -76,6 +77,8 @@ public class AuthController {
 
         // Sanitize and Validate input
         if (user.getEmail() != null) user.setEmail(user.getEmail().trim().toLowerCase());
+        if (user.getFirstName() != null) user.setFirstName(user.getFirstName().trim());
+        if (user.getLastName() != null) user.setLastName(user.getLastName().trim());
         phoneNumber = phoneNumber.trim();
 
         if (user.getPassword() != null && !user.getPassword().equals(confirmPassword)) {
@@ -84,30 +87,23 @@ public class AuthController {
         if (userService.findByEmail(user.getEmail()) != null) {
             bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
         }
-        // Thêm các validation khác nếu cần
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("user", user);
             return "auth/register";
         }
 
-        // Send OTP instead of saving user directly
         try {
             String otp = generateOtp();
             emailService.sendOtpEmail(user.getEmail(), otp);
 
-            // Prepare user object to store temporarily
             user.setPhoneNumber(phoneNumber);
-            String email = user.getEmail();
-            String username = email.split("@")[0] + "_" + System.currentTimeMillis();
-            user.setUsername(username);
+            user.setUsername(user.getFirstName() + user.getLastName());
 
-            // Store temporary data in session
             session.setAttribute("tempUser", user);
             session.setAttribute("otp", otp);
             session.setAttribute("otpTimestamp", System.currentTimeMillis());
 
-            // Redirect to OTP verification page
             redirectAttributes.addFlashAttribute("email", user.getEmail());
             return "redirect:/verify-otp";
 
@@ -157,30 +153,24 @@ public class AuthController {
 
         if (submittedOtp.equals(storedOtp)) {
             try {
-                // OTP is correct, now register the user permanently
+                tempUser.setEmailVerifed(true);
                 userService.register(tempUser);
 
-                // Auto-login: Set user in session
                 User registeredUser = userService.getUserWithRole(tempUser.getEmail());
                 session.setAttribute("currentUser", registeredUser);
 
-                // Clear OTP session data
                 clearOtpSession(session);
 
-                // Redirect based on user role
                 String roleName = registeredUser.getRoleName();
-                System.out.println("Registration and auto-login success - User role: " + roleName);
+                String displayUserName = registeredUser.getFirstName() + " " + registeredUser.getLastName();
                 if ("Admin".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng Admin " + registeredUser.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng Admin " + displayUserName + "! Bạn có quyền truy cập đầy đủ hệ thống.");
                     return "redirect:/admin";
                 } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + displayUserName + "! Bạn có thể quản lý xe và đặt chỗ.");
                     return "redirect:/owner/dashboard";
-                } else if ("Customer".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
-                    return "redirect:/";
                 } else {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + " trở lại EvoDana.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + displayUserName + "! Hãy khám phá và đặt xe ngay.");
                     return "redirect:/";
                 }
             } catch (Exception e) {
@@ -201,7 +191,7 @@ public class AuthController {
         String username = "Bạn";
         if (session.getAttribute("currentUser") != null) {
             User user = (User) session.getAttribute("currentUser");
-            username = user.getFirstName() != null ? user.getFirstName() : user.getUsername();
+            username = user.getFirstName() != null && user.getLastName() != null ? user.getFirstName() + " " + user.getLastName() : user.getUsername();
         }
 
         session.invalidate();

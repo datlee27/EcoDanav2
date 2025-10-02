@@ -7,11 +7,7 @@ import java.util.Map;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "Vehicle")
@@ -56,14 +52,13 @@ public class Vehicle {
     @Column(name = "CreatedDate", nullable = false)
     private LocalDateTime createdDate;
 
-    @Column(name = "LastUpdatedBy", length = 36)
-    private String lastUpdatedBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "CategoryId", referencedColumnName = "CategoryId")
+    private VehicleCategory category;
 
-    @Column(name = "CategoryId")
-    private Integer categoryId;
-
-    @Column(name = "TransmissionTypeId")
-    private Integer transmissionTypeId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "TransmissionTypeId", referencedColumnName = "TransmissionTypeId")
+    private TransmissionType transmissionType;
 
     @Column(name = "MainImageUrl", length = 255)
     private String mainImageUrl;
@@ -82,10 +77,6 @@ public class Vehicle {
         this.createdDate = LocalDateTime.now();
     }
 
-    /**
-     * Phương thức pomocniczy để lấy giá theo ngày từ chuỗi JSON.
-     * @return BigDecimal giá theo ngày, hoặc BigDecimal.ZERO nếu có lỗi.
-     */
     @Transient
     public BigDecimal getDailyPriceFromJson() {
         if (this.rentalPrices == null || this.rentalPrices.isEmpty()) {
@@ -98,13 +89,12 @@ public class Vehicle {
                 return new BigDecimal(dailyPrice.toString());
             }
         } catch (Exception e) {
-            // Ghi log lỗi nếu cần
             System.err.println("Error parsing rentalPrices JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
         }
         return BigDecimal.ZERO;
     }
 
-    // Getters and Setters (Giữ nguyên các getters và setters khác)
+    // Getters and Setters
     public String getVehicleId() { return vehicleId; }
     public void setVehicleId(String vehicleId) { this.vehicleId = vehicleId; }
     public String getVehicleModel() { return vehicleModel; }
@@ -131,16 +121,26 @@ public class Vehicle {
     public void setBatteryCapacity(BigDecimal batteryCapacity) { this.batteryCapacity = batteryCapacity; }
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
-    public String getLastUpdatedBy() { return lastUpdatedBy; }
-    public void setLastUpdatedBy(String lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
-    public Integer getCategoryId() { return categoryId; }
-    public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
-    public Integer getTransmissionTypeId() { return transmissionTypeId; }
-    public void setTransmissionTypeId(Integer transmissionTypeId) { this.transmissionTypeId = transmissionTypeId; }
     public String getMainImageUrl() { return mainImageUrl; }
     public void setMainImageUrl(String mainImageUrl) { this.mainImageUrl = mainImageUrl; }
     public String getImageUrls() { return imageUrls; }
     public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
     public String getFeatures() { return features; }
     public void setFeatures(String features) { this.features = features; }
+
+    public VehicleCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(VehicleCategory category) {
+        this.category = category;
+    }
+
+    public TransmissionType getTransmissionType() {
+        return transmissionType;
+    }
+
+    public void setTransmissionType(TransmissionType transmissionType) {
+        this.transmissionType = transmissionType;
+    }
 }

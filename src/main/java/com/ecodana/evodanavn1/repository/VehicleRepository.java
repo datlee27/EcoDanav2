@@ -22,9 +22,9 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
     @Query("SELECT v FROM Vehicle v WHERE v.status = 'Available'")
     List<Vehicle> findAvailableVehicles();
 
-    List<Vehicle> findByCategoryId(Integer categoryId);
+    List<Vehicle> findByCategory_CategoryId(Integer categoryId);
 
-    List<Vehicle> findByTransmissionTypeId(Integer transmissionTypeId);
+    List<Vehicle> findByTransmissionType_TransmissionTypeId(Integer transmissionTypeId);
 
     Optional<Vehicle> findByLicensePlate(String licensePlate);
 
