@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -13,130 +14,41 @@ import com.ecodana.evodanavn1.model.Vehicle;
 
 @Repository
 public interface VehicleRepository extends JpaRepository<Vehicle, String> {
-    
-    /**
-     * Find vehicles by status
-     * @param status the vehicle status
-     * @return list of vehicles with the status
-     */
+
     List<Vehicle> findByStatus(String status);
-    
-    /**
-     * Find vehicles by vehicle type
-     * @param vehicleType the vehicle type
-     * @return list of vehicles of the type
-     */
+
     List<Vehicle> findByVehicleType(String vehicleType);
-    
-    /**
-     * Find available vehicles
-     * @return list of available vehicles
-     */
+
     @Query("SELECT v FROM Vehicle v WHERE v.status = 'Available'")
     List<Vehicle> findAvailableVehicles();
-    
-    /**
-     * Find vehicles by brand ID
-     * @param brandId the brand ID
-     * @return list of vehicles from the brand
-     */
-    List<Vehicle> findByBrandId(String brandId);
-    
-    /**
-     * Find vehicles by category ID
-     * @param categoryId the category ID
-     * @return list of vehicles in the category
-     */
-    List<Vehicle> findByCategoryId(String categoryId);
-    
-    /**
-     * Find vehicles by fuel type ID
-     * @param fuelTypeId the fuel type ID
-     * @return list of vehicles with the fuel type
-     */
-    List<Vehicle> findByFuelTypeId(String fuelTypeId);
-    
-    /**
-     * Find vehicles by transmission type ID
-     * @param transmissionTypeId the transmission type ID
-     * @return list of vehicles with the transmission type
-     */
-    List<Vehicle> findByTransmissionTypeId(String transmissionTypeId);
-    
-    /**
-     * Find vehicles by license plate
-     * @param licensePlate the license plate
-     * @return optional vehicle
-     */
+
+    List<Vehicle> findByCategoryId(Integer categoryId);
+
+    List<Vehicle> findByTransmissionTypeId(Integer transmissionTypeId);
+
     Optional<Vehicle> findByLicensePlate(String licensePlate);
-    
-    /**
-     * Check if vehicle exists by license plate
-     * @param licensePlate the license plate
-     * @return true if exists, false otherwise
-     */
+
     boolean existsByLicensePlate(String licensePlate);
-    
-    /**
-     * Find vehicles by price range
-     * @param minPrice minimum price per day
-     * @param maxPrice maximum price per day
-     * @return list of vehicles in price range
-     */
-    @Query("SELECT v FROM Vehicle v WHERE v.pricePerDay BETWEEN :minPrice AND :maxPrice")
-    List<Vehicle> findByPriceRange(@Param("minPrice") java.math.BigDecimal minPrice, 
-                                   @Param("maxPrice") java.math.BigDecimal maxPrice);
-    
-    /**
-     * Find vehicles by seats
-     * @param seats the number of seats
-     * @return list of vehicles with the number of seats
-     */
+
+    @Query(value = "SELECT * FROM Vehicle v WHERE JSON_EXTRACT(v.RentalPrices, '$.daily') BETWEEN :minPrice AND :maxPrice", nativeQuery = true)
+    List<Vehicle> findByPriceRange(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
+
     List<Vehicle> findBySeats(Integer seats);
-    
-    /**
-     * Find vehicles that require license
-     * @param requiresLicense whether license is required
-     * @return list of vehicles based on license requirement
-     */
+
     List<Vehicle> findByRequiresLicense(Boolean requiresLicense);
-    
-    /**
-     * Search vehicles by keyword (brand, model, or license plate)
-     * @param keyword the search keyword
-     * @return list of matching vehicles
-     */
+
     @Query(value = "SELECT v.* FROM Vehicle v " +
-           "JOIN CarBrand cb ON v.BrandId = cb.BrandId " +
-           "WHERE LOWER(cb.BrandName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(v.VehicleModel) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(v.LicensePlate) LIKE LOWER(CONCAT('%', :keyword, '%'))", nativeQuery = true)
+            "WHERE LOWER(v.VehicleModel) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(v.LicensePlate) LIKE LOWER(CONCAT('%', :keyword, '%'))", nativeQuery = true)
     List<Vehicle> searchVehicles(@Param("keyword") String keyword);
-    
-    /**
-     * Find vehicle status distribution
-     * @return list of status distribution data
-     */
+
     @Query(value = "SELECT v.Status as status, COUNT(v.VehicleId) as count FROM Vehicle v GROUP BY v.Status", nativeQuery = true)
     List<Map<String, Object>> findStatusDistribution();
-    
-    /**
-     * Find vehicle category distribution
-     * @return list of category distribution data
-     */
+
     @Query(value = "SELECT vc.CategoryName as category, COUNT(v.VehicleId) as count " +
-           "FROM Vehicle v " +
-           "JOIN VehicleCategories vc ON v.CategoryId = vc.CategoryId " +
-           "GROUP BY vc.CategoryName", nativeQuery = true)
+            "FROM Vehicle v " +
+            "JOIN VehicleCategories vc ON v.CategoryId = vc.CategoryId " +
+            "GROUP BY vc.CategoryName", nativeQuery = true)
     List<Map<String, Object>> findCategoryDistribution();
-    
-    /**
-     * Find vehicle brand distribution
-     * @return list of brand distribution data
-     */
-    @Query(value = "SELECT cb.BrandName as brand, COUNT(v.VehicleId) as count " +
-           "FROM Vehicle v " +
-           "JOIN CarBrand cb ON v.BrandId = cb.BrandId " +
-           "GROUP BY cb.BrandName ORDER BY count DESC", nativeQuery = true)
-    List<Map<String, Object>> findBrandDistribution();
+
 }

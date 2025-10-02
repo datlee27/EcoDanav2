@@ -1,4 +1,3 @@
-<!-- Vehicles Tab Content -->
 <div th:fragment="vehicles-tab">
     <div class="bg-white shadow rounded-lg">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -15,40 +14,38 @@
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and !vehicles.empty}">
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
-                            <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.brandId}">-</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.vehicleType}">-</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.seats}">-</td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span th:if="${vehicle.status == 'Available'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${vehicle.status}">-</span>
-                            <span th:if="${vehicle.status == 'InUse'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${vehicle.status}">-</span>
-                            <span th:if="${vehicle.status != 'Available' and vehicle.status != 'InUse'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${vehicle.status}">-</span>
-                        </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.pricePerDay}">-</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                            <button class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">Maintenance</button>
-                            <button class="text-red-600 hover:text-red-900" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Unavailable">Remove</button>
-                        </td>
-                    </tr>
-                    <tr th:if="${vehicles == null or vehicles.empty}">
-                        <td colspan="7" class="px-6 py-4 text-center text-gray-500">No vehicles found</td>
-                    </tr>
+                <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and !vehicles.empty}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
+                        <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.vehicleType}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.seats}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span th:if="${vehicle.status == 'Available'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${vehicle.status}">-</span>
+                        <span th:if="${vehicle.status == 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${vehicle.status}">-</span>
+                        <span th:if="${vehicle.status != 'Available' and vehicle.status != 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${vehicle.status}">-</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
+                        <button class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">Maintenance</button>
+                        <button class="text-red-600 hover:text-red-900" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Unavailable">Remove</button>
+                    </td>
+                </tr>
+                <tr th:if="${vehicles == null or vehicles.empty}">
+                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No vehicles found</td>
+                </tr>
                 </tbody>
             </table>
         </div>

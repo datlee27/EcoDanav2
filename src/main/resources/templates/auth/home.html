@@ -176,12 +176,11 @@
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <!-- Dynamic vehicle cards from database -->
             <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
                 <div class="car-image h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                     <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' :
-                                     vehicle.vehicleType == 'Motorcycle' ? 'fas fa-motorcycle text-6xl text-white' :
-                                     'fas fa-bicycle text-6xl text-white'}"></i>
+                                     (vehicle.vehicleType == 'ElectricMotorcycle' ? 'fas fa-motorcycle text-6xl text-white' :
+                                     'fas fa-car text-6xl text-white')}"></i>
                 </div>
                 <div class="car-details p-6">
                     <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
@@ -189,8 +188,7 @@
                     <div class="car-type mb-2">
                             <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' +
                                            (vehicle.vehicleType == 'ElectricCar' ? 'bg-blue-100 text-blue-800' :
-                                            vehicle.vehicleType == 'Motorcycle' ? 'bg-green-100 text-green-800' :
-                                            'bg-purple-100 text-purple-800')}"
+                                            'bg-green-100 text-green-800')}"
                                   th:text="${vehicle.vehicleType}">Type</span>
                     </div>
 
@@ -200,9 +198,9 @@
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star"></i>
-                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
                         </div>
-                        <span class="rating-text text-sm text-gray-500">4.8 (4,485 reviews)</span>
+                        <span class="rating-text text-sm text-gray-500">(15 reviews)</span>
                     </div>
 
                     <div class="car-specs grid grid-cols-2 gap-2 mb-4">
@@ -226,10 +224,10 @@
 
                     <div class="price-container flex justify-between items-center mb-4">
                         <span class="price-label text-gray-600">Price:</span>
-                        <span class="price font-bold text-lg" th:text="'$' + ${vehicle.pricePerDay} + ' / day'">$89 / day</span>
+                        <span class="price font-bold text-lg" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())} + ' / day'">$89 / day</span>
                     </div>
 
-                    <a th:href="@{/vehicles/detail(id=${vehicle.vehicleId})}"
+                    <a th:href="@{'/vehicles/detail/' + ${vehicle.vehicleId}}"
                        class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
                         View Details
                         <i class="fas fa-arrow-right ml-2"></i>
@@ -248,7 +246,6 @@
     </div>
 </section>
 
-<!-- Testimonials section -->
 <section class="py-20 bg-gray-50">
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
@@ -1274,6 +1271,8 @@
         restoreLocationState();
     });
 </script>
+
 </body>
 
 </html>
+
