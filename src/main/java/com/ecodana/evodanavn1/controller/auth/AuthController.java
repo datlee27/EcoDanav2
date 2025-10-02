@@ -159,9 +159,30 @@ public class AuthController {
             try {
                 // OTP is correct, now register the user permanently
                 userService.register(tempUser);
+
+                // Auto-login: Set user in session
+                User registeredUser = userService.getUserWithRole(tempUser.getEmail());
+                session.setAttribute("currentUser", registeredUser);
+
+                // Clear OTP session data
                 clearOtpSession(session);
-                redirectAttributes.addFlashAttribute("success", "Đăng ký tài khoản thành công! Bây giờ bạn có thể đăng nhập.");
-                return "redirect:/login";
+
+                // Redirect based on user role
+                String roleName = registeredUser.getRoleName();
+                System.out.println("Registration and auto-login success - User role: " + roleName);
+                if ("Admin".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng Admin " + registeredUser.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
+                    return "redirect:/admin";
+                } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
+                    return "redirect:/owner/dashboard";
+                } else if ("Customer".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                    return "redirect:/";
+                } else {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + " trở lại EvoDana.");
+                    return "redirect:/";
+                }
             } catch (Exception e) {
                 System.err.println("Failed to save user after OTP verification: " + e.getMessage());
                 model.addAttribute("error", "Đã xảy ra lỗi khi lưu tài khoản của bạn. Vui lòng thử lại.");
@@ -185,7 +206,7 @@ public class AuthController {
 
         session.invalidate();
         redirectAttributes.addFlashAttribute("success", "Tạm biệt, " + username + "! Bạn đã đăng xuất thành công.");
-        return "redirect:/";
+        return "redirect:/login";
     }
 
     private String generateOtp() {

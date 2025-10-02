@@ -68,6 +68,8 @@ public class DotenvConfig {
         validateProperty("DB_URL");
         validateProperty("DB_USERNAME");
         validateProperty("GOOGLE_API_KEY");
+        validateProperty("MAIL_USERNAME");
+        validateProperty("MAIL_PASSWORD");
 
         System.out.println("✅ Environment validation completed");
     }
