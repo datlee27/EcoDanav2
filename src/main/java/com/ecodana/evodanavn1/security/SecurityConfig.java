@@ -80,7 +80,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         // ===== THAY ĐỔI Ở DÒNG NÀY =====
-                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
                         // ===============================
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")

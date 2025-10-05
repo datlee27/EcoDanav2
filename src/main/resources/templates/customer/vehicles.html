@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách xe - EvoDana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" th:href="@{/css/vehicles.css}">
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20">
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">Khám phá các dòng xe điện</h1>
+            <p class="mt-4 text-xl text-gray-600">Lựa chọn phương tiện hoàn hảo cho chuyến đi của bạn tại Đà Nẵng.</p>
+        </div>
+
+        <!-- Vehicle Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Vehicle Card -->
+            <div th:each="vehicle : ${vehicles}" class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
+                <div class="relative">
+<!--                    <img th:src="${vehicle.mainImageUrl}" alt="Vehicle Image" class="w-full h-56 object-cover">-->
+                    <!-- 
+                        Tự động tạo đường dẫn ảnh từ vehicle.vehicleModel.
+                        Ví dụ: "VinFast VF8" -> "/images/vehicles/vinfast-vf8.jpg"
+                    -->
+                    <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                         th:alt="${vehicle.vehicleModel}" class="w-full h-56 object-cover">
+                    <div class="absolute top-0 right-0 bg-primary text-white px-3 py-1 m-2 rounded-md text-sm font-medium"
+                         th:text="${vehicle.status == 'Available' ? 'Sẵn sàng' : 'Đã thuê'}">
+                        Sẵn sàng
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div class="flex items-baseline mb-2">
+                        <span class="inline-block bg-gray-200 text-gray-800 text-xs px-2 rounded-full uppercase font-semibold tracking-wide"
+                              th:text="${vehicle.vehicleType == 'ElectricCar' ? 'Ô tô điện' : 'Xe máy điện'}">
+                            Ô tô điện
+                        </span>
+                    </div>
+                    <h4 class="text-xl font-semibold text-gray-900 leading-tight truncate" th:text="${vehicle.vehicleModel}">
+                        VinFast VF8 Eco
+                    </h4>
+                    <div class="mt-1 text-gray-600 text-sm">
+                        <i class="fas fa-chair mr-1"></i> <span th:text="${vehicle.seats}">5</span> chỗ
+                        <span class="mx-2">|</span>
+                        <i class="fas fa-cog mr-1"></i> Số tự động
+                    </div>
+
+                    <div class="mt-4">
+                        <span class="text-2xl font-bold text-primary" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')}">1,200,000</span>
+                        <span class="text-sm text-gray-600">/ ngày</span>
+                    </div>
+
+                    <div class="mt-6">
+                        <a th:href="@{/vehicles/{id}(id=${vehicle.vehicleId})}"
+                           class="w-full text-center block bg-primary text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${vehicles == null or vehicles.isEmpty()}" class="col-span-1 sm:col-span-2 lg:col-span-3 text-center py-12">
+                <i class="fas fa-car-side text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-700">Không tìm thấy xe nào</h3>
+                <p class="text-gray-500 mt-2">Hiện tại chưa có xe nào trong hệ thống. Vui lòng quay lại sau.</p>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>
