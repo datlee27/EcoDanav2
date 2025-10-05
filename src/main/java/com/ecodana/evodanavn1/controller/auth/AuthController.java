@@ -1,6 +1,11 @@
 package com.ecodana.evodanavn1.controller.auth;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +22,7 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
+import java.security.Principal;
 
 @Controller
 public class AuthController {
@@ -26,6 +32,10 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+
+    // Inject AuthenticationManager để thực hiện đăng nhập theo chương trình
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @GetMapping("/login")
     public String login() {
@@ -52,12 +62,12 @@ public class AuthController {
                     redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
                     return "redirect:/";
                 } else {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại EvoDana.");
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại ecodana.");
                     return "redirect:/";
                 }
             }
         }
-        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng trở lại EvoDana.");
+        redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng trở lại ecodana.");
         return "redirect:/";
     }
 
@@ -74,7 +84,6 @@ public class AuthController {
                                       @RequestParam String confirmPassword, @RequestParam String phoneNumber,
                                       Model model, HttpSession session, RedirectAttributes redirectAttributes) {
 
-        // Sanitize and Validate input
         if (user.getEmail() != null) user.setEmail(user.getEmail().trim().toLowerCase());
         phoneNumber = phoneNumber.trim();
 
@@ -84,30 +93,25 @@ public class AuthController {
         if (userService.findByEmail(user.getEmail()) != null) {
             bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
         }
-        // Thêm các validation khác nếu cần
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("user", user);
             return "auth/register";
         }
 
-        // Send OTP instead of saving user directly
         try {
             String otp = generateOtp();
             emailService.sendOtpEmail(user.getEmail(), otp);
 
-            // Prepare user object to store temporarily
             user.setPhoneNumber(phoneNumber);
             String email = user.getEmail();
             String username = email.split("@")[0] + "_" + System.currentTimeMillis();
             user.setUsername(username);
 
-            // Store temporary data in session
             session.setAttribute("tempUser", user);
             session.setAttribute("otp", otp);
             session.setAttribute("otpTimestamp", System.currentTimeMillis());
 
-            // Redirect to OTP verification page
             redirectAttributes.addFlashAttribute("email", user.getEmail());
             return "redirect:/verify-otp";
 
@@ -157,35 +161,32 @@ public class AuthController {
 
         if (submittedOtp.equals(storedOtp)) {
             try {
-                // OTP is correct, now register the user permanently
+                // Lấy mật khẩu gốc (chưa mã hóa) từ session để đăng nhập
+                String rawPassword = tempUser.getPassword();
+
+                // 1. Lưu người dùng vào CSDL (mật khẩu sẽ được mã hóa tại đây)
                 userService.register(tempUser);
 
-                // Auto-login: Set user in session
+                // 2. ĐĂNG NHẬP NGƯỜI DÙNG VÀO SPRING SECURITY
+                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(tempUser.getEmail(), rawPassword);
+                Authentication authentication = authenticationManager.authenticate(authToken);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+
+                // 3. Lấy thông tin đầy đủ của người dùng và lưu vào session để sử dụng ngay
                 User registeredUser = userService.getUserWithRole(tempUser.getEmail());
                 session.setAttribute("currentUser", registeredUser);
 
-                // Clear OTP session data
+                // Xóa dữ liệu OTP khỏi session
                 clearOtpSession(session);
 
-                // Redirect based on user role
-                String roleName = registeredUser.getRoleName();
-                System.out.println("Registration and auto-login success - User role: " + roleName);
-                if ("Admin".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng Admin " + registeredUser.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
-                    return "redirect:/admin";
-                } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
-                    return "redirect:/owner/dashboard";
-                } else if ("Customer".equalsIgnoreCase(roleName)) {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
-                    return "redirect:/";
-                } else {
-                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + " trở lại EvoDana.");
-                    return "redirect:/";
-                }
+                // Chuyển hướng như cũ
+                redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
+                return "redirect:/";
+
             } catch (Exception e) {
-                System.err.println("Failed to save user after OTP verification: " + e.getMessage());
-                model.addAttribute("error", "Đã xảy ra lỗi khi lưu tài khoản của bạn. Vui lòng thử lại.");
+                System.err.println("Failed to save user or auto-login after OTP verification: " + e.getMessage());
+                model.addAttribute("error", "Đã xảy ra lỗi khi hoàn tất đăng ký. Vui lòng thử lại.");
                 model.addAttribute("email", tempUser.getEmail());
                 return "auth/verify-otp";
             }
@@ -194,6 +195,30 @@ public class AuthController {
             model.addAttribute("email", tempUser.getEmail());
             return "auth/verify-otp";
         }
+    }
+
+    @GetMapping("/profile")
+    public String userProfile(Model model, HttpSession session) {
+        // Lấy đối tượng User đã được lưu trong session khi đăng nhập
+        User currentUser = (User) session.getAttribute("currentUser");
+
+        // Nếu người dùng chưa đăng nhập (không có trong session), chuyển hướng về trang đăng nhập
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        // --- BƯỚC 1: Cung cấp thông tin cho thanh NAV ---
+        // Thêm đối tượng currentUser vào model để thanh nav có thể sử dụng
+        model.addAttribute("currentUser", currentUser);
+
+        // --- BƯỚC 2: Cung cấp thông tin cho nội dung trang PROFILE ---
+        // Lấy thông tin mới nhất của người dùng từ CSDL dựa trên email hoặc username trong session
+        User userForProfile = userService.findByEmail(currentUser.getEmail());
+        // Thêm vào model với tên "user" để profile.html sử dụng
+        model.addAttribute("user", userForProfile);
+
+        // Trả về view của trang profile
+        return "auth/profile";
     }
 
     @GetMapping("/logout")

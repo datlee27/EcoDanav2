@@ -1,7 +1,9 @@
 package com.ecodana.evodanavn1.controller.customer;
 
+import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,7 +22,12 @@ public class VehicleController {
     }
 
     @GetMapping("/vehicles")
-    public String listVehicles(Model model) {
+    public String listVehicles(Model model, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            model.addAttribute("currentUser", currentUser);
+        }
+
         List<Vehicle> vehicles = vehicleService.getAllVehicles();
         model.addAttribute("vehicles", vehicles);
         return "customer/vehicles";

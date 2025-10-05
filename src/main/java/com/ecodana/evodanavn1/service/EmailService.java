@@ -28,7 +28,7 @@ public class EmailService {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        helper.setFrom(new InternetAddress(fromEmail, "EvoDana Team"));
+        helper.setFrom(new InternetAddress(fromEmail, "EcoDana Team"));
         helper.setTo(to);
 
         // ===== THAY ĐỔI ĐỂ TIÊU ĐỀ EMAIL LÀ DUY NHẤT =====
@@ -37,7 +37,7 @@ public class EmailService {
         String timestamp = LocalTime.now().format(formatter);
 
         // 2. Tạo tiêu đề email độc nhất bằng cách thêm thời gian vào cuối
-        String uniqueSubject = "Your EvoDana Account Verification OTP [" + timestamp + "]";
+        String uniqueSubject = "Your EcoDana Account Verification OTP [" + timestamp + "]";
         helper.setSubject(uniqueSubject);
         // ===============================================
 
@@ -61,11 +61,11 @@ public class EmailService {
                 + "</style></head>"
                 + "<body>"
                 + "<div class='container'>"
-                + "<div class='header'>EvoDana Verification</div>"
+                + "<div class='header'>EcoDana Verification</div>"
                 + "<p class='message'>Your One-Time Password (OTP) for account verification is:</p>"
                 + "<div class='otp-code'>" + otp + "</div>"
                 + "<p class='message'>This code is valid for 5 minutes. Please do not share this code with anyone.</p>"
-                + "<p class='footer'>© 2025 EvoDana. All rights reserved.</p>"
+                + "<p class='footer'>© 2025 EcoDana. All rights reserved.</p>"
                 + "</div>"
                 + "</body></html>";
     }
