@@ -2,7 +2,9 @@ package com.ecodana.evodanavn1.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.session.SessionRegistry;
@@ -80,7 +82,7 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         // ===== THAY ĐỔI Ở DÒNG NÀY =====
-                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles", "/css/**", "/js/**", "/images/**", "/oauth2/**").permitAll()
                         // ===============================
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
@@ -134,4 +136,8 @@ public class SecurityConfig {
         return authorizationRequestResolver;
     }
 
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 }

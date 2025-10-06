@@ -59,7 +59,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
                     session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
                     response.sendRedirect("/");
                 } else {
-                    session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại EvoDana.");
+                    session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + " trở lại ecodana.");
                     response.sendRedirect("/");
                 }
                 return;
@@ -68,7 +68,7 @@ public class CustomAuthenticationSuccessHandler implements AuthenticationSuccess
         
         // Fallback to home page if user not found
         HttpSession session = request.getSession(true);
-        session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng trở lại EvoDana.");
+        session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng trở lại ecodana.");
         response.sendRedirect("/");
     }
 }
