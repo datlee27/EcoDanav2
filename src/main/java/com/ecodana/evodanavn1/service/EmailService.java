@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
@@ -23,6 +24,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Async
     public void sendOtpEmail(String to, String otp) throws MessagingException, UnsupportedEncodingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
@@ -70,8 +72,8 @@ public class EmailService {
     }
 
 
-
-    public void sendPasswordResetEmail(String to, String token, HttpServletRequest request) throws MessagingException, UnsupportedEncodingException {
+    @Async
+    public void sendPasswordResetEmail(String to, String token, String baseUrl) throws MessagingException, UnsupportedEncodingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
@@ -79,8 +81,8 @@ public class EmailService {
         helper.setTo(to);
         helper.setSubject("EcoDana - Yêu cầu đặt lại mật khẩu của bạn");
 
-        // Tạo URL reset, ví dụ: http://localhost:8080/reset-password?token=...
-        String resetUrl = getBaseUrl(request) + "/reset-password?token=" + token;
+        // Tạo URL reset từ baseUrl đã được truyền vào
+        String resetUrl = baseUrl + "/reset-password?token=" + token;
 
         String htmlContent = buildPasswordResetHtmlContent(resetUrl);
         helper.setText(htmlContent, true);

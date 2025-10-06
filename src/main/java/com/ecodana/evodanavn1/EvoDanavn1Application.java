@@ -3,8 +3,10 @@ package com.ecodana.evodanavn1;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
+@EnableAsync
 @EntityScan("com.ecodana.evodanavn1.model")
 public class EvoDanavn1Application {
 

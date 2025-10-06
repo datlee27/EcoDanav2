@@ -1,6 +1,7 @@
 package com.ecodana.evodanavn1.controller.auth;
 
 import com.ecodana.evodanavn1.model.PasswordResetToken;
+import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,6 +36,9 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private PasswordResetTokenRepository tokenRepository;
 
     // Inject AuthenticationManager để thực hiện đăng nhập theo chương trình
     @Autowired
@@ -265,9 +269,15 @@ public class AuthController {
         User user = userOptional.get();
         PasswordResetToken token = userService.createPasswordResetTokenForUser(user);
 
+        // Lấy baseUrl từ request trước khi gọi phương thức async
+        String baseUrl = getBaseUrl(request);
+
         try {
-            emailService.sendPasswordResetEmail(user.getEmail(), token.getToken(), request);
+            // Truyền baseUrl (String) thay vì request (HttpServletRequest)
+            emailService.sendPasswordResetEmail(user.getEmail(), token.getToken(), baseUrl);
         } catch (MessagingException | UnsupportedEncodingException e) {
+            // Log lỗi để debug
+            System.err.println("Error sending password reset email: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Lỗi khi gửi email. Vui lòng thử lại.");
             return "redirect:/forgot-password";
         }
@@ -319,14 +329,28 @@ public class AuthController {
 
             // Đánh dấu token đã được sử dụng
             resetToken.setUsed(true);
-            // Cần có phương thức save trong repository
-            // tokenRepository.save(resetToken);
+            tokenRepository.save(resetToken);
 
             redirectAttributes.addFlashAttribute("message", "Mật khẩu của bạn đã được thay đổi thành công.");
             return "redirect:/login";
         } else {
             redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi. Vui lòng thử lại.");
             return "redirect:/forgot-password";
+        }
+    }
+
+    // Hàm tiện ích để tạo baseUrl từ request
+    private String getBaseUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        // Chỉ thêm port vào URL nếu nó không phải là port mặc định (80 cho http, 443 cho https)
+        if ((("http".equals(scheme) && serverPort == 80) || ("https".equals(scheme) && serverPort == 443))) {
+            return scheme + "://" + serverName + contextPath;
+        } else {
+            return scheme + "://" + serverName + ":" + serverPort + contextPath;
         }
     }
 }
