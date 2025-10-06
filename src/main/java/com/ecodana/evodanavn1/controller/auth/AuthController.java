@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.controller.auth;
 
+import com.ecodana.evodanavn1.model.PasswordResetToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -23,6 +24,8 @@ import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
 import java.security.Principal;
+import java.util.Optional;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 public class AuthController {
@@ -207,11 +210,11 @@ public class AuthController {
             return "redirect:/login";
         }
 
-        // --- BƯỚC 1: Cung cấp thông tin cho thanh NAV ---
+        // --- BƯỚC 1: Cung cấp thông tin cho thanh NAV ---\
         // Thêm đối tượng currentUser vào model để thanh nav có thể sử dụng
         model.addAttribute("currentUser", currentUser);
 
-        // --- BƯỚC 2: Cung cấp thông tin cho nội dung trang PROFILE ---
+        // --- BƯỚC 2: Cung cấp thông tin cho nội dung trang PROFILE ---\
         // Lấy thông tin mới nhất của người dùng từ CSDL dựa trên email hoặc username trong session
         User userForProfile = userService.findByEmail(currentUser.getEmail());
         // Thêm vào model với tên "user" để profile.html sử dụng
@@ -242,5 +245,88 @@ public class AuthController {
         session.removeAttribute("tempUser");
         session.removeAttribute("otp");
         session.removeAttribute("otpTimestamp");
+    }
+
+
+    @GetMapping("/forgot-password")
+    public String showForgotPasswordForm() {
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String processForgotPassword(@RequestParam("email") String userEmail, HttpServletRequest request, RedirectAttributes redirectAttributes) {
+        Optional<User> userOptional = userService.findUserByEmail(userEmail);
+
+        if (userOptional.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy tài khoản nào với email này.");
+            return "redirect:/forgot-password";
+        }
+
+        User user = userOptional.get();
+        PasswordResetToken token = userService.createPasswordResetTokenForUser(user);
+
+        try {
+            emailService.sendPasswordResetEmail(user.getEmail(), token.getToken(), request);
+        } catch (MessagingException | UnsupportedEncodingException e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi khi gửi email. Vui lòng thử lại.");
+            return "redirect:/forgot-password";
+        }
+
+        redirectAttributes.addFlashAttribute("message", "Một liên kết đặt lại mật khẩu đã được gửi đến email của bạn.");
+        return "redirect:/forgot-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(@RequestParam("token") String token, Model model, RedirectAttributes redirectAttributes) {
+        String result = userService.validatePasswordResetToken(token);
+        if (result != null) {
+            String message = switch (result) {
+                case "expired" -> "Liên kết đã hết hạn. Vui lòng yêu cầu một liên kết mới.";
+                case "usedToken" -> "Liên kết đã được sử dụng. Vui lòng yêu cầu một liên kết mới.";
+                default -> "Liên kết không hợp lệ. Vui lòng kiểm tra lại hoặc yêu cầu một liên kết mới.";
+            };
+            redirectAttributes.addFlashAttribute("error", message);
+            return "redirect:/forgot-password";
+        }
+
+        model.addAttribute("token", token);
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String processResetPassword(@RequestParam("token") String token,
+                                       @RequestParam("password") String newPassword,
+                                       @RequestParam("confirmPassword") String confirmPassword,
+                                       RedirectAttributes redirectAttributes) {
+
+        String result = userService.validatePasswordResetToken(token);
+        if (result != null) {
+            redirectAttributes.addFlashAttribute("error", "Liên kết không hợp lệ hoặc đã hết hạn.");
+            return "redirect:/forgot-password";
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("token", token);
+            redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp.");
+            return "redirect:/reset-password?token=" + token;
+        }
+
+        Optional<PasswordResetToken> tokenOptional = userService.getPasswordResetToken(token);
+        if(tokenOptional.isPresent()){
+            PasswordResetToken resetToken = tokenOptional.get();
+            User user = resetToken.getUser();
+            userService.changeUserPassword(user, newPassword);
+
+            // Đánh dấu token đã được sử dụng
+            resetToken.setUsed(true);
+            // Cần có phương thức save trong repository
+            // tokenRepository.save(resetToken);
+
+            redirectAttributes.addFlashAttribute("message", "Mật khẩu của bạn đã được thay đổi thành công.");
+            return "redirect:/login";
+        } else {
+            redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi. Vui lòng thử lại.");
+            return "redirect:/forgot-password";
+        }
     }
 }

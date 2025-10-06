@@ -1,11 +1,14 @@
 package com.ecodana.evodanavn1.service;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ecodana.evodanavn1.model.PasswordResetToken;
+import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,9 @@ public class UserService {
     
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordResetTokenRepository tokenRepository;
     
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -255,6 +261,47 @@ public class UserService {
             userRepository.save(user);
             return true;
         }).orElse(false);
+    }
+
+
+    public Optional<User> findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    public PasswordResetToken createPasswordResetTokenForUser(User user) {
+        String token = UUID.randomUUID().toString();
+        String id = UUID.randomUUID().toString();
+        // Token hết hạn sau 15 phút
+        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
+        PasswordResetToken myToken = new PasswordResetToken(id, token, user, expiryDate);
+        return tokenRepository.save(myToken);
+    }
+
+    public Optional<PasswordResetToken> getPasswordResetToken(String token) {
+        return Optional.ofNullable(tokenRepository.findByToken(token));
+    }
+
+    public String validatePasswordResetToken(String token) {
+        Optional<PasswordResetToken> passTokenOpt = getPasswordResetToken(token);
+        if (passTokenOpt.isEmpty()) {
+            return "invalidToken";
+        }
+
+        PasswordResetToken passToken = passTokenOpt.get();
+        if (passToken.isUsed()) {
+            return "usedToken";
+        }
+
+        if (passToken.getExpiryTime().isBefore(LocalDateTime.now())) {
+            return "expired";
+        }
+
+        return null; // Token hợp lệ
+    }
+
+    public void changeUserPassword(User user, String newPassword) {
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
     
     public List<User> searchUsers(String keyword) {

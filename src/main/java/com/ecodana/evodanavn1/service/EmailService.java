@@ -10,10 +10,9 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.io.UnsupportedEncodingException;
-// --- THÊM CÁC IMPORT ĐỂ LẤY THỜI GIAN ---
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-// --- KẾT THÚC THÊM IMPORT ---
+import jakarta.servlet.http.HttpServletRequest;
 
 @Service
 public class EmailService {
@@ -68,5 +67,46 @@ public class EmailService {
                 + "<p class='footer'>© 2025 EcoDana. All rights reserved.</p>"
                 + "</div>"
                 + "</body></html>";
+    }
+
+
+
+    public void sendPasswordResetEmail(String to, String token, HttpServletRequest request) throws MessagingException, UnsupportedEncodingException {
+        MimeMessage mimeMessage = javaMailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        helper.setFrom(new InternetAddress(fromEmail, "EcoDana Team"));
+        helper.setTo(to);
+        helper.setSubject("EcoDana - Yêu cầu đặt lại mật khẩu của bạn");
+
+        // Tạo URL reset, ví dụ: http://localhost:8080/reset-password?token=...
+        String resetUrl = getBaseUrl(request) + "/reset-password?token=" + token;
+
+        String htmlContent = buildPasswordResetHtmlContent(resetUrl);
+        helper.setText(htmlContent, true);
+
+        javaMailSender.send(mimeMessage);
+    }
+
+    private String getBaseUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        String contextPath = request.getContextPath();
+        return scheme + "://" + serverName + ":" + serverPort + contextPath;
+    }
+
+    private String buildPasswordResetHtmlContent(String resetUrl) {
+        return "<!DOCTYPE html>"
+                + "<html>" // ... (Nội dung HTML cho email reset, xem ví dụ bên dưới)
+                + "<body style='font-family: Arial, sans-serif; text-align: center; color: #333;'>"
+                + "<div style='max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'>"
+                + "<h2>Yêu cầu đặt lại mật khẩu</h2>"
+                + "<p>Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản EcoDana của bạn.</p>"
+                + "<p>Vui lòng nhấp vào nút bên dưới để đặt lại mật khẩu của bạn. Liên kết này sẽ hết hạn sau 15 phút.</p>"
+                + "<a href='" + resetUrl + "' style='background-color: #28a745; color: white; padding: 15px 25px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; font-size: 16px; margin: 20px 0;'>Đặt lại mật khẩu</a>"
+                + "<p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>"
+                + "<hr><p style='font-size: 12px; color: #888;'>© 2025 EcoDana. All rights reserved.</p>"
+                + "</div></body></html>";
     }
 }
