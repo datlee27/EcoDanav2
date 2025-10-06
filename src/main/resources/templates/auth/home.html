@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <head th:replace="~{fragments/layout :: head}"></head>
 
@@ -10,7 +10,7 @@
     <div class="flex items-center justify-between">
         <div class="flex items-center">
             <i class="fas fa-check-circle mr-3"></i>
-            <span th:text="${success}">Registration successful!</span>
+            <span th:text="${success}">Đăng ký thành công!</span>
         </div>
         <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
             <i class="fas fa-times"></i>
@@ -19,14 +19,14 @@
 </div>
 
 <section class="hero pt-16">
-    <div class="container mx-auto px-4 py-12 flex flex-col md:flex-row items-center">
-        <div class="md:w-1/2 mb-10 md:mb-0">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Find, book and rent a car Easily</h1>
-            <p class="text-xl text-gray-600 mb-8">Get a car wherever and whenever you need it with your iOS and Android
-                device.</p>
-        </div>
-        <div class="md:w-1/2">
-            <img src="/images/tripview.jpg" alt="Car rental app" class="rounded-lg shadow-xl">
+    <div class="container mx-auto px-4 py-12">
+        <div class="relative rounded-lg shadow-xl overflow-hidden">
+            <img src="/images/tripview.png" alt="Ứng dụng cho thuê xe" class="w-full">
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="absolute inset-0 flex flex-col justify-center items-center text-center text-white p-4">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4">Tìm, Đặt và Thuê xe dễ dàng</h1>
+                <p class="text-xl mb-8">Thuê xe ở bất cứ đâu và bất cứ khi nào bạn cần.</p>
+            </div>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
                     <i class="fas fa-map-marker-alt"></i>
                 </div>
                 <div class="search-details flex-grow">
-                    <h4 class="font-semibold">Location</h4>
+                    <h4 class="font-semibold">Địa điểm</h4>
                     <p class="text-gray-500">Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng</p>
                 </div>
                 <div class="search-icon text-primary text-xl ml-auto">
@@ -50,8 +50,8 @@
                     <i class="fas fa-calendar"></i>
                 </div>
                 <div class="search-details flex-grow">
-                    <h4 class="font-semibold">Pickup & Return Date</h4>
-                    <p class="text-gray-500" id="date-time-display">Tue 15 Feb, 09:00 - Thu 16 Feb, 11:00</p>
+                    <h4 class="font-semibold">Ngày nhận & trả xe</h4>
+                    <p class="text-gray-500" id="date-time-display">Thứ 3, 15/02, 09:00 - Thứ 5, 16/02, 11:00</p>
                 </div>
                 <div class="search-icon text-primary text-xl ml-auto">
                     <i class="fas fa-chevron-down"></i>
@@ -59,7 +59,7 @@
             </div>
 
             <button class="search-btn bg-primary text-white px-6 py-4 rounded-lg hover:bg-accent transition-colors flex items-center">
-                Search
+                Tìm kiếm
                 <i class="fas fa-arrow-right ml-2"></i>
             </button>
         </div>
@@ -70,10 +70,9 @@
     <div class="container mx-auto px-4">
         <div class="text-center">
             <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
-                HOW IT WORK
+                CÁCH THỨC HOẠT ĐỘNG
             </div>
-            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-12">Rent with following 3 working
-                steps</h2>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-12">Thuê xe với 3 bước đơn giản</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -81,24 +80,24 @@
                 <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
                     <i class="fas fa-map-marker-alt"></i>
                 </div>
-                <h3 class="step-title text-xl font-semibold mb-2">Choose location</h3>
-                <p class="step-description text-gray-600">Enter your location and find nearby cars</p>
+                <h3 class="step-title text-xl font-semibold mb-2">Chọn địa điểm</h3>
+                <p class="step-description text-gray-600">Nhập vị trí của bạn và tìm xe ở gần</p>
             </div>
 
             <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
                 <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
                     <i class="fas fa-calendar"></i>
                 </div>
-                <h3 class="step-title text-xl font-semibold mb-2">Pick-up date</h3>
-                <p class="step-description text-gray-600">Select your pick up date and time to book your car</p>
+                <h3 class="step-title text-xl font-semibold mb-2">Chọn ngày nhận xe</h3>
+                <p class="step-description text-gray-600">Chọn ngày và giờ bạn muốn nhận xe để đặt</p>
             </div>
 
             <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
                 <div class="step-icon bg-blue-100 text-blue-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl mb-4">
                     <i class="fas fa-car"></i>
                 </div>
-                <h3 class="step-title text-xl font-semibold mb-2">Book your car</h3>
-                <p class="step-description text-gray-600">Book your car and we will deliver it directly to you</p>
+                <h3 class="step-title text-xl font-semibold mb-2">Đặt xe</h3>
+                <p class="step-description text-gray-600">Đặt xe và chúng tôi sẽ giao xe tận nơi cho bạn</p>
             </div>
         </div>
     </div>
@@ -109,10 +108,9 @@
         <div class="flex flex-col md:flex-row items-center">
             <div class="md:w-1/2 mb-10 md:mb-0">
                 <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
-                    WHY CHOOSE US
+                    TẠI SAO CHỌN CHÚNG TÔI
                 </div>
-                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-8">We offer the best experience
-                    with our rental deals</h2>
+                <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800 mb-8">Chúng tôi mang đến trải nghiệm tốt nhất với các ưu đãi thuê xe</h2>
 
                 <div class="space-y-6">
                     <div class="feature flex items-start space-x-4">
@@ -120,8 +118,8 @@
                             <i class="fas fa-wallet"></i>
                         </div>
                         <div class="feature-text">
-                            <h4 class="font-semibold text-lg mb-1">Best price guaranteed</h4>
-                            <p class="text-gray-600">Find a lower price? We'll refund you 100% of the difference.</p>
+                            <h4 class="font-semibold text-lg mb-1">Đảm bảo giá tốt nhất</h4>
+                            <p class="text-gray-600">Tìm thấy giá thấp hơn? Chúng tôi sẽ hoàn lại 100% chênh lệch.</p>
                         </div>
                     </div>
 
@@ -130,9 +128,8 @@
                             <i class="fas fa-user-check"></i>
                         </div>
                         <div class="feature-text">
-                            <h4 class="font-semibold text-lg mb-1">Experience driver</h4>
-                            <p class="text-gray-600">Don't have driver? Don't worry, we have many experienced driver for
-                                you.</p>
+                            <h4 class="font-semibold text-lg mb-1">Tài xế kinh nghiệm</h4>
+                            <p class="text-gray-600">Bạn không có tài xế? Đừng lo, chúng tôi có nhiều tài xế kinh nghiệm cho bạn.</p>
                         </div>
                     </div>
 
@@ -141,8 +138,8 @@
                             <i class="fas fa-truck"></i>
                         </div>
                         <div class="feature-text">
-                            <h4 class="font-semibold text-lg mb-1">24 hour car delivery</h4>
-                            <p class="text-gray-600">Book your car anytime and we will deliver it directly to you.</p>
+                            <h4 class="font-semibold text-lg mb-1">Giao xe 24 giờ</h4>
+                            <p class="text-gray-600">Đặt xe bất cứ lúc nào và chúng tôi sẽ giao xe tận nơi.</p>
                         </div>
                     </div>
 
@@ -151,16 +148,15 @@
                             <i class="fas fa-headset"></i>
                         </div>
                         <div class="feature-text">
-                            <h4 class="font-semibold text-lg mb-1">24/7 technical support</h4>
-                            <p class="text-gray-600">Have a question? Contact Rentcars support any time when you have
-                                problem.</p>
+                            <h4 class="font-semibold text-lg mb-1">Hỗ trợ kỹ thuật 24/7</h4>
+                            <p class="text-gray-600">Có câu hỏi? Liên hệ hỗ trợ của Rentcars bất cứ lúc nào bạn gặp sự cố.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="md:w-1/2">
-                <img src="https://via.placeholder.com/500x400" alt="Why choose us" class="rounded-lg shadow-xl">
+                <img src="https://via.placeholder.com/500x400" alt="Tại sao chọn chúng tôi" class="rounded-lg shadow-xl">
             </div>
         </div>
     </div>
@@ -170,9 +166,9 @@
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
             <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">
-                POPULAR RENTAL DEALS
+                ƯU ĐÃI THUÊ XE HẤP DẪN
             </div>
-            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Most popular cars rental deals</h2>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Các ưu đãi thuê xe phổ biến nhất</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -183,13 +179,13 @@
                                      'fas fa-car text-6xl text-white')}"></i>
                 </div>
                 <div class="car-details p-6">
-                    <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Vehicle Model</h3>
+                    <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Mẫu xe</h3>
 
                     <div class="car-type mb-2">
                             <span th:class="${'px-2 py-1 rounded-full text-xs font-medium ' +
                                            (vehicle.vehicleType == 'ElectricCar' ? 'bg-blue-100 text-blue-800' :
                                             'bg-green-100 text-green-800')}"
-                                  th:text="${vehicle.vehicleType}">Type</span>
+                                  th:text="${vehicle.vehicleType}">Loại</span>
                     </div>
 
                     <div class="car-rating flex items-center mb-4">
@@ -200,36 +196,36 @@
                             <i class="fas fa-star"></i>
                             <i class="fas fa-star-half-alt"></i>
                         </div>
-                        <span class="rating-text text-sm text-gray-500">(15 reviews)</span>
+                        <span class="rating-text text-sm text-gray-500">(15 đánh giá)</span>
                     </div>
 
                     <div class="car-specs grid grid-cols-2 gap-2 mb-4">
                         <div class="spec flex items-center text-sm text-gray-600">
                             <i class="fas fa-user mr-2 text-primary"></i>
-                            <span th:text="${vehicle.seats} + ' Passengers'">4 Passengers</span>
+                            <span th:text="${vehicle.seats} + ' chỗ'">4 chỗ</span>
                         </div>
                         <div class="spec flex items-center text-sm text-gray-600">
                             <i th:class="${vehicle.requiresLicense ? 'fas fa-id-card mr-2 text-primary' : 'fas fa-ban mr-2 text-primary'}"></i>
-                            <span th:text="${vehicle.requiresLicense ? 'License Required' : 'No License'}">License</span>
+                            <span th:text="${vehicle.requiresLicense ? 'Yêu cầu bằng lái' : 'Không cần bằng lái'}">Bằng lái</span>
                         </div>
                         <div class="spec flex items-center text-sm text-gray-600" th:if="${vehicle.batteryCapacity != null}">
                             <i class="fas fa-battery-half mr-2 text-primary"></i>
-                            <span th:text="${vehicle.batteryCapacity} + ' kWh'">Battery</span>
+                            <span th:text="${vehicle.batteryCapacity} + ' kWh'">Pin</span>
                         </div>
                         <div class="spec flex items-center text-sm text-gray-600">
                             <i class="fas fa-tachometer-alt mr-2 text-primary"></i>
-                            <span th:text="${vehicle.odometer} + ' km'">Odometer</span>
+                            <span th:text="${vehicle.odometer} + ' km'">Odo</span>
                         </div>
                     </div>
 
                     <div class="price-container flex justify-between items-center mb-4">
-                        <span class="price-label text-gray-600">Price:</span>
-                        <span class="price font-bold text-lg" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())} + ' / day'">$89 / day</span>
+                        <span class="price-label text-gray-600">Giá:</span>
+                        <span class="price font-bold text-lg" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())} + ' / ngày'">$89 / ngày</span>
                     </div>
 
                     <a th:href="@{'/vehicles/detail/' + ${vehicle.vehicleId}}"
                        class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
-                        View Details
+                        Xem chi tiết
                         <i class="fas fa-arrow-right ml-2"></i>
                     </a>
                 </div>
@@ -239,7 +235,7 @@
         <div class="text-center mt-12">
             <a th:href="@{/vehicles}"
                class="view-all-btn bg-transparent border border-primary text-primary px-6 py-3 rounded-lg hover:bg-primary hover:text-white transition-colors flex items-center justify-center mx-auto">
-                Show all vehicles
+                Xem tất cả xe
                 <i class="fas fa-arrow-right ml-2"></i>
             </a>
         </div>
@@ -249,8 +245,8 @@
 <section class="py-20 bg-gray-50">
     <div class="container mx-auto px-4">
         <div class="text-center mb-12">
-            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">TESTIMONIALS</div>
-            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">What people say about us?</h2>
+            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">NHẬN XÉT</div>
+            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Mọi người nói gì về chúng tôi?</h2>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -265,10 +261,9 @@
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="testimonial-text text-gray-600 italic mb-4">"I have been using your services for 3 years.
-                        Your service is great, I will continue to use your service."</p>
+                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi đã sử dụng dịch vụ của bạn trong 3 năm. Dịch vụ của bạn rất tuyệt, tôi sẽ tiếp tục sử dụng dịch vụ của bạn."</p>
                     <h4 class="testimonial-author font-semibold text-lg">Jenny Wilson</h4>
-                    <p class="testimonial-location text-gray-500">From New York, US</p>
+                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>
                 </div>
             </div>
 
@@ -283,10 +278,9 @@
                         <i class="fas fa-star"></i>
                         <i class="fas fa-star"></i>
                     </div>
-                    <p class="testimonial-text text-gray-600 italic mb-4">"I feel very secure when using your services.
-                        Your customer care team is very enthusiastic and the driver is always on time."</p>
+                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi cảm thấy rất an toàn khi sử dụng dịch vụ của bạn. Đội ngũ chăm sóc khách hàng của bạn rất nhiệt tình và tài xế luôn đúng giờ."</p>
                     <h4 class="testimonial-author font-semibold text-lg">Charlie Johnson</h4>
-                    <p class="testimonial-location text-gray-500">From New York, US</p>
+                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>
                 </div>
             </div>
         </div>
@@ -327,7 +321,7 @@
         <div class="border rounded-lg p-4 mb-4 search-popup-section">
             <h4 class="font-semibold text-gray-800">Theo xu hướng</h4>
             <div class="flex flex-wrap gap-2 mt-2 search-tags">
-                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe ô tô iện</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe ô tô điện</button>
                 <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Xe máy điện</button>
             </div>
         </div>
@@ -335,8 +329,8 @@
         <div class="border rounded-lg p-4 mb-4 search-popup-section">
             <h4 class="font-semibold text-gray-800">Ngân sách</h4>
             <div class="flex flex-wrap gap-2 mt-2 search-tags">
-                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">dưới 500 nghìn</button>
-                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">trên 500 nghìn</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Dưới 500 nghìn</button>
+                <button class="tag-btn bg-gray-200 px-4 py-2 rounded-full text-sm">Trên 500 nghìn</button>
             </div>
         </div>
 
@@ -1275,4 +1269,3 @@
 </body>
 
 </html>
-
