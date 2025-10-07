@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.model;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -26,6 +27,7 @@ public class User {
     private String username;
     
     @Column(name = "UserDOB")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate userDOB;
     
     

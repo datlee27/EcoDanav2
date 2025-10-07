@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.UUID;
 
 import com.ecodana.evodanavn1.model.PasswordResetToken;
 import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -195,6 +197,20 @@ public class UserService {
     public User updateUser(User user) {
         return userRepository.save(user);
     }
+
+    public User updateUser(String id, String firstName, String lastName, LocalDate userDOB, String gender, String phoneNumber) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            user.setFirstName(firstName);
+            user.setLastName(lastName);
+            user.setUserDOB(userDOB);
+            user.setGender(gender);
+            user.setPhoneNumber(phoneNumber);
+            return userRepository.save(user);
+        }
+        return null;
+    }
     
     public Map<String, Object> getUserStatistics() {
         Map<String, Object> stats = new HashMap<>();
@@ -297,6 +313,31 @@ public class UserService {
         }
 
         return null; // Token hợp lệ
+    }
+
+    /**
+     * Thay đổi mật khẩu cho người dùng đã xác thực.
+     *
+     * @param userId          ID của người dùng cần đổi mật khẩu.
+     * @param currentPassword Mật khẩu hiện tại để xác thực.
+     * @param newPassword     Mật khẩu mới.
+     * @return true nếu đổi mật khẩu thành công, false nếu mật khẩu hiện tại không đúng.
+     */
+    @Transactional
+    public boolean changePasswordForAuthenticatedUser(String userId, String currentPassword, String newPassword) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            // Kiểm tra xem mật khẩu hiện tại có khớp không
+            if (passwordEncoder.matches(currentPassword, user.getPassword())) {
+                // Nếu khớp, mã hóa và đặt mật khẩu mới
+                user.setPassword(passwordEncoder.encode(newPassword));
+                userRepository.save(user);
+                return true;
+            }
+        }
+        // Trả về false nếu không tìm thấy người dùng hoặc mật khẩu hiện tại không đúng
+        return false;
     }
 
     public void changeUserPassword(User user, String newPassword) {

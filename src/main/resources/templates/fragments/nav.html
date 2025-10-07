@@ -34,7 +34,7 @@
                         <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                             <i class="fas fa-user text-white text-sm"></i>
                         </div>
-                        <span th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</span>
+                        <span id="navbar-username" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</span>
                         <i class="fas fa-chevron-down text-xs"></i>
                     </button>
 
@@ -42,7 +42,7 @@
                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                         <div class="py-2">
                             <div class="px-4 py-2 border-b border-gray-100">
-                                <p class="text-sm font-medium text-gray-900" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</p>
+                                <p id="dropdown-username" class="text-sm font-medium text-gray-900" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</p>
                                 <p class="text-xs text-gray-500" th:text="${currentUser.email}">email@example.com</p>
                             </div>
                             

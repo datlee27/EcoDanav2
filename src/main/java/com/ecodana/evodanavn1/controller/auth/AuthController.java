@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.controller.auth;
 import com.ecodana.evodanavn1.model.PasswordResetToken;
 import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -24,7 +26,7 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
-import java.security.Principal;
+import java.util.Map;
 import java.util.Optional;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -40,7 +42,7 @@ public class AuthController {
     @Autowired
     private PasswordResetTokenRepository tokenRepository;
 
-    // Inject AuthenticationManager để thực hiện đăng nhập theo chương trình
+    // Inject AuthenticationManager to perform programmatic login
     @Autowired
     private AuthenticationManager authenticationManager;
 
@@ -168,26 +170,26 @@ public class AuthController {
 
         if (submittedOtp.equals(storedOtp)) {
             try {
-                // Lấy mật khẩu gốc (chưa mã hóa) từ session để đăng nhập
+                // Get the original (unencrypted) password from the session to log in
                 String rawPassword = tempUser.getPassword();
 
-                // 1. Lưu người dùng vào CSDL (mật khẩu sẽ được mã hóa tại đây)
+                // 1. Save the user to the database (the password will be encrypted here)
                 userService.register(tempUser);
 
-                // 2. ĐĂNG NHẬP NGƯỜI DÙNG VÀO SPRING SECURITY
+                // 2. LOG THE USER INTO SPRING SECURITY
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(tempUser.getEmail(), rawPassword);
                 Authentication authentication = authenticationManager.authenticate(authToken);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
-                // 3. Lấy thông tin đầy đủ của người dùng và lưu vào session để sử dụng ngay
+                // 3. Get the full user information and save it to the session for immediate use
                 User registeredUser = userService.getUserWithRole(tempUser.getEmail());
                 session.setAttribute("currentUser", registeredUser);
 
-                // Xóa dữ liệu OTP khỏi session
+                // Clear OTP data from the session
                 clearOtpSession(session);
 
-                // Chuyển hướng như cũ
+                // Redirect as before
                 redirectAttributes.addFlashAttribute("success", "🎉 Đăng ký thành công! Chào mừng " + registeredUser.getFirstName() + "! Hãy khám phá và đặt xe ngay.");
                 return "redirect:/";
 
@@ -206,27 +208,78 @@ public class AuthController {
 
     @GetMapping("/profile")
     public String userProfile(Model model, HttpSession session) {
-        // Lấy đối tượng User đã được lưu trong session khi đăng nhập
+        // Get the User object saved in the session during login
         User currentUser = (User) session.getAttribute("currentUser");
 
-        // Nếu người dùng chưa đăng nhập (không có trong session), chuyển hướng về trang đăng nhập
+        // If the user is not logged in (not in session), redirect to the login page
         if (currentUser == null) {
             return "redirect:/login";
         }
 
-        // --- BƯỚC 1: Cung cấp thông tin cho thanh NAV ---\
-        // Thêm đối tượng currentUser vào model để thanh nav có thể sử dụng
+        // --- STEP 1: Provide information for the NAV bar ---
+        // Add the currentUser object to the model so the nav bar can use it
         model.addAttribute("currentUser", currentUser);
 
-        // --- BƯỚC 2: Cung cấp thông tin cho nội dung trang PROFILE ---\
-        // Lấy thông tin mới nhất của người dùng từ CSDL dựa trên email hoặc username trong session
+        // --- STEP 2: Provide information for the PROFILE page content ---
+        // Get the latest user information from the database based on the email or username in the session
         User userForProfile = userService.findByEmail(currentUser.getEmail());
-        // Thêm vào model với tên "user" để profile.html sử dụng
+        // Add to the model with the name "user" for profile.html to use
         model.addAttribute("user", userForProfile);
 
-        // Trả về view của trang profile
+        // Return the view of the profile page
         return "auth/profile";
     }
+
+    @PostMapping("/profile/update")
+    public String updateUserProfile(User user, RedirectAttributes redirectAttributes, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        userService.updateUser(currentUser.getId(), user.getFirstName(), user.getLastName(), user.getUserDOB(), user.getGender(), user.getPhoneNumber());
+        
+        // Update the user's name in the session as well
+        User updatedUser = userService.findByEmail(currentUser.getEmail());
+        session.setAttribute("currentUser", updatedUser);
+
+        redirectAttributes.addFlashAttribute("success", "Cập nhật thông tin thành công!");
+        return "redirect:/profile";
+    }
+
+    @PostMapping("/profile/change-password")
+    public String changePassword(@RequestParam String currentPassword,
+                                 @RequestParam String newPassword,
+                                 @RequestParam String confirmPassword,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            redirectAttributes.addFlashAttribute("password_error", "Mật khẩu mới và mật khẩu xác nhận không khớp.");
+            return "redirect:/profile";
+        }
+
+        if (newPassword.length() < 6) {
+            redirectAttributes.addFlashAttribute("password_error", "Mật khẩu mới phải có ít nhất 6 ký tự.");
+            return "redirect:/profile";
+        }
+
+        boolean isPasswordChanged = userService.changePasswordForAuthenticatedUser(currentUser.getId(), currentPassword, newPassword);
+
+        if (isPasswordChanged) {
+            redirectAttributes.addFlashAttribute("password_success", "Đổi mật khẩu thành công!");
+        } else {
+            redirectAttributes.addFlashAttribute("password_error", "Mật khẩu hiện tại không đúng. Vui lòng thử lại.");
+        }
+
+        return "redirect:/profile";
+    }
+
 
     @GetMapping("/logout")
     public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
@@ -269,14 +322,14 @@ public class AuthController {
         User user = userOptional.get();
         PasswordResetToken token = userService.createPasswordResetTokenForUser(user);
 
-        // Lấy baseUrl từ request trước khi gọi phương thức async
+        // Get baseUrl from the request before calling the async method
         String baseUrl = getBaseUrl(request);
 
         try {
-            // Truyền baseUrl (String) thay vì request (HttpServletRequest)
+            // Pass baseUrl (String) instead of request (HttpServletRequest)
             emailService.sendPasswordResetEmail(user.getEmail(), token.getToken(), baseUrl);
         } catch (MessagingException | UnsupportedEncodingException e) {
-            // Log lỗi để debug
+            // Log the error for debugging
             System.err.println("Error sending password reset email: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Lỗi khi gửi email. Vui lòng thử lại.");
             return "redirect:/forgot-password";
@@ -300,7 +353,7 @@ public class AuthController {
         }
 
         model.addAttribute("token", token);
-        return "auth/reset-password";
+        return "auth/reset-password"; // Changed from "change-password"
     }
 
     @PostMapping("/reset-password")
@@ -327,7 +380,7 @@ public class AuthController {
             User user = resetToken.getUser();
             userService.changeUserPassword(user, newPassword);
 
-            // Đánh dấu token đã được sử dụng
+            // Mark the token as used
             resetToken.setUsed(true);
             tokenRepository.save(resetToken);
 
@@ -339,18 +392,20 @@ public class AuthController {
         }
     }
 
-    // Hàm tiện ích để tạo baseUrl từ request
+    // Utility function to create baseUrl from the request
     private String getBaseUrl(HttpServletRequest request) {
         String scheme = request.getScheme();
         String serverName = request.getServerName();
         int serverPort = request.getServerPort();
         String contextPath = request.getContextPath();
 
-        // Chỉ thêm port vào URL nếu nó không phải là port mặc định (80 cho http, 443 cho https)
+        // Only add the port to the URL if it is not the default port (80 for http, 443 for https)
         if ((("http".equals(scheme) && serverPort == 80) || ("https".equals(scheme) && serverPort == 443))) {
             return scheme + "://" + serverName + contextPath;
         } else {
             return scheme + "://" + serverName + ":" + serverPort + contextPath;
         }
     }
+    
+    // Removed the old /change-password GET and POST mappings
 }

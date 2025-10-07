@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" th:href="@{/css/profile.css}">
 
 <head th:replace="~{fragments/layout :: head}"></head>
@@ -13,64 +14,254 @@
         <h3>Xin chào bạn!</h3>
         <nav>
             <ul>
-                <li><a href="#" class="active"><i class="fa-solid fa-user"></i> Tài khoản của tôi</a></li>
+                <li><a href="#profile-form" id="profile-link" class="active"><i class="fa-solid fa-user"></i> Tài khoản của tôi</a></li>
                 <li><a href="#"><i class="fa-solid fa-heart"></i> Xe yêu thích</a></li>
                 <li><a href="#"><i class="fa-solid fa-route"></i> Chuyến của tôi</a></li>
                 <li><a href="#"><i class="fa-solid fa-gift"></i> Quà tặng</a></li>
                 <li><a href="#"><i class="fa-solid fa-location-dot"></i> Địa chỉ của tôi</a></li>
-                <li><a href="#"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a></li>
+                <li><a href="#change-password-form" id="change-password-link"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a></li>
             </ul>
         </nav>
     </aside>
 
     <section class="profile-content">
-        <div class="content-header">
-            <h2>Thông tin tài khoản</h2>
-            <a href="#" class="edit-link">Chỉnh sửa</a>
-        </div>
+        <!-- User Info Form -->
+        <form th:action="@{/profile/update}" th:object="${user}" method="post" id="profile-form">
+            <div class="content-header">
+                <h2>Thông tin tài khoản</h2>
+                <div>
+                    <a href="#" class="edit-link" id="edit-link">Chỉnh sửa</a>
+                    <button type="button" class="cancel-button" id="cancel-button" style="display:none;">Hủy</button>
+                    <button type="submit" class="save-button" id="save-button" style="display:none;">Lưu thay đổi</button>
+                </div>
+            </div>
 
-        <div class="info-grid">
-            <div class="info-item">
-                <span class="info-label">Tên tài khoản</span>
-                <p class="info-value" th:text="${user.firstName + ' ' + user.lastName}">Tạ Tuấn Kỳ</p>
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="info-label" for="firstName">Họ và tên</label>
+                    <div class="name-inputs">
+                        <input type="text" id="firstName" th:field="*{firstName}" class="info-value" readonly />
+                        <input type="text" th:field="*{lastName}" class="info-value" readonly />
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label" for="userDOB">Ngày sinh</label>
+                    <input type="text" id="userDOB" name="userDOB"
+                           th:value="${user.userDOB != null ? #temporals.format(user.userDOB, 'yyyy-MM-dd') : ''}"
+                           class="info-value" readonly placeholder="Chưa cập nhật"/>
+                </div>
+                <div class="info-item">
+                    <label class="info-label" for="gender">Giới tính</label>
+                    <select id="gender" th:field="*{gender}" class="info-value" disabled>
+                        <option value="" th:selected="${user.gender == null}">Chưa cập nhật</option>
+                        <option value="Male" th:selected="${user.gender == 'Male'}">Nam</option>
+                        <option value="Female" th:selected="${user.gender == 'Female'}">Nữ</option>
+                        <option value="Other" th:selected="${user.gender == 'Other'}">Khác</option>
+                    </select>
+                </div>
+                <div class="info-item">
+                    <label class="info-label" for="phoneNumber">Số điện thoại</label>
+                    <input type="text" id="phoneNumber" th:field="*{phoneNumber}" class="info-value" readonly />
+                </div>
+                <div class="info-item">
+                    <label class="info-label">Email</label>
+                    <p class="info-value static" th:text="${user.email}">tatuanky2014sv@gmail.com</p>
+                </div>
+                <div class="info-item-linked">
+                    <div class="linked-content">
+                        <label class="info-label">Google</label>
+                        <p class="info-value static">Chưa liên kết</p>
+                    </div>
+                    <a href="#" class="link-button">Liên kết</a>
+                </div>
             </div>
-            <div class="info-item">
-                <span class="info-label">Ngày sinh</span>
-                <p class="info-value" th:text="${user.userDOB != null ? #dates.format(user.userDOB, 'dd/MM/yyyy') : 'Chưa cập nhật'}">04/06/2004</p>
-            </div>
-            <div class="info-item">
-                <span class="info-label">Giới tính</span>
-                <p class="info-value" th:text="${user.gender != null ? user.gender : 'Chưa cập nhật'}">Male</p>
-            </div>
-        </div>
+        </form>
 
-        <div class="info-list">
-            <div class="info-item">
+        <!-- Change Password Form -->
+        <form th:action="@{/profile/change-password}" method="post" id="change-password-form" style="display: none;">
+            <div class="content-header">
+                <h2>Đổi mật khẩu</h2>
                 <div>
-                    <span class="info-label">Số điện thoại</span>
-                    <p class="info-value" th:text="${user.phoneNumber != null ? user.phoneNumber : 'Chưa cập nhật'}"></p>
+                    <button type="submit" class="save-button">Lưu thay đổi</button>
                 </div>
-                <a href="#" class="edit-link">Chỉnh sửa</a>
             </div>
-            <div class="info-item">
-                <div>
-                    <span class="info-label">Email</span>
-                    <p class="info-value" th:text="${user.email}">tatuanky2014sv@gmail.com</p>
+
+            <!-- Display password change success/error messages -->
+            <div th:if="${password_success}" class="alert alert-success" th:text="${password_success}"></div>
+            <div th:if="${password_error}" class="alert alert-danger" th:text="${password_error}"></div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <label class="info-label" for="currentPassword">Mật khẩu hiện tại</label>
+                    <input type="password" id="currentPassword" name="currentPassword" class="info-value" required />
                 </div>
-                <a href="#" class="edit-link">Chỉnh sửa</a>
-            </div>
-            <div class="info-item">
-                <div>
-                    <span class="info-label">Google</span>
-                    <p class="info-value">Chưa liên kết</p>
+                <div class="info-item">
+                    <label class="info-label" for="newPassword">Mật khẩu mới</label>
+                    <input type="password" id="newPassword" name="newPassword" class="info-value" required />
                 </div>
-                <a href="#" class="edit-link">Liên kết</a>
+                <div class="info-item">
+                    <label class="info-label" for="confirmPassword">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="info-value" required />
+                </div>
             </div>
-        </div>
+        </form>
     </section>
 </main>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const profileForm = document.getElementById('profile-form');
+        const changePasswordForm = document.getElementById('change-password-form');
+        const profileLink = document.getElementById('profile-link');
+        const changePasswordLink = document.getElementById('change-password-link');
+
+        const sidebarLinks = document.querySelectorAll('.profile-sidebar a');
+
+        function setActiveLink(activeLink) {
+            sidebarLinks.forEach(link => link.classList.remove('active'));
+            activeLink.classList.add('active');
+        }
+
+        profileLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            profileForm.style.display = 'block';
+            changePasswordForm.style.display = 'none';
+            setActiveLink(profileLink);
+        });
+
+        changePasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            profileForm.style.display = 'none';
+            changePasswordForm.style.display = 'block';
+            setActiveLink(changePasswordLink);
+        });
+
+        // Show the correct form based on flash attributes
+        if (document.querySelector('.alert-danger') || document.querySelector('.alert-success')) {
+            profileForm.style.display = 'none';
+            changePasswordForm.style.display = 'block';
+            setActiveLink(changePasswordLink);
+        } else {
+            profileForm.style.display = 'block';
+            changePasswordForm.style.display = 'none';
+            setActiveLink(profileLink);
+        }
+
+        // --- Profile Edit/Cancel Logic ---
+        const form = document.getElementById('profile-form');
+        const editLink = document.getElementById('edit-link');
+        const saveButton = document.getElementById('save-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const inputs = form.querySelectorAll('input.info-value, select.info-value');
+
+        let originalValues = {};
+        inputs.forEach(input => {
+            originalValues[input.name || input.id] = input.value;
+        });
+
+        function setFormEditable(isEditable) {
+            inputs.forEach(input => {
+                if (input.tagName.toLowerCase() === 'select') {
+                    input.disabled = !isEditable;
+                } else {
+                    if (!isEditable) {
+                        input.setAttribute('readonly', 'readonly');
+                    } else {
+                        input.removeAttribute('readonly');
+                    }
+                }
+                if (isEditable) {
+                    input.classList.remove('readonly');
+                } else {
+                    input.classList.add('readonly');
+                }
+            });
+
+            editLink.style.display = isEditable ? 'none' : 'inline-block';
+            saveButton.style.display = isEditable ? 'inline-block' : 'none';
+            cancelButton.style.display = isEditable ? 'inline-block' : 'none';
+        }
+
+        editLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            setFormEditable(true);
+            inputs.forEach(input => {
+                originalValues[input.name || input.id] = input.value;
+            });
+        });
+
+        cancelButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            inputs.forEach(input => {
+                input.value = originalValues[input.name || input.id];
+                 if (input.id === 'userDOB' && input._flatpickr) {
+                    input._flatpickr.setDate(originalValues[input.id]);
+                }
+            });
+            setFormEditable(false);
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: 'POST',
+                body: new URLSearchParams(formData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.reload(); // Reload to show success message and updated data
+                } else {
+                     throw new Error('Network response was not ok');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi cập nhật thông tin.');
+            });
+        });
+
+        // --- Flatpickr Initialization ---
+        const dobInput = document.getElementById("userDOB");
+        flatpickr(dobInput, {
+            "locale": "vn",
+            altInput: true,
+            altFormat: "d/m/Y",
+            dateFormat: "Y-m-d",
+            allowInput: true,
+            onOpen: function(selectedDates, dateStr, instance) {
+                if (instance.input.hasAttribute('readonly')) {
+                    instance.close();
+                }
+            },
+            onReady: function(selectedDates, dateStr, instance) {
+                const flatpickrInput = instance.altInput;
+                const originalInput = instance.input;
+                flatpickrInput.classList.add('info-value');
+                const syncState = () => {
+                    if (originalInput.hasAttribute('readonly')) {
+                        flatpickrInput.setAttribute('readonly', 'readonly');
+                        flatpickrInput.classList.add('readonly');
+                    } else {
+                        flatpickrInput.removeAttribute('readonly');
+                        flatpickrInput.classList.remove('readonly');
+                    }
+                };
+                syncState();
+                const observer = new MutationObserver(syncState);
+                observer.observe(originalInput, { attributes: true, attributeFilter: ['readonly'] });
+            }
+        });
+
+        setFormEditable(false);
+    });
+</script>
 
 </body>
 </html>

@@ -53,13 +53,13 @@
 }
 
 .profile-sidebar nav a:hover {
-    background-color: #E8F5E9; /* Màu nền xanh lá rất nhạt khi hover */
-    color: #388E3C; /* Màu chữ xanh lá đậm hơn khi hover */
+    background-color: #E8F5E9;
+    color: #388E3C;
 }
 
 .profile-sidebar nav a.active {
-    background-color: #C8E6C9; /* Màu nền xanh lá nhạt cho tab đang hoạt động */
-    color: #388E3C; /* Màu chữ xanh lá đậm cho tab đang hoạt động */
+    background-color: #C8E6C9;
+    color: #388E3C;
     font-weight: 600;
 }
 
@@ -88,57 +88,153 @@
     color: #111827;
 }
 
-.edit-link {
+/* Buttons */
+.edit-link, .save-button, .cancel-button, .link-button {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #4CAF50; /* Màu chữ xanh lá mặc định */
     text-decoration: none;
-    transition: color 0.3s;
+    transition: all 0.3s;
+    border-radius: 8px;
+    padding: 8px 16px;
+    border: 1px solid transparent;
+    cursor: pointer;
+}
+
+.edit-link {
+    color: #4CAF50;
+    border-color: #4CAF50;
 }
 
 .edit-link:hover {
-    color: #388E3C; /* Màu chữ xanh lá đậm hơn khi hover */
+    background-color: #4CAF50;
+    color: #fff;
+}
+
+.save-button {
+    background-color: #4CAF50;
+    color: #fff;
+    border-color: #4CAF50;
+}
+
+.save-button:hover {
+    background-color: #388E3C;
+}
+
+.cancel-button {
+    background-color: #f44336;
+    color: #fff;
+    border-color: #f44336;
+    margin-right: 8px;
+}
+
+.cancel-button:hover {
+    background-color: #d32f2f;
+}
+
+.link-button {
+    color: #2196F3;
+    border-color: #2196F3;
+    align-self: flex-end;
+    margin-bottom: 4px; /* Align with input fields */
+}
+
+.link-button:hover {
+    background-color: #2196F3;
+    color: #fff;
 }
 
 /* Information Display Styling */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 24px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px 32px;
     margin-bottom: 32px;
 }
 
-.info-list {
+.info-item, .info-item-linked {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
-.info-list .info-item {
-    display: flex;
+.info-item-linked {
+    flex-direction: row;
     justify-content: space-between;
-    align-items: center;
-    padding: 16px 0;
-    border-bottom: 1px solid #f0f0f0;
+    align-items: flex-end;
 }
 
-.info-list .info-item:last-child {
-    border-bottom: none;
+.linked-content {
+    flex-grow: 1;
 }
 
-.info-item .info-label {
+.info-label {
     font-size: 0.9rem;
     color: #6b7280;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    display: block;
 }
 
-.info-item .info-value {
+.info-value {
     font-size: 1rem;
     font-weight: 500;
     color: #1f2937;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    width: 100%;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+/* Readonly and Disabled State */
+.info-value.readonly,
+.info-value:disabled {
+    background-color: transparent;
+    border-color: transparent;
+    padding-left: 0;
+    color: #1f2937;
+    cursor: default;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Remove focus outline on readonly/disabled fields */
+.info-value.readonly:focus,
+.info-value:disabled:focus {
+    outline: none;
+    box-shadow: none;
+    border-color: transparent;
+}
+
+/* Focus state for editable fields */
+.info-value:not(.readonly):not(:disabled):focus {
+    border-color: #4CAF50; /* Green border on focus */
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2); /* Soft green glow */
+    outline: none;
+}
+
+.info-value.static {
+    border: none;
+    padding: 8px 0;
+    background: transparent;
+}
+
+.name-inputs {
+    display: flex;
+    gap: 8px;
+}
+
+.name-inputs .info-value {
+    flex: 1;
 }
 
 /* Responsive Design */
+@media (max-width: 992px) {
+    .info-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .profile-container {
         flex-direction: column;
@@ -147,5 +243,9 @@
     .profile-sidebar {
         flex: 1;
         width: 100%;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
     }
 }
