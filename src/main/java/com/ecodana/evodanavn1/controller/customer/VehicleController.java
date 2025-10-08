@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -22,15 +23,37 @@ public class VehicleController {
     }
 
     @GetMapping("/vehicles")
-    public String listVehicles(Model model, HttpSession session) {
+    public String listVehicles(@RequestParam(required = false) String location,
+                               @RequestParam(required = false) String pickupDate,
+                               @RequestParam(required = false) String returnDate,
+                               @RequestParam(required = false) String pickupTime,
+                               @RequestParam(required = false) String returnTime,
+                               @RequestParam(required = false) String category,
+                               @RequestParam(required = false) String vehicleType,
+                               @RequestParam(required = false) String budget,
+                               @RequestParam(required = false) Integer seats,
+                               @RequestParam(required = false) Boolean requiresLicense,
+                               Model model, HttpSession session) {
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser != null) {
             model.addAttribute("currentUser", currentUser);
         }
 
-        List<Vehicle> vehicles = vehicleService.getAllVehicles();
+        List<Vehicle> vehicles = vehicleService.filterVehicles(location, pickupDate, returnDate, pickupTime, returnTime, category, vehicleType, budget, seats, requiresLicense);
         model.addAttribute("vehicles", vehicles);
+
+        // Add all filter parameters to the model to be used in the view
+        model.addAttribute("selectedLocation", location);
+        model.addAttribute("selectedPickupDate", pickupDate);
+        model.addAttribute("selectedReturnDate", returnDate);
+        model.addAttribute("selectedPickupTime", pickupTime);
+        model.addAttribute("selectedReturnTime", returnTime);
+        model.addAttribute("selectedCategory", category);
+        model.addAttribute("selectedVehicleType", vehicleType);
+        model.addAttribute("selectedBudget", budget);
+        model.addAttribute("selectedSeats", seats);
+        model.addAttribute("selectedRequiresLicense", requiresLicense);
+
         return "customer/vehicles";
     }
 }
-

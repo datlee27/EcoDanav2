@@ -1,19 +1,21 @@
 package com.ecodana.evodanavn1.service;
 
-import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class VehicleService {
@@ -125,5 +127,55 @@ public class VehicleService {
         analytics.put("statusDistribution", vehicleRepository.findStatusDistribution());
         analytics.put("categoryDistribution", vehicleRepository.findCategoryDistribution());
         return analytics;
+    }
+
+    private boolean isNullOrEmpty(String str) {
+        return str == null || str.isEmpty();
+    }
+
+    public List<Vehicle> filterVehicles(String location, String pickupDate, String returnDate, String pickupTime, String returnTime, String category, String vehicleType, String budget, Integer seats, Boolean requiresLicense) {
+        Stream<Vehicle> vehicleStream = getAllVehicles().stream();
+
+        // TODO: Implement location-based filtering. The Vehicle entity currently does not have location data.
+
+        // Filter by availability if date/time is specified
+        if (!isNullOrEmpty(pickupDate) || !isNullOrEmpty(returnDate) || !isNullOrEmpty(pickupTime) || !isNullOrEmpty(returnTime)) {
+            vehicleStream = vehicleStream.filter(vehicle -> "Available".equalsIgnoreCase(vehicle.getStatus()));
+        }
+
+        // Filter by Vehicle Type
+        if (!isNullOrEmpty(vehicleType)) {
+            vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType()));
+        }
+
+        // Filter by Category
+        if (!isNullOrEmpty(category)) {
+            vehicleStream = vehicleStream.filter(vehicle -> vehicle.getCategory() != null && category.equalsIgnoreCase(vehicle.getCategory().getCategoryName()));
+        }
+
+        // Filter by Budget
+        if (!isNullOrEmpty(budget)) {
+            vehicleStream = vehicleStream.filter(vehicle -> {
+                BigDecimal dailyPrice = getDailyPrice(vehicle);
+                if ("under500k".equals(budget)) {
+                    return dailyPrice.compareTo(new BigDecimal("500000")) < 0;
+                } else if ("over500k".equals(budget)) {
+                    return dailyPrice.compareTo(new BigDecimal("500000")) >= 0;
+                }
+                return true; // No budget filter if value is unknown
+            });
+        }
+
+        // Filter by Seats
+        if (seats != null && seats > 0) {
+            vehicleStream = vehicleStream.filter(vehicle -> seats.equals(vehicle.getSeats()));
+        }
+
+        // Filter by License Requirement
+        if (requiresLicense != null) {
+            vehicleStream = vehicleStream.filter(vehicle -> requiresLicense.equals(vehicle.getRequiresLicense()));
+        }
+
+        return vehicleStream.collect(Collectors.toList());
     }
 }

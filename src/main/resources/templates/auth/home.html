@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            <button class="search-btn bg-primary text-white px-6 py-4 rounded-lg hover:bg-accent transition-colors flex items-center">
+            <button id="quick-search-btn" onclick="performSearch()" class="search-btn bg-primary text-white px-6 py-4 rounded-lg hover:bg-accent transition-colors flex items-center">
                 Tìm kiếm
                 <i class="fas fa-arrow-right ml-2"></i>
             </button>
@@ -89,7 +89,7 @@
                     <i class="fas fa-calendar"></i>
                 </div>
                 <h3 class="step-title text-xl font-semibold mb-2">Chọn ngày nhận xe</h3>
-                <p class="step-description text-gray-600">Chọn ngày và giờ bạn muốn nhận xe để đặt</p>
+                <p class="step-description text-gray-600">Chọn ngày và giờ bạn muốn đặt</p>
             </div>
 
             <div class="step text-center p-6 rounded-lg hover:shadow-lg transition-shadow">
@@ -334,7 +334,7 @@
             </div>
         </div>
 
-        <button onclick="closePopup('search-popup')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors">Tìm kiếm</button>
+        <button onclick="closePopup('search-popup')" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors">Xác nhận</button>
     </div>
 </div>
 
@@ -1120,6 +1120,57 @@
 
         updateSummary();
         closePopup('date-time-popup');
+    }
+
+    function performSearch() {
+        const baseUrl = '[[@{/vehicles}]]';
+        const params = new URLSearchParams();
+
+        // 1. Lấy địa điểm
+        if (selectedLocationText && selectedLocationText !== 'Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng') {
+            params.append('location', selectedLocationText);
+        }
+
+        // 2. Lấy ngày và giờ
+        if (selectedDates.length === 2) {
+            const pickupDate = selectedDates[0].toISOString().split('T')[0];
+            const returnDate = selectedDates[1].toISOString().split('T')[0];
+            const pickupTime = document.getElementById('pickup-time').value;
+            const returnTime = document.getElementById('return-time').value;
+
+            params.append('pickupDate', pickupDate);
+            params.append('returnDate', returnDate);
+            params.append('pickupTime', pickupTime);
+            params.append('returnTime', returnTime);
+        }
+
+        // 3. Lấy các tags đã chọn và chuyển đổi thành parameters
+        const selectedTags = document.querySelectorAll('#search-popup .tag-btn.selected');
+        selectedTags.forEach(tag => {
+            const tagText = tag.textContent.trim();
+            switch (tagText) {
+                case 'Xe ô tô điện':
+                    params.set('vehicleType', 'ElectricCar');
+                    break;
+                case 'Xe máy điện':
+                    params.set('vehicleType', 'ElectricMotorcycle');
+                    break;
+                case 'Dưới 500 nghìn':
+                    params.set('budget', 'under500k');
+                    break;
+                case 'Trên 500 nghìn':
+                    params.set('budget', 'over500k');
+                    break;
+                case 'Công việc, đi lại':
+                case 'Gia đình':
+                case 'Tiếp khách, dự tiệc':
+                    params.set('category', tagText);
+                    break;
+            }
+        });
+
+        // 4. Chuyển hướng
+        window.location.href = `${baseUrl}?${params.toString()}`;
     }
 
     // --- DOMContentLoaded ---
