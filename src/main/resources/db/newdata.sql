@@ -1,4 +1,4 @@
-
+USE ecodanangv2;
 
 INSERT INTO Roles (RoleId, RoleName, NormalizedName)
 VALUES ('550e8400-e29b-41d4-a716-446655440001', 'Admin', 'ADMIN'),
@@ -36,7 +36,7 @@ VALUES ('550e8400-e29b-41d4-a716-446655440100', 'admin', 'admin@ecodana.com',
 -- NỘI DUNG: DỮ LIỆU MẪU XE ĐIỆN VINFAST (TỔNG HỢP)
 -- PHIÊN BẢN: HOÀN CHỈNH
 -- =============================================
-USE ecodanav2;
+
 
 -- =============================================
 -- SECTION 1: DỮ LIỆU BẢNG TRA CỨU

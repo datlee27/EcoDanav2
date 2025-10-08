@@ -4,7 +4,7 @@
 -- PHIÊN BẢN TỐI ƯU HÓA
 -- =============================================
 
-USE ecodanav2;
+# USE ecodanangv2;
 
 -- Vô hiệu hóa các kiểm tra để đảm bảo việc xóa và tạo bảng diễn ra suôn sẻ
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
