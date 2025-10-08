@@ -173,11 +173,17 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <div class="car-image h-40 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <i th:class="${vehicle.vehicleType == 'ElectricCar' ? 'fas fa-car text-6xl text-white' :
-                                     (vehicle.vehicleType == 'ElectricMotorcycle' ? 'fas fa-motorcycle text-6xl text-white' :
-                                     'fas fa-car text-6xl text-white')}"></i>
-                </div>
+                <!-- Thay thế khối div hiển thị icon bằng thẻ img -->
+                <a th:href="@{'/vehicles/detail/' + ${vehicle.vehicleId}}" class="block h-48 overflow-hidden" th:with="
+                    imageFolder = (${vehicle.vehicleType == 'ElectricCar'} ? 'electric-car' : 'electric-motorbike'),
+                    imageName = (${vehicle.vehicleModel != null} ? ${vehicle.vehicleModel.toLowerCase().replace(' ', '-')} : 'default'),
+                    imageUrl = @{|/images/vehicles/${imageFolder}/${imageName}.jpg|},
+                    fallbackUrl = @{|/images/vehicles/${imageFolder}/default.jpg|}">
+                    <!-- Tự động tạo đường dẫn ảnh .jpg từ vehicleModel. Nếu ảnh không tồn tại, sẽ hiển thị ảnh mặc định theo loại xe. -->
+                    <img th:src="${imageUrl}" th:data-fallback-src="${fallbackUrl}"
+                         onerror="this.onerror=null; this.src=this.getAttribute('data-fallback-src');"
+                         th:alt="${vehicle.vehicleModel}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110">
+                </a>
                 <div class="car-details p-6">
                     <h3 class="car-title text-xl font-semibold mb-2" th:text="${vehicle.vehicleModel}">Mẫu xe</h3>
 
@@ -1187,16 +1193,39 @@
             }, 5000);
         }
 
-        // Xử lý chọn các tag trong popup tìm kiếm (cho phép chọn nhiều)
+        // Xử lý chọn các tag trong popup tìm kiếm
         const tagButtons = document.querySelectorAll('.tag-btn');
         tagButtons.forEach(button => {
             button.addEventListener('click', function() {
-                const isSelected = this.classList.toggle('selected');
-                this.classList.toggle('bg-primary', isSelected);
-                this.classList.toggle('text-white', isSelected);
-                this.classList.toggle('bg-gray-200', !isSelected);
-                this.classList.add('pulse-animation');
+                const section = this.closest('.search-popup-section');
+                const sectionTitle = section.querySelector('h4').textContent.trim();
+                const isSingleChoice = ['Theo xu hướng', 'Ngân sách'].includes(sectionTitle);
 
+                if (isSingleChoice) {
+                    // Logic chọn đơn
+                    const wasSelected = this.classList.contains('selected');
+                    
+                    // Deselect all buttons in the same section
+                    const siblings = this.parentElement.querySelectorAll('.tag-btn');
+                    siblings.forEach(sibling => {
+                        sibling.classList.remove('selected', 'bg-primary', 'text-white');
+                        sibling.classList.add('bg-gray-200');
+                    });
+
+                    // If the button was not already selected, select it.
+                    if (!wasSelected) {
+                        this.classList.add('selected', 'bg-primary', 'text-white');
+                        this.classList.remove('bg-gray-200');
+                    }
+                } else {
+                    // Logic chọn nhiều (như cũ)
+                    const isSelected = this.classList.toggle('selected');
+                    this.classList.toggle('bg-primary', isSelected);
+                    this.classList.toggle('text-white', isSelected);
+                    this.classList.toggle('bg-gray-200', !isSelected);
+                }
+
+                this.classList.add('pulse-animation');
                 setTimeout(() => {
                     this.classList.remove('pulse-animation');
                 }, 300);
