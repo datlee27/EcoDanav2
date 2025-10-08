@@ -17,7 +17,8 @@ public class VehicleCategories {
 
     @Column(name = "CategoryName", length = 100, nullable = false, unique = true)
     private String categoryName;
-
+    @Column(name = "VehicleType", length = 20, nullable = false)
+    private String vehicleType;
     // Constructors
     public VehicleCategories() {}
 
@@ -26,9 +27,12 @@ public class VehicleCategories {
     }
 
     // Getters/Setters
-    public Integer getCategoryId() { return categoryId; }
+    public String getCategoryId() { return categoryId.toString(); }
     public void setCategoryId(Integer categoryId) { this.categoryId = categoryId; }
 
     public String getCategoryName() { return categoryName; }
     public void setCategoryName(String categoryName) { this.categoryName = categoryName; }
+
+    public String getVehicleType() { return vehicleType; }
+    public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
 }

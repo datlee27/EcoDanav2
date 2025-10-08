@@ -87,9 +87,7 @@ public class SecurityConfig {
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                         .anyRequest().authenticated()
                 )
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth2/**", "/api/**")
-                )
+                .csrf(csrf -> csrf.disable())
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")

@@ -15,35 +15,54 @@ public class Vehicle {
     @Id
     @Column(name = "VehicleId", length = 36)
     private String vehicleId;
-
+    
+    @Column(name = "BrandId", length = 36)
+    private String brandId;
+    
     @Column(name = "VehicleModel", length = 50, nullable = false)
     private String vehicleModel;
 
     @Column(name = "YearManufactured")
-    private Integer yearManufactured;
-
+    private Integer yearManufactured; 
+    @Column(name = "FuelTypeId", length = 36)
+    private String fuelTypeId;
+    
     @Column(name = "LicensePlate", length = 20, nullable = false)
     private String licensePlate;
-
-    @Column(name = "Seats", nullable = false)
+    
+    @Column(name = "Seats")
     private Integer seats;
-
-    @Column(name = "Odometer", nullable = false)
+    
+    @Column(name = "Odometer")
     private Integer odometer;
-
-    @Column(name = "RentalPrices", columnDefinition = "JSON")
-    private String rentalPrices; // JSON: {"hourly": 50000, "daily": 500000, "monthly": 10000000}
-
-    @Column(name = "Status", length = 20, nullable = false)
-    private String status; // ENUM('Available', 'Rented', 'Maintenance', 'Unavailable')
-
+    
+    @Column(name = "PricePerHour", precision = 10, scale = 2)
+    private BigDecimal pricePerHour;
+    
+    @Column(name = "PricePerDay", precision = 10, scale = 2)
+    private BigDecimal pricePerDay;
+    
+    @Column(name = "PricePerMonth", precision = 10, scale = 2)
+    private BigDecimal pricePerMonth;
+    
+    @Column(name = "Status", length = 20)
+    private String status;
+    
     @Column(name = "Description", length = 500)
     private String description;
 
-    @Column(name = "VehicleType", length = 20, nullable = false)
-    private String vehicleType; // ENUM('ElectricCar', 'ElectricMotorcycle')
-
-    @Column(name = "RequiresLicense", nullable = false)
+    @Column(name = "ImageUrl", length = 500)
+    private String imageUrl; 
+    @Column(name = "RentalPrices", columnDefinition = "JSON")
+    private String rentalPrices; 
+    
+    @Column(name = "LastUpdatedBy", length = 36)
+    private String lastUpdatedBy;
+    
+    @Column(name = "VehicleType", length = 20)
+    private String vehicleType;
+    
+    @Column(name = "RequiresLicense")
     private Boolean requiresLicense = true;
 
     @Column(name = "BatteryCapacity", precision = 10, scale = 2)
@@ -75,6 +94,7 @@ public class Vehicle {
     // Constructors
     public Vehicle() {
         this.createdDate = LocalDateTime.now();
+        this.status = "Available";
     }
 
     @Transient
@@ -95,6 +115,25 @@ public class Vehicle {
     }
 
     // Getters and Setters
+     public String getBrandId() { return brandId; }
+    public void setBrandId(String brandId) { this.brandId = brandId; }
+     public String getFuelTypeId() { return fuelTypeId; }
+    public void setFuelTypeId(String fuelTypeId) { this.fuelTypeId = fuelTypeId; }
+    public String getTransmissionTypeId() { return  (transmissionType != null) ? transmissionType.getTransmissionTypeId() : null;
+     }
+    public void setTransmissionTypeId(String transmissionTypeId) {
+        transmissionType.setTransmissionTypeId(odometer);
+        this.setTransmissionType(transmissionType);
+     }
+    public BigDecimal getPricePerHour() { return pricePerHour; }
+    public void setPricePerHour(BigDecimal pricePerHour) { this.pricePerHour = pricePerHour; }
+    
+    public BigDecimal getPricePerDay() { return pricePerDay; }
+    public void setPricePerDay(BigDecimal pricePerDay) { this.pricePerDay = pricePerDay; }
+    
+    public BigDecimal getPricePerMonth() { return pricePerMonth; }
+    public void setPricePerMonth(BigDecimal pricePerMonth) { this.pricePerMonth = pricePerMonth; }
+    
     public String getVehicleId() { return vehicleId; }
     public void setVehicleId(String vehicleId) { this.vehicleId = vehicleId; }
     public String getVehicleModel() { return vehicleModel; }
@@ -113,6 +152,17 @@ public class Vehicle {
     public void setStatus(String status) { this.status = status; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; } 
+    public String getCategoryId() { return  (category != null) ? category.getCategoryId().toString() : null; }
+    public void setCategoryId(String categoryId) { 
+        category.setCategoryId(Integer.parseInt(categoryId));
+        this.setCategory(category); }
+    
+    public String getLastUpdatedBy() { return lastUpdatedBy; }
+    public void setLastUpdatedBy(String lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
+    
     public String getVehicleType() { return vehicleType; }
     public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
     public Boolean getRequiresLicense() { return requiresLicense; }
