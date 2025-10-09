@@ -3,10 +3,10 @@ package com.ecodana.evodanavn1.service;
 import java.util.List;
 import java.util.Optional;
 
+import com.ecodana.evodanavn1.model.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.ecodana.evodanavn1.model.Role;
 import com.ecodana.evodanavn1.repository.RoleRepository;
 
 @Service

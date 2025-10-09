@@ -6,7 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.ecodana.evodanavn1.model.TransmissionType;
 
 @Repository
-public interface TransmissionTypeRepository extends JpaRepository<TransmissionType, String> {
+public interface TransmissionTypeRepository extends JpaRepository<TransmissionType, Integer> {
 }
-
-

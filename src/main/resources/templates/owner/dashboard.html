@@ -1,1305 +1,1277 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-  <head th:replace="~{fragments/layout :: head}"></head>
-  <body>
-    <style>
-        .primary { color: #4CAF50; }
-        .bg-primary { background-color: #4CAF50; }
-        .hidden { display: none; }
-        .dashboard-section { display: block; }
-        .section-badge { background-color: #dbeafe; color: #4CAF50; }
-    </style>
-    <div th:replace="~{fragments/nav :: nav}"></div>
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<style>
+    .primary { color: #4CAF50; }
+    .bg-primary { background-color: #4CAF50; }
+    .hidden { display: none; }
+    .dashboard-section { display: block; }
+    .section-badge { background-color: #dbeafe; color: #4CAF50; }
+</style>
+<div th:replace="~{fragments/nav :: nav}"></div>
 
-    <!-- Success Notification -->
-    <div
-      th:if="${success}"
-      id="success-notification"
-      class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300"
-    >
-      <div class="flex items-center justify-between">
+<div
+        th:if="${success}"
+        id="success-notification"
+        class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300"
+>
+    <div class="flex items-center justify-between">
         <div class="flex items-center">
-          <i class="fas fa-check-circle mr-3"></i>
-          <span th:text="${success}">Login successful!</span>
+            <i class="fas fa-check-circle mr-3"></i>
+            <span th:text="${success}">Login successful!</span>
         </div>
         <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors">
-          <i class="fas fa-times"></i>
+            <i class="fas fa-times"></i>
         </button>
-      </div>
     </div>
+</div>
 
-    <!-- Owner Header -->
-    <div class="bg-white shadow-sm border-b">
-      <div class="container mx-auto px-4 py-4">
+<div class="bg-white shadow-sm border-b">
+    <div class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold text-gray-800">Owner Dashboard</h1>
-            <p class="text-gray-600">Manage your rental business</p>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button class="relative p-2 text-gray-600 hover:text-primary">
-              <i class="fas fa-bell text-xl"></i>
-              <span
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                >3</span
-              >
-            </button>
-            <div class="flex items-center space-x-3">
-              <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <i class="fas fa-user text-white text-lg"></i>
-              </div>
-              <div>
-                <p
-                  class="font-semibold text-gray-800"
-                  th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}"
-                >
-                  Owner
-                </p>
-                <p class="text-sm text-gray-600">Car Owner</p>
-              </div>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">Owner Dashboard</h1>
+                <p class="text-gray-600">Manage your rental business</p>
             </div>
-          </div>
+            <div class="flex items-center space-x-4">
+                <button class="relative p-2 text-gray-600 hover:text-primary">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span
+                            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                    >3</span
+                    >
+                </button>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <p
+                                class="font-semibold text-gray-800"
+                                th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}"
+                        >
+                            Owner
+                        </p>
+                        <p class="text-sm text-gray-600">Car Owner</p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
+</div>
 
-    <div class="container mx-auto px-4 py-6">
-      <!-- Navigation Tabs -->
-      <div class="flex space-x-4 mb-6 overflow-x-auto">
+<div class="container mx-auto px-4 py-6">
+    <div class="flex space-x-4 mb-6 overflow-x-auto">
         <button onclick="showSection('dashboard')" class="px-4 py-2 bg-primary text-white rounded-lg">Overview</button>
         <button onclick="showSection('cars')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Cars</button>
         <button onclick="showSection('bookings')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
-          Bookings
+            Bookings
         </button>
         <button onclick="showSection('income')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Income</button>
         <button onclick="showSection('chat')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Chat</button>
         <button onclick="showSection('analytics')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
-          Analytics
+            Analytics
         </button>
         <button onclick="showSection('driving')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">
-          Driving Services
+            Driving Services
         </button>
         <button onclick="showSection('profile')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg">Profile</button>
-      </div>
+    </div>
 
-      <!-- Overview Section (Dashboard Content) -->
-      <div id="dashboard-section" class="dashboard-section">
+    <div id="dashboard-section" class="dashboard-section">
         <div class="mb-8">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4"
-          >
-            OVERVIEW
-          </div>
-          <h2 class="text-3xl font-bold text-gray-800 mb-2">
-            Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
-          </h2>
-          <p class="text-gray-600">Here's what's happening with your rental business today.</p>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">Total Cars</p>
-                <p class="text-3xl font-bold text-gray-800" th:text="${totalVehicles ?: 0}">0</p>
-                <p class="text-green-500 text-sm">
-                  <i class="fas fa-arrow-up mr-1"></i
-                  ><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span>
-                </p>
-              </div>
-              <div class="bg-blue-100 p-3 rounded-full">
-                <i class="fas fa-car text-2xl text-blue-600"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">Monthly Income</p>
-                <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">
-                  $8,450
-                </p>
-                <p class="text-green-500 text-sm">
-                  <i class="fas fa-arrow-up mr-1"></i
-                  ><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span>
-                </p>
-              </div>
-              <div class="bg-green-100 p-3 rounded-full">
-                <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">Active Bookings</p>
-                <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>
-                <p class="text-blue-500 text-sm">
-                  <i class="fas fa-info-circle mr-1"></i
-                  ><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span>
-                </p>
-              </div>
-              <div class="bg-yellow-100 p-3 rounded-full">
-                <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-gray-600 text-sm font-medium">Available Cars</p>
-                <p class="text-3xl font-bold text-gray-800" th:text="${availableVehicles ?: 0}">0</p>
-                <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>
-              </div>
-              <div class="bg-purple-100 p-3 rounded-full">
-                <i class="fas fa-check-circle text-2xl text-purple-600"></i>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Recent Activity & Quick Actions -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <!-- Recent Bookings -->
-          <div class="bg-white rounded-xl shadow-md p-6">
-            <div class="flex items-center justify-between mb-6">
-              <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>
-              <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">
-                View All
-              </button>
-            </div>
-            <div class="space-y-4">
-              <div
-                th:each="booking : ${recentBookings}"
-                class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-                  <i class="fas fa-car text-white"></i>
-                </div>
-                <div class="flex-1">
-                  <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
-                  <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">
-                    Sarah Johnson • Feb 15-18, 2025
-                  </p>
-                  <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
-                </div>
-                <span
-                  th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}"
-                  th:text="${booking.status}"
-                  >Active</span
-                >
-              </div>
-            </div>
-          </div>
-
-          <!-- Quick Actions -->
-          <div class="bg-white rounded-xl shadow-md p-6">
-            <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>
-            <div class="grid grid-cols-2 gap-4">
-              <button
-                onclick="showAddCarModal()"
-                class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center"
-              >
-                <i class="fas fa-plus text-2xl mb-3"></i>
-                <p class="font-medium">Add New Car</p>
-              </button>
-              <button
-                onclick="showSection('bookings')"
-                class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center"
-              >
-                <i class="fas fa-calendar text-2xl mb-3"></i>
-                <p class="font-medium">View Bookings</p>
-              </button>
-              <button
-                onclick="showSection('income')"
-                class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center"
-              >
-                <i class="fas fa-chart-bar text-2xl mb-3"></i>
-                <p class="font-medium">Income Report</p>
-              </button>
-              <button
-                onclick="showSection('chat')"
-                class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center"
-              >
-                <i class="fas fa-comments text-2xl mb-3"></i>
-                <p class="font-medium">Messages</p>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Performance Chart Area -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>
-          <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-            <div class="text-center text-gray-500">
-              <i class="fas fa-chart-area text-4xl mb-4"></i>
-              <p>Performance chart will be displayed here</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Cars Section -->
-      <div id="cars-section" class="dashboard-section hidden">
-        <div class="flex justify-between items-center mb-6">
-          <div>
             <div
-              class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4"
             >
-              CAR MANAGEMENT
+                OVERVIEW
             </div>
-            <h2 class="text-2xl font-bold text-gray-800">My Cars</h2>
-          </div>
-          <button
-            onclick="toggleAddCar()"
-            class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
-          >
-            <i class="fas fa-plus mr-2"></i>Add New Car
-          </button>
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">
+                Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
+            </h2>
+            <p class="text-gray-600">Here's what's happening with your rental business today.</p>
         </div>
 
-        <!-- Add Car Modal -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Total Cars</p>
+                        <p class="text-3xl font-bold text-gray-800" th:text="${totalVehicles ?: 0}">0</p>
+                        <p class="text-green-500 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i
+                            ><span th:text="${stats?.carsGrowth ?: '+2 this month'}">+2 this month</span>
+                        </p>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-car text-2xl text-blue-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Monthly Income</p>
+                        <p class="text-3xl font-bold text-gray-800" th:text="'$' + ${stats?.monthlyIncome ?: '8,450'}">
+                            $8,450
+                        </p>
+                        <p class="text-green-500 text-sm">
+                            <i class="fas fa-arrow-up mr-1"></i
+                            ><span th:text="${stats?.incomeGrowth ?: '+15% vs last month'}">+15% vs last month</span>
+                        </p>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-dollar-sign text-2xl text-green-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Active Bookings</p>
+                        <p class="text-3xl font-bold text-gray-800" th:text="${stats?.activeBookings ?: 28}">28</p>
+                        <p class="text-blue-500 text-sm">
+                            <i class="fas fa-info-circle mr-1"></i
+                            ><span th:text="${stats?.endingToday ?: '5 ending today'}">5 ending today</span>
+                        </p>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fas fa-calendar-check text-2xl text-yellow-600"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-600 text-sm font-medium">Available Cars</p>
+                        <p class="text-3xl font-bold text-gray-800" th:text="${availableVehicles ?: 0}">0</p>
+                        <p class="text-gray-500 text-sm"><i class="fas fa-check-circle mr-1"></i>Ready to rent</p>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fas fa-check-circle text-2xl text-purple-600"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-semibold text-gray-800">Recent Bookings</h3>
+                    <button onclick="showSection('bookings')" class="text-primary hover:text-blue-600 text-sm font-medium">
+                        View All
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <div
+                            th:each="booking : ${recentBookings}"
+                            class="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                        <div class="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+                            <i class="fas fa-car text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
+                            <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">
+                                Sarah Johnson • Feb 15-18, 2025
+                            </p>
+                            <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
+                        </div>
+                        <span
+                                th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}"
+                                th:text="${booking.status}"
+                        >Active</span
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <button
+                            onclick="showAddCarModal()"
+                            class="p-6 bg-primary text-white rounded-lg hover:bg-blue-600 transition-colors text-center"
+                    >
+                        <i class="fas fa-plus text-2xl mb-3"></i>
+                        <p class="font-medium">Add New Car</p>
+                    </button>
+                    <button
+                            onclick="showSection('bookings')"
+                            class="p-6 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-center"
+                    >
+                        <i class="fas fa-calendar text-2xl mb-3"></i>
+                        <p class="font-medium">View Bookings</p>
+                    </button>
+                    <button
+                            onclick="showSection('income')"
+                            class="p-6 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-center"
+                    >
+                        <i class="fas fa-chart-bar text-2xl mb-3"></i>
+                        <p class="font-medium">Income Report</p>
+                    </button>
+                    <button
+                            onclick="showSection('chat')"
+                            class="p-6 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-center"
+                    >
+                        <i class="fas fa-comments text-2xl mb-3"></i>
+                        <p class="font-medium">Messages</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Monthly Performance</h3>
+            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-chart-area text-4xl mb-4"></i>
+                    <p>Performance chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cars-section" class="dashboard-section hidden">
+        <div class="flex justify-between items-center mb-6">
+            <div>
+                <div
+                        class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+                >
+                    CAR MANAGEMENT
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800">My Cars</h2>
+            </div>
+            <button
+                    onclick="toggleAddCar()"
+                    class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center"
+            >
+                <i class="fas fa-plus mr-2"></i>Add New Car
+            </button>
+        </div>
+
         <div id="add-car" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2">
-          <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] overflow-y-auto">
+            <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] overflow-y-auto">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h3 class="text-xl font-semibold text-gray-800">Add New Vehicle</h3>
+                    <button onclick="toggleAddCar()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form
+                        th:action="@{/owner/cars}"
+                        method="post"
+                        enctype="multipart/form-data"
+                        class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-6"
+                >
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                        <input name="model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                        <select name="brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="" disabled selected>Select brand</option>
+                            <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                        <select name="fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="" disabled selected>Select fuel type</option>
+                            <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                        <select name="transmissionTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="" disabled selected>Select transmission</option>
+                            <option
+                                    th:each="t : ${transmissions}"
+                                    th:value="${t.transmissionTypeId}"
+                                    th:text="${t.transmissionTypeName}"
+                            ></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        <select name="categoryId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="" disabled selected>Select category</option>
+                            <option
+                                    th:each="c : ${categories}"
+                                    th:value="${c.categoryId}"
+                                    th:text="${c.categoryName}"
+                            ></option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                        <input
+                                name="type"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                placeholder="e.g. Sedan, SUV, Hatchback"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
+                        <input
+                                type="number"
+                                name="yearManufactured"
+                                min="2000"
+                                max="2025"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
+                        <input name="licensePlate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
+                        <input
+                                type="number"
+                                name="seats"
+                                value="4"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
+                        <input
+                                type="number"
+                                name="odometer"
+                                value="0"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate</label>
+                        <input
+                                type="number"
+                                step="0.01"
+                                name="hourlyRate"
+                                value="0"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
+                        <input
+                                type="number"
+                                step="0.01"
+                                name="dailyRate"
+                                value="0"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
+                        <input
+                                type="number"
+                                step="0.01"
+                                name="monthlyRate"
+                                value="0"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
+                        <input
+                                type="number"
+                                step="0.01"
+                                name="batteryCapacity"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div class="md:col-span-3 lg:col-span-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea
+                                name="description"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                                rows="3"
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
+                        <select name="requiresLicense" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="true" selected>Yes</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select name="status" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="Available" selected>Available</option>
+                            <option value="Unavailable">Unavailable</option>
+                            <option value="Maintenance">Maintenance</option>
+                            <option value="Booked">Booked</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3 lg:col-span-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
+                        <input
+                                type="file"
+                                name="images"
+                                accept="image/*"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        />
+                    </div>
+                    <div class="md:col-span-3 lg:col-span-4 flex justify-end space-x-4 pt-2 border-t mt-2">
+                        <button
+                                type="button"
+                                onclick="toggleAddCar()"
+                                class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                                type="submit"
+                                class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                        >
+                            Save Vehicle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Image</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Plate</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Year</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Seats</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Odometer</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Daily Price</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Brand</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Fuel Type</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Transmission</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Battery (kWh)</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">License Req</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                <tr th:each="v : ${vehicles}">
+                    <td class="px-6 py-4">
+                        <img
+                                th:src="${v.imageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}"
+                                class="w-20 h-12 object-cover rounded"
+                                th:alt="${v.vehicleModel ?: 'Vehicle'}"
+                        />
+                    </td>
+                    <td class="px-6 py-4" th:text="${v.vehicleModel ?: 'N/A'}">Model</td>
+                    <td class="px-6 py-4" th:text="${v.licensePlate ?: 'N/A'}">Plate</td>
+                    <td class="px-6 py-4" th:text="${v.vehicleType ?: 'N/A'}">Type</td>
+                    <td class="px-6 py-4" th:text="${v.yearManufactured ?: 'N/A'}">Year</td>
+                    <td class="px-6 py-4" th:text="${v.seats != null ? v.seats : 0}">Seats</td>
+                    <td class="px-6 py-4" th:text="${v.odometer != null ? v.odometer : 0}">Odometer</td>
+                    <td class="px-6 py-4 truncate max-w-xs" th:text="${v.description ?: 'No description'}">Description</td>
+                    <td
+                            class="px-6 py-4"
+                            th:text="${v.pricePerDay != null ? '$' + #numbers.formatDecimal(v.pricePerDay, 1, 'COMMA', 2, 'POINT') : '$0.00'}"
+                    >
+                        $0.00
+                    </td>
+                    <td class="px-6 py-4" th:text="${v.brandId != null ? brandMap[v.brandId] : 'N/A'}">Brand</td>
+                    <td class="px-6 py-4" th:text="${v.fuelTypeId != null ? fuelTypeMap[v.fuelTypeId] : 'N/A'}">
+                        Fuel Type
+                    </td>
+                    <td
+                            class="px-6 py-4"
+                            th:text="${v.transmissionTypeId != null ? transmissionMap[v.transmissionTypeId.toString()] : 'N/A'}"
+                    >
+                        Transmission
+                    </td>
+                    <td class="px-6 py-4" th:text="${v.categoryId != null ? categoryMap[v.categoryId] : 'N/A'}">
+                        Category
+                    </td>
+                    <td
+                            class="px-6 py-4"
+                            th:text="${v.batteryCapacity != null ? #numbers.formatDecimal(v.batteryCapacity, 1, 'COMMA', 2, 'POINT') : '—'}"
+                    >
+                        —
+                    </td>
+                    <td class="px-6 py-4">
+                        <span th:text="${v.requiresLicense != null ? (v.requiresLicense ? 'Yes' : 'No') : 'N/A'}">Yes</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input
+                                        type="checkbox"
+                                        class="sr-only peer status-toggle"
+                                        th:attr="data-id=${v.vehicleId}, onclick='toggleVehicleStatus(this)'"
+                                        th:checked="${v.status == 'Available'}"
+                                />
+                                <div
+                                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-300 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"
+                                        style="position: relative"
+                                ></div>
+                            </label>
+                            <span class="text-sm" th:text="${v.status ?: 'Unknown'}">Available</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 space-x-2">
+                        <button
+                                class="px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                th:attr="onclick='openEditCarModal(\'' + ${v.vehicleId} + '\')'"
+                        >
+                            Edit
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="edit-car" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2">
+        <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] overflow-y-auto">
             <div class="flex justify-between items-center px-6 py-4 border-b">
-              <h3 class="text-xl font-semibold text-gray-800">Add New Vehicle</h3>
-              <button onclick="toggleAddCar()" class="text-gray-500 hover:text-gray-700">
-                <i class="fas fa-times text-xl"></i>
-              </button>
+                <h3 class="text-xl font-semibold text-gray-800">Edit Vehicle</h3>
+                <button onclick="toggleEditCar(false)" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
             </div>
             <form
-              th:action="@{/owner/cars}"
-              method="post"
-              enctype="multipart/form-data"
-              class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-6"
+                    id="edit-car-form"
+                    enctype="multipart/form-data"
+                    class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-6"
             >
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                <input name="model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-                <select name="brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="" disabled selected>Select brand</option>
-                  <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
-                <select name="fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="" disabled selected>Select fuel type</option>
-                  <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
-                <select name="transmissionTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="" disabled selected>Select transmission</option>
-                  <option
-                    th:each="t : ${transmissions}"
-                    th:value="${t.transmissionTypeId}"
-                    th:text="${t.transmissionName}"
-                  ></option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select name="categoryId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="" disabled selected>Select category</option>
-                  <option
-                    th:each="c : ${categories}"
-                    th:value="${c.categoryId}"
-                    th:text="${c.categoryName + ' (' + c.vehicleType + ')'}"
-                  ></option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                <input
-                  name="type"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  placeholder="e.g. Sedan, SUV, Hatchback"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
-                <input
-                  type="number"
-                  name="yearManufactured"
-                  min="2000"
-                  max="2025"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
-                <input name="licensePlate" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
-                <input
-                  type="number"
-                  name="seats"
-                  value="4"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
-                <input
-                  type="number"
-                  name="odometer"
-                  value="0"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="hourlyRate"
-                  value="0"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="dailyRate"
-                  value="0"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="monthlyRate"
-                  value="0"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="batteryCapacity"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div class="md:col-span-3 lg:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                  name="description"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                  rows="3"
-                ></textarea>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
-                <select name="requiresLicense" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="true" selected>Yes</option>
-                  <option value="false">No</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select name="status" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                  <option value="Available" selected>Available</option>
-                  <option value="Unavailable">Unavailable</option>
-                  <option value="Maintenance">Maintenance</option>
-                  <option value="Booked">Booked</option>
-                </select>
-              </div>
-              <div class="md:col-span-3 lg:col-span-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
-                <input
-                  type="file"
-                  name="images"
-                  accept="image/*"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                />
-              </div>
-              <div class="md:col-span-3 lg:col-span-4 flex justify-end space-x-4 pt-2 border-t mt-2">
-                <button
-                  type="button"
-                  onclick="toggleAddCar()"
-                  class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Save Vehicle
-                </button>
-              </div>
+                <input type="hidden" name="id" id="edit-id" />
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
+                    <input name="model" id="edit-model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
+                    <select name="brandId" id="edit-brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <option value="" disabled>Select brand</option>
+                        <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
+                    <select name="fuelTypeId" id="edit-fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <option value="" disabled>Select fuel type</option>
+                        <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                    <select
+                            name="transmissionTypeId"
+                            id="edit-transmissionTypeId"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    >
+                        <option value="" disabled>Select transmission</option>
+                        <option
+                                th:each="t : ${transmissions}"
+                                th:value="${t.transmissionTypeId}"
+                                th:text="${t.transmissionTypeName}"
+                        ></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                    <select name="categoryId" id="edit-categoryId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <option value="" disabled>Select category</option>
+                        <option
+                                th:each="c : ${categories}"
+                                th:value="${c.categoryId}"
+                                th:text="${c.categoryName}"
+                        ></option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
+                    <input
+                            name="type"
+                            id="edit-type"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            placeholder="e.g. Sedan, SUV, Hatchback"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
+                    <input
+                            type="number"
+                            name="yearManufactured"
+                            id="edit-yearManufactured"
+                            min="2000"
+                            max="2025"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
+                    <input
+                            name="licensePlate"
+                            id="edit-licensePlate"
+                            required
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
+                    <input
+                            type="number"
+                            name="seats"
+                            id="edit-seats"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
+                    <input
+                            type="number"
+                            name="odometer"
+                            id="edit-odometer"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate</label>
+                    <input
+                            type="number"
+                            step="0.01"
+                            name="hourlyRate"
+                            id="edit-hourlyRate"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
+                    <input
+                            type="number"
+                            step="0.01"
+                            name="dailyRate"
+                            id="edit-dailyRate"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
+                    <input
+                            type="number"
+                            step="0.01"
+                            name="monthlyRate"
+                            id="edit-monthlyRate"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
+                    <input
+                            type="number"
+                            step="0.01"
+                            name="batteryCapacity"
+                            id="edit-batteryCapacity"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div class="md:col-span-3 lg:col-span-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea
+                            name="description"
+                            id="edit-description"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            rows="3"
+                    ></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
+                    <select
+                            name="requiresLicense"
+                            id="edit-requiresLicense"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    >
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select name="status" id="edit-status" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <option value="Available">Available</option>
+                        <option value="Unavailable">Unavailable</option>
+                        <option value="Maintenance">Maintenance</option>
+                        <option value="Booked">Booked</option>
+                    </select>
+                </div>
+                <div class="md:col-span-3 lg:col-span-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
+                    <input
+                            type="file"
+                            name="images"
+                            id="edit-images"
+                            accept="image/*"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                    />
+                </div>
+                <div class="md:col-span-3 lg:col-span-4 flex justify-end space-x-4 pt-2 border-t mt-2">
+                    <button
+                            type="button"
+                            onclick="toggleEditCar(false)"
+                            class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                            type="button"
+                            onclick="submitEditForm()"
+                            class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        Update Vehicle
+                    </button>
+                </div>
             </form>
-          </div>
         </div>
+    </div>
 
-        <!-- Car Management Table -->
-        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
-          <table class="min-w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Image</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Plate</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Year</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Seats</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Odometer</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Daily Price</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Brand</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Fuel Type</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Transmission</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Battery (kWh)</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">License Req</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr th:each="v : ${vehicles}">
-                <td class="px-6 py-4">
-                  <img
-                    th:src="${v.imageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}"
-                    class="w-20 h-12 object-cover rounded"
-                    th:alt="${v.vehicleModel ?: 'Vehicle'}"
-                  />
-                </td>
-                <td class="px-6 py-4" th:text="${v.vehicleModel ?: 'N/A'}">Model</td>
-                <td class="px-6 py-4" th:text="${v.licensePlate ?: 'N/A'}">Plate</td>
-                <td class="px-6 py-4" th:text="${v.vehicleType ?: 'N/A'}">Type</td>
-                <td class="px-6 py-4" th:text="${v.yearManufactured ?: 'N/A'}">Year</td>
-                <td class="px-6 py-4" th:text="${v.seats != null ? v.seats : 0}">Seats</td>
-                <td class="px-6 py-4" th:text="${v.odometer != null ? v.odometer : 0}">Odometer</td>
-                <td class="px-6 py-4 truncate max-w-xs" th:text="${v.description ?: 'No description'}">Description</td>
-                <td
-                  class="px-6 py-4"
-                  th:text="${v.pricePerDay != null ? '$' + #numbers.formatDecimal(v.pricePerDay, 1, 'COMMA', 2, 'POINT') : '$0.00'}"
-                >
-                  $0.00
-                </td>
-                <td class="px-6 py-4" th:text="${v.brandId != null ? brandMap[v.brandId] : 'N/A'}">Brand</td>
-                <td class="px-6 py-4" th:text="${v.fuelTypeId != null ? fuelTypeMap[v.fuelTypeId] : 'N/A'}">
-                  Fuel Type
-                </td>
-                <td
-                  class="px-6 py-4"
-                  th:text="${v.transmissionTypeId != null ? transmissionMap[v.transmissionTypeId] : 'N/A'}"
-                >
-                  Transmission
-                </td>
-                <td class="px-6 py-4" th:text="${v.categoryId != null ? categoryMap[v.categoryId] : 'N/A'}">
-                  Category
-                </td>
-                <td
-                  class="px-6 py-4"
-                  th:text="${v.batteryCapacity != null ? #numbers.formatDecimal(v.batteryCapacity, 1, 'COMMA', 2, 'POINT') : '—'}"
-                >
-                  —
-                </td>
-                <td class="px-6 py-4">
-                  <span th:text="${v.requiresLicense != null ? (v.requiresLicense ? 'Yes' : 'No') : 'N/A'}">Yes</span>
-                </td>
-                <td class="px-6 py-4">
-                  <div class="flex items-center space-x-3">
-                    <label class="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        class="sr-only peer status-toggle"
-                        th:attr="data-id=${v.vehicleId}, onclick='toggleVehicleStatus(this)'"
-                        th:checked="${v.status == 'Available'}"
-                      />
-                      <div
-                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-300 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"
-                        style="position: relative"
-                      ></div>
-                    </label>
-                    <span class="text-sm" th:text="${v.status ?: 'Unknown'}">Available</span>
-                  </div>
-                </td>
-                <td class="px-6 py-4 space-x-2">
-                  <button
-                    class="px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
-                    th:attr="onclick='openEditCarModal(\'' + ${v.vehicleId} + '\')'"
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Edit Car Modal -->
-      <div id="edit-car" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-2">
-        <div class="bg-white rounded-xl shadow-2xl w-full h-full max-w-[95vw] max-h-[95vh] overflow-y-auto">
-          <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h3 class="text-xl font-semibold text-gray-800">Edit Vehicle</h3>
-            <button onclick="toggleEditCar(false)" class="text-gray-500 hover:text-gray-700">
-              <i class="fas fa-times text-xl"></i>
-            </button>
-          </div>
-          <form
-            id="edit-car-form"
-            enctype="multipart/form-data"
-            class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-6"
-          >
-            <input type="hidden" name="id" id="edit-id" />
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
-              <input name="model" id="edit-model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-              <select name="brandId" id="edit-brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                <option value="" disabled>Select brand</option>
-                <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
-              <select name="fuelTypeId" id="edit-fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                <option value="" disabled>Select fuel type</option>
-                <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
-              <select
-                name="transmissionTypeId"
-                id="edit-transmissionTypeId"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              >
-                <option value="" disabled>Select transmission</option>
-                <option
-                  th:each="t : ${transmissions}"
-                  th:value="${t.transmissionTypeId}"
-                  th:text="${t.transmissionName}"
-                ></option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select name="categoryId" id="edit-categoryId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                <option value="" disabled>Select category</option>
-                <option
-                  th:each="c : ${categories}"
-                  th:value="${c.categoryId}"
-                  th:text="${c.categoryName + ' (' + c.vehicleType + ')'}"
-                ></option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-              <input
-                name="type"
-                id="edit-type"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                placeholder="e.g. Sedan, SUV, Hatchback"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
-              <input
-                type="number"
-                name="yearManufactured"
-                id="edit-yearManufactured"
-                min="2000"
-                max="2025"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
-              <input
-                name="licensePlate"
-                id="edit-licensePlate"
-                required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
-              <input
-                type="number"
-                name="seats"
-                id="edit-seats"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
-              <input
-                type="number"
-                name="odometer"
-                id="edit-odometer"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate</label>
-              <input
-                type="number"
-                step="0.01"
-                name="hourlyRate"
-                id="edit-hourlyRate"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
-              <input
-                type="number"
-                step="0.01"
-                name="dailyRate"
-                id="edit-dailyRate"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate</label>
-              <input
-                type="number"
-                step="0.01"
-                name="monthlyRate"
-                id="edit-monthlyRate"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="batteryCapacity"
-                id="edit-batteryCapacity"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div class="md:col-span-3 lg:col-span-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-              <textarea
-                name="description"
-                id="edit-description"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                rows="3"
-              ></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
-              <select
-                name="requiresLicense"
-                id="edit-requiresLicense"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select name="status" id="edit-status" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                <option value="Available">Available</option>
-                <option value="Unavailable">Unavailable</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Booked">Booked</option>
-              </select>
-            </div>
-            <div class="md:col-span-3 lg:col-span-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
-              <input
-                type="file"
-                name="images"
-                id="edit-images"
-                accept="image/*"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-              />
-            </div>
-            <div class="md:col-span-3 lg:col-span-4 flex justify-end space-x-4 pt-2 border-t mt-2">
-              <button
-                type="button"
-                onclick="toggleEditCar(false)"
-                class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onclick="submitEditForm()"
-                class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Update Vehicle
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Bookings Section -->
-      <div id="bookings-section" class="dashboard-section hidden">
+    <div id="bookings-section" class="dashboard-section hidden">
         <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            BOOKING MANAGEMENT
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Booking Management</h2>
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                BOOKING MANAGEMENT
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Booking Management</h2>
         </div>
 
         <div class="bg-white rounded-xl shadow-md overflow-hidden">
-          <div class="p-6 border-b">
-            <div class="flex flex-wrap gap-4">
-              <button class="px-4 py-2 bg-primary text-white rounded-lg font-medium filter-btn" data-status="all">
-                All Bookings
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
-                data-status="pending"
-              >
-                Pending
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
-                data-status="active"
-              >
-                Active
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
-                data-status="completed"
-              >
-                Completed
-              </button>
-              <button
-                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
-                data-status="cancelled"
-              >
-                Cancelled
-              </button>
-            </div>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Car</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rental Period</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                  <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200">
-                <tr
-                  th:each="booking : ${bookings}"
-                  class="hover:bg-gray-50"
-                  th:attr="data-status=${booking.status.toLowerCase()}"
-                >
-                  <td class="px-6 py-4">
-                    <div class="flex items-center space-x-3">
-                      <div class="w-10 h-10 bg-gray-300 rounded-full">
-                        <img
-                          th:if="${booking.customer != null and booking.customer.avatar != null}"
-                          th:src="${booking.customer.avatar}"
-                          th:alt="${booking.customer.name}"
-                          class="w-full h-full rounded-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p
-                          class="font-semibold text-gray-800"
-                          th:text="${booking.customer != null ? booking.customer.name : 'N/A'}"
-                        >
-                          Sarah Johnson
-                        </p>
-                        <p
-                          class="text-sm text-gray-600"
-                          th:text="${booking.customer != null ? booking.customer.email : 'N/A'}"
-                        >
-                          sarah@example.com
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div>
-                      <p
-                        class="font-medium text-gray-800"
-                        th:text="${booking.car != null ? (booking.car.brand + ' ' + booking.car.model) : 'N/A'}"
-                      >
-                        BMW X5
-                      </p>
-                      <p
-                        class="text-sm text-gray-600"
-                        th:text="${booking.car != null ? (booking.car.type + ' • ' + booking.car.year) : 'N/A'}"
-                      >
-                        SUV • 2023
-                      </p>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <div>
-                      <p class="font-medium text-gray-800" th:text="${booking.dateRange ?: 'N/A'}">Feb 15-18, 2025</p>
-                      <p
-                        class="text-sm text-gray-600"
-                        th:text="${booking.duration != null ? (booking.duration + ' days') : 'N/A'}"
-                      >
-                        3 days
-                      </p>
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <p
-                      class="font-semibold text-primary"
-                      th:text="${booking.totalAmount != null ? ('$' + booking.totalAmount) : '$0'}"
+            <div class="p-6 border-b">
+                <div class="flex flex-wrap gap-4">
+                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-medium filter-btn" data-status="all">
+                        All Bookings
+                    </button>
+                    <button
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
+                            data-status="pending"
                     >
-                      $960
-                    </p>
-                  </td>
-                  <td class="px-6 py-4">
+                        Pending
+                    </button>
+                    <button
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
+                            data-status="active"
+                    >
+                        Active
+                    </button>
+                    <button
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
+                            data-status="completed"
+                    >
+                        Completed
+                    </button>
+                    <button
+                            class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn"
+                            data-status="cancelled"
+                    >
+                        Cancelled
+                    </button>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Car</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rental Period</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                    <tr
+                            th:each="booking : ${bookings}"
+                            class="hover:bg-gray-50"
+                            th:attr="data-status=${booking.status.toLowerCase()}"
+                    >
+                        <td class="px-6 py-4">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gray-300 rounded-full">
+                                    <img
+                                            th:if="${booking.customer != null and booking.customer.avatar != null}"
+                                            th:src="${booking.customer.avatar}"
+                                            th:alt="${booking.customer.name}"
+                                            class="w-full h-full rounded-full object-cover"
+                                    />
+                                </div>
+                                <div>
+                                    <p
+                                            class="font-semibold text-gray-800"
+                                            th:text="${booking.customer != null ? booking.customer.name : 'N/A'}"
+                                    >
+                                        Sarah Johnson
+                                    </p>
+                                    <p
+                                            class="text-sm text-gray-600"
+                                            th:text="${booking.customer != null ? booking.customer.email : 'N/A'}"
+                                    >
+                                        sarah@example.com
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p
+                                        class="font-medium text-gray-800"
+                                        th:text="${booking.car != null ? (booking.car.brand + ' ' + booking.car.model) : 'N/A'}"
+                                >
+                                    BMW X5
+                                </p>
+                                <p
+                                        class="text-sm text-gray-600"
+                                        th:text="${booking.car != null ? (booking.car.type + ' • ' + booking.car.year) : 'N/A'}"
+                                >
+                                    SUV • 2023
+                                </p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-gray-800" th:text="${booking.dateRange ?: 'N/A'}">Feb 15-18, 2025</p>
+                                <p
+                                        class="text-sm text-gray-600"
+                                        th:text="${booking.duration != null ? (booking.duration + ' days') : 'N/A'}"
+                                >
+                                    3 days
+                                </p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p
+                                    class="font-semibold text-primary"
+                                    th:text="${booking.totalAmount != null ? ('$' + booking.totalAmount) : '$0'}"
+                            >
+                                $960
+                            </p>
+                        </td>
+                        <td class="px-6 py-4">
                     <span
-                      th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}"
-                      th:text="${booking.status ?: 'Unknown'}"
-                      >Active</span
+                            th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}"
+                            th:text="${booking.status ?: 'Unknown'}"
+                    >Active</span
                     >
-                  </td>
-                  <td class="px-6 py-4">
-                    <div class="flex space-x-3">
-                      <button
-                        th:attr="onclick='viewBooking(' + ${booking.id} + ')'"
-                        class="text-primary hover:text-blue-600"
-                        title="View Details"
-                      >
-                        <i class="fas fa-eye"></i>
-                      </button>
-                      <button
-                        th:if="${booking.status == 'PENDING'}"
-                        th:attr="onclick='acceptBooking(' + ${booking.id} + ')'"
-                        class="text-green-500 hover:text-green-600"
-                        title="Accept"
-                      >
-                        <i class="fas fa-check"></i>
-                      </button>
-                      <button
-                        th:if="${booking.status == 'PENDING'}"
-                        th:attr="onclick='declineBooking(' + ${booking.id} + ')'"
-                        class="text-red-500 hover:text-red-600"
-                        title="Decline"
-                      >
-                        <i class="fas fa-times"></i>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Driving Services Section -->
-      <div id="driving-section" class="dashboard-section hidden">
-        <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            DRIVING SERVICES
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-center py-12">
-            <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>
-            <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>
-            <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-              <i class="fas fa-plus mr-2"></i>Add Driving Service
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Income Reports Section -->
-      <div id="income-section" class="dashboard-section hidden">
-        <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            INCOME REPORTS
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <div class="bg-white p-6 rounded-xl shadow-md">
-            <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>
-            <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-md">
-            <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
-            <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>
-          </div>
-          <div class="bg-white p-6 rounded-xl shadow-md">
-            <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>
-            <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>
-          </div>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>
-          <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-            <div class="text-center text-gray-500">
-              <i class="fas fa-chart-line text-4xl mb-4"></i>
-              <p>Income chart will be displayed here</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex space-x-3">
+                                <button
+                                        th:attr="onclick='viewBooking(' + ${booking.id} + ')'"
+                                        class="text-primary hover:text-blue-600"
+                                        title="View Details"
+                                >
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button
+                                        th:if="${booking.status == 'PENDING'}"
+                                        th:attr="onclick='acceptBooking(' + ${booking.id} + ')'"
+                                        class="text-green-500 hover:text-green-600"
+                                        title="Accept"
+                                >
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button
+                                        th:if="${booking.status == 'PENDING'}"
+                                        th:attr="onclick='declineBooking(' + ${booking.id} + ')'"
+                                        class="text-red-500 hover:text-red-600"
+                                        title="Decline"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
-          </div>
         </div>
-      </div>
-
-      <!-- Customer Chat Section -->
-      <div id="chat-section" class="dashboard-section hidden">
-        <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            CUSTOMER CHAT
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-center py-12">
-            <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>
-            <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>
-            <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-              <i class="fas fa-comment mr-2"></i>Start New Chat
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Analytics Section -->
-      <div id="analytics-section" class="dashboard-section hidden">
-        <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            ANALYTICS
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <div class="text-center py-12">
-            <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>
-            <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>
-            <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>
-            <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
-              <i class="fas fa-chart-line mr-2"></i>View Full Analytics
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profile Settings Section -->
-      <div id="profile-section" class="dashboard-section hidden">
-        <div class="mb-6">
-          <div
-            class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
-          >
-            PROFILE SETTINGS
-          </div>
-          <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
-        </div>
-        <div class="bg-white rounded-xl shadow-md p-6">
-          <form th:action="@{/owner/profile}" method="post" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  th:value="${currentUser?.firstName}"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  th:value="${currentUser?.lastName}"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  th:value="${currentUser?.email}"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  th:value="${currentUser?.phoneNumber}"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                />
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
-              <input
-                type="text"
-                name="address"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Enter your address"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
-              <input
-                type="text"
-                name="paymentInfo"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                placeholder="Bank account or payment details"
-              />
-            </div>
-            <div class="flex space-x-4">
-              <button
-                type="submit"
-                class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                <i class="fas fa-save mr-2"></i>Update Profile
-              </button>
-              <button
-                type="button"
-                class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
-              >
-                <i class="fas fa-times mr-2"></i>Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
     </div>
 
-    <!-- JavaScript for interactions -->
-    <script th:inline="javascript">
-      /*<![CDATA[*/
-      var currentEditingCarId = null;
-      function showSection(sectionId) {
+    <div id="driving-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                DRIVING SERVICES
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Driving Services</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-steering-wheel text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Driving Services Management</h3>
+                <p class="text-gray-500 mb-6">Manage your driving services and requests here.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-plus mr-2"></i>Add Driving Service
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="income-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                INCOME REPORTS
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Income Reports</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Week</h4>
+                <p class="text-2xl font-bold text-primary" th:text="'$' + ${weeklyIncome ?: '2,150'}">$2,150</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Month</h4>
+                <p class="text-2xl font-bold text-green-600" th:text="'$' + ${monthlyIncome ?: '8,450'}">$8,450</p>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h4 class="font-semibold text-gray-600 mb-2">This Year</h4>
+                <p class="text-2xl font-bold text-purple-600" th:text="'$' + ${yearlyIncome ?: '95,200'}">$95,200</p>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h3 class="text-xl font-semibold text-gray-800 mb-6">Income Analytics</h3>
+            <div class="h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                <div class="text-center text-gray-500">
+                    <i class="fas fa-chart-line text-4xl mb-4"></i>
+                    <p>Income chart will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                CUSTOMER CHAT
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Customer Chat</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Customer Communication</h3>
+                <p class="text-gray-500 mb-6">Chat with your customers in real-time.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-comment mr-2"></i>Start New Chat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="analytics-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                ANALYTICS
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Analytics Dashboard</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="text-center py-12">
+                <i class="fas fa-chart-bar text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-600 mb-2">Business Analytics</h3>
+                <p class="text-gray-500 mb-6">View detailed analytics and insights about your rental business.</p>
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-chart-line mr-2"></i>View Full Analytics
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="profile-section" class="dashboard-section hidden">
+        <div class="mb-6">
+            <div
+                    class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-2"
+            >
+                PROFILE SETTINGS
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800">Profile Settings</h2>
+        </div>
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <form th:action="@{/owner/profile}" method="post" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input
+                                type="text"
+                                name="firstName"
+                                th:value="${currentUser?.firstName}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input
+                                type="text"
+                                name="lastName"
+                                th:value="${currentUser?.lastName}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input
+                                type="email"
+                                name="email"
+                                th:value="${currentUser?.email}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input
+                                type="tel"
+                                name="phone"
+                                th:value="${currentUser?.phoneNumber}"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <input
+                            type="text"
+                            name="address"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            placeholder="Enter your address"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Information</label>
+                    <input
+                            type="text"
+                            name="paymentInfo"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                            placeholder="Bank account or payment details"
+                    />
+                </div>
+                <div class="flex space-x-4">
+                    <button
+                            type="submit"
+                            class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                        <i class="fas fa-save mr-2"></i>Update Profile
+                    </button>
+                    <button
+                            type="button"
+                            class="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 transition-colors"
+                    >
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var currentEditingCarId = null;
+    function showSection(sectionId) {
         document.querySelectorAll(".dashboard-section").forEach((section) => {
-          section.classList.add("hidden");
+            section.classList.add("hidden");
         });
         const target = document.getElementById(sectionId + "-section");
         if (target) target.classList.remove("hidden");
 
         // Update tab buttons
         document.querySelectorAll(".flex.space-x-4 button").forEach((btn) => {
-          btn.classList.remove("bg-primary", "text-white");
-          btn.classList.add("bg-gray-200", "text-gray-700");
+            btn.classList.remove("bg-primary", "text-white");
+            btn.classList.add("bg-gray-200", "text-gray-700");
         });
         event.target.classList.remove("bg-gray-200", "text-gray-700");
         event.target.classList.add("bg-primary", "text-white");
-      }
+    }
 
-      // Initial load: show dashboard
-      showSection("dashboard");
+    // Initial load: show dashboard
+    showSection("dashboard");
 
-      function showAddCarModal() {
+    function showAddCarModal() {
         const addCarForm = document.getElementById("add-car");
         if (addCarForm) {
-          addCarForm.classList.remove("hidden");
-          addCarForm.scrollIntoView({ behavior: "smooth" });
-        }
-      }
-
-      function toggleAddCar() {
-        const addCarForm = document.getElementById("add-car");
-        if (addCarForm) {
-          if (addCarForm.classList.contains("hidden")) {
             addCarForm.classList.remove("hidden");
             addCarForm.scrollIntoView({ behavior: "smooth" });
-          } else {
-            addCarForm.classList.add("hidden");
-          }
         }
-      }
+    }
 
-      // Auto-hide form after successful submission
-      document.addEventListener("DOMContentLoaded", function () {
+    function toggleAddCar() {
         const addCarForm = document.getElementById("add-car");
         if (addCarForm) {
-          addCarForm.addEventListener("submit", function () {
-            // Hide form after a short delay to allow for success message
-            setTimeout(() => {
-              addCarForm.classList.add("hidden");
-            }, 1000);
-          });
+            if (addCarForm.classList.contains("hidden")) {
+                addCarForm.classList.remove("hidden");
+                addCarForm.scrollIntoView({ behavior: "smooth" });
+            } else {
+                addCarForm.classList.add("hidden");
+            }
         }
-      });
+    }
 
-      function editCar(carId) {
+    document.addEventListener("DOMContentLoaded", function () {
+        const addCarForm = document.getElementById("add-car");
+        if (addCarForm) {
+            addCarForm.addEventListener("submit", function () {
+                setTimeout(() => {
+                    addCarForm.classList.add("hidden");
+                }, 1000);
+            });
+        }
+    });
+
+    function editCar(carId) {
         alert(`Edit car ID: ${carId}`);
-      }
+    }
 
-      function deleteCar(carId) {
+    function deleteCar(carId) {
         if (confirm("Are you sure you want to delete this car?")) {
-          alert("Car deleted successfully");
-          location.reload();
+            alert("Car deleted successfully");
+            location.reload();
         }
-      }
+    }
 
-      function viewBooking(bookingId) {
+    function viewBooking(bookingId) {
         alert(`View booking ID: ${bookingId}`);
-      }
+    }
 
-      function acceptBooking(bookingId) {
+    function acceptBooking(bookingId) {
         alert("Booking accepted");
         location.reload();
-      }
+    }
 
-      function declineBooking(bookingId) {
+    function declineBooking(bookingId) {
         if (confirm("Are you sure you want to decline this booking?")) {
-          alert("Booking declined");
-          location.reload();
+            alert("Booking declined");
+            location.reload();
         }
-      }
+    }
 
-      // Filter bookings
-      document.querySelectorAll(".filter-btn").forEach((button) => {
+    document.querySelectorAll(".filter-btn").forEach((button) => {
         button.addEventListener("click", () => {
-          const status = button.getAttribute("data-status");
-          document.querySelectorAll("#bookings-section tbody tr").forEach((row) => {
-            if (status === "all" || row.getAttribute("data-status") === status) {
-              row.style.display = "";
-            } else {
-              row.style.display = "none";
-            }
-          });
-          document.querySelectorAll(".filter-btn").forEach((btn) => btn.classList.replace("bg-primary", "bg-gray-100"));
-          button.classList.replace("bg-gray-100", "bg-primary");
+            const status = button.getAttribute("data-status");
+            document.querySelectorAll("#bookings-section tbody tr").forEach((row) => {
+                if (status === "all" || row.getAttribute("data-status") === status) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+            document.querySelectorAll(".filter-btn").forEach((btn) => btn.classList.replace("bg-primary", "bg-gray-100"));
+            button.classList.replace("bg-gray-100", "bg-primary");
         });
-      });
+    });
 
-      // Close notification
-      function closeNotification(button) {
+    function closeNotification(button) {
         const notification = button.closest("#success-notification");
         if (notification) {
-          notification.style.transform = "translateX(100%)";
-          setTimeout(() => notification.remove(), 300);
+            notification.style.transform = "translateX(100%)";
+            setTimeout(() => notification.remove(), 300);
         }
-      }
+    }
 
-      // Auto-hide notification after 5 seconds
-      setTimeout(() => {
+    setTimeout(() => {
         const notification = document.getElementById("success-notification");
         if (notification) {
-          notification.style.transform = "translateX(100%)";
-          setTimeout(() => notification.remove(), 300);
+            notification.style.transform = "translateX(100%)";
+            setTimeout(() => notification.remove(), 300);
         }
-      }, 5000);
+    }, 5000);
 
-      // Status toggle function
-      function toggleVehicleStatus(checkbox) {
+    function toggleVehicleStatus(checkbox) {
         console.log("Status toggle triggered");
         const id = checkbox.getAttribute("data-id");
         console.log("Vehicle ID:", id);
         fetch(`/owner/cars/${id}/toggle-availability`, { method: "POST" }).catch((err) => {
-          alert("Failed to update status");
-          checkbox.checked = !checkbox.checked;
+            alert("Failed to update status");
+            checkbox.checked = !checkbox.checked;
         });
-      }
+    }
 
-      function toggleEditCar(show) {
+    function toggleEditCar(show) {
         const modal = document.getElementById("edit-car");
         if (!modal) return;
         if (show) {
-          modal.classList.remove("hidden");
-          modal.scrollIntoView({ behavior: "smooth" });
+            modal.classList.remove("hidden");
+            modal.scrollIntoView({ behavior: "smooth" });
         } else {
-          modal.classList.add("hidden");
+            modal.classList.add("hidden");
         }
-      }
+    }
 
-      function openEditCarModal(id) {
+    function openEditCarModal(id) {
         currentEditingCarId = id;
         fetch(`/owner/cars/${id}/edit`)
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.status !== "success") throw new Error(data.message || "Failed");
-            const c = data.data || {};
-            document.getElementById("edit-id").value = c.id || "";
-            document.getElementById("edit-model").value = c.model || "";
-            document.getElementById("edit-type").value = c.type || "";
-            document.getElementById("edit-licensePlate").value = c.licensePlate || "";
-            document.getElementById("edit-seats").value = c.seats ?? "";
-            document.getElementById("edit-odometer").value = c.odometer ?? "";
-            document.getElementById("edit-hourlyRate").value = c.hourlyRate ?? "";
-            document.getElementById("edit-dailyRate").value = c.dailyRate ?? "";
-            document.getElementById("edit-monthlyRate").value = c.monthlyRate ?? "";
-            document.getElementById("edit-batteryCapacity").value = c.batteryCapacity ?? "";
-            document.getElementById("edit-description").value = c.description || "";
-            document.getElementById("edit-requiresLicense").value = String(c.requiresLicense);
-            document.getElementById("edit-status").value = c.status || "Available";
-            document.getElementById("edit-yearManufactured").value = c.yearManufactured ?? "";
-            // Reference selects
-            if (c.brandId) document.getElementById("edit-brandId").value = c.brandId;
-            else document.getElementById("edit-brandId").selectedIndex = 0;
-            if (c.fuelTypeId) document.getElementById("edit-fuelTypeId").value = c.fuelTypeId;
-            else document.getElementById("edit-fuelTypeId").selectedIndex = 0;
-            if (c.transmissionTypeId) document.getElementById("edit-transmissionTypeId").value = c.transmissionTypeId;
-            else document.getElementById("edit-transmissionTypeId").selectedIndex = 0;
-            if (c.categoryId) document.getElementById("edit-categoryId").value = c.categoryId;
-            else document.getElementById("edit-categoryId").selectedIndex = 0;
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.status !== "success") throw new Error(data.message || "Failed");
+                const c = data.data || {};
+                document.getElementById("edit-id").value = c.id || "";
+                document.getElementById("edit-model").value = c.model || "";
+                document.getElementById("edit-type").value = c.type || "";
+                document.getElementById("edit-licensePlate").value = c.licensePlate || "";
+                document.getElementById("edit-seats").value = c.seats ?? "";
+                document.getElementById("edit-odometer").value = c.odometer ?? "";
+                document.getElementById("edit-hourlyRate").value = c.hourlyRate ?? "";
+                document.getElementById("edit-dailyRate").value = c.dailyRate ?? "";
+                document.getElementById("edit-monthlyRate").value = c.monthlyRate ?? "";
+                document.getElementById("edit-batteryCapacity").value = c.batteryCapacity ?? "";
+                document.getElementById("edit-description").value = c.description || "";
+                document.getElementById("edit-requiresLicense").value = String(c.requiresLicense);
+                document.getElementById("edit-status").value = c.status || "Available";
+                document.getElementById("edit-yearManufactured").value = c.yearManufactured ?? "";
+                if (c.brandId) document.getElementById("edit-brandId").value = c.brandId;
+                else document.getElementById("edit-brandId").selectedIndex = 0;
+                if (c.fuelTypeId) document.getElementById("edit-fuelTypeId").value = c.fuelTypeId;
+                else document.getElementById("edit-fuelTypeId").selectedIndex = 0;
+                if (c.transmissionTypeId) document.getElementById("edit-transmissionTypeId").value = c.transmissionTypeId;
+                else document.getElementById("edit-transmissionTypeId").selectedIndex = 0;
+                if (c.categoryId) document.getElementById("edit-categoryId").value = c.categoryId;
+                else document.getElementById("edit-categoryId").selectedIndex = 0;
 
-            toggleEditCar(true);
-          })
-          .catch((err) => alert(err.message || "Failed to load vehicle"));
-      }
+                toggleEditCar(true);
+            })
+            .catch((err) => alert(err.message || "Failed to load vehicle"));
+    }
 
-      // Submit edit form via PUT
-      function submitEditForm() {
+    function submitEditForm() {
         if (!currentEditingCarId) return;
         const editForm = document.getElementById("edit-car-form");
         if (!editForm) return;
 
         const formData = new FormData(editForm);
         fetch(`/owner/cars/${currentEditingCarId}`, {
-          method: "PUT",
-          body: formData,
+            method: "PUT",
+            body: formData,
         })
-          .then((res) => {
-            toggleEditCar(false);
-            location.href = "/owner/dashboard?section=cars";
-          })
-          .catch((err) => alert(err.message || "Update failed"));
-      }
-      /*]]>*/
-    </script>
+            .then((res) => {
+                toggleEditCar(false);
+                location.href = "/owner/dashboard?section=cars";
+            })
+            .catch((err) => alert(err.message || "Update failed"));
+    }
+    /*]]>*/
+</script>
 
-    <div th:replace="~{fragments/footer :: footer}"></div>
-  </body>
+<div th:replace="~{fragments/footer :: footer}"></div>
+</body>
 </html>

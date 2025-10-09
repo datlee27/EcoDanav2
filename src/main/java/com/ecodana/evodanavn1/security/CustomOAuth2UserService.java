@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,7 +16,6 @@ import org.springframework.security.oauth2.core.oidc.OidcUserInfo;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.UserService;
 
 @Service

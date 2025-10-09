@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.repository.BookingRepository;
 
 @Service

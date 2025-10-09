@@ -1,9 +1,9 @@
 package com.ecodana.evodanavn1.controller.auth;
 
 import com.ecodana.evodanavn1.model.PasswordResetToken;
+import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,11 +14,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.EmailService;
 import com.ecodana.evodanavn1.service.UserService;
 
@@ -26,7 +24,6 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
 import java.util.Optional;
 import jakarta.servlet.http.HttpServletRequest;
 

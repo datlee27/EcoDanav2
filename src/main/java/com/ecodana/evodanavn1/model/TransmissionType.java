@@ -16,8 +16,8 @@ public class TransmissionType {
     private String transmissionTypeName;
 
     // Getters and Setters
-    public String getTransmissionTypeId() {
-        return transmissionTypeId.toString();
+    public Integer getTransmissionTypeId() {
+        return transmissionTypeId;
     }
 
     public void setTransmissionTypeId(Integer transmissionTypeId) {

@@ -15,53 +15,53 @@ public class Vehicle {
     @Id
     @Column(name = "VehicleId", length = 36)
     private String vehicleId;
-    
+
     @Column(name = "BrandId", length = 36)
     private String brandId;
-    
+
     @Column(name = "VehicleModel", length = 50, nullable = false)
     private String vehicleModel;
 
     @Column(name = "YearManufactured")
-    private Integer yearManufactured; 
+    private Integer yearManufactured;
     @Column(name = "FuelTypeId", length = 36)
     private String fuelTypeId;
-    
+
     @Column(name = "LicensePlate", length = 20, nullable = false)
     private String licensePlate;
-    
+
     @Column(name = "Seats")
     private Integer seats;
-    
+
     @Column(name = "Odometer")
     private Integer odometer;
-    
+
     @Column(name = "PricePerHour", precision = 10, scale = 2)
     private BigDecimal pricePerHour;
-    
+
     @Column(name = "PricePerDay", precision = 10, scale = 2)
     private BigDecimal pricePerDay;
-    
+
     @Column(name = "PricePerMonth", precision = 10, scale = 2)
     private BigDecimal pricePerMonth;
-    
+
     @Column(name = "Status", length = 20)
     private String status;
-    
+
     @Column(name = "Description", length = 500)
     private String description;
 
     @Column(name = "ImageUrl", length = 500)
-    private String imageUrl; 
+    private String imageUrl;
     @Column(name = "RentalPrices", columnDefinition = "JSON")
-    private String rentalPrices; 
-    
+    private String rentalPrices;
+
     @Column(name = "LastUpdatedBy", length = 36)
     private String lastUpdatedBy;
-    
+
     @Column(name = "VehicleType", length = 20)
     private String vehicleType;
-    
+
     @Column(name = "RequiresLicense")
     private Boolean requiresLicense = true;
 
@@ -73,7 +73,7 @@ public class Vehicle {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryId", referencedColumnName = "CategoryId")
-    private VehicleCategory category;
+    private VehicleCategories category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TransmissionTypeId", referencedColumnName = "TransmissionTypeId")
@@ -115,25 +115,26 @@ public class Vehicle {
     }
 
     // Getters and Setters
-     public String getBrandId() { return brandId; }
+    public String getBrandId() { return brandId; }
     public void setBrandId(String brandId) { this.brandId = brandId; }
-     public String getFuelTypeId() { return fuelTypeId; }
+    public String getFuelTypeId() { return fuelTypeId; }
     public void setFuelTypeId(String fuelTypeId) { this.fuelTypeId = fuelTypeId; }
-    public String getTransmissionTypeId() { return  (transmissionType != null) ? transmissionType.getTransmissionTypeId() : null;
-     }
+    public Integer getTransmissionTypeId() { return (transmissionType != null) ? transmissionType.getTransmissionTypeId() : null; }
     public void setTransmissionTypeId(String transmissionTypeId) {
-        transmissionType.setTransmissionTypeId(odometer);
-        this.setTransmissionType(transmissionType);
-     }
+        if (this.transmissionType == null) {
+            this.transmissionType = new TransmissionType();
+        }
+        this.transmissionType.setTransmissionTypeId(Integer.parseInt(transmissionTypeId));
+    }
     public BigDecimal getPricePerHour() { return pricePerHour; }
     public void setPricePerHour(BigDecimal pricePerHour) { this.pricePerHour = pricePerHour; }
-    
+
     public BigDecimal getPricePerDay() { return pricePerDay; }
     public void setPricePerDay(BigDecimal pricePerDay) { this.pricePerDay = pricePerDay; }
-    
+
     public BigDecimal getPricePerMonth() { return pricePerMonth; }
     public void setPricePerMonth(BigDecimal pricePerMonth) { this.pricePerMonth = pricePerMonth; }
-    
+
     public String getVehicleId() { return vehicleId; }
     public void setVehicleId(String vehicleId) { this.vehicleId = vehicleId; }
     public String getVehicleModel() { return vehicleModel; }
@@ -154,15 +155,18 @@ public class Vehicle {
     public void setDescription(String description) { this.description = description; }
 
     public String getImageUrl() { return imageUrl; }
-    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; } 
-    public String getCategoryId() { return  (category != null) ? category.getCategoryId().toString() : null; }
-    public void setCategoryId(String categoryId) { 
-        category.setCategoryId(Integer.parseInt(categoryId));
-        this.setCategory(category); }
-    
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public Integer getCategoryId() { return (category != null) ? category.getCategoryId() : null; }
+    public void setCategoryId(String categoryId) {
+        if (this.category == null) {
+            this.category = new VehicleCategories();
+        }
+        this.category.setCategoryId(Integer.parseInt(categoryId));
+    }
+
     public String getLastUpdatedBy() { return lastUpdatedBy; }
     public void setLastUpdatedBy(String lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
-    
+
     public String getVehicleType() { return vehicleType; }
     public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
     public Boolean getRequiresLicense() { return requiresLicense; }
@@ -178,11 +182,11 @@ public class Vehicle {
     public String getFeatures() { return features; }
     public void setFeatures(String features) { this.features = features; }
 
-    public VehicleCategory getCategory() {
+    public VehicleCategories getCategory() {
         return category;
     }
 
-    public void setCategory(VehicleCategory category) {
+    public void setCategory(VehicleCategories category) {
         this.category = category;
     }
 

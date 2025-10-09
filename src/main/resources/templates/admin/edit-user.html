@@ -18,7 +18,7 @@
                         <h1 class="text-2xl font-bold text-gray-900">Edit User</h1>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <a th:href="@{/admin/dashboard?tab=users}" 
+                        <a th:href="@{/admin/dashboard?tab=user}"
                            class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
                             <i class="fas fa-arrow-left mr-1"></i>Back to Users
                         </a>
@@ -46,7 +46,7 @@
                     <h3 class="text-lg font-medium text-gray-900">Chỉnh sửa User</h3>
                 </div>
                 
-                <form th:action="@{/admin/users/update}" method="post" class="p-6">
+                <form th:action="@{/admin/user/update}" method="post" class="p-6">
                     <input type="hidden" name="userId" th:value="${editUser.id}">
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -108,7 +108,7 @@
                     </div>
                     
                     <div class="flex justify-end space-x-3 mt-6">
-                        <a th:href="@{/admin/dashboard?tab=users}" 
+                        <a th:href="@{/admin/dashboard?tab=user}"
                            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors">
                             Hủy
                         </a>

@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.ecodana.evodanavn1.model.PasswordResetToken;
+import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -17,8 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ecodana.evodanavn1.model.Role;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.repository.UserRepository;
 
 @Service
@@ -76,7 +75,7 @@ public class UserService {
                 return false;
             }
             
-            if (user.getUsername() != null && !user.getUsername().isEmpty() && 
+            if (user.getUsername() != null && !user.getUsername().isEmpty() &&
                 userRepository.existsByUsername(user.getUsername())) {
                 return false;
             }

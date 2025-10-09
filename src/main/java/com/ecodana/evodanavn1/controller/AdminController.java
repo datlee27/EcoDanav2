@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ecodana.evodanavn1.model.Role;
+import com.ecodana.evodanavn1.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +22,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.ecodana.evodanavn1.model.Role;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.repository.RoleRepository;
 import com.ecodana.evodanavn1.service.AnalyticsService;
 import com.ecodana.evodanavn1.service.BookingService;

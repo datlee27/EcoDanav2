@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.VehicleService;
