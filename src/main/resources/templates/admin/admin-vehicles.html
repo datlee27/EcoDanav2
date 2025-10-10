@@ -1,13 +1,14 @@
+<!-- DEPRECATED: This is the old fragment for dashboard tab -->
+<!-- Use admin-vehicles-management.html for the full vehicle management page -->
 <div th:fragment="vehicles-tab">
     <div class="bg-white shadow rounded-lg">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-900">Vehicle Management</h3>
                 <div class="flex space-x-2">
-                    <input type="text" placeholder="Search vehicles..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                        <i class="fas fa-plus mr-1"></i>Add Vehicle
-                    </button>
+                    <a href="/admin/vehicles" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
+                        <i class="fas fa-external-link-alt mr-1"></i>Go to Vehicle Management
+                    </a>
                 </div>
             </div>
         </div>
@@ -38,9 +39,9 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())}">-</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                        <button class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">Maintenance</button>
-                        <button class="text-red-600 hover:text-red-900" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Unavailable">Remove</button>
+                        <a th:href="@{/admin/vehicles/detail/{id}(id=${vehicle.vehicleId})}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+                        <a th:href="@{/admin/vehicles/edit/{id}(id=${vehicle.vehicleId})}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+                        <a th:href="@{/admin/vehicles}" class="text-green-600 hover:text-green-900">Manage</a>
                     </td>
                 </tr>
                 <tr th:if="${vehicles == null or vehicles.empty}">

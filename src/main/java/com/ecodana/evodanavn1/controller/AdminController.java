@@ -112,6 +112,7 @@ public class AdminController {
             List<?> allVehicles = vehicleService.getAllVehicles();
             List<?> allBookings = bookingService.getAllBookings();
             List<?> allUsers = userService.getAllUsersWithRole();
+            List<?> allRoles = roleRepository.findAll();
             
             System.out.println("Loaded users with role info: " + allUsers.size());
             for (Object obj : allUsers) {
@@ -146,6 +147,7 @@ public class AdminController {
             model.addAttribute("vehicles", allVehicles);
             model.addAttribute("bookings", allBookings);
             model.addAttribute("users", allUsers);
+            model.addAttribute("roles", allRoles);
             model.addAttribute("discounts", allDiscounts);
             model.addAttribute("insuranceList", allInsurance);
             model.addAttribute("contracts", allContracts);
@@ -162,6 +164,9 @@ public class AdminController {
             model.addAttribute("totalVehicles", allVehicles.size());
             model.addAttribute("totalBookings", allBookings.size());
             model.addAttribute("totalUsers", allUsers.size());
+            model.addAttribute("activeUsers", ((List<User>)allUsers).stream().filter(u -> "Active".equals(u.getStatus())).count());
+            model.addAttribute("inactiveUsers", ((List<User>)allUsers).stream().filter(u -> "Inactive".equals(u.getStatus())).count());
+            model.addAttribute("bannedUsers", ((List<User>)allUsers).stream().filter(u -> "Banned".equals(u.getStatus())).count());
             model.addAttribute("totalRevenue", analytics.get("totalRevenue"));
             model.addAttribute("activeSessions", analytics.get("activeSessions"));
             
@@ -221,42 +226,46 @@ public class AdminController {
         return "admin/bookings-management";
     }
 
-    @GetMapping("/admin/vehicles")
-    public String adminVehicles(HttpSession session, Model model) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return "redirect:/login";
-        }
-        
-        List<?> allVehicles = vehicleService.getAllVehicles();
-        List<?> availableVehicles = vehicleService.getAvailableVehicles();
-        
-        model.addAttribute("vehicles", allVehicles);
-        model.addAttribute("totalVehicles", allVehicles.size());
-        model.addAttribute("availableVehicles", availableVehicles.size());
-        model.addAttribute("inUseVehicles", 0); // Mock data
-        model.addAttribute("maintenanceVehicles", 0); // Mock data
-        
-        return "admin/vehicles-management";
-    }
+    // DEPRECATED: Moved to VehicleAdminController
+    // This endpoint is now handled by /admin/vehicles in VehicleAdminController
+    // @GetMapping("/admin/vehicles")
+    // public String adminVehicles(HttpSession session, Model model) {
+    //     User user = (User) session.getAttribute("currentUser");
+    //     if (user == null || !userService.isAdmin(user)) {
+    //         return "redirect:/login";
+    //     }
+    //     
+    //     List<?> allVehicles = vehicleService.getAllVehicles();
+    //     List<?> availableVehicles = vehicleService.getAvailableVehicles();
+    //     
+    //     model.addAttribute("vehicles", allVehicles);
+    //     model.addAttribute("totalVehicles", allVehicles.size());
+    //     model.addAttribute("availableVehicles", availableVehicles.size());
+    //     model.addAttribute("inUseVehicles", 0); // Mock data
+    //     model.addAttribute("maintenanceVehicles", 0); // Mock data
+    //     
+    //     return "admin/vehicles-management";
+    // }
 
-    @GetMapping("/admin/users")
-    public String adminUsers(HttpSession session, Model model) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return "redirect:/login";
-        }
-        
-        List<?> allUsers = userService.getAllUsers();
-        
-        model.addAttribute("users", allUsers);
-        model.addAttribute("totalUsers", allUsers.size());
-        model.addAttribute("activeUsers", allUsers.size()); // Mock data
-        model.addAttribute("pendingUsers", 0); // Mock data
-        model.addAttribute("suspendedUsers", 0); // Mock data
-        
-        return "admin/users-management";
-    }
+    // DEPRECATED: User management moved to UserAdminController
+    // This endpoint is now handled by /admin/users in UserAdminController
+    // @GetMapping("/admin/users")
+    // public String adminUsers(HttpSession session, Model model) {
+    //     User user = (User) session.getAttribute("currentUser");
+    //     if (user == null || !userService.isAdmin(user)) {
+    //         return "redirect:/login";
+    //     }
+    //     
+    //     List<?> allUsers = userService.getAllUsers();
+    //     
+    //     model.addAttribute("users", allUsers);
+    //     model.addAttribute("totalUsers", allUsers.size());
+    //     model.addAttribute("activeUsers", allUsers.size()); // Mock data
+    //     model.addAttribute("pendingUsers", 0); // Mock data
+    //     model.addAttribute("suspendedUsers", 0); // Mock data
+    //     
+    //     return "admin/users-management";
+    // }
 
     @GetMapping("/admin/reports")
     public String adminReports(HttpSession session, Model model) {
@@ -382,35 +391,35 @@ public class AdminController {
         return "redirect:/admin/dashboard?tab=users";
     }
 
-    // Edit User Form
-    @GetMapping("/admin/users/edit/{id}")
-    public String editUserForm(@PathVariable String id, Model model, HttpSession session) {
-        User currentUser = (User) session.getAttribute("currentUser");
-        
-        if (currentUser == null) {
-            return "redirect:/admin/dashboard?tab=users";
-        }
-        
-        // Check if user has admin role
-        String roleName = currentUser.getRoleName();
-        if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
-            return "redirect:/admin/dashboard?tab=users";
-        }
-        
-        try {
-            User user = userService.findById(id);
-            if (user != null) {
-                model.addAttribute("editUser", user);
-                model.addAttribute("tab", "users");
-                return "admin/edit-user";
-            } else {
-                return "redirect:/admin/dashboard?tab=users";
-            }
-        } catch (Exception e) {
-            logger.error("Error loading user for edit: " + e.getMessage(), e);
-            return "redirect:/admin/dashboard?tab=users";
-        }
-    }
+    // DEPRECATED: Edit User Form - Moved to UserAdminController
+    // @GetMapping("/admin/users/edit/{id}")
+    // public String editUserForm(@PathVariable String id, Model model, HttpSession session) {
+    //     User currentUser = (User) session.getAttribute("currentUser");
+    //     
+    //     if (currentUser == null) {
+    //         return "redirect:/admin/dashboard?tab=users";
+    //     }
+    //     
+    //     // Check if user has admin role
+    //     String roleName = currentUser.getRoleName();
+    //     if (roleName == null || !"Admin".equalsIgnoreCase(roleName)) {
+    //         return "redirect:/admin/dashboard?tab=users";
+    //     }
+    //     
+    //     try {
+    //         User user = userService.findById(id);
+    //         if (user != null) {
+    //             model.addAttribute("editUser", user);
+    //             model.addAttribute("tab", "users");
+    //             return "admin/edit-user";
+    //         } else {
+    //             return "redirect:/admin/dashboard?tab=users";
+    //         }
+    //     } catch (Exception e) {
+    //         logger.error("Error loading user for edit: " + e.getMessage(), e);
+    //         return "redirect:/admin/dashboard?tab=users";
+    //     }
+    // }
 
     // Update User
     @PostMapping("/admin/users/update")
@@ -632,30 +641,30 @@ public class AdminController {
         }
     }
     
-    // Vehicle Management API
-    
-    @PostMapping("/admin/api/vehicles/status")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> updateVehicleStatus(
-            @RequestParam String vehicleId, 
-            @RequestParam String status, 
-            HttpSession session) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return ResponseEntity.status(403).body(Map.of("error", "Unauthorized"));
-        }
-        
-        try {
-            Object updatedVehicle = vehicleService.updateVehicleStatus(vehicleId, status);
-            if (updatedVehicle != null) {
-                return ResponseEntity.ok(Map.of("success", true, "vehicle", updatedVehicle));
-            } else {
-                return ResponseEntity.badRequest().body(Map.of("error", "Vehicle not found"));
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
-        }
-    }
+    // DEPRECATED: Vehicle Management API moved to VehicleAdminController
+    // Use PATCH /admin/vehicles/api/status/{id} instead
+    // @PostMapping("/admin/api/vehicles/status")
+    // @ResponseBody
+    // public ResponseEntity<Map<String, Object>> updateVehicleStatus(
+    //         @RequestParam String vehicleId, 
+    //         @RequestParam String status, 
+    //         HttpSession session) {
+    //     User user = (User) session.getAttribute("currentUser");
+    //     if (user == null || !userService.isAdmin(user)) {
+    //         return ResponseEntity.status(403).body(Map.of("error", "Unauthorized"));
+    //     }
+    //     
+    //     try {
+    //         Object updatedVehicle = vehicleService.updateVehicleStatus(vehicleId, status);
+    //         if (updatedVehicle != null) {
+    //             return ResponseEntity.ok(Map.of("success", true, "vehicle", updatedVehicle));
+    //         } else {
+    //             return ResponseEntity.badRequest().body(Map.of("error", "Vehicle not found"));
+    //         }
+    //     } catch (Exception e) {
+    //         return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+    //     }
+    // }
     
     // Discount Management API
     

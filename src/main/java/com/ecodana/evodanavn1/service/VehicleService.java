@@ -1,19 +1,23 @@
 package com.ecodana.evodanavn1.service;
 
+import com.ecodana.evodanavn1.dto.VehicleRequest;
+import com.ecodana.evodanavn1.dto.VehicleResponse;
+import com.ecodana.evodanavn1.model.TransmissionType;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.model.VehicleCategory;
+import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
+import com.ecodana.evodanavn1.repository.VehicleCategoryRepository;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,6 +26,12 @@ public class VehicleService {
 
     @Autowired
     private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private VehicleCategoryRepository vehicleCategoryRepository;
+
+    @Autowired
+    private TransmissionTypeRepository transmissionTypeRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -177,5 +187,163 @@ public class VehicleService {
         }
 
         return vehicleStream.collect(Collectors.toList());
+    }
+
+    // Admin-specific methods
+    @Transactional
+    public VehicleResponse createVehicle(VehicleRequest request) {
+        Vehicle vehicle = new Vehicle();
+        vehicle.setVehicleId(UUID.randomUUID().toString());
+        vehicle.setVehicleModel(request.getVehicleModel());
+        vehicle.setYearManufactured(request.getYearManufactured());
+        vehicle.setLicensePlate(request.getLicensePlate());
+        vehicle.setSeats(request.getSeats());
+        vehicle.setOdometer(request.getOdometer());
+        vehicle.setStatus(request.getStatus() != null ? request.getStatus() : "Available");
+        vehicle.setDescription(request.getDescription());
+        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setRequiresLicense(request.getRequiresLicense() != null ? request.getRequiresLicense() : true);
+        vehicle.setBatteryCapacity(request.getBatteryCapacity());
+        vehicle.setMainImageUrl(request.getMainImageUrl());
+        vehicle.setCreatedDate(LocalDateTime.now());
+
+        // Set rental prices as JSON
+        try {
+            Map<String, Object> prices = new HashMap<>();
+            prices.put("hourly", request.getHourlyPrice() != null ? request.getHourlyPrice() : BigDecimal.ZERO);
+            prices.put("daily", request.getDailyPrice() != null ? request.getDailyPrice() : BigDecimal.ZERO);
+            prices.put("monthly", request.getMonthlyPrice() != null ? request.getMonthlyPrice() : BigDecimal.ZERO);
+            vehicle.setRentalPrices(objectMapper.writeValueAsString(prices));
+        } catch (Exception e) {
+            throw new RuntimeException("Error setting rental prices: " + e.getMessage());
+        }
+
+        // Set image URLs as JSON
+        if (request.getImageUrls() != null && !request.getImageUrls().isEmpty()) {
+            try {
+                vehicle.setImageUrls(objectMapper.writeValueAsString(request.getImageUrls()));
+            } catch (Exception e) {
+                throw new RuntimeException("Error setting image URLs: " + e.getMessage());
+            }
+        }
+
+        // Set features as JSON
+        if (request.getFeatures() != null && !request.getFeatures().isEmpty()) {
+            try {
+                vehicle.setFeatures(objectMapper.writeValueAsString(request.getFeatures()));
+            } catch (Exception e) {
+                throw new RuntimeException("Error setting features: " + e.getMessage());
+            }
+        }
+
+        // Set category
+        if (request.getCategoryId() != null) {
+            VehicleCategory category = vehicleCategoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            vehicle.setCategory(category);
+        }
+
+        // Set transmission type
+        if (request.getTransmissionTypeId() != null) {
+            TransmissionType transmissionType = transmissionTypeRepository.findById(request.getTransmissionTypeId())
+                    .orElseThrow(() -> new RuntimeException("Transmission type not found"));
+            vehicle.setTransmissionType(transmissionType);
+        }
+
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        return new VehicleResponse(savedVehicle);
+    }
+
+    @Transactional
+    public VehicleResponse updateVehicleById(String vehicleId, VehicleRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+
+        vehicle.setVehicleModel(request.getVehicleModel());
+        vehicle.setYearManufactured(request.getYearManufactured());
+        vehicle.setLicensePlate(request.getLicensePlate());
+        vehicle.setSeats(request.getSeats());
+        vehicle.setOdometer(request.getOdometer());
+        vehicle.setStatus(request.getStatus());
+        vehicle.setDescription(request.getDescription());
+        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setRequiresLicense(request.getRequiresLicense());
+        vehicle.setBatteryCapacity(request.getBatteryCapacity());
+        vehicle.setMainImageUrl(request.getMainImageUrl());
+
+        // Update rental prices as JSON
+        try {
+            Map<String, Object> prices = new HashMap<>();
+            prices.put("hourly", request.getHourlyPrice() != null ? request.getHourlyPrice() : BigDecimal.ZERO);
+            prices.put("daily", request.getDailyPrice() != null ? request.getDailyPrice() : BigDecimal.ZERO);
+            prices.put("monthly", request.getMonthlyPrice() != null ? request.getMonthlyPrice() : BigDecimal.ZERO);
+            vehicle.setRentalPrices(objectMapper.writeValueAsString(prices));
+        } catch (Exception e) {
+            throw new RuntimeException("Error updating rental prices: " + e.getMessage());
+        }
+
+        // Update image URLs as JSON
+        if (request.getImageUrls() != null) {
+            try {
+                vehicle.setImageUrls(objectMapper.writeValueAsString(request.getImageUrls()));
+            } catch (Exception e) {
+                throw new RuntimeException("Error updating image URLs: " + e.getMessage());
+            }
+        }
+
+        // Update features as JSON
+        if (request.getFeatures() != null) {
+            try {
+                vehicle.setFeatures(objectMapper.writeValueAsString(request.getFeatures()));
+            } catch (Exception e) {
+                throw new RuntimeException("Error updating features: " + e.getMessage());
+            }
+        }
+
+        // Update category
+        if (request.getCategoryId() != null) {
+            VehicleCategory category = vehicleCategoryRepository.findById(request.getCategoryId())
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            vehicle.setCategory(category);
+        }
+
+        // Update transmission type
+        if (request.getTransmissionTypeId() != null) {
+            TransmissionType transmissionType = transmissionTypeRepository.findById(request.getTransmissionTypeId())
+                    .orElseThrow(() -> new RuntimeException("Transmission type not found"));
+            vehicle.setTransmissionType(transmissionType);
+        }
+
+        Vehicle updatedVehicle = vehicleRepository.save(vehicle);
+        return new VehicleResponse(updatedVehicle);
+    }
+
+    public VehicleResponse getVehicleResponseById(String vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        return new VehicleResponse(vehicle);
+    }
+
+    public List<VehicleResponse> getAllVehicleResponses() {
+        return vehicleRepository.findAll().stream()
+                .map(VehicleResponse::new)
+                .collect(Collectors.toList());
+    }
+
+    public List<VehicleCategory> getAllCategories() {
+        return vehicleCategoryRepository.findAll();
+    }
+
+    public List<TransmissionType> getAllTransmissionTypes() {
+        return transmissionTypeRepository.findAll();
+    }
+
+    public boolean vehicleExistsByLicensePlate(String licensePlate) {
+        return vehicleRepository.existsByLicensePlate(licensePlate);
+    }
+
+    public boolean vehicleExistsByLicensePlateAndNotId(String licensePlate, String vehicleId) {
+        Optional<Vehicle> vehicle = vehicleRepository.findByLicensePlate(licensePlate);
+        return vehicle.isPresent() && !vehicle.get().getVehicleId().equals(vehicleId);
     }
 }
