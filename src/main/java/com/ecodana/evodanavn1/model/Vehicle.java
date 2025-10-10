@@ -2,6 +2,7 @@ package com.ecodana.evodanavn1.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -92,6 +93,66 @@ public class Vehicle {
             System.err.println("Error parsing rentalPrices JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
         }
         return BigDecimal.ZERO;
+    }
+
+    @Transient
+    public BigDecimal getHourlyPriceFromJson() {
+        if (this.rentalPrices == null || this.rentalPrices.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            Map<String, Object> prices = objectMapper.readValue(this.rentalPrices, new TypeReference<Map<String, Object>>() {});
+            Object hourlyPrice = prices.get("hourly");
+            if (hourlyPrice instanceof Number) {
+                return new BigDecimal(hourlyPrice.toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing rentalPrices JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
+        }
+        return BigDecimal.ZERO;
+    }
+
+    @Transient
+    public BigDecimal getMonthlyPriceFromJson() {
+        if (this.rentalPrices == null || this.rentalPrices.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            Map<String, Object> prices = objectMapper.readValue(this.rentalPrices, new TypeReference<Map<String, Object>>() {});
+            Object monthlyPrice = prices.get("monthly");
+            if (monthlyPrice instanceof Number) {
+                return new BigDecimal(monthlyPrice.toString());
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing rentalPrices JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
+        }
+        return BigDecimal.ZERO;
+    }
+
+    @Transient
+    public List<String> getImageUrlsFromJson() {
+        if (this.imageUrls == null || this.imageUrls.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            return objectMapper.readValue(this.imageUrls, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            System.err.println("Error parsing imageUrls JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
+        }
+        return new java.util.ArrayList<>();
+    }
+
+    @Transient
+    public List<String> getFeaturesFromJson() {
+        if (this.features == null || this.features.isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        try {
+            return objectMapper.readValue(this.features, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            System.err.println("Error parsing features JSON for vehicle " + this.vehicleId + ": " + e.getMessage());
+        }
+        return new java.util.ArrayList<>();
     }
 
     // Getters and Setters

@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
@@ -55,5 +56,28 @@ public class VehicleController {
         model.addAttribute("selectedRequiresLicense", requiresLicense);
 
         return "customer/vehicles";
+    }
+
+    @GetMapping("/vehicles/{id}")
+    public String vehicleDetail(@PathVariable("id") String vehicleId, Model model, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser != null) {
+            model.addAttribute("currentUser", currentUser);
+        }
+
+        Vehicle vehicle = vehicleService.getVehicleById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy xe"));
+
+        model.addAttribute("vehicle", vehicle);
+
+        // Get related vehicles (same type, different model)
+        List<Vehicle> relatedVehicles = vehicleService.getVehiclesByType(vehicle.getVehicleType())
+                .stream()
+                .filter(v -> !v.getVehicleId().equals(vehicleId) && "Available".equals(v.getStatus()))
+                .limit(3)
+                .toList();
+        model.addAttribute("relatedVehicles", relatedVehicles);
+
+        return "customer/vehicle-detail";
     }
 }

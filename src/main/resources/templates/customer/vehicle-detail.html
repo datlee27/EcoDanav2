@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${vehicle.vehicleModel} + ' - EcoDana'">Chi tiết xe - EcoDana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        
+        .tab-button {
+            position: relative;
+            padding: 1rem 1.5rem;
+            color: #6b7280;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button:hover {
+            color: #10b981;
+        }
+        .tab-button.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .thumbnail-item.active {
+            border-color: #10b981 !important;
+        }
+        .rotate-180 {
+            transform: rotate(180deg);
+        }
+        .bg-primary {
+            background-color: #10b981;
+        }
+        .text-primary {
+            color: #10b981;
+        }
+        .hover\:bg-accent:hover {
+            background-color: #059669;
+        }
+        .hover\:text-accent:hover {
+            color: #059669;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Vehicle Title & Rating -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-3" th:text="${vehicle.vehicleModel}">MITSUBISHI XPANDER 2024</h1>
+            <div class="flex items-center gap-4 text-sm text-gray-600">
+                <div class="flex items-center">
+                    <i class="fas fa-star text-yellow-400 mr-1"></i>
+                    <span class="font-semibold">5.0</span>
+                    <span class="mx-1">•</span>
+                    <span>17 chuyến</span>
+                </div>
+                <div class="flex items-center">
+                    <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
+                    <span>Quận Bình Thạnh, TP. Đà Nẵng</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Detail Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column - Images & Info -->
+            <div class="lg:col-span-2">
+                <!-- Image Gallery (Mioto Style) -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6 p-2">
+                    <div class="grid grid-cols-4 gap-2">
+                        <!-- Main Image (3 cols x 2 rows) -->
+                        <div class="col-span-3 row-span-2">
+                            <img id="mainImage" 
+                                 th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                                 th:alt="${vehicle.vehicleModel}" 
+                                 class="w-full h-full object-cover rounded-lg cursor-pointer"
+                                 style="max-height: 400px;">
+                        </div>
+                        
+                        <!-- Thumbnail Images (right side) -->
+                        <div class="thumbnail-item active cursor-pointer rounded-lg overflow-hidden border-2 border-green-500">
+                            <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                                 th:alt="${vehicle.vehicleModel}" 
+                                 class="w-full h-full object-cover"
+                                 style="height: 95px;">
+                        </div>
+                        <div th:each="imageUrl, iterStat : ${vehicle.getImageUrlsFromJson()}" 
+                             th:if="${iterStat.index < 3}"
+                             class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-gray-200 hover:border-green-500 transition-all">
+                            <img th:src="${imageUrl}" 
+                                 th:alt="${vehicle.vehicleModel}" 
+                                 class="w-full h-full object-cover"
+                                 style="height: 95px;">
+                        </div>
+                        
+                        <!-- View All Button -->
+                        <div class="col-span-1 flex items-center justify-center bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-all"
+                             style="height: 95px;">
+                            <div class="text-center">
+                                <i class="fas fa-images text-2xl text-gray-600 mb-1"></i>
+                                <p class="text-xs text-gray-600">Xem tất cả</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Navigation Container -->
+                <div class="bg-white rounded-lg shadow-md mb-6">
+                    <!-- Tab Buttons -->
+                    <div class="flex border-b border-gray-200 overflow-x-auto">
+                        <button class="tab-button active" data-tab="features">Đặc điểm</button>
+                        <button class="tab-button" data-tab="documents">Giấy tờ thuê xe</button>
+                        <button class="tab-button" data-tab="location">Vị trí xe</button>
+                        <button class="tab-button" data-tab="owner">Chủ xe</button>
+                    </div>
+
+                    <!-- Tab Contents -->
+                    <div class="p-6">
+                        <!-- Tab 1: Đặc điểm -->
+                        <div id="features" class="tab-content active">
+                            <h2 class="text-xl font-semibold mb-4">Đặc điểm</h2>
+                            
+                            <!-- Key Specs Grid -->
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-cog text-2xl text-green-500"></i>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Truyền động</p>
+                                        <p class="font-semibold" th:text="${vehicle.transmissionType != null ? vehicle.transmissionType.transmissionTypeName : 'Số tự động'}">Số tự động</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-chair text-2xl text-green-500"></i>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Số ghế</p>
+                                        <p class="font-semibold" th:text="${vehicle.seats} + ' chỗ'">7 chỗ</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-bolt text-2xl text-green-500"></i>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Nhiên liệu</p>
+                                        <p class="font-semibold">Điện</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <i class="fas fa-battery-full text-2xl text-green-500"></i>
+                                    <div>
+                                        <p class="text-xs text-gray-600">Tiêu hao</p>
+                                        <p class="font-semibold" th:text="${vehicle.batteryCapacity != null ? vehicle.batteryCapacity + ' kWh/100km' : '6L/100km'}">6L/100km</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="mb-6">
+                                <h3 class="font-semibold mb-3">Mô tả</h3>
+                                <p class="text-gray-700 leading-relaxed" th:text="${vehicle.description ?: 'Xe điện hiện đại, thân thiện với môi trường, phù hợp cho mọi nhu cầu di chuyển.'}">
+                                    Xe ô tô mới, đẹp và chạy cho các bạn đi chơi cho dễ dàng
+                                </p>
+                            </div>
+
+                            <!-- Features -->
+                            <div th:if="${!vehicle.getFeaturesFromJson().isEmpty()}">
+                                <h3 class="font-semibold mb-3">Các tiện nghi khác</h3>
+                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                    <div th:each="feature : ${vehicle.getFeaturesFromJson()}" 
+                                         class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <span class="text-sm" th:text="${feature}">Bluetooth</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Giấy tờ thuê xe -->
+                        <div id="documents" class="tab-content">
+                            <h2 class="text-xl font-semibold mb-4">Giấy tờ thuê xe</h2>
+                            
+                            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6">
+                                <p class="text-sm text-orange-800">
+                                    <i class="fas fa-exclamation-circle mr-2"></i>
+                                    Chọn 1 trong 2 hình thức
+                                </p>
+                            </div>
+
+                            <div class="space-y-4">
+                                <!-- Option 1: GPLX + CCCD -->
+                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-id-card text-2xl text-green-500 mt-1"></i>
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold mb-2">GPLX (đối chiếu) & Passport (giữ lại)</h4>
+                                            <p class="text-sm text-gray-600">Đối chiếu Giấy phép lái xe (đối với xe máy bắt buộc có GPLX hạng A1 & đối với ô tô bắt buộc có GPLX hạng B1 trở lên) & giữ lại Passport (hộ chiếu)</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Option 2: GPLX + CCCD + Deposit -->
+                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-credit-card text-2xl text-green-500 mt-1"></i>
+                                        <div class="flex-1">
+                                            <h4 class="font-semibold mb-2">GPLX (đối chiếu) & CCCD (đối chiếu VNeID)</h4>
+                                            <p class="text-sm text-gray-600">Đối chiếu Giấy phép lái xe (đối với xe máy bắt buộc có GPLX hạng A1 & đối với ô tô bắt buộc có GPLX hạng B1 trở lên) & đối chiếu CCCD gắn chip (VNeID)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Terms Section -->
+                            <div class="mt-8">
+                                <h3 class="font-semibold mb-4">Tài sản thế chấp</h3>
+                                <p class="text-sm text-gray-700 mb-4">
+                                    15 triệu (Tiền mặt/Chuyển khoản cho chủ xe khi nhận xe) hoặc Xe máy (kèm cà vẹt gốc) giá trị 15 triệu
+                                </p>
+
+                                <h3 class="font-semibold mb-4">Điều khoản</h3>
+                                <ul class="space-y-2 text-sm text-gray-700">
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Sử dụng xe đúng mục đích</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Không sử dụng xe thuê vào mục đích phi pháp, trái pháp luật</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Không sử dụng xe thuê để cầm cố, thế chấp</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Không hút thuốc, nhả kẹo cao su, xả rác trong xe</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Không chở hàng quốc cấm dễ cháy nổ</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Không chở hoa quả, thực phẩm nặng mùi trong xe</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i class="fas fa-check text-green-500 mt-1"></i>
+                                        <span>Khi trả xe, nếu xe bẩn hoặc có mùi trong xe, khách hàng vui lòng vệ sinh xe sạch sẽ hoặc gửi phụ phí vệ sinh xe</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Vị trí xe -->
+                        <div id="location" class="tab-content">
+                            <h2 class="text-xl font-semibold mb-4">Vị trí xe</h2>
+                            
+                            <div class="mb-4">
+                                <div class="flex items-start gap-3">
+                                    <i class="fas fa-map-marker-alt text-green-500 text-xl mt-1"></i>
+                                    <div>
+                                        <p class="font-semibold">Quận Bình Thạnh, TP. Đà Nẵng</p>
+                                        <p class="text-sm text-gray-600">Đây chỉ là khu vực gần đúng, địa chỉ cụ thể sẽ được hiển thị sau khi đặt cọc</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Map Placeholder -->
+                            <div class="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
+                                <div class="text-center text-gray-500">
+                                    <i class="fas fa-map text-4xl mb-2"></i>
+                                    <p>Bản đồ sẽ được hiển thị tại đây</p>
+                                    <p class="text-sm">(Tích hợp Google Maps)</p>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 text-right">
+                                <a href="#" class="text-green-500 hover:text-green-600 font-semibold">
+                                    Xem bản đồ <i class="fas fa-arrow-right ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Chủ xe -->
+                        <div id="owner" class="tab-content">
+                            <h2 class="text-xl font-semibold mb-4">Chủ xe</h2>
+                            
+                            <!-- Owner Info Card -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <div class="flex items-center gap-4 mb-4">
+                                    <img src="https://via.placeholder.com/80" alt="Owner" class="w-20 h-20 rounded-full object-cover">
+                                    <div class="flex-1">
+                                        <h3 class="text-xl font-semibold">Lê Xuân An</h3>
+                                        <div class="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                            <i class="fas fa-star text-yellow-400"></i>
+                                            <span class="font-semibold">5.0</span>
+                                            <span>•</span>
+                                            <span>18 chuyến</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Owner Stats -->
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div class="p-3 bg-white rounded-lg">
+                                        <p class="text-2xl font-bold text-green-500">100%</p>
+                                        <p class="text-xs text-gray-600">Tỉ lệ phản hồi</p>
+                                    </div>
+                                    <div class="p-3 bg-white rounded-lg">
+                                        <p class="text-2xl font-bold text-green-500">5 phút</p>
+                                        <p class="text-xs text-gray-600">Phản hồi trong</p>
+                                    </div>
+                                    <div class="p-3 bg-white rounded-lg">
+                                        <p class="text-2xl font-bold text-green-500">90%</p>
+                                        <p class="text-xs text-gray-600">Tỉ lệ đồng ý</p>
+                                    </div>
+                                </div>
+
+                                <!-- Owner Description -->
+                                <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                                    <p class="text-sm text-gray-700">
+                                        <i class="fas fa-quote-left text-blue-400 mr-2"></i>
+                                        Chủ xe thân thiện, nhiệt tình và sẵn sàng hỗ trợ khách hàng trong suốt chuyến đi.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Reviews Section -->
+                            <div>
+                                <h3 class="font-semibold mb-4">
+                                    <i class="fas fa-star text-yellow-400 mr-2"></i>
+                                    5.0 • 13 đánh giá
+                                </h3>
+
+                                <!-- Review Items -->
+                                <div class="space-y-4">
+                                    <div class="border-b border-gray-200 pb-4">
+                                        <div class="flex items-start gap-3">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <h4 class="font-semibold">Thục</h4>
+                                                    <span class="text-xs text-gray-500">09/10/2025</span>
+                                                </div>
+                                                <div class="flex items-center gap-1 mb-2">
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                </div>
+                                                <p class="text-sm text-gray-700">Xe đẹp, chủ xe nhiệt tình!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="border-b border-gray-200 pb-4">
+                                        <div class="flex items-start gap-3">
+                                            <img src="https://via.placeholder.com/40" alt="User" class="w-10 h-10 rounded-full">
+                                            <div class="flex-1">
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <h4 class="font-semibold">Kim Hưng</h4>
+                                                    <span class="text-xs text-gray-500">09/10/2025</span>
+                                                </div>
+                                                <div class="flex items-center gap-1 mb-2">
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                    <i class="fas fa-star text-yellow-400 text-sm"></i>
+                                                </div>
+                                                <p class="text-sm text-gray-700">Xe chạy êm, tiết kiệm nhiên liệu. Rất hài lòng!</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="mt-4 w-full py-2 border border-green-500 text-green-500 rounded-lg hover:bg-green-50 transition-all">
+                                    Xem thêm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Booking Card -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+                    
+                    <!-- Pricing (Mioto Style) -->
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-2 mb-4">
+                            <span class="text-3xl font-bold text-green-500" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson() / 1000, 0, 'COMMA', 0, 'POINT')} + 'K'">1.002K</span>
+                            <span class="text-gray-600">/ngày</span>
+                        </div>
+
+                        <!-- Insurance Badge Green -->
+                        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-shield-alt text-green-500"></i>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-green-700">Bảo hiểm thuê xe</p>
+                                    <p class="text-xs text-gray-600">Chuyến đi có mua bảo hiểm. Khách hàng chỉ bồi thường tối đa 2,000,000 VNĐ trong trường hợp có sự cố ngoài ý muốn.</p>
+                                </div>
+                            </div>
+                            <a href="#" class="text-xs text-green-600 hover:underline mt-2 inline-block">Xem thêm ›</a>
+                        </div>
+
+                        <!-- Insurance Badge Red HOT -->
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">HOT</span>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold">Bảo hiểm người trên xe</p>
+                                    <p class="text-lg font-bold text-green-500">50.000đ/ngày</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">Trường hợp xảy ra tai nạn, khách hàng sẽ được bồi thường tối đa 200,000,000đ/người/vụ</p>
+                        </div>
+                    </div>
+
+                    <!-- Booking Form -->
+                    <form th:action="@{/booking/create}" method="post" class="space-y-4">
+                        <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}">
+                        
+                        <!-- Location Pickup -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
+                                Địa điểm giao xe
+                            </label>
+                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option>Quận Bình Thạnh, TP. Đà Nẵng</option>
+                            </select>
+                        </div>
+
+                        <!-- Date Time Inputs -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nhận xe</label>
+                                <input type="date" name="pickupDate" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
+                            </div>
+                            <div>
+                                <input type="time" name="pickupTime" value="21:00" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Trả xe</label>
+                                <input type="date" name="returnDate" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
+                            </div>
+                            <div>
+                                <input type="time" name="returnTime" value="20:00" required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
+                            </div>
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Đơn giá thuê</span>
+                                <span class="font-semibold" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')} + ' ₫/ngày'">1.121.536 ₫/ngày</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
+                                <span class="font-semibold">110.401 ₫</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
+                                    <input type="checkbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
+                                    <span>Bảo hiểm người trên xe</span>
+                                </label>
+                                <span class="font-semibold">50.000 ₫</span>
+                            </div>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="border-t-2 border-gray-300 pt-4 mt-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold">Tổng cộng</span>
+                                <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson() + 110401, 0, 'COMMA', 0, 'POINT')} + 'đ'">1.231.937đ</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" 
+                                    th:disabled="${vehicle.status != 'Available'}"
+                                    class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                <span th:text="${vehicle.status == 'Available' ? 'CHỌN THUÊ' : 'Xe không khả dụng'}">CHỌN THUÊ</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Fees Collapsible -->
+                    <div class="mt-4">
+                        <button class="w-full text-left text-sm text-gray-600 hover:text-gray-800 flex items-center justify-between" onclick="toggleFees()">
+                            <span>Phí phụ có thể phát sinh</span>
+                            <i class="fas fa-chevron-down" id="feesIcon"></i>
+                        </button>
+                        <div id="feesContent" class="hidden mt-3 text-xs text-gray-600 space-y-2">
+                            <div class="flex justify-between">
+                                <span>• Phí vượt giờ</span>
+                                <span>50.000đ/giờ</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>• Phí quá km</span>
+                                <span>5.000đ/km</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>• Phí vệ sinh</span>
+                                <span>100.000đ</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Info -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <p class="text-sm text-gray-600 text-center mb-3">Cần hỗ trợ?</p>
+                        <a href="tel:0236123456" class="flex items-center justify-center text-green-500 hover:text-green-600">
+                            <i class="fas fa-phone-alt mr-2"></i>
+                            <span class="font-semibold">0236 123 456</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Vehicles -->
+        <div th:if="${!relatedVehicles.isEmpty()}" class="mt-16">
+            <h2 class="text-2xl font-bold mb-6">Xe tương tự</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div th:each="relatedVehicle : ${relatedVehicles}" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
+                    <div class="relative">
+                        <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(relatedVehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                             th:alt="${relatedVehicle.vehicleModel}" 
+                             class="w-full h-48 object-cover">
+                        <div class="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium">
+                            Sẵn sàng
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-semibold mb-2" th:text="${relatedVehicle.vehicleModel}">VinFast VF5</h3>
+                        <div class="flex items-center text-sm text-gray-600 mb-3">
+                            <i class="fas fa-chair mr-1"></i>
+                            <span th:text="${relatedVehicle.seats}">4</span> chỗ
+                            <span class="mx-2">|</span>
+                            <i class="fas fa-cog mr-1"></i>
+                            Tự động
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xl font-bold text-primary" th:text="${#numbers.formatDecimal(relatedVehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')}">600,000</span>
+                                <span class="text-sm text-gray-600">₫/ngày</span>
+                            </div>
+                            <a th:href="@{'/vehicles/' + ${relatedVehicle.vehicleId}}" 
+                               class="text-primary hover:text-accent font-semibold">
+                                Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+<div th:replace="~{fragments/chatbot :: chatbot}"></div>
+
+<!-- JavaScript -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab Switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active from all tabs
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                // Add active to clicked tab
+                button.classList.add('active');
+                const tabId = button.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Image Gallery
+        const mainImage = document.getElementById('mainImage');
+        const thumbnailItems = document.querySelectorAll('.thumbnail-item');
+
+        thumbnailItems.forEach((item, index) => {
+            item.addEventListener('click', function() {
+                const img = this.querySelector('img');
+                if (img) {
+                    mainImage.src = img.src;
+                    
+                    // Update active thumbnail
+                    thumbnailItems.forEach(thumb => {
+                        thumb.classList.remove('active', 'border-green-500');
+                        thumb.classList.add('border-gray-200');
+                    });
+                    this.classList.remove('border-gray-200');
+                    this.classList.add('active', 'border-green-500');
+                }
+            });
+        });
+
+        // Date validation
+        const pickupDateInput = document.querySelector('input[name="pickupDate"]');
+        const returnDateInput = document.querySelector('input[name="returnDate"]');
+        
+        if (pickupDateInput && returnDateInput) {
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            pickupDateInput.min = today;
+            returnDateInput.min = today;
+
+            pickupDateInput.addEventListener('change', function() {
+                returnDateInput.min = this.value;
+                if (returnDateInput.value && returnDateInput.value < this.value) {
+                    returnDateInput.value = this.value;
+                }
+            });
+        }
+    });
+
+    // Toggle Fees Function
+    function toggleFees() {
+        const feesContent = document.getElementById('feesContent');
+        const feesIcon = document.getElementById('feesIcon');
+        
+        if (feesContent.classList.contains('hidden')) {
+            feesContent.classList.remove('hidden');
+            feesIcon.classList.add('rotate-180');
+        } else {
+            feesContent.classList.add('hidden');
+            feesIcon.classList.remove('rotate-180');
+        }
+    }
+</script>
+
+</body>
+</html>

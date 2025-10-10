@@ -174,7 +174,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
                 <!-- Thay thế khối div hiển thị icon bằng thẻ img -->
-                <a th:href="@{'/vehicles/detail/' + ${vehicle.vehicleId}}" class="block h-48 overflow-hidden" th:with="
+                <a th:href="@{'/vehicles/' + ${vehicle.vehicleId}}" class="block h-48 overflow-hidden" th:with="
                     imageFolder = (${vehicle.vehicleType == 'ElectricCar'} ? 'electric-car' : 'electric-motorbike'),
                     imageName = (${vehicle.vehicleModel != null} ? ${vehicle.vehicleModel.toLowerCase().replace(' ', '-')} : 'default'),
                     imageUrl = @{|/images/vehicles/${imageFolder}/${imageName}.jpg|},
@@ -229,7 +229,7 @@
                         <span class="price font-bold text-lg" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())} + ' / ngày'">$89 / ngày</span>
                     </div>
 
-                    <a th:href="@{'/vehicles/detail/' + ${vehicle.vehicleId}}"
+                    <a th:href="@{'/vehicles/' + ${vehicle.vehicleId}}"
                        class="rent-btn w-full bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors flex items-center justify-center">
                         Xem chi tiết
                         <i class="fas fa-arrow-right ml-2"></i>
