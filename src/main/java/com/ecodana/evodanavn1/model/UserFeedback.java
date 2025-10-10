@@ -1,6 +1,9 @@
 package com.ecodana.evodanavn1.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -14,6 +17,7 @@ public class UserFeedback {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -67,4 +71,8 @@ public class UserFeedback {
     public void setStaffReply(String staffReply) { this.staffReply = staffReply; }
     public LocalDateTime getReplyDate() { return replyDate; }
     public void setReplyDate(LocalDateTime replyDate) { this.replyDate = replyDate; }
+
+    public enum DocumentType {
+        CitizenId, DriverLicense, Passport
+    }
 }

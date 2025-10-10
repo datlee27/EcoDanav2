@@ -2,10 +2,9 @@ package com.ecodana.evodanavn1.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "UserDocuments")
@@ -15,11 +14,14 @@ public class UserDocument {
     @Column(name = "DocumentId", length = 36)
     private String documentId;
 
-    @Column(name = "UserId", length = 36, nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
     @Column(name = "DocumentType", nullable = false)
-    private String documentType; // ENUM('CitizenId', 'DriverLicense', 'Passport')
+    @Enumerated(EnumType.STRING)
+    private DocumentType documentType;
 
     @Column(name = "DocumentNumber", length = 50, nullable = false)
     private String documentNumber;
@@ -55,10 +57,10 @@ public class UserDocument {
     // Getters and Setters
     public String getDocumentId() { return documentId; }
     public void setDocumentId(String documentId) { this.documentId = documentId; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    public String getDocumentType() { return documentType; }
-    public void setDocumentType(String documentType) { this.documentType = documentType; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public DocumentType getDocumentType() { return documentType; }
+    public void setDocumentType(DocumentType documentType) { this.documentType = documentType; }
     public String getDocumentNumber() { return documentNumber; }
     public void setDocumentNumber(String documentNumber) { this.documentNumber = documentNumber; }
     public String getFullName() { return fullName; }
@@ -77,4 +79,8 @@ public class UserDocument {
     public void setVerified(boolean isVerified) { this.isVerified = isVerified; }
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+
+    public enum DocumentType {
+        CitizenId, DriverLicense, Passport
+    }
 }

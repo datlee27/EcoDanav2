@@ -1,6 +1,9 @@
 package com.ecodana.evodanavn1.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -12,7 +15,8 @@ public class UserFavoriteVehicles {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false)
-    private User user; // Sửa từ 'Users' thành 'user' và kiểu dữ liệu
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
     @Id
     @ManyToOne(fetch = FetchType.LAZY)
@@ -21,13 +25,13 @@ public class UserFavoriteVehicles {
 
     // Getters and Setters
     public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; } // Sửa kiểu dữ liệu
+    public void setUser(User user) { this.user = user; }
     public Vehicle getVehicle() { return vehicle; }
     public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
 
     // Composite key class
     public static class UserFavoriteVehicleId implements Serializable {
-        private String user; // Tên này phải khớp với thuộc tính 'user' trong Entity
+        private String user;
         private String vehicle;
 
         public UserFavoriteVehicleId() {}

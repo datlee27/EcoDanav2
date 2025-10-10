@@ -272,20 +272,6 @@
                         <input name="model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-                        <select name="brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                            <option value="" disabled selected>Select brand</option>
-                            <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
-                        <select name="fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                            <option value="" disabled selected>Select fuel type</option>
-                            <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
-                        </select>
-                    </div>
-                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
                         <select name="transmissionTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
                             <option value="" disabled selected>Select transmission</option>
@@ -309,11 +295,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                        <input
-                                name="type"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                                placeholder="e.g. Sedan, SUV, Hatchback"
-                        />
+                        <select name="type" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                            <option value="ElectricCar">Electric Car</option>
+                            <option value="ElectricMotorcycle">Electric Motorcycle</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
@@ -451,8 +436,6 @@
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Odometer</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Description</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Daily Price</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Brand</th>
-                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Fuel Type</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Transmission</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Category</th>
                     <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Battery (kWh)</th>
@@ -465,7 +448,7 @@
                 <tr th:each="v : ${vehicles}">
                     <td class="px-6 py-4">
                         <img
-                                th:src="${v.imageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}"
+                                th:src="${v.mainImageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}"
                                 class="w-20 h-12 object-cover rounded"
                                 th:alt="${v.vehicleModel ?: 'Vehicle'}"
                         />
@@ -479,21 +462,17 @@
                     <td class="px-6 py-4 truncate max-w-xs" th:text="${v.description ?: 'No description'}">Description</td>
                     <td
                             class="px-6 py-4"
-                            th:text="${v.pricePerDay != null ? '$' + #numbers.formatDecimal(v.pricePerDay, 1, 'COMMA', 2, 'POINT') : '$0.00'}"
+                            th:text="${v.getDailyPriceFromJson() != null ? '$' + #numbers.formatDecimal(v.getDailyPriceFromJson(), 1, 'COMMA', 2, 'POINT') : '$0.00'}"
                     >
                         $0.00
                     </td>
-                    <td class="px-6 py-4" th:text="${v.brandId != null ? brandMap[v.brandId] : 'N/A'}">Brand</td>
-                    <td class="px-6 py-4" th:text="${v.fuelTypeId != null ? fuelTypeMap[v.fuelTypeId] : 'N/A'}">
-                        Fuel Type
-                    </td>
                     <td
                             class="px-6 py-4"
-                            th:text="${v.transmissionTypeId != null ? transmissionMap[v.transmissionTypeId.toString()] : 'N/A'}"
+                            th:text="${v.transmissionType != null ? transmissionMap[v.transmissionType.transmissionTypeId.toString()] : 'N/A'}"
                     >
                         Transmission
                     </td>
-                    <td class="px-6 py-4" th:text="${v.categoryId != null ? categoryMap[v.categoryId] : 'N/A'}">
+                    <td class="px-6 py-4" th:text="${v.category != null ? categoryMap[v.category.categoryId] : 'N/A'}">
                         Category
                     </td>
                     <td
@@ -525,7 +504,7 @@
                     <td class="px-6 py-4 space-x-2">
                         <button
                                 class="px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200"
-                                th:attr="onclick='openEditCarModal(\'' + ${v.vehicleId} + '\')'"
+                                th:attr="onclick=|openEditCarModal('${v.vehicleId}')|"
                         >
                             Edit
                         </button>
@@ -555,20 +534,6 @@
                     <input name="model" id="edit-model" required class="w-full px-4 py-3 border border-gray-300 rounded-lg" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Brand</label>
-                    <select name="brandId" id="edit-brandId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                        <option value="" disabled>Select brand</option>
-                        <option th:each="b : ${brands}" th:value="${b.brandId}" th:text="${b.brandName}"></option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Fuel Type</label>
-                    <select name="fuelTypeId" id="edit-fuelTypeId" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                        <option value="" disabled>Select fuel type</option>
-                        <option th:each="f : ${fuelTypes}" th:value="${f.fuelTypeId}" th:text="${f.fuelName}"></option>
-                    </select>
-                </div>
-                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
                     <select
                             name="transmissionTypeId"
@@ -596,12 +561,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                    <input
-                            name="type"
-                            id="edit-type"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-lg"
-                            placeholder="e.g. Sedan, SUV, Hatchback"
-                    />
+                    <select name="type" id="edit-type" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                        <option value="ElectricCar">Electric Car</option>
+                        <option value="ElectricMotorcycle">Electric Motorcycle</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
@@ -1119,9 +1082,9 @@
     function toggleAddCar() {
         const addCarForm = document.getElementById("add-car");
         if (addCarForm) {
-            if (addCarForm.classList.contains("hidden")) {
-                addCarForm.classList.remove("hidden");
-                addCarForm.scrollIntoView({ behavior: "smooth" });
+            if (addCarForm.classList.contains("hidden")) {;
+            addCarForm.classList.remove("hidden");
+            addCarForm.scrollIntoView({ behavior: "smooth" });
             } else {
                 addCarForm.classList.add("hidden");
             }
@@ -1239,10 +1202,6 @@
                 document.getElementById("edit-requiresLicense").value = String(c.requiresLicense);
                 document.getElementById("edit-status").value = c.status || "Available";
                 document.getElementById("edit-yearManufactured").value = c.yearManufactured ?? "";
-                if (c.brandId) document.getElementById("edit-brandId").value = c.brandId;
-                else document.getElementById("edit-brandId").selectedIndex = 0;
-                if (c.fuelTypeId) document.getElementById("edit-fuelTypeId").value = c.fuelTypeId;
-                else document.getElementById("edit-fuelTypeId").selectedIndex = 0;
                 if (c.transmissionTypeId) document.getElementById("edit-transmissionTypeId").value = c.transmissionTypeId;
                 else document.getElementById("edit-transmissionTypeId").selectedIndex = 0;
                 if (c.categoryId) document.getElementById("edit-categoryId").value = c.categoryId;

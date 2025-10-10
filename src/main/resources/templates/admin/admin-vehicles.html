@@ -1,16 +1,19 @@
 <div th:fragment="vehicles-tab">
-    <div class="bg-white shadow rounded-lg">
+    <div class="bg-white shadow rounded-lg mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-900">Vehicle Management</h3>
                 <div class="flex space-x-2">
-                    <input type="text" placeholder="Search vehicles..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <button class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
+                    <input type="text" id="vehicleSearchInput" placeholder="Search vehicles..." class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <a th:href="@{/admin/vehicles/add}" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 flex items-center">
                         <i class="fas fa-plus mr-1"></i>Add Vehicle
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
@@ -24,27 +27,39 @@
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and !vehicles.empty}">
+                <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and not #lists.isEmpty(vehicles)}">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
-                        <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
+                        <div class="flex items-center">
+                            <img th:src="${vehicle.mainImageUrl != null ? vehicle.mainImageUrl : '/images/placeholder.png'}" alt="Vehicle Image" class="h-10 w-10 rounded-full object-cover mr-4">
+                            <div>
+                                <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
+                                <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
+                            </div>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.vehicleType}">-</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.seats}">-</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span th:if="${vehicle.status == 'Available'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${vehicle.status}">-</span>
-                        <span th:if="${vehicle.status == 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${vehicle.status}">-</span>
-                        <span th:if="${vehicle.status != 'Available' and vehicle.status != 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${vehicle.status}">-</span>
+                        <span th:classappend="${vehicle.status.name() == 'Available' ? 'bg-green-100 text-green-800' : (vehicle.status.name() == 'Rented' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800')}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" th:text="${vehicle.status.name()}">-</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())}">-</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</button>
-                        <button class="text-yellow-600 hover:text-yellow-900 mr-3" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">Maintenance</button>
-                        <button class="text-red-600 hover:text-red-900" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Unavailable">Remove</button>
+                        <a th:href="@{'/admin/vehicles/edit/' + ${vehicle.vehicleId}}" class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <button class="text-yellow-600 hover:text-yellow-900 mr-3" title="Set to Maintenance" data-action="vehicle-status" th:data-vehicle-id="${vehicle.vehicleId}" data-status="Maintenance">
+                            <i class="fas fa-tools"></i>
+                        </button>
+                        <a th:href="@{'/admin/vehicles/delete/' + ${vehicle.vehicleId}}" class="text-red-600 hover:text-red-900" title="Delete" onclick="return confirm('Are you sure you want to delete this vehicle?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
                     </td>
                 </tr>
-                <tr th:if="${vehicles == null or vehicles.empty}">
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No vehicles found</td>
+                <tr th:if="${vehicles == null or #lists.isEmpty(vehicles)}">
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-car-side text-4xl mb-2"></i>
+                        <p>No vehicles found in the database.</p>
+                    </td>
                 </tr>
                 </tbody>
             </table>

@@ -371,19 +371,19 @@
                 </div>
 
                 <div id="vehicles" class="tab-content" th:class="${tab == 'vehicles' ? 'tab-content active' : 'tab-content'}">
-                    <div th:include="admin/admin-vehicles :: vehicles-tab"></div>
+                    <div th:insert="~{admin/admin-vehicles :: vehicles-tab}"></div>
                 </div>
 
                 <div id="bookings" class="tab-content" th:class="${tab == 'bookings' ? 'tab-content active' : 'tab-content'}">
-                    <div th:include="admin/admin-bookings :: bookings-tab"></div>
+                    <div th:insert="~{admin/admin-bookings :: bookings-tab}"></div>
                 </div>
 
                 <div id="contracts" class="tab-content" th:class="${tab == 'contracts' ? 'tab-content active' : 'tab-content'}">
-                    <div th:include="admin/admin-contracts :: contracts-tab"></div>
+                    <div th:insert="~{admin/admin-contracts :: contracts-tab}"></div>
                 </div>
 
                 <div id="payments" class="tab-content" th:class="${tab == 'payments' ? 'tab-content active' : 'tab-content'}">
-                    <div class="bg-white shadow rounded-lg">
+                    <div class="bg-white shadow rounded-lg" th:insert="~{admin/admin-payments :: payments-tab}">
                         <div class="px-6 py-4 border-b border-gray-200">
                             <div class="flex justify-between items-center">
                                 <h3 class="text-lg font-medium text-gray-900">Payment Management</h3>
@@ -528,7 +528,7 @@
                 </div>
 
                 <div id="reports" class="tab-content" th:class="${tab == 'reports' ? 'tab-content active' : 'tab-content'}">
-                    <div th:include="admin/admin-reports :: reports-tab"></div>
+                    <div th:insert="~{admin/admin-reports :: reports-tab}"></div>
                 </div>
             </div>
         </div>

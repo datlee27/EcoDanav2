@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType; // Thêm import này
+import jakarta.persistence.Enumerated; // Thêm import này
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -23,7 +25,7 @@ public class User {
     @Column(name = "UserId", length = 36)
     private String id;
 
-    @Column(name = "Username", unique = true, nullable = false)
+    @Column(name = "Username", unique = true, nullable = false, length=100)
     private String username;
 
     @Column(name = "UserDOB")
@@ -33,8 +35,9 @@ public class User {
     @Column(name = "AvatarUrl", length = 255)
     private String avatarUrl;
 
-    @Column(name = "Gender", length = 10)
-    private String gender;
+    @Column(name = "Gender")
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     @Column(name = "FirstName", length = 256)
     private String firstName;
@@ -42,8 +45,9 @@ public class User {
     @Column(name = "LastName", length = 256)
     private String lastName;
 
-    @Column(name = "Status", length = 20, nullable = false)
-    private String status = "Active";
+    @Column(name = "Status", nullable = false)
+    @Enumerated(EnumType.STRING)
+    private UserStatus status = UserStatus.Active;
 
     @Column(name = "RoleId", length = 36, nullable = false)
     private String roleId;
@@ -52,7 +56,7 @@ public class User {
     @JoinColumn(name = "RoleId", referencedColumnName = "RoleId", insertable = false, updatable = false)
     private Role role;
 
-    @Column(name = "CreatedDate")
+    @Column(name = "CreatedDate", nullable = false)
     private LocalDateTime createdDate;
 
     @Column(name = "NormalizedUserName", length = 256)
@@ -74,8 +78,8 @@ public class User {
     @Column(name = "PasswordHash", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "PhoneNumber", length = 11)
-    @Size(max = 11, message = "Phone number must not exceed 11 characters")
+    @Column(name = "PhoneNumber", length = 15)
+    @Size(max = 15, message = "Phone number must not exceed 15 characters")
     @Pattern(regexp = "^[0-9]*$", message = "Phone number must contain only digits")
     private String phoneNumber;
 
@@ -103,7 +107,7 @@ public class User {
     // Constructors
     public User() {
         this.createdDate = LocalDateTime.now();
-        this.status = "Active";
+        this.status = UserStatus.Active;
         this.emailVerifed = false;
         this.twoFactorEnabled = false;
         this.lockoutEnabled = false;
@@ -135,8 +139,8 @@ public class User {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
 
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
+    public Gender getGender() { return gender; }
+    public void setGender(Gender gender) { this.gender = gender; }
 
     public String getFirstName() { return firstName; }
     public void setFirstName(String firstName) { this.firstName = firstName; }
@@ -144,8 +148,8 @@ public class User {
     public String getLastName() { return lastName; }
     public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public UserStatus getStatus() { return status; }
+    public void setStatus(UserStatus status) { this.status = status; }
 
     public String getRoleId() { return roleId; }
     public void setRoleId(String roleId) { this.roleId = roleId; }
@@ -190,10 +194,10 @@ public class User {
     public void setHasLicense(boolean hasLicense) { this.hasLicense = hasLicense; }
 
     public boolean isActive() {
-        return "Active".equalsIgnoreCase(this.status);
+        return UserStatus.Active.equals(this.status);
     }
     public void setActive(boolean active) {
-        this.status = active ? "Active" : "Inactive";
+        this.status = active ? UserStatus.Active : UserStatus.Inactive;
     }
 
     public Role getRole() { return role; }
@@ -211,6 +215,14 @@ public class User {
             return role.getRoleName().equalsIgnoreCase(roleName);
         }
         return false;
+    }
+
+    public enum Gender {
+        Male, Female, Other
+    }
+
+    public enum UserStatus {
+        Active, Inactive, Banned
     }
 
     @Override

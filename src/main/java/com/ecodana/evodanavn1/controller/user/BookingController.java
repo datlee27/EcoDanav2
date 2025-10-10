@@ -52,7 +52,7 @@ public class BookingController {
         }
 
         // Check if vehicle is available
-        if (!"Available".equals(vehicle.getStatus())) {
+        if (vehicle.getStatus() != Vehicle.VehicleStatus.Available) {
             model.addAttribute("error", "Vehicle is not available for booking");
             return "redirect:/vehicles";
         }
@@ -64,7 +64,7 @@ public class BookingController {
         }
 
         // Sử dụng VehicleService để lấy giá thuê theo ngày từ JSON
-        BigDecimal dailyPrice = vehicleService.getDailyPrice(vehicle);
+        BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
         if (dailyPrice == null || dailyPrice.compareTo(BigDecimal.ZERO) <= 0) {
             model.addAttribute("error", "Could not determine the daily rate for this vehicle.");
             return "redirect:/vehicles";
@@ -73,14 +73,14 @@ public class BookingController {
 
         Booking booking = new Booking();
         booking.setBookingId(UUID.randomUUID().toString());
-        booking.setUserId(user.getId());
-        booking.setVehicleId(vehicle.getVehicleId());
+        booking.setUser(user);
+        booking.setVehicle(vehicle);
         booking.setPickupDateTime(pickupDate.atStartOfDay());
         booking.setReturnDateTime(returnDate.atStartOfDay());
         booking.setTotalAmount(amount);
-        booking.setStatus("Pending");
+        booking.setStatus(Booking.BookingStatus.Pending);
         booking.setBookingCode("BK" + System.currentTimeMillis());
-        booking.setRentalType("daily");
+        booking.setRentalType(Booking.RentalType.daily);
 
         booking.setCreatedDate(java.time.LocalDateTime.now());
 

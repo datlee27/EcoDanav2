@@ -1,6 +1,9 @@
 package com.ecodana.evodanavn1.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -17,6 +20,7 @@ public class BookingApproval {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "StaffId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User staff;
 
     @Column(name = "ApprovalStatus", nullable = false)
