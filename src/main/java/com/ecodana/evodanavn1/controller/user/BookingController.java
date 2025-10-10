@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.VehicleService;
@@ -52,7 +52,7 @@ public class BookingController {
         }
 
         // Check if vehicle is available
-        if (!"Available".equals(vehicle.getStatus())) {
+        if (vehicle.getStatus() != Vehicle.VehicleStatus.Available) {
             model.addAttribute("error", "Vehicle is not available for booking");
             return "redirect:/vehicles";
         }
@@ -64,7 +64,7 @@ public class BookingController {
         }
 
         // Sử dụng VehicleService để lấy giá thuê theo ngày từ JSON
-        BigDecimal dailyPrice = vehicleService.getDailyPrice(vehicle);
+        BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
         if (dailyPrice == null || dailyPrice.compareTo(BigDecimal.ZERO) <= 0) {
             model.addAttribute("error", "Could not determine the daily rate for this vehicle.");
             return "redirect:/vehicles";
@@ -73,14 +73,14 @@ public class BookingController {
 
         Booking booking = new Booking();
         booking.setBookingId(UUID.randomUUID().toString());
-        booking.setUserId(user.getId());
-        booking.setVehicleId(vehicle.getVehicleId());
+        booking.setUser(user);
+        booking.setVehicle(vehicle);
         booking.setPickupDateTime(pickupDate.atStartOfDay());
         booking.setReturnDateTime(returnDate.atStartOfDay());
         booking.setTotalAmount(amount);
-        booking.setStatus("Pending");
+        booking.setStatus(Booking.BookingStatus.Pending);
         booking.setBookingCode("BK" + System.currentTimeMillis());
-        booking.setRentalType("daily");
+        booking.setRentalType(Booking.RentalType.daily);
 
         booking.setCreatedDate(java.time.LocalDateTime.now());
 

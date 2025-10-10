@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,7 +73,7 @@ public class VehicleService {
     }
 
     public List<Vehicle> getFavoriteVehiclesByUser(User user) {
-        return vehicleRepository.findAvailableVehicles().stream().limit(2).toList();
+        return vehicleRepository.findAvailableVehicles().stream().limit(2).collect(Collectors.toList());
     }
 
     public BigDecimal getDailyPrice(Vehicle vehicle) {
@@ -93,15 +92,10 @@ public class VehicleService {
     public Map<String, Object> getVehicleStatistics() {
         Map<String, Object> stats = new HashMap<>();
         List<Vehicle> allVehicles = getAllVehicles();
-        List<Vehicle> availableVehicles = getAvailableVehicles();
-        long inUseVehicles = allVehicles.stream().filter(v -> "Rented".equals(v.getStatus())).count();
-        long maintenanceVehicles = allVehicles.stream().filter(v -> "Maintenance".equals(v.getStatus())).count();
-
         stats.put("totalVehicles", allVehicles.size());
-        stats.put("availableVehicles", availableVehicles.size());
-        stats.put("inUseVehicles", inUseVehicles);
-        stats.put("maintenanceVehicles", maintenanceVehicles);
-
+        stats.put("availableVehicles", getAvailableVehicles().size());
+        stats.put("inUseVehicles", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented).count());
+        stats.put("maintenanceVehicles", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Maintenance).count());
         return stats;
     }
 
@@ -112,7 +106,7 @@ public class VehicleService {
     public Vehicle updateVehicleStatus(String vehicleId, String status) {
         return vehicleRepository.findById(vehicleId)
                 .map(vehicle -> {
-                    vehicle.setStatus(status);
+                    vehicle.setStatus(Vehicle.VehicleStatus.valueOf(status));
                     return vehicleRepository.save(vehicle);
                 })
                 .orElse(null);
@@ -130,48 +124,41 @@ public class VehicleService {
     }
 
     private boolean isNullOrEmpty(String str) {
-        return str == null || str.isEmpty();
+        return str == null || str.trim().isEmpty();
     }
 
     public List<Vehicle> filterVehicles(String location, String pickupDate, String returnDate, String pickupTime, String returnTime, String category, String vehicleType, String budget, Integer seats, Boolean requiresLicense) {
         Stream<Vehicle> vehicleStream = getAllVehicles().stream();
 
-        // TODO: Implement location-based filtering. The Vehicle entity currently does not have location data.
-
-        // Filter by availability if date/time is specified
+        // TODO: Implement location-based filtering.
         if (!isNullOrEmpty(pickupDate) || !isNullOrEmpty(returnDate) || !isNullOrEmpty(pickupTime) || !isNullOrEmpty(returnTime)) {
-            vehicleStream = vehicleStream.filter(vehicle -> "Available".equalsIgnoreCase(vehicle.getStatus()));
+            vehicleStream = vehicleStream.filter(vehicle -> vehicle.getStatus() == Vehicle.VehicleStatus.Available);
         }
 
-        // Filter by Vehicle Type
         if (!isNullOrEmpty(vehicleType)) {
-            vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType()));
+            vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType().name()));
         }
 
-        // Filter by Category
         if (!isNullOrEmpty(category)) {
             vehicleStream = vehicleStream.filter(vehicle -> vehicle.getCategory() != null && category.equalsIgnoreCase(vehicle.getCategory().getCategoryName()));
         }
 
-        // Filter by Budget
         if (!isNullOrEmpty(budget)) {
             vehicleStream = vehicleStream.filter(vehicle -> {
-                BigDecimal dailyPrice = getDailyPrice(vehicle);
+                BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
                 if ("under500k".equals(budget)) {
                     return dailyPrice.compareTo(new BigDecimal("500000")) < 0;
                 } else if ("over500k".equals(budget)) {
                     return dailyPrice.compareTo(new BigDecimal("500000")) >= 0;
                 }
-                return true; // No budget filter if value is unknown
+                return true;
             });
         }
 
-        // Filter by Seats
         if (seats != null && seats > 0) {
             vehicleStream = vehicleStream.filter(vehicle -> seats.equals(vehicle.getSeats()));
         }
 
-        // Filter by License Requirement
         if (requiresLicense != null) {
             vehicleStream = vehicleStream.filter(vehicle -> requiresLicense.equals(vehicle.getRequiresLicense()));
         }

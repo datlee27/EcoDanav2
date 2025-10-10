@@ -25,25 +25,27 @@ public class Vehicle {
     @Column(name = "LicensePlate", length = 20, nullable = false)
     private String licensePlate;
 
-    @Column(name = "Seats", nullable = false)
+    @Column(name = "Seats")
     private Integer seats;
 
-    @Column(name = "Odometer", nullable = false)
+    @Column(name = "Odometer")
     private Integer odometer;
 
     @Column(name = "RentalPrices", columnDefinition = "JSON")
-    private String rentalPrices; // JSON: {"hourly": 50000, "daily": 500000, "monthly": 10000000}
+    private String rentalPrices;
 
-    @Column(name = "Status", length = 20, nullable = false)
-    private String status; // ENUM('Available', 'Rented', 'Maintenance', 'Unavailable')
+    @Column(name = "Status", length = 20)
+    @Enumerated(EnumType.STRING)
+    private VehicleStatus status;
 
     @Column(name = "Description", length = 500)
     private String description;
 
-    @Column(name = "VehicleType", length = 20, nullable = false)
-    private String vehicleType; // ENUM('ElectricCar', 'ElectricMotorcycle')
+    @Column(name = "VehicleType", length = 20)
+    @Enumerated(EnumType.STRING)
+    private VehicleType vehicleType;
 
-    @Column(name = "RequiresLicense", nullable = false)
+    @Column(name = "RequiresLicense")
     private Boolean requiresLicense = true;
 
     @Column(name = "BatteryCapacity", precision = 10, scale = 2)
@@ -53,8 +55,12 @@ public class Vehicle {
     private LocalDateTime createdDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "LastUpdatedBy")
+    private User lastUpdatedBy;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryId", referencedColumnName = "CategoryId")
-    private VehicleCategory category;
+    private VehicleCategories category;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "TransmissionTypeId", referencedColumnName = "TransmissionTypeId")
@@ -75,6 +81,7 @@ public class Vehicle {
     // Constructors
     public Vehicle() {
         this.createdDate = LocalDateTime.now();
+        this.status = VehicleStatus.Available;
     }
 
     @Transient
@@ -109,30 +116,27 @@ public class Vehicle {
     public void setOdometer(Integer odometer) { this.odometer = odometer; }
     public String getRentalPrices() { return rentalPrices; }
     public void setRentalPrices(String rentalPrices) { this.rentalPrices = rentalPrices; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public VehicleStatus getStatus() { return status; }
+    public void setStatus(VehicleStatus status) { this.status = status; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public String getVehicleType() { return vehicleType; }
-    public void setVehicleType(String vehicleType) { this.vehicleType = vehicleType; }
+
+    public VehicleType getVehicleType() { return vehicleType; }
+    public void setVehicleType(VehicleType vehicleType) { this.vehicleType = vehicleType; }
     public Boolean getRequiresLicense() { return requiresLicense; }
     public void setRequiresLicense(Boolean requiresLicense) { this.requiresLicense = requiresLicense; }
     public BigDecimal getBatteryCapacity() { return batteryCapacity; }
     public void setBatteryCapacity(BigDecimal batteryCapacity) { this.batteryCapacity = batteryCapacity; }
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
-    public String getMainImageUrl() { return mainImageUrl; }
-    public void setMainImageUrl(String mainImageUrl) { this.mainImageUrl = mainImageUrl; }
-    public String getImageUrls() { return imageUrls; }
-    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
-    public String getFeatures() { return features; }
-    public void setFeatures(String features) { this.features = features; }
+    public User getLastUpdatedBy() { return lastUpdatedBy; }
+    public void setLastUpdatedBy(User lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
 
-    public VehicleCategory getCategory() {
+    public VehicleCategories getCategory() {
         return category;
     }
 
-    public void setCategory(VehicleCategory category) {
+    public void setCategory(VehicleCategories category) {
         this.category = category;
     }
 
@@ -142,5 +146,20 @@ public class Vehicle {
 
     public void setTransmissionType(TransmissionType transmissionType) {
         this.transmissionType = transmissionType;
+    }
+
+    public String getMainImageUrl() { return mainImageUrl; }
+    public void setMainImageUrl(String mainImageUrl) { this.mainImageUrl = mainImageUrl; }
+    public String getImageUrls() { return imageUrls; }
+    public void setImageUrls(String imageUrls) { this.imageUrls = imageUrls; }
+    public String getFeatures() { return features; }
+    public void setFeatures(String features) { this.features = features; }
+
+    public enum VehicleStatus {
+        Available, Rented, Maintenance, Unavailable
+    }
+
+    public enum VehicleType {
+        ElectricCar, ElectricMotorcycle
     }
 }

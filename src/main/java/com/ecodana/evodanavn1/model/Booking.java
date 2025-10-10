@@ -3,10 +3,9 @@ package com.ecodana.evodanavn1.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "Booking")
@@ -15,14 +14,19 @@ public class Booking {
     @Column(name = "BookingId", length = 36)
     private String bookingId;
 
-    @Column(name = "UserId", length = 36, nullable = false)
-    private String userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "UserId", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
 
-    @Column(name = "VehicleId", length = 36, nullable = false)
-    private String vehicleId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "VehicleId", nullable = false)
+    private Vehicle vehicle;
 
-    @Column(name = "HandledBy", length = 36)
-    private String handledBy;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "HandledBy")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User handledBy;
 
     @Column(name = "PickupDateTime", nullable = false)
     private LocalDateTime pickupDateTime;
@@ -34,10 +38,12 @@ public class Booking {
     private BigDecimal totalAmount;
 
     @Column(name = "Status", length = 50, nullable = false)
-    private String status = "Pending"; // ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled')
+    @Enumerated(EnumType.STRING)
+    private BookingStatus status = BookingStatus.Pending;
 
-    @Column(name = "DiscountId", length = 36)
-    private String discountId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "DiscountId")
+    private Discount discount;
 
     @Column(name = "CreatedDate", nullable = false)
     private LocalDateTime createdDate;
@@ -52,7 +58,8 @@ public class Booking {
     private String expectedPaymentMethod;
 
     @Column(name = "RentalType", length = 10, nullable = false)
-    private String rentalType = "daily"; // ENUM('hourly', 'daily', 'monthly')
+    @Enumerated(EnumType.STRING)
+    private RentalType rentalType = RentalType.daily;
 
     @Column(name = "TermsAgreed", nullable = false)
     private Boolean termsAgreed = false;
@@ -71,22 +78,22 @@ public class Booking {
     // Getters and Setters
     public String getBookingId() { return bookingId; }
     public void setBookingId(String bookingId) { this.bookingId = bookingId; }
-    public String getUserId() { return userId; }
-    public void setUserId(String userId) { this.userId = userId; }
-    public String getVehicleId() { return vehicleId; }
-    public void setVehicleId(String vehicleId) { this.vehicleId = vehicleId; }
-    public String getHandledBy() { return handledBy; }
-    public void setHandledBy(String handledBy) { this.handledBy = handledBy; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public Vehicle getVehicle() { return vehicle; }
+    public void setVehicle(Vehicle vehicle) { this.vehicle = vehicle; }
+    public User getHandledBy() { return handledBy; }
+    public void setHandledBy(User handledBy) { this.handledBy = handledBy; }
     public LocalDateTime getPickupDateTime() { return pickupDateTime; }
     public void setPickupDateTime(LocalDateTime pickupDateTime) { this.pickupDateTime = pickupDateTime; }
     public LocalDateTime getReturnDateTime() { return returnDateTime; }
     public void setReturnDateTime(LocalDateTime returnDateTime) { this.returnDateTime = returnDateTime; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getDiscountId() { return discountId; }
-    public void setDiscountId(String discountId) { this.discountId = discountId; }
+    public BookingStatus getStatus() { return status; }
+    public void setStatus(BookingStatus status) { this.status = status; }
+    public Discount getDiscount() { return discount; }
+    public void setDiscount(Discount discount) { this.discount = discount; }
     public LocalDateTime getCreatedDate() { return createdDate; }
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
     public String getCancelReason() { return cancelReason; }
@@ -95,12 +102,20 @@ public class Booking {
     public void setBookingCode(String bookingCode) { this.bookingCode = bookingCode; }
     public String getExpectedPaymentMethod() { return expectedPaymentMethod; }
     public void setExpectedPaymentMethod(String expectedPaymentMethod) { this.expectedPaymentMethod = expectedPaymentMethod; }
-    public String getRentalType() { return rentalType; }
-    public void setRentalType(String rentalType) { this.rentalType = rentalType; }
+    public RentalType getRentalType() { return rentalType; }
+    public void setRentalType(RentalType rentalType) { this.rentalType = rentalType; }
     public Boolean getTermsAgreed() { return termsAgreed; }
     public void setTermsAgreed(Boolean termsAgreed) { this.termsAgreed = termsAgreed; }
     public LocalDateTime getTermsAgreedAt() { return termsAgreedAt; }
     public void setTermsAgreedAt(LocalDateTime termsAgreedAt) { this.termsAgreedAt = termsAgreedAt; }
     public String getTermsVersion() { return termsVersion; }
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
+
+    public enum BookingStatus {
+        Pending, Approved, Rejected, Ongoing, Completed, Cancelled
+    }
+
+    public enum RentalType {
+        hourly, daily, monthly
+    }
 }

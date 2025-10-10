@@ -1,9 +1,8 @@
 package com.ecodana.evodanavn1.controller.auth;
 
-import com.ecodana.evodanavn1.model.PasswordResetToken;
-import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
+import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.service.UserService.TokenValidationResult;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -14,11 +13,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.EmailService;
 import com.ecodana.evodanavn1.service.UserService;
 
@@ -26,7 +23,6 @@ import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import java.io.UnsupportedEncodingException;
-import java.util.Map;
 import java.util.Optional;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -38,9 +34,6 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
-
-    @Autowired
-    private PasswordResetTokenRepository tokenRepository;
 
     // Inject AuthenticationManager to perform programmatic login
     @Autowired
@@ -237,8 +230,8 @@ public class AuthController {
             return "redirect:/login";
         }
 
-        userService.updateUser(currentUser.getId(), user.getFirstName(), user.getLastName(), user.getUserDOB(), user.getGender(), user.getPhoneNumber());
-        
+        userService.updateUser(currentUser.getId(), user.getFirstName(), user.getLastName(), user.getUserDOB(), user.getGender() != null ? user.getGender().name() : null, user.getPhoneNumber());
+
         // Update the user's name in the session as well
         User updatedUser = userService.findByEmail(currentUser.getEmail());
         session.setAttribute("currentUser", updatedUser);
@@ -320,16 +313,14 @@ public class AuthController {
         }
 
         User user = userOptional.get();
-        PasswordResetToken token = userService.createPasswordResetTokenForUser(user);
+        // The createPasswordResetTokenForUser method now handles deleting old tokens.
+        var token = userService.createPasswordResetTokenForUser(user);
 
-        // Get baseUrl from the request before calling the async method
         String baseUrl = getBaseUrl(request);
 
         try {
-            // Pass baseUrl (String) instead of request (HttpServletRequest)
             emailService.sendPasswordResetEmail(user.getEmail(), token.getToken(), baseUrl);
         } catch (MessagingException | UnsupportedEncodingException e) {
-            // Log the error for debugging
             System.err.println("Error sending password reset email: " + e.getMessage());
             redirectAttributes.addFlashAttribute("error", "Lỗi khi gửi email. Vui lòng thử lại.");
             return "redirect:/forgot-password";
@@ -341,11 +332,11 @@ public class AuthController {
 
     @GetMapping("/reset-password")
     public String showResetPasswordForm(@RequestParam("token") String token, Model model, RedirectAttributes redirectAttributes) {
-        String result = userService.validatePasswordResetToken(token);
-        if (result != null) {
+        TokenValidationResult result = userService.validatePasswordResetToken(token);
+        if (result != TokenValidationResult.VALID) {
             String message = switch (result) {
-                case "expired" -> "Liên kết đã hết hạn. Vui lòng yêu cầu một liên kết mới.";
-                case "usedToken" -> "Liên kết đã được sử dụng. Vui lòng yêu cầu một liên kết mới.";
+                case EXPIRED -> "Liên kết đã hết hạn. Vui lòng yêu cầu một liên kết mới.";
+                case USED -> "Liên kết đã được sử dụng. Vui lòng yêu cầu một liên kết mới.";
                 default -> "Liên kết không hợp lệ. Vui lòng kiểm tra lại hoặc yêu cầu một liên kết mới.";
             };
             redirectAttributes.addFlashAttribute("error", message);
@@ -353,7 +344,7 @@ public class AuthController {
         }
 
         model.addAttribute("token", token);
-        return "auth/reset-password"; // Changed from "change-password"
+        return "auth/reset-password";
     }
 
     @PostMapping("/reset-password")
@@ -362,32 +353,24 @@ public class AuthController {
                                        @RequestParam("confirmPassword") String confirmPassword,
                                        RedirectAttributes redirectAttributes) {
 
-        String result = userService.validatePasswordResetToken(token);
-        if (result != null) {
-            redirectAttributes.addFlashAttribute("error", "Liên kết không hợp lệ hoặc đã hết hạn.");
-            return "redirect:/forgot-password";
-        }
-
         if (!newPassword.equals(confirmPassword)) {
             redirectAttributes.addFlashAttribute("token", token);
             redirectAttributes.addFlashAttribute("error", "Mật khẩu xác nhận không khớp.");
             return "redirect:/reset-password?token=" + token;
         }
 
-        Optional<PasswordResetToken> tokenOptional = userService.getPasswordResetToken(token);
-        if(tokenOptional.isPresent()){
-            PasswordResetToken resetToken = tokenOptional.get();
-            User user = resetToken.getUser();
-            userService.changeUserPassword(user, newPassword);
+        TokenValidationResult result = userService.resetPassword(token, newPassword);
 
-            // Mark the token as used
-            resetToken.setUsed(true);
-            tokenRepository.save(resetToken);
-
+        if (result == TokenValidationResult.VALID) {
             redirectAttributes.addFlashAttribute("message", "Mật khẩu của bạn đã được thay đổi thành công.");
             return "redirect:/login";
         } else {
-            redirectAttributes.addFlashAttribute("error", "Đã xảy ra lỗi. Vui lòng thử lại.");
+            String message = switch (result) {
+                case EXPIRED -> "Liên kết đã hết hạn. Vui lòng yêu cầu một liên kết mới.";
+                case USED -> "Liên kết đã được sử dụng. Vui lòng yêu cầu một liên kết mới.";
+                default -> "Liên kết không hợp lệ. Vui lòng thử lại.";
+            };
+            redirectAttributes.addFlashAttribute("error", message);
             return "redirect:/forgot-password";
         }
     }
@@ -406,6 +389,4 @@ public class AuthController {
             return scheme + "://" + serverName + ":" + serverPort + contextPath;
         }
     }
-    
-    // Removed the old /change-password GET and POST mappings
 }

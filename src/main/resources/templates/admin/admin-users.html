@@ -1,10 +1,10 @@
-<div th:fragment="users-tab">
+<div th:fragment="user-tab">
     <div class="bg-white shadow rounded-lg mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
             <div class="flex justify-between items-center">
                 <h3 class="text-lg font-medium text-gray-900">User Management</h3>
                 <div class="flex space-x-2">
-                    <input type="text" id="userSearchInput" placeholder="Search users..."
+                    <input type="text" id="userSearchInput" placeholder="Search user..."
                            class="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <button onclick="showAddUserModal()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors">
                         <i class="fas fa-plus mr-1"></i>Add User
@@ -30,7 +30,7 @@
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                <tr th:each="user, iterStat : ${users}" th:if="${users != null and not #lists.isEmpty(users)}">
+                <tr th:each="user, iterStat : ${user}" th:if="${user != null and not #lists.isEmpty(user)}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${iterStat.count}"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div class="flex items-center">
@@ -62,10 +62,10 @@
                         </a>
                     </td>
                 </tr>
-                <tr th:if="${users == null or #lists.isEmpty(users)}">
+                <tr th:if="${user == null or #lists.isEmpty(user)}">
                     <td colspan="8" class="px-6 py-12 text-center text-gray-500">
-                        <i class="fas fa-users text-4xl mb-2"></i>
-                        <p>No users found in the database.</p>
+                        <i class="fas fa-user text-4xl mb-2"></i>
+                        <p>No user found in the database.</p>
                     </td>
                 </tr>
                 </tbody>
