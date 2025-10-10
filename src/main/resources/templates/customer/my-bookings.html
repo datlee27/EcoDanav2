@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn đặt xe của tôi - EcoDana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Đơn đặt xe của tôi</h1>
+            <p class="text-gray-600">Quản lý tất cả các đơn đặt xe của bạn</p>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                <p class="text-green-800" th:text="${success}">Success message</p>
+            </div>
+        </div>
+
+        <div th:if="${error}" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle text-red-500 mr-3"></i>
+                <p class="text-red-800" th:text="${error}">Error message</p>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="bg-white rounded-lg shadow-md mb-6">
+            <div class="flex border-b border-gray-200 overflow-x-auto">
+                <button class="filter-tab active px-6 py-3 font-medium text-green-500 border-b-2 border-green-500" data-status="all">
+                    Tất cả (<span th:text="${bookings.size()}">0</span>)
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Pending">
+                    Chờ duyệt
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Approved">
+                    Đã duyệt
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Ongoing">
+                    Đang thuê
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Completed">
+                    Hoàn thành
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Cancelled">
+                    Đã hủy
+                </button>
+            </div>
+        </div>
+
+        <!-- Bookings List -->
+        <div th:if="${bookings.isEmpty()}" class="bg-white rounded-lg shadow-md p-12 text-center">
+            <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Chưa có đơn đặt xe nào</h3>
+            <p class="text-gray-500 mb-6">Hãy bắt đầu thuê xe để trải nghiệm dịch vụ của chúng tôi!</p>
+            <a th:href="@{/vehicles}" class="inline-block bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all">
+                <i class="fas fa-car mr-2"></i>
+                Thuê xe ngay
+            </a>
+        </div>
+
+        <div th:if="${!bookings.isEmpty()}" class="space-y-4">
+            <div th:each="booking : ${bookings}" 
+                 class="booking-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all"
+                 th:attr="data-status=${booking.status}">
+                
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                        <!-- Booking Code & Status -->
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <h3 class="text-lg font-semibold text-gray-900" th:text="${booking.bookingCode}">BK1234567890</h3>
+                                <span class="status-badge px-3 py-1 rounded-full text-xs font-semibold"
+                                      th:classappend="${booking.status == 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                                       booking.status == 'Approved' ? 'bg-blue-100 text-blue-800' :
+                                                       booking.status == 'Ongoing' ? 'bg-green-100 text-green-800' :
+                                                       booking.status == 'Completed' ? 'bg-gray-100 text-gray-800' :
+                                                       booking.status == 'Cancelled' ? 'bg-red-100 text-red-800' :
+                                                       'bg-gray-100 text-gray-800'}"
+                                      th:text="${booking.status == 'Pending' ? 'Chờ duyệt' :
+                                               booking.status == 'Approved' ? 'Đã duyệt' :
+                                               booking.status == 'Ongoing' ? 'Đang thuê' :
+                                               booking.status == 'Completed' ? 'Hoàn thành' :
+                                               booking.status == 'Cancelled' ? 'Đã hủy' :
+                                               booking.status}">
+                                    Chờ duyệt
+                                </span>
+                            </div>
+                            <p class="text-sm text-gray-500">
+                                <i class="far fa-calendar mr-1"></i>
+                                Đặt ngày: <span th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">01/01/2025 10:00</span>
+                            </p>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="mt-3 md:mt-0 text-right">
+                            <p class="text-sm text-gray-600">Tổng tiền</p>
+                            <p class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.231.937 ₫</p>
+                        </div>
+                    </div>
+
+                    <!-- Rental Details -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Nhận xe</p>
+                            <p class="font-semibold text-gray-800">
+                                <i class="fas fa-calendar-check text-green-500 mr-2"></i>
+                                <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2025 21:00</span>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500 mb-1">Trả xe</p>
+                            <p class="font-semibold text-gray-800">
+                                <i class="fas fa-calendar-times text-red-500 mr-2"></i>
+                                <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">05/01/2025 20:00</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex flex-wrap gap-2">
+                        <a th:href="@{'/booking/confirmation/' + ${booking.bookingId}}" 
+                           class="btn-detail px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-sm font-medium">
+                            <i class="fas fa-eye mr-1"></i>
+                            Xem chi tiết
+                        </a>
+                        
+                        <button th:if="${booking.status == 'Pending'}"
+                                onclick="cancelBooking(this)"
+                                th:attr="data-booking-id=${booking.bookingId}"
+                                class="btn-cancel px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all text-sm font-medium">
+                            <i class="fas fa-times mr-1"></i>
+                            Hủy đơn
+                        </button>
+
+                        <a th:if="${booking.status == 'Completed'}"
+                           href="#"
+                           class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all text-sm font-medium">
+                            <i class="fas fa-star mr-1"></i>
+                            Đánh giá
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Cancel Modal -->
+<div id="cancelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <h3 class="text-xl font-semibold mb-4">Xác nhận hủy đơn</h3>
+        <p class="text-gray-600 mb-4">Bạn có chắc chắn muốn hủy đơn đặt xe này?</p>
+        
+        <form id="cancelForm" method="post">
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Lý do hủy (tùy chọn)</label>
+                <textarea name="cancelReason" rows="3" 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                          placeholder="Nhập lý do hủy..."></textarea>
+            </div>
+            
+            <div class="flex gap-3">
+                <button type="button" onclick="closeCancelModal()" 
+                        class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Đóng
+                </button>
+                <button type="submit" 
+                        class="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    Xác nhận hủy
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+    // Filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Remove active from all tabs
+            document.querySelectorAll('.filter-tab').forEach(t => {
+                t.classList.remove('active', 'text-green-500', 'border-b-2', 'border-green-500');
+                t.classList.add('text-gray-600');
+            });
+            
+            // Add active to clicked tab
+            this.classList.remove('text-gray-600');
+            this.classList.add('active', 'text-green-500', 'border-b-2', 'border-green-500');
+            
+            // Filter bookings
+            const status = this.getAttribute('data-status');
+            const bookings = document.querySelectorAll('.booking-card');
+            
+            bookings.forEach(booking => {
+                if (status === 'all' || booking.getAttribute('data-status') === status) {
+                    booking.style.display = 'block';
+                } else {
+                    booking.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Cancel booking
+    function cancelBooking(button) {
+        const bookingId = button.getAttribute('data-booking-id');
+        const form = document.getElementById('cancelForm');
+        form.action = '/booking/cancel/' + bookingId;
+        document.getElementById('cancelModal').classList.remove('hidden');
+    }
+
+    function closeCancelModal() {
+        document.getElementById('cancelModal').classList.add('hidden');
+    }
+
+    // Close modal on outside click
+    document.getElementById('cancelModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCancelModal();
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận đặt xe - EcoDana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Success Message -->
+        <div class="bg-white rounded-lg shadow-md p-8 mb-6 text-center">
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-check-circle text-5xl text-green-500"></i>
+                </div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Đặt xe thành công!</h1>
+                <p class="text-gray-600">Cảm ơn bạn đã đặt xe tại EcoDana</p>
+            </div>
+
+            <!-- Booking Code -->
+            <div class="bg-green-50 border-2 border-green-500 rounded-lg p-4 inline-block">
+                <p class="text-sm text-gray-600 mb-1">Mã đặt xe</p>
+                <p class="text-2xl font-bold text-green-600" th:text="${booking.bookingCode}">BK1234567890</p>
+            </div>
+        </div>
+
+        <!-- Booking Details -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-info-circle text-green-500 mr-2"></i>
+                Thông tin đặt xe
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Vehicle Info -->
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-3">Thông tin xe</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center">
+                            <i class="fas fa-car text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Xe:</span>
+                            <span class="ml-auto font-semibold" th:text="${vehicle.vehicleModel}">VinFast VF8</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-id-card text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Biển số:</span>
+                            <span class="ml-auto font-semibold" th:text="${vehicle.licensePlate}">43A-12345</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-chair text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Số chỗ:</span>
+                            <span class="ml-auto font-semibold" th:text="${vehicle.seats} + ' chỗ'">5 chỗ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rental Period -->
+                <div>
+                    <h3 class="font-semibold text-gray-700 mb-3">Thời gian thuê</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-check text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Nhận xe:</span>
+                            <span class="ml-auto font-semibold" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2025 21:00</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar-times text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Trả xe:</span>
+                            <span class="ml-auto font-semibold" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">05/01/2025 20:00</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-clock text-gray-400 w-5 mr-2"></i>
+                            <span class="text-gray-600">Thời gian:</span>
+                            <span class="ml-auto font-semibold" th:text="${T(java.time.temporal.ChronoUnit).DAYS.between(booking.pickupDateTime, booking.returnDateTime) + 1} + ' ngày'">5 ngày</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+                <div class="flex justify-between items-center">
+                    <span class="text-lg font-semibold text-gray-700">Tổng tiền:</span>
+                    <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.231.937 ₫</span>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div class="mt-4">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-hourglass-half text-yellow-500 mr-3"></i>
+                        <div>
+                            <p class="font-semibold text-yellow-800">Trạng thái: Đang chờ duyệt</p>
+                            <p class="text-sm text-yellow-700">Chúng tôi sẽ xác nhận đơn đặt xe của bạn trong vòng 24 giờ</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-list-check text-green-500 mr-2"></i>
+                Các bước tiếp theo
+            </h2>
+
+            <div class="space-y-4">
+                <div class="flex items-start">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">1</div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Chờ xác nhận</p>
+                        <p class="text-sm text-gray-600">Chúng tôi sẽ kiểm tra và xác nhận đơn đặt xe của bạn</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">2</div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Nhận thông báo</p>
+                        <p class="text-sm text-gray-600">Bạn sẽ nhận được email/SMS xác nhận khi đơn được duyệt</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center font-bold mr-3 flex-shrink-0">3</div>
+                    <div>
+                        <p class="font-semibold text-gray-800">Nhận xe</p>
+                        <p class="text-sm text-gray-600">Đến địa điểm nhận xe vào thời gian đã chọn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-4">
+            <a th:href="@{/booking/my-bookings}" 
+               class="flex-1 bg-green-500 text-white text-center font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all">
+                <i class="fas fa-list mr-2"></i>
+                Xem đơn đặt xe của tôi
+            </a>
+            <a th:href="@{/vehicles}" 
+               class="flex-1 bg-white border-2 border-green-500 text-green-500 text-center font-semibold py-3 px-6 rounded-lg hover:bg-green-50 transition-all">
+                <i class="fas fa-car mr-2"></i>
+                Tiếp tục thuê xe
+            </a>
+        </div>
+
+        <!-- Contact Support -->
+        <div class="mt-6 text-center">
+            <p class="text-gray-600 mb-2">Cần hỗ trợ?</p>
+            <a href="tel:0236123456" class="text-green-500 hover:text-green-600 font-semibold">
+                <i class="fas fa-phone-alt mr-2"></i>
+                0236 123 456
+            </a>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+</body>
+</html>

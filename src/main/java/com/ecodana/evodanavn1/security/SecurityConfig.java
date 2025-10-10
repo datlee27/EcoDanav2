@@ -85,6 +85,7 @@ public class SecurityConfig {
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers("/booking/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf

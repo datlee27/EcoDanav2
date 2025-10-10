@@ -441,8 +441,12 @@
                     </div>
 
                     <!-- Booking Form -->
-                    <form th:action="@{/booking/create}" method="post" class="space-y-4">
+                    <form id="bookingForm" th:action="@{/booking/create}" method="post" class="space-y-4">
                         <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}">
+                        <input type="hidden" name="dailyPrice" id="dailyPriceInput" th:value="${vehicle.getDailyPriceFromJson()}">
+                        <input type="hidden" name="totalAmount" id="totalAmountInput" value="0">
+                        <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0">
+                        <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false">
                         
                         <!-- Location Pickup -->
                         <div>
@@ -450,8 +454,10 @@
                                 <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
                                 Địa điểm giao xe
                             </label>
-                            <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <option>Quận Bình Thạnh, TP. Đà Nẵng</option>
+                            <select name="pickupLocation" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                <option value="Quận Bình Thạnh, TP. Đà Nẵng">Quận Bình Thạnh, TP. Đà Nẵng</option>
+                                <option value="Quận Hải Châu, TP. Đà Nẵng">Quận Hải Châu, TP. Đà Nẵng</option>
+                                <option value="Quận Sơn Trà, TP. Đà Nẵng">Quận Sơn Trà, TP. Đà Nẵng</option>
                             </select>
                         </div>
 
@@ -459,11 +465,11 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Nhận xe</label>
-                                <input type="date" name="pickupDate" required
+                                <input type="date" id="pickupDate" name="pickupDate" required
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
                             </div>
                             <div>
-                                <input type="time" name="pickupTime" value="21:00" required
+                                <input type="time" id="pickupTime" name="pickupTime" value="21:00" required
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
                             </div>
                         </div>
@@ -471,31 +477,39 @@
                         <div class="grid grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Trả xe</label>
-                                <input type="date" name="returnDate" required
+                                <input type="date" id="returnDate" name="returnDate" required
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
                             </div>
                             <div>
-                                <input type="time" name="returnTime" value="20:00" required
+                                <input type="time" id="returnTime" name="returnTime" value="20:00" required
                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
+                            </div>
+                        </div>
+
+                        <!-- Rental Duration Display -->
+                        <div id="rentalDuration" class="bg-blue-50 border border-blue-200 rounded-lg p-3 hidden">
+                            <div class="flex items-center gap-2 text-sm">
+                                <i class="fas fa-calendar-alt text-blue-500"></i>
+                                <span class="text-gray-700">Thời gian thuê: <span id="durationText" class="font-semibold text-blue-600">0 ngày</span></span>
                             </div>
                         </div>
 
                         <!-- Price Breakdown -->
                         <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
                             <div class="flex justify-between">
-                                <span class="text-gray-600">Đơn giá thuê</span>
-                                <span class="font-semibold" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')} + ' ₫/ngày'">1.121.536 ₫/ngày</span>
+                                <span class="text-gray-600">Đơn giá thuê (<span id="daysCount">0</span> ngày)</span>
+                                <span class="font-semibold" id="rentalPrice" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
                             </div>
                             <div class="flex justify-between">
                                 <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
-                                <span class="font-semibold">110.401 ₫</span>
+                                <span class="font-semibold" id="basicInsurance">110.401 ₫</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
-                                    <input type="checkbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
-                                    <span>Bảo hiểm người trên xe</span>
+                                    <input type="checkbox" id="additionalInsuranceCheckbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
+                                    <span>Bảo hiểm người trên xe (<span id="insuranceDays">0</span> ngày)</span>
                                 </label>
-                                <span class="font-semibold">50.000 ₫</span>
+                                <span class="font-semibold" id="additionalInsurancePrice">0 ₫</span>
                             </div>
                         </div>
 
@@ -503,12 +517,13 @@
                         <div class="border-t-2 border-gray-300 pt-4 mt-4">
                             <div class="flex justify-between items-center">
                                 <span class="text-lg font-semibold">Tổng cộng</span>
-                                <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson() + 110401, 0, 'COMMA', 0, 'POINT')} + 'đ'">1.231.937đ</span>
+                                <span class="text-2xl font-bold text-green-500" id="totalAmount">0đ</span>
                             </div>
                         </div>
 
                         <div class="pt-4">
                             <button type="submit" 
+                                    id="submitBookingBtn"
                                     th:disabled="${vehicle.status != 'Available'}"
                                     class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
                                 <i class="fas fa-check-circle mr-2"></i>
@@ -635,10 +650,64 @@
             });
         });
 
-        // Date validation
-        const pickupDateInput = document.querySelector('input[name="pickupDate"]');
-        const returnDateInput = document.querySelector('input[name="returnDate"]');
+        // Booking Price Calculation
+        const pickupDateInput = document.getElementById('pickupDate');
+        const returnDateInput = document.getElementById('returnDate');
+        const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
+        const dailyPriceInput = document.getElementById('dailyPriceInput');
         
+        const BASIC_INSURANCE = 110401;
+        const ADDITIONAL_INSURANCE_PER_DAY = 50000;
+        
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+        }
+        
+        function calculatePrice() {
+            if (!pickupDateInput.value || !returnDateInput.value) {
+                return;
+            }
+            
+            const pickupDate = new Date(pickupDateInput.value);
+            const returnDate = new Date(returnDateInput.value);
+            
+            // Calculate days
+            const diffTime = Math.abs(returnDate - pickupDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
+            
+            if (diffDays < 1) {
+                return;
+            }
+            
+            // Show duration
+            document.getElementById('rentalDuration').classList.remove('hidden');
+            document.getElementById('durationText').textContent = diffDays + ' ngày';
+            document.getElementById('daysCount').textContent = diffDays;
+            document.getElementById('insuranceDays').textContent = diffDays;
+            
+            // Get daily price
+            const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
+            
+            // Calculate rental price
+            const rentalPrice = dailyPrice * diffDays;
+            document.getElementById('rentalPrice').textContent = formatCurrency(rentalPrice);
+            
+            // Calculate additional insurance
+            const additionalInsurance = additionalInsuranceCheckbox.checked ? 
+                (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
+            document.getElementById('additionalInsurancePrice').textContent = formatCurrency(additionalInsurance);
+            
+            // Calculate total
+            const total = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+            document.getElementById('totalAmount').textContent = formatCurrency(total) + 'đ';
+            
+            // Update hidden inputs
+            document.getElementById('totalAmountInput').value = total;
+            document.getElementById('rentalDaysInput').value = diffDays;
+            document.getElementById('additionalInsuranceInput').value = additionalInsuranceCheckbox.checked;
+        }
+        
+        // Date validation and calculation
         if (pickupDateInput && returnDateInput) {
             // Set minimum date to today
             const today = new Date().toISOString().split('T')[0];
@@ -650,8 +719,25 @@
                 if (returnDateInput.value && returnDateInput.value < this.value) {
                     returnDateInput.value = this.value;
                 }
+                calculatePrice();
             });
+            
+            returnDateInput.addEventListener('change', calculatePrice);
         }
+        
+        if (additionalInsuranceCheckbox) {
+            additionalInsuranceCheckbox.addEventListener('change', calculatePrice);
+        }
+        
+        // Form validation before submit
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            const totalAmount = parseFloat(document.getElementById('totalAmountInput').value);
+            if (!totalAmount || totalAmount <= 0) {
+                e.preventDefault();
+                alert('Vui lòng chọn ngày nhận và trả xe!');
+                return false;
+            }
+        });
     });
 
     // Toggle Fees Function
