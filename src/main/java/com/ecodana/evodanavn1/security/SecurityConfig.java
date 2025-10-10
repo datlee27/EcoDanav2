@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.security;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -46,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> {
-            com.ecodana.evodanavn1.model.User user = userService.findByUsername(username);
+            User user = userService.findByUsername(username);
             if (user == null) {
                 user = userService.findByEmail(username);
             }

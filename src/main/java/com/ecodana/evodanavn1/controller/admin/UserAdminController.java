@@ -64,14 +64,20 @@ public class UserAdminController {
             model.addAttribute("users", users);
             model.addAttribute("roles", roles);
             model.addAttribute("totalUsers", users.size());
-            model.addAttribute("activeUsers", users.stream().filter(u -> "Active".equals(u.getStatus())).count());
-            model.addAttribute("inactiveUsers", users.stream().filter(u -> "Inactive".equals(u.getStatus())).count());
-            model.addAttribute("bannedUsers", users.stream().filter(u -> "Banned".equals(u.getStatus())).count());
+            model.addAttribute("activeUsers", users.stream().filter(u -> u.getStatus() == User.UserStatus.Active).count());
+            model.addAttribute("inactiveUsers", users.stream().filter(u -> u.getStatus() == User.UserStatus.Inactive).count());
+            model.addAttribute("bannedUsers", users.stream().filter(u -> u.getStatus() == User.UserStatus.Banned).count());
             
             return "admin/user-management";
         } catch (Exception e) {
             logger.error("Error loading user management page", e);
             model.addAttribute("error", "Error loading users: " + e.getMessage());
+            model.addAttribute("totalUsers", 0);
+            model.addAttribute("activeUsers", 0);
+            model.addAttribute("inactiveUsers", 0);
+            model.addAttribute("bannedUsers", 0);
+            model.addAttribute("users", List.of());
+            model.addAttribute("roles", List.of());
             return "admin/user-management";
         }
     }
@@ -168,7 +174,7 @@ public class UserAdminController {
             
             if (status != null && !status.trim().isEmpty() && !"all".equalsIgnoreCase(status)) {
                 users = users.stream()
-                        .filter(u -> status.equalsIgnoreCase(u.getStatus()))
+                        .filter(u -> u.getStatus() != null && status.equalsIgnoreCase(u.getStatus().name()))
                         .collect(Collectors.toList());
             }
             
@@ -275,8 +281,10 @@ public class UserAdminController {
             newUser.setUserDOB(userRequest.getUserDOB());
             newUser.setPhoneNumber(userRequest.getPhoneNumber());
             newUser.setAvatarUrl(userRequest.getAvatarUrl());
-            newUser.setGender(userRequest.getGender());
-            newUser.setStatus(userRequest.getStatus());
+            if (userRequest.getGender() != null) {
+                newUser.setGender(User.Gender.valueOf(userRequest.getGender()));
+            }
+            newUser.setStatus(User.UserStatus.valueOf(userRequest.getStatus()));
             newUser.setRoleId(userRequest.getRoleId());
             newUser.setEmail(userRequest.getEmail());
             newUser.setEmailVerifed(userRequest.getEmailVerified() != null && userRequest.getEmailVerified());
@@ -374,8 +382,10 @@ public class UserAdminController {
             existingUser.setUserDOB(userRequest.getUserDOB());
             existingUser.setPhoneNumber(userRequest.getPhoneNumber());
             existingUser.setAvatarUrl(userRequest.getAvatarUrl());
-            existingUser.setGender(userRequest.getGender());
-            existingUser.setStatus(userRequest.getStatus());
+            if (userRequest.getGender() != null) {
+                existingUser.setGender(User.Gender.valueOf(userRequest.getGender()));
+            }
+            existingUser.setStatus(User.UserStatus.valueOf(userRequest.getStatus()));
             existingUser.setRoleId(userRequest.getRoleId());
             existingUser.setEmail(userRequest.getEmail());
             
@@ -479,7 +489,7 @@ public class UserAdminController {
                         .body(Map.of("success", false, "message", "User not found"));
             }
             
-            user.setStatus(status);
+            user.setStatus(User.UserStatus.valueOf(status));
             User updatedUser = userService.save(user);
             
             // Load with role for response

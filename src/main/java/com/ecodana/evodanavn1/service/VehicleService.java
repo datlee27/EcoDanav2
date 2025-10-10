@@ -5,7 +5,7 @@ import com.ecodana.evodanavn1.dto.VehicleResponse;
 import com.ecodana.evodanavn1.model.TransmissionType;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
-import com.ecodana.evodanavn1.model.VehicleCategory;
+import com.ecodana.evodanavn1.model.VehicleCategories;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
 import com.ecodana.evodanavn1.repository.VehicleCategoryRepository;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
@@ -84,7 +84,7 @@ public class VehicleService {
     }
 
     public List<Vehicle> getFavoriteVehiclesByUser(User user) {
-        return vehicleRepository.findAvailableVehicles().stream().limit(2).toList();
+        return vehicleRepository.findAvailableVehicles().stream().limit(2).collect(Collectors.toList());
     }
 
     public BigDecimal getDailyPrice(Vehicle vehicle) {
@@ -103,15 +103,10 @@ public class VehicleService {
     public Map<String, Object> getVehicleStatistics() {
         Map<String, Object> stats = new HashMap<>();
         List<Vehicle> allVehicles = getAllVehicles();
-        List<Vehicle> availableVehicles = getAvailableVehicles();
-        long inUseVehicles = allVehicles.stream().filter(v -> "Rented".equals(v.getStatus())).count();
-        long maintenanceVehicles = allVehicles.stream().filter(v -> "Maintenance".equals(v.getStatus())).count();
-
         stats.put("totalVehicles", allVehicles.size());
-        stats.put("availableVehicles", availableVehicles.size());
-        stats.put("inUseVehicles", inUseVehicles);
-        stats.put("maintenanceVehicles", maintenanceVehicles);
-
+        stats.put("availableVehicles", getAvailableVehicles().size());
+        stats.put("inUseVehicles", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented).count());
+        stats.put("maintenanceVehicles", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Maintenance).count());
         return stats;
     }
 
@@ -122,7 +117,7 @@ public class VehicleService {
     public Vehicle updateVehicleStatus(String vehicleId, String status) {
         return vehicleRepository.findById(vehicleId)
                 .map(vehicle -> {
-                    vehicle.setStatus(status);
+                    vehicle.setStatus(Vehicle.VehicleStatus.valueOf(status));
                     return vehicleRepository.save(vehicle);
                 })
                 .orElse(null);
@@ -140,48 +135,41 @@ public class VehicleService {
     }
 
     private boolean isNullOrEmpty(String str) {
-        return str == null || str.isEmpty();
+        return str == null || str.trim().isEmpty();
     }
 
     public List<Vehicle> filterVehicles(String location, String pickupDate, String returnDate, String pickupTime, String returnTime, String category, String vehicleType, String budget, Integer seats, Boolean requiresLicense) {
         Stream<Vehicle> vehicleStream = getAllVehicles().stream();
 
-        // TODO: Implement location-based filtering. The Vehicle entity currently does not have location data.
-
-        // Filter by availability if date/time is specified
+        // TODO: Implement location-based filtering.
         if (!isNullOrEmpty(pickupDate) || !isNullOrEmpty(returnDate) || !isNullOrEmpty(pickupTime) || !isNullOrEmpty(returnTime)) {
-            vehicleStream = vehicleStream.filter(vehicle -> "Available".equalsIgnoreCase(vehicle.getStatus()));
+            vehicleStream = vehicleStream.filter(vehicle -> vehicle.getStatus() == Vehicle.VehicleStatus.Available);
         }
 
-        // Filter by Vehicle Type
         if (!isNullOrEmpty(vehicleType)) {
-            vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType()));
+            vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType().name()));
         }
 
-        // Filter by Category
         if (!isNullOrEmpty(category)) {
             vehicleStream = vehicleStream.filter(vehicle -> vehicle.getCategory() != null && category.equalsIgnoreCase(vehicle.getCategory().getCategoryName()));
         }
 
-        // Filter by Budget
         if (!isNullOrEmpty(budget)) {
             vehicleStream = vehicleStream.filter(vehicle -> {
-                BigDecimal dailyPrice = getDailyPrice(vehicle);
+                BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
                 if ("under500k".equals(budget)) {
                     return dailyPrice.compareTo(new BigDecimal("500000")) < 0;
                 } else if ("over500k".equals(budget)) {
                     return dailyPrice.compareTo(new BigDecimal("500000")) >= 0;
                 }
-                return true; // No budget filter if value is unknown
+                return true;
             });
         }
 
-        // Filter by Seats
         if (seats != null && seats > 0) {
             vehicleStream = vehicleStream.filter(vehicle -> seats.equals(vehicle.getSeats()));
         }
 
-        // Filter by License Requirement
         if (requiresLicense != null) {
             vehicleStream = vehicleStream.filter(vehicle -> requiresLicense.equals(vehicle.getRequiresLicense()));
         }
@@ -199,9 +187,9 @@ public class VehicleService {
         vehicle.setLicensePlate(request.getLicensePlate());
         vehicle.setSeats(request.getSeats());
         vehicle.setOdometer(request.getOdometer());
-        vehicle.setStatus(request.getStatus() != null ? request.getStatus() : "Available");
+        vehicle.setStatus(request.getStatus() != null ? Vehicle.VehicleStatus.valueOf(request.getStatus()) : Vehicle.VehicleStatus.Available);
         vehicle.setDescription(request.getDescription());
-        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setVehicleType(request.getVehicleType() != null ? Vehicle.VehicleType.valueOf(request.getVehicleType()) : null);
         vehicle.setRequiresLicense(request.getRequiresLicense() != null ? request.getRequiresLicense() : true);
         vehicle.setBatteryCapacity(request.getBatteryCapacity());
         vehicle.setMainImageUrl(request.getMainImageUrl());
@@ -238,16 +226,14 @@ public class VehicleService {
 
         // Set category
         if (request.getCategoryId() != null) {
-            VehicleCategory category = vehicleCategoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
-            vehicle.setCategory(category);
+            vehicleCategoryRepository.findById(request.getCategoryId())
+                    .ifPresent(vehicle::setCategory);
         }
 
         // Set transmission type
         if (request.getTransmissionTypeId() != null) {
-            TransmissionType transmissionType = transmissionTypeRepository.findById(request.getTransmissionTypeId())
-                    .orElseThrow(() -> new RuntimeException("Transmission type not found"));
-            vehicle.setTransmissionType(transmissionType);
+            transmissionTypeRepository.findById(request.getTransmissionTypeId())
+                    .ifPresent(vehicle::setTransmissionType);
         }
 
         Vehicle savedVehicle = vehicleRepository.save(vehicle);
@@ -264,9 +250,9 @@ public class VehicleService {
         vehicle.setLicensePlate(request.getLicensePlate());
         vehicle.setSeats(request.getSeats());
         vehicle.setOdometer(request.getOdometer());
-        vehicle.setStatus(request.getStatus());
+        vehicle.setStatus(request.getStatus() != null ? Vehicle.VehicleStatus.valueOf(request.getStatus()) : vehicle.getStatus());
         vehicle.setDescription(request.getDescription());
-        vehicle.setVehicleType(request.getVehicleType());
+        vehicle.setVehicleType(request.getVehicleType() != null ? Vehicle.VehicleType.valueOf(request.getVehicleType()) : vehicle.getVehicleType());
         vehicle.setRequiresLicense(request.getRequiresLicense());
         vehicle.setBatteryCapacity(request.getBatteryCapacity());
         vehicle.setMainImageUrl(request.getMainImageUrl());
@@ -302,16 +288,14 @@ public class VehicleService {
 
         // Update category
         if (request.getCategoryId() != null) {
-            VehicleCategory category = vehicleCategoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
-            vehicle.setCategory(category);
+            vehicleCategoryRepository.findById(request.getCategoryId())
+                    .ifPresent(vehicle::setCategory);
         }
 
         // Update transmission type
         if (request.getTransmissionTypeId() != null) {
-            TransmissionType transmissionType = transmissionTypeRepository.findById(request.getTransmissionTypeId())
-                    .orElseThrow(() -> new RuntimeException("Transmission type not found"));
-            vehicle.setTransmissionType(transmissionType);
+            transmissionTypeRepository.findById(request.getTransmissionTypeId())
+                    .ifPresent(vehicle::setTransmissionType);
         }
 
         Vehicle updatedVehicle = vehicleRepository.save(vehicle);
@@ -330,7 +314,7 @@ public class VehicleService {
                 .collect(Collectors.toList());
     }
 
-    public List<VehicleCategory> getAllCategories() {
+    public List<VehicleCategories> getAllCategories() {
         return vehicleCategoryRepository.findAll();
     }
 

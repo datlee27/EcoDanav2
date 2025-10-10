@@ -39,8 +39,8 @@ public class UserResponse {
         this.userDOB = user.getUserDOB();
         this.phoneNumber = user.getPhoneNumber();
         this.avatarUrl = user.getAvatarUrl();
-        this.gender = user.getGender();
-        this.status = user.getStatus();
+        this.gender = user.getGender() != null ? user.getGender().name() : null;
+        this.status = user.getStatus() != null ? user.getStatus().name() : null;
         this.roleId = user.getRoleId();
         this.roleName = user.getRole() != null ? user.getRole().getRoleName() : null;
         this.email = user.getEmail();

@@ -2,10 +2,9 @@ package com.ecodana.evodanavn1.repository;
 
 import java.util.Optional;
 
+import com.ecodana.evodanavn1.model.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import com.ecodana.evodanavn1.model.Role;
 
 @Repository
 public interface RoleRepository extends JpaRepository<Role, String> {

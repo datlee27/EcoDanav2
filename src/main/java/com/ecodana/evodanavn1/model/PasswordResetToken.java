@@ -1,13 +1,17 @@
 package com.ecodana.evodanavn1.model;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Entity
 @Table(name = "PasswordResetTokens")
@@ -29,19 +33,20 @@ public class PasswordResetToken {
     @Column(name = "CreatedAt", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @OneToOne(targetEntity = User.class, fetch = FetchType.EAGER)
-    @JoinColumn(nullable = false, name = "UserId")
+    @ManyToOne(targetEntity = User.class, fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(nullable = false, name = "UserId", referencedColumnName = "UserId")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
     // Constructors
     public PasswordResetToken() {
+        this.id = UUID.randomUUID().toString(); // Generate ID here
         this.createdAt = LocalDateTime.now();
         this.isUsed = false;
     }
 
-    public PasswordResetToken(String id, String token, User user, LocalDateTime expiryTime) {
-        this();
-        this.id = id;
+    public PasswordResetToken(String token, User user, LocalDateTime expiryTime) {
+        this(); // Call default constructor to generate ID
         this.token = token;
         this.user = user;
         this.expiryTime = expiryTime;

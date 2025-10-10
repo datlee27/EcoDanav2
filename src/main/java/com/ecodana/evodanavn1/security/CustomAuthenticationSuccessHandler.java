@@ -2,12 +2,12 @@ package com.ecodana.evodanavn1.security;
 
 import java.io.IOException;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.UserService;
 
 import jakarta.servlet.ServletException;

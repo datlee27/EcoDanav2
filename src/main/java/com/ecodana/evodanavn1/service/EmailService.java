@@ -4,8 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+// import org.springframework.scheduling.annotation.Async; // Removed this import
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
@@ -72,7 +73,7 @@ public class EmailService {
     }
 
 
-    @Async
+    // Removed @Async annotation to ensure synchronous execution after transaction commit
     public void sendPasswordResetEmail(String to, String token, String baseUrl) throws MessagingException, UnsupportedEncodingException {
         MimeMessage mimeMessage = javaMailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");

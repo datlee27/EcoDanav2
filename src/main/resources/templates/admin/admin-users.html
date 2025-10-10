@@ -1,0 +1,161 @@
+<div th:fragment="users-tab">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-500 rounded-lg p-3">
+                    <i class="fas fa-users text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${totalUsers ?: 0}">5</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-500 rounded-lg p-3">
+                    <i class="fas fa-user-check text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Active Users</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${activeUsers ?: 0}">5</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-500 rounded-lg p-3">
+                    <i class="fas fa-user-clock text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Inactive Users</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${inactiveUsers ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-red-500 rounded-lg p-3">
+                    <i class="fas fa-user-slash text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Banned Users</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${bannedUsers ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Section -->
+    <div class="bg-white shadow-md rounded-lg mb-6">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <h3 class="text-lg font-semibold text-gray-900">User Management</h3>
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                    <input type="text" id="userSearchInput" placeholder="Search users..."
+                           class="px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <a href="/admin/users" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center">
+                        <i class="fas fa-external-link-alt mr-2"></i>Full Page View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created Date</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                <tr th:each="user, iterStat : ${users}" th:if="${users != null and not #lists.isEmpty(users)}">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div th:if="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}" 
+                                     class="h-10 w-10 rounded-full overflow-hidden">
+                                    <img th:src="${user.avatarUrl}" th:alt="${user.username}" class="h-full w-full object-cover">
+                                </div>
+                                <div th:unless="${user.avatarUrl != null and !user.avatarUrl.isEmpty()}" 
+                                     class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                    <i class="fas fa-user text-gray-500"></i>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900" th:text="${user.username}">-</div>
+                                <div class="text-sm text-gray-500" th:text="${user.firstName + ' ' + user.lastName}">-</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900" th:text="${user.email}">-</div>
+                        <div class="text-sm text-gray-500" th:text="${user.phoneNumber ?: 'N/A'}">-</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span th:classappend="${user.role?.roleName == 'Admin' ? 'bg-purple-100 text-purple-800' : 
+                                              (user.role?.roleName == 'Owner' ? 'bg-blue-100 text-blue-800' : 
+                                              (user.role?.roleName == 'Staff' ? 'bg-indigo-100 text-indigo-800' : 
+                                              'bg-gray-100 text-gray-800'))}"
+                              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              th:text="${user.role?.roleName ?: 'Customer'}">-</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span th:classappend="${user.status != null and user.status.name() == 'Active' ? 'bg-green-100 text-green-800' : 
+                                              (user.status != null and user.status.name() == 'Banned' ? 'bg-red-100 text-red-800' : 
+                                              'bg-yellow-100 text-yellow-800')}"
+                              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              th:text="${user.status != null ? user.status.name() : 'Unknown'}">-</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" 
+                        th:text="${user.createdDate != null ? #temporals.format(user.createdDate, 'dd/MM/yyyy') : 'N/A'}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a th:href="@{'/admin/users/detail/' + ${user.id}}" 
+                           class="text-blue-600 hover:text-blue-900 mr-3" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a th:href="@{'/admin/users/edit/' + ${user.id}}" 
+                           class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a th:href="@{'/admin/users/delete/' + ${user.id}}" 
+                           class="text-red-600 hover:text-red-900" title="Delete"
+                           onclick="return confirm('Are you sure you want to delete this user?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${users == null or #lists.isEmpty(users)}">
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-users text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-lg font-medium">No users found</p>
+                            <p class="text-sm text-gray-400 mt-1">Users will appear here once added to the system</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

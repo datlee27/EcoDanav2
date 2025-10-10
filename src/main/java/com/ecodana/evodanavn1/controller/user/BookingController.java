@@ -7,6 +7,7 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.UUID;
 
+import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.VehicleService;
@@ -95,14 +95,14 @@ public class BookingController {
             // Create booking
             Booking booking = new Booking();
             booking.setBookingId(UUID.randomUUID().toString());
-            booking.setUserId(user.getId());
-            booking.setVehicleId(vehicle.getVehicleId());
+            booking.setUser(user);
+            booking.setVehicle(vehicle);
             booking.setPickupDateTime(pickupDateTime);
             booking.setReturnDateTime(returnDateTime);
             booking.setTotalAmount(totalAmount);
-            booking.setStatus("Pending");
+            booking.setStatus(Booking.BookingStatus.Pending);
             booking.setBookingCode("BK" + System.currentTimeMillis());
-            booking.setRentalType("daily");
+            booking.setRentalType(Booking.RentalType.daily);
             booking.setCreatedDate(LocalDateTime.now());
             booking.setTermsAgreed(true);
             booking.setTermsAgreedAt(LocalDateTime.now());
@@ -132,12 +132,22 @@ public class BookingController {
         }
 
         Booking booking = bookingService.findById(bookingId).orElse(null);
-        if (booking == null || !booking.getUserId().equals(user.getId())) {
+        if (booking == null) {
             return "redirect:/booking/my-bookings";
         }
 
-        Vehicle vehicle = vehicleService.getVehicleById(booking.getVehicleId()).orElse(null);
-        
+        // Get user ID from booking entity relationship
+        String bookingUserId = booking.getUser() != null ? booking.getUser().getId() : null;
+        if (bookingUserId == null || !bookingUserId.equals(user.getId())) {
+            return "redirect:/booking/my-bookings";
+        }
+
+        // Get vehicle from booking entity relationship
+        Vehicle vehicle = booking.getVehicle();
+        if (vehicle == null) {
+            return "redirect:/booking/my-bookings";
+        }
+
         model.addAttribute("booking", booking);
         model.addAttribute("vehicle", vehicle);
         model.addAttribute("user", user);
@@ -178,17 +188,24 @@ public class BookingController {
         }
 
         Booking booking = bookingService.findById(bookingId).orElse(null);
-        if (booking == null || !booking.getUserId().equals(user.getId())) {
+        if (booking == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
             return "redirect:/booking/my-bookings";
         }
 
-        if (!"Pending".equals(booking.getStatus())) {
+        // Check booking ownership
+        String bookingUserId = booking.getUser() != null ? booking.getUser().getId() : null;
+        if (bookingUserId == null || !bookingUserId.equals(user.getId())) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+            return "redirect:/booking/my-bookings";
+        }
+
+        if (booking.getStatus() != Booking.BookingStatus.Pending) {
             redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đang chờ duyệt!");
             return "redirect:/booking/my-bookings";
         }
 
-        booking.setStatus("Cancelled");
+        booking.setStatus(Booking.BookingStatus.Cancelled);
         booking.setCancelReason(cancelReason != null ? cancelReason : "Khách hàng hủy");
         bookingService.updateBooking(booking);
 

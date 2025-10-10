@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const tab = urlParams.get('tab');
     if (tab) {
         switchTab(tab);
+    } else {
+        // If no tab parameter, ensure dashboard stats are visible
+        const dashboardStats = document.getElementById('dashboard-stats');
+        const dashboardStats2 = document.getElementById('dashboard-stats-2');
+        if (dashboardStats && dashboardStats2) {
+            dashboardStats.style.display = 'grid';
+            dashboardStats2.style.display = 'grid';
+        }
     }
     
     // User management is now handled server-side
@@ -141,6 +149,19 @@ function switchTab(tabName, event) {
     }
 
     currentTab = tabName;
+    
+    // Show/hide dashboard statistics cards
+    const dashboardStats = document.getElementById('dashboard-stats');
+    const dashboardStats2 = document.getElementById('dashboard-stats-2');
+    if (dashboardStats && dashboardStats2) {
+        if (tabName === 'overview') {
+            dashboardStats.style.display = 'grid';
+            dashboardStats2.style.display = 'grid';
+        } else {
+            dashboardStats.style.display = 'none';
+            dashboardStats2.style.display = 'none';
+        }
+    }
     
     // Close sidebar on mobile after selection
     if (window.innerWidth < 1024) {

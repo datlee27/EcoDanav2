@@ -46,9 +46,9 @@ public class VehicleResponse {
         this.licensePlate = vehicle.getLicensePlate();
         this.seats = vehicle.getSeats();
         this.odometer = vehicle.getOdometer();
-        this.status = vehicle.getStatus();
+        this.status = vehicle.getStatus() != null ? vehicle.getStatus().name() : null;
         this.description = vehicle.getDescription();
-        this.vehicleType = vehicle.getVehicleType();
+        this.vehicleType = vehicle.getVehicleType() != null ? vehicle.getVehicleType().name() : null;
         this.requiresLicense = vehicle.getRequiresLicense();
         this.batteryCapacity = vehicle.getBatteryCapacity();
         this.createdDate = vehicle.getCreatedDate();

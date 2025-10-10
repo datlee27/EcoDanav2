@@ -1,51 +1,146 @@
-<!-- DEPRECATED: This is the old fragment for dashboard tab -->
-<!-- Use admin-vehicles-management.html for the full vehicle management page -->
 <div th:fragment="vehicles-tab">
-    <div class="bg-white shadow rounded-lg">
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-indigo-500 rounded-lg p-3">
+                    <i class="fas fa-car text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Vehicles</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${totalVehicles ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-green-500 rounded-lg p-3">
+                    <i class="fas fa-check-circle text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Available</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${availableVehicles ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-blue-500 rounded-lg p-3">
+                    <i class="fas fa-key text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Rented</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${rentedVehicles ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-yellow-500 rounded-lg p-3">
+                    <i class="fas fa-tools text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Maintenance</dt>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${maintenanceVehicles ?: 0}">0</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicle Management Section -->
+    <div class="bg-white shadow-md rounded-lg mb-6">
         <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h3 class="text-lg font-medium text-gray-900">Vehicle Management</h3>
-                <div class="flex space-x-2">
-                    <a href="/admin/vehicles" class="px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700">
-                        <i class="fas fa-external-link-alt mr-1"></i>Go to Vehicle Management
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                <h3 class="text-lg font-semibold text-gray-900">Vehicle Management</h3>
+                <div class="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2">
+                    <input type="text" id="vehicleSearchInput" placeholder="Search vehicles..."
+                           class="px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <a href="/admin/vehicles" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition-colors inline-flex items-center justify-center">
+                        <i class="fas fa-external-link-alt mr-2"></i>Full Page View
                     </a>
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Vehicles Table -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seats</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Day</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and !vehicles.empty}">
+                <tr th:each="vehicle : ${vehicles}" th:if="${vehicles != null and not #lists.isEmpty(vehicles)}">
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
-                        <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <img th:src="${vehicle.mainImageUrl != null ? vehicle.mainImageUrl : '/images/placeholder.png'}" 
+                                     alt="Vehicle" class="h-10 w-10 rounded-lg object-cover">
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900" th:text="${vehicle.vehicleModel}">-</div>
+                                <div class="text-sm text-gray-500" th:text="${vehicle.licensePlate}">-</div>
+                            </div>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.vehicleType}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800" 
+                              th:text="${vehicle.vehicleType}">-</span>
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${vehicle.seats}">-</td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span th:if="${vehicle.status == 'Available'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" th:text="${vehicle.status}">-</span>
-                        <span th:if="${vehicle.status == 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800" th:text="${vehicle.status}">-</span>
-                        <span th:if="${vehicle.status != 'Available' and vehicle.status != 'Rented'}" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800" th:text="${vehicle.status}">-</span>
+                        <span th:classappend="${vehicle.status.name() == 'Available' ? 'bg-green-100 text-green-800' : 
+                                              (vehicle.status.name() == 'Rented' ? 'bg-blue-100 text-blue-800' : 
+                                              (vehicle.status.name() == 'Maintenance' ? 'bg-yellow-100 text-yellow-800' : 
+                                              'bg-red-100 text-red-800'))}"
+                              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" 
+                              th:text="${vehicle.status.name()}">-</span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())}">-</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <a th:href="@{/admin/vehicles/detail/{id}(id=${vehicle.vehicleId})}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
-                        <a th:href="@{/admin/vehicles/edit/{id}(id=${vehicle.vehicleId})}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
-                        <a th:href="@{/admin/vehicles}" class="text-green-600 hover:text-green-900">Manage</a>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" 
+                        th:text="${#numbers.formatCurrency(vehicle.getDailyPriceFromJson())}">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <a th:href="@{'/admin/vehicles/detail/' + ${vehicle.vehicleId}}" 
+                           class="text-blue-600 hover:text-blue-900 mr-3" title="View">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a th:href="@{'/admin/vehicles/edit/' + ${vehicle.vehicleId}}" 
+                           class="text-indigo-600 hover:text-indigo-900 mr-3" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a th:href="@{'/admin/vehicles/delete/' + ${vehicle.vehicleId}}" 
+                           class="text-red-600 hover:text-red-900" title="Delete"
+                           onclick="return confirm('Are you sure you want to delete this vehicle?');">
+                            <i class="fas fa-trash"></i>
+                        </a>
                     </td>
                 </tr>
-                <tr th:if="${vehicles == null or vehicles.empty}">
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">No vehicles found</td>
+                <tr th:if="${vehicles == null or #lists.isEmpty(vehicles)}">
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-car text-4xl text-gray-300 mb-3"></i>
+                            <p class="text-lg font-medium">No vehicles found</p>
+                            <p class="text-sm text-gray-400 mt-1">Vehicles will appear here once added to the system</p>
+                        </div>
+                    </td>
                 </tr>
                 </tbody>
             </table>

@@ -4,7 +4,7 @@ import com.ecodana.evodanavn1.dto.VehicleRequest;
 import com.ecodana.evodanavn1.dto.VehicleResponse;
 import com.ecodana.evodanavn1.model.TransmissionType;
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.VehicleCategory;
+import com.ecodana.evodanavn1.model.VehicleCategories;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
@@ -40,7 +40,7 @@ public class VehicleAdminController {
         }
 
         List<VehicleResponse> vehicles = vehicleService.getAllVehicleResponses();
-        List<VehicleCategory> categories = vehicleService.getAllCategories();
+        List<VehicleCategories> categories = vehicleService.getAllCategories();
         List<TransmissionType> transmissionTypes = vehicleService.getAllTransmissionTypes();
 
         model.addAttribute("currentUser", user);
@@ -62,7 +62,7 @@ public class VehicleAdminController {
             return "redirect:/login";
         }
 
-        List<VehicleCategory> categories = vehicleService.getAllCategories();
+        List<VehicleCategories> categories = vehicleService.getAllCategories();
         List<TransmissionType> transmissionTypes = vehicleService.getAllTransmissionTypes();
 
         model.addAttribute("currentUser", user);
@@ -84,7 +84,7 @@ public class VehicleAdminController {
 
         try {
             VehicleResponse vehicle = vehicleService.getVehicleResponseById(id);
-            List<VehicleCategory> categories = vehicleService.getAllCategories();
+            List<VehicleCategories> categories = vehicleService.getAllCategories();
             List<TransmissionType> transmissionTypes = vehicleService.getAllTransmissionTypes();
 
             model.addAttribute("currentUser", user);
@@ -298,7 +298,7 @@ public class VehicleAdminController {
         }
 
         try {
-            List<VehicleCategory> categories = vehicleService.getAllCategories();
+            List<VehicleCategories> categories = vehicleService.getAllCategories();
             return ResponseEntity.ok(Map.of("success", true, "categories", categories));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

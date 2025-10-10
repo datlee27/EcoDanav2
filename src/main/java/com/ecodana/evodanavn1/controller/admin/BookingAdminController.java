@@ -17,11 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.ecodana.evodanavn1.dto.BookingDTO;
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
-import com.ecodana.evodanavn1.service.UserService;
-import com.ecodana.evodanavn1.service.VehicleService;
 
 @Controller
 @RequestMapping("/admin")
@@ -32,12 +28,6 @@ public class BookingAdminController {
 
     @Autowired
     private BookingService bookingService;
-
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private VehicleService vehicleService;
 
     /**
      * Display booking management page
@@ -59,7 +49,7 @@ public class BookingAdminController {
             List<Booking> bookings;
             
             if (status != null && !status.isEmpty() && !"All".equalsIgnoreCase(status)) {
-                bookings = bookingService.getBookingsByStatus(status);
+                bookings = bookingService.getBookingsByStatus(Booking.BookingStatus.valueOf(status));
             } else {
                 bookings = bookingService.getAllBookings();
             }
@@ -121,7 +111,7 @@ public class BookingAdminController {
             Booking booking = bookingService.findById(id)
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
-            booking.setStatus(newStatus);
+            booking.setStatus(Booking.BookingStatus.valueOf(newStatus));
             
             if ("Rejected".equalsIgnoreCase(newStatus) || "Cancelled".equalsIgnoreCase(newStatus)) {
                 booking.setCancelReason(reason);
@@ -157,12 +147,24 @@ public class BookingAdminController {
                     .orElseThrow(() -> new RuntimeException("Booking not found"));
 
             // Update fields
-            booking.setPickupDateTime(updatedBooking.getPickupDateTime());
-            booking.setReturnDateTime(updatedBooking.getReturnDateTime());
-            booking.setTotalAmount(updatedBooking.getTotalAmount());
-            booking.setStatus(updatedBooking.getStatus());
-            booking.setExpectedPaymentMethod(updatedBooking.getExpectedPaymentMethod());
-            booking.setRentalType(updatedBooking.getRentalType());
+            if (updatedBooking.getPickupDateTime() != null) {
+                booking.setPickupDateTime(updatedBooking.getPickupDateTime());
+            }
+            if (updatedBooking.getReturnDateTime() != null) {
+                booking.setReturnDateTime(updatedBooking.getReturnDateTime());
+            }
+            if (updatedBooking.getTotalAmount() != null) {
+                booking.setTotalAmount(updatedBooking.getTotalAmount());
+            }
+            if (updatedBooking.getStatus() != null) {
+                booking.setStatus(updatedBooking.getStatus());
+            }
+            if (updatedBooking.getExpectedPaymentMethod() != null) {
+                booking.setExpectedPaymentMethod(updatedBooking.getExpectedPaymentMethod());
+            }
+            if (updatedBooking.getRentalType() != null) {
+                booking.setRentalType(updatedBooking.getRentalType());
+            }
             
             if (updatedBooking.getCancelReason() != null) {
                 booking.setCancelReason(updatedBooking.getCancelReason());
@@ -237,61 +239,55 @@ public class BookingAdminController {
         BookingDTO dto = new BookingDTO();
         dto.setBookingId(booking.getBookingId());
         dto.setBookingCode(booking.getBookingCode());
-        dto.setUserId(booking.getUserId());
-        dto.setVehicleId(booking.getVehicleId());
-        dto.setHandledBy(booking.getHandledBy());
+        dto.setUserId(booking.getUser() != null ? booking.getUser().getId() : null);
+        dto.setVehicleId(booking.getVehicle() != null ? booking.getVehicle().getVehicleId() : null);
+        dto.setHandledBy(booking.getHandledBy() != null ? booking.getHandledBy().getId() : null);
         dto.setPickupDateTime(booking.getPickupDateTime());
         dto.setReturnDateTime(booking.getReturnDateTime());
         dto.setTotalAmount(booking.getTotalAmount());
-        dto.setStatus(booking.getStatus());
-        dto.setDiscountId(booking.getDiscountId());
+        dto.setStatus(booking.getStatus() != null ? booking.getStatus().name() : null);
+        dto.setDiscountId(booking.getDiscount() != null ? booking.getDiscount().getDiscountId() : null);
         dto.setCreatedDate(booking.getCreatedDate());
         dto.setCancelReason(booking.getCancelReason());
-        dto.setBookingCode(booking.getBookingCode());
         dto.setExpectedPaymentMethod(booking.getExpectedPaymentMethod());
-        dto.setRentalType(booking.getRentalType());
+        dto.setRentalType(booking.getRentalType() != null ? booking.getRentalType().name() : null);
         dto.setTermsAgreed(booking.getTermsAgreed());
         dto.setTermsAgreedAt(booking.getTermsAgreedAt());
         dto.setTermsVersion(booking.getTermsVersion());
 
         // Get user information
         try {
-            logger.debug("Fetching user with ID: {}", booking.getUserId());
-            User user = userService.findById(booking.getUserId());
-            if (user != null) {
-                dto.setUserName(user.getUsername());
-                dto.setUserEmail(user.getEmail());
-                dto.setUserPhone(user.getPhoneNumber());
-                logger.debug("User found: {}", user.getUsername());
+            if (booking.getUser() != null) {
+                logger.debug("Fetching user with ID: {}", booking.getUser().getId());
+                dto.setUserName(booking.getUser().getUsername());
+                dto.setUserEmail(booking.getUser().getEmail());
+                dto.setUserPhone(booking.getUser().getPhoneNumber());
+                logger.debug("User found: {}", booking.getUser().getUsername());
             } else {
-                logger.warn("User not found for booking {} with userId: {}", booking.getBookingId(), booking.getUserId());
+                logger.warn("User not found for booking {}", booking.getBookingId());
             }
         } catch (Exception e) {
-            logger.error("Error fetching user for booking " + booking.getBookingId() + " with userId: " + booking.getUserId(), e);
+            logger.error("Error fetching user for booking " + booking.getBookingId(), e);
         }
 
         // Get vehicle information
         try {
-            logger.debug("Fetching vehicle with ID: {}", booking.getVehicleId());
-            Vehicle vehicle = vehicleService.getVehicleById(booking.getVehicleId()).orElse(null);
-            if (vehicle != null) {
-                dto.setVehicleModel(vehicle.getVehicleModel());
-                dto.setLicensePlate(vehicle.getLicensePlate());
-                logger.debug("Vehicle found: {}", vehicle.getVehicleModel());
+            if (booking.getVehicle() != null) {
+                logger.debug("Fetching vehicle with ID: {}", booking.getVehicle().getVehicleId());
+                dto.setVehicleModel(booking.getVehicle().getVehicleModel());
+                dto.setLicensePlate(booking.getVehicle().getLicensePlate());
+                logger.debug("Vehicle found: {}", booking.getVehicle().getVehicleModel());
             } else {
-                logger.warn("Vehicle not found for booking {} with vehicleId: {}", booking.getBookingId(), booking.getVehicleId());
+                logger.warn("Vehicle not found for booking {}", booking.getBookingId());
             }
         } catch (Exception e) {
-            logger.error("Error fetching vehicle for booking " + booking.getBookingId() + " with vehicleId: " + booking.getVehicleId(), e);
+            logger.error("Error fetching vehicle for booking " + booking.getBookingId(), e);
         }
 
         // Get handler information
         if (booking.getHandledBy() != null) {
             try {
-                User handler = userService.findById(booking.getHandledBy());
-                if (handler != null) {
-                    dto.setHandledByName(handler.getUsername());
-                }
+                dto.setHandledByName(booking.getHandledBy().getUsername());
             } catch (Exception e) {
                 logger.error("Error fetching handler for booking " + booking.getBookingId(), e);
             }
