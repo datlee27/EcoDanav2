@@ -1,4 +1,4 @@
-package com.ecodana.evodanavn1.controller;
+package com.ecodana.evodanavn1.controller.admin;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,13 +68,13 @@ public class AdminController {
             model.addAttribute("totalVehicles", allVehicles.size());
             model.addAttribute("totalBookings", allBookings.size());
             model.addAttribute("totalUsers", allUsers.size());
-            
+
             // Add user statistics
             Map<String, Object> userStats = userService.getUserStatistics();
             model.addAttribute("activeUsers", userStats.get("activeUsers"));
             model.addAttribute("inactiveUsers", userStats.get("inactiveUsers"));
             model.addAttribute("bannedUsers", userStats.get("bannedUsers"));
-            
+
             // Add vehicle statistics
             long availableVehicles = allVehicles.stream().filter(v -> "Available".equals(v.getStatus().name())).count();
             long rentedVehicles = allVehicles.stream().filter(v -> "Rented".equals(v.getStatus().name())).count();
@@ -82,7 +82,7 @@ public class AdminController {
             model.addAttribute("availableVehicles", availableVehicles);
             model.addAttribute("rentedVehicles", rentedVehicles);
             model.addAttribute("maintenanceVehicles", maintenanceVehicles);
-            
+
             return "admin/admin-dashboard";
         } catch (Exception e) {
             logger.error("Error loading admin data: " + e.getMessage(), e);
@@ -141,7 +141,7 @@ public class AdminController {
     }
     // User CRUD Operations moved to UserAdminController
     // All /admin/users/* endpoints are now handled by UserAdminController
-    
+
     // Vehicle CRUD Operations moved to VehicleAdminController
     // All /admin/vehicles/* endpoints (except /admin/vehicles listing) are now handled by VehicleAdminController
 }

@@ -524,10 +524,10 @@
                         <div class="pt-4">
                             <button type="submit" 
                                     id="submitBookingBtn"
-                                    th:disabled="${vehicle.status != 'Available'}"
+                                    th:disabled="${vehicle.status.name() != 'Available'}"
                                     class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
                                 <i class="fas fa-check-circle mr-2"></i>
-                                <span th:text="${vehicle.status == 'Available' ? 'CHỌN THUÊ' : 'Xe không khả dụng'}">CHỌN THUÊ</span>
+                                <span th:text="${vehicle.status.name() == 'Available' ? 'CHỌN THUÊ' : 'Xe không khả dụng'}">CHỌN THUÊ</span>
                             </button>
                         </div>
                     </form>

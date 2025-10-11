@@ -47,7 +47,7 @@ public class VehicleService {
         return vehicleRepository.findAvailableVehicles();
     }
 
-    public List<Vehicle> getVehiclesByType(String vehicleType) {
+    public List<Vehicle> getVehiclesByType(Vehicle.VehicleType vehicleType) {
         return vehicleRepository.findByVehicleType(vehicleType);
     }
 
@@ -139,12 +139,10 @@ public class VehicleService {
     }
 
     public List<Vehicle> filterVehicles(String location, String pickupDate, String returnDate, String pickupTime, String returnTime, String category, String vehicleType, String budget, Integer seats, Boolean requiresLicense) {
-        Stream<Vehicle> vehicleStream = getAllVehicles().stream();
+        // Bắt đầu bằng việc chỉ lấy các xe có sẵn (Available)
+        Stream<Vehicle> vehicleStream = getAvailableVehicles().stream();
 
         // TODO: Implement location-based filtering.
-        if (!isNullOrEmpty(pickupDate) || !isNullOrEmpty(returnDate) || !isNullOrEmpty(pickupTime) || !isNullOrEmpty(returnTime)) {
-            vehicleStream = vehicleStream.filter(vehicle -> vehicle.getStatus() == Vehicle.VehicleStatus.Available);
-        }
 
         if (!isNullOrEmpty(vehicleType)) {
             vehicleStream = vehicleStream.filter(vehicle -> vehicleType.equals(vehicle.getVehicleType().name()));

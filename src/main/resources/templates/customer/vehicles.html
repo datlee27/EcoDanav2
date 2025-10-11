@@ -120,10 +120,16 @@
             <div th:each="vehicle : ${vehicles}" class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
                 <div class="relative">
                     <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
-                         th:alt="${vehicle.vehicleModel}" class="w-full h-56 object-cover">
-                    <div class="absolute top-0 right-0 bg-primary text-white px-3 py-1 m-2 rounded-md text-sm font-medium"
-                         th:text="${vehicle.status == 'Available' ? 'Sẵn sàng' : 'Đã thuê'}">
-                        Sẵn sàng
+                         th:alt="${vehicle.vehicleModel}" class="w-full h-56 object-cover"
+                         onerror="this.src='https://via.placeholder.com/400x224?text=No+Image'">
+                    <div class="absolute top-0 right-0 px-3 py-1 m-2 rounded-md text-sm font-medium"
+                         th:classappend="${vehicle.status.name() == 'Available' ? 'bg-green-500 text-white' :
+                                          vehicle.status.name() == 'Rented' ? 'bg-yellow-500 text-white' :
+                                          'bg-red-500 text-white'}"
+                         th:text="${vehicle.status.name() == 'Available' ? 'Sẵn sàng' :
+                                    vehicle.status.name() == 'Rented' ? 'Đã thuê' :
+                                    vehicle.status.name() == 'Maintenance' ? 'Bảo trì' : 'Không khả dụng'}">
+                        Trạng thái
                     </div>
                 </div>
                 <div class="p-6">
@@ -148,7 +154,7 @@
                     </div>
 
                     <div class="mt-6">
-                        <a th:href="@{'/vehicles/{id}(id=${vehicle.vehicleId})}"
+                        <a th:href="@{/vehicles/{id}(id=${vehicle.vehicleId})}"
                            class="w-full text-center block bg-primary text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md">
                             Xem chi tiết
                         </a>

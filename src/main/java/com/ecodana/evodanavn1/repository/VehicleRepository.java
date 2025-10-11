@@ -17,7 +17,7 @@ public interface VehicleRepository extends JpaRepository<Vehicle, String> {
 
     List<Vehicle> findByStatus(String status);
 
-    List<Vehicle> findByVehicleType(String vehicleType);
+    List<Vehicle> findByVehicleType(Vehicle.VehicleType vehicleType);
 
     @Query("SELECT v FROM Vehicle v WHERE v.status = 'Available'")
     List<Vehicle> findAvailableVehicles();

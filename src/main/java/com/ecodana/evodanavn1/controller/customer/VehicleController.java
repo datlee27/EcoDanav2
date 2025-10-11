@@ -71,7 +71,7 @@ public class VehicleController {
         model.addAttribute("vehicle", vehicle);
 
         // Get related vehicles (same type, different model)
-        List<Vehicle> relatedVehicles = vehicleService.getVehiclesByType(vehicle.getVehicleType().toString())
+        List<Vehicle> relatedVehicles = vehicleService.getVehiclesByType(vehicle.getVehicleType())
                 .stream()
                 .filter(v -> !v.getVehicleId().equals(vehicleId) && Vehicle.VehicleStatus.Available.equals(v.getStatus()))
                 .limit(3)
