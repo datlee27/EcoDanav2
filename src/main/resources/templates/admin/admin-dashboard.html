@@ -494,6 +494,11 @@
                     
                     <!-- Discount Management Tab -->
                     <div id="discounts" class="tab-content" th:class="${tab == 'discounts' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-discounts-fragment :: discounts-tab"></div>
+                    </div>
+                    
+                    <!-- OLD Discount Tab (Deprecated) -->
+                    <div style="display: none;">
                         <div class="bg-white shadow rounded-lg">
                             <div class="px-6 py-4 border-b border-gray-200">
                                 <div class="flex justify-between items-center">
