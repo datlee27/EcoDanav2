@@ -17,6 +17,9 @@ public class BookingRequest {
     private BigDecimal totalAmount;
     private Integer rentalDays;
     private Boolean additionalInsurance;
+    private String discountId;
+    private BigDecimal discountAmount;
+    private String paymentMethod;
 
     // Thêm getters và setters nếu không dùng Lombok
     public String getVehicleId() { return vehicleId; }
@@ -37,4 +40,10 @@ public class BookingRequest {
     public void setRentalDays(Integer rentalDays) { this.rentalDays = rentalDays; }
     public Boolean getAdditionalInsurance() { return additionalInsurance; }
     public void setAdditionalInsurance(Boolean additionalInsurance) { this.additionalInsurance = additionalInsurance; }
+    public String getDiscountId() { return discountId; }
+    public void setDiscountId(String discountId) { this.discountId = discountId; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
 }

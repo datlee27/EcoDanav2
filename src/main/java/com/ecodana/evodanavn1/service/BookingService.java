@@ -30,6 +30,10 @@ public class BookingService {
         return bookingRepository.findByUserId(user.getId());
     }
 
+    public List<Booking> getBookingsByUserId(String userId) {
+        return bookingRepository.findByUserId(userId);
+    }
+
     public void addBooking(Booking booking) {
         if (booking.getBookingId() == null) {
             booking.setBookingId(UUID.randomUUID().toString());

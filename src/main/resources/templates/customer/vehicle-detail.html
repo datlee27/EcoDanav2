@@ -441,12 +441,14 @@
                     </div>
 
                     <!-- Booking Form -->
-                    <form id="bookingForm" th:action="@{/booking/create}" method="post" class="space-y-4">
+                    <form id="bookingForm" th:action="@{/booking/checkout}" method="post" class="space-y-4">
                         <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}">
                         <input type="hidden" name="dailyPrice" id="dailyPriceInput" th:value="${vehicle.getDailyPriceFromJson()}">
                         <input type="hidden" name="totalAmount" id="totalAmountInput" value="0">
                         <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0">
                         <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false">
+                        <input type="hidden" name="discountId" id="discountIdInput" value="">
+                        <input type="hidden" name="discountAmount" id="discountAmountInput" value="0">
                         
                         <!-- Location Pickup -->
                         <div>
@@ -494,6 +496,23 @@
                             </div>
                         </div>
 
+                        <!-- Discount Code Input -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-tag text-green-500 mr-1"></i>
+                                Mã giảm giá
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="text" id="discountCodeInput" name="discountCode" placeholder="Nhập mã giảm giá"
+                                       class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
+                                <button type="button" id="applyDiscountBtn" onclick="applyDiscount()"
+                                        class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-sm font-semibold">
+                                    Áp dụng
+                                </button>
+                            </div>
+                            <div id="discountMessage" class="mt-2 text-sm hidden"></div>
+                        </div>
+
                         <!-- Price Breakdown -->
                         <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
                             <div class="flex justify-between">
@@ -511,6 +530,13 @@
                                 </label>
                                 <span class="font-semibold" id="additionalInsurancePrice">0 ₫</span>
                             </div>
+                            <div id="discountRow" class="flex justify-between text-green-600 hidden">
+                                <span class="font-medium">
+                                    <i class="fas fa-tag mr-1"></i>
+                                    Giảm giá (<span id="discountName"></span>)
+                                </span>
+                                <span class="font-semibold" id="discountAmount">0 ₫</span>
+                            </div>
                         </div>
 
                         <!-- Total -->
@@ -522,8 +548,9 @@
                         </div>
 
                         <div class="pt-4">
-                            <button type="submit" 
+                            <button type="button" 
                                     id="submitBookingBtn"
+                                    onclick="proceedToCheckout()"
                                     th:disabled="${vehicle.status.name() != 'Available'}"
                                     class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
                                 <i class="fas fa-check-circle mr-2"></i>
@@ -611,6 +638,102 @@
 
 <!-- JavaScript -->
 <script>
+    // Global variables for discount
+    let appliedDiscount = null;
+    let discountAmount = 0;
+    
+    // Global constants
+    const BASIC_INSURANCE = 110401;
+    const ADDITIONAL_INSURANCE_PER_DAY = 50000;
+    
+    // Global function to format currency
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+    }
+    
+    // Global function to calculate price
+    function calculatePrice() {
+        const pickupDateInput = document.getElementById('pickupDate');
+        const returnDateInput = document.getElementById('returnDate');
+        const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
+        const dailyPriceInput = document.getElementById('dailyPriceInput');
+        
+        if (!pickupDateInput || !returnDateInput) {
+            return;
+        }
+        
+        if (!pickupDateInput.value || !returnDateInput.value) {
+            return;
+        }
+        
+        const pickupDate = new Date(pickupDateInput.value);
+        const returnDate = new Date(returnDateInput.value);
+        
+        // Calculate days
+        const diffTime = Math.abs(returnDate - pickupDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
+        
+        if (diffDays < 1) {
+            return;
+        }
+        
+        // Show duration
+        document.getElementById('rentalDuration').classList.remove('hidden');
+        document.getElementById('durationText').textContent = diffDays + ' ngày';
+        document.getElementById('daysCount').textContent = diffDays;
+        document.getElementById('insuranceDays').textContent = diffDays;
+        
+        // Get daily price
+        const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
+        
+        // Calculate rental price
+        const rentalPrice = dailyPrice * diffDays;
+        document.getElementById('rentalPrice').textContent = formatCurrency(rentalPrice);
+        
+        // Calculate additional insurance
+        const additionalInsurance = additionalInsuranceCheckbox.checked ? 
+            (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
+        document.getElementById('additionalInsurancePrice').textContent = formatCurrency(additionalInsurance);
+        
+        // Apply discount
+        let finalDiscount = 0;
+        if (appliedDiscount) {
+            const subtotal = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+            if (appliedDiscount.discountType === 'Percentage') {
+                finalDiscount = subtotal * (appliedDiscount.discountValue / 100);
+            } else {
+                finalDiscount = appliedDiscount.discountValue;
+            }
+            
+            // Apply max discount limit
+            if (appliedDiscount.maxDiscountAmount && finalDiscount > appliedDiscount.maxDiscountAmount) {
+                finalDiscount = appliedDiscount.maxDiscountAmount;
+            }
+            
+            discountAmount = finalDiscount;
+            document.getElementById('discountRow').classList.remove('hidden');
+            document.getElementById('discountName').textContent = appliedDiscount.voucherCode;
+            document.getElementById('discountAmount').textContent = '-' + formatCurrency(finalDiscount);
+        } else {
+            discountAmount = 0;
+            document.getElementById('discountRow').classList.add('hidden');
+        }
+        
+        // Calculate total
+        const total = rentalPrice + BASIC_INSURANCE + additionalInsurance - discountAmount;
+        document.getElementById('totalAmount').textContent = formatCurrency(total) + 'đ';
+        
+        // Update hidden inputs
+        document.getElementById('totalAmountInput').value = total;
+        document.getElementById('rentalDaysInput').value = diffDays;
+        document.getElementById('additionalInsuranceInput').value = additionalInsuranceCheckbox.checked;
+        document.getElementById('discountAmountInput').value = discountAmount;
+        if (appliedDiscount) {
+            document.getElementById('discountIdInput').value = appliedDiscount.discountId;
+        }
+    }
+    
+    // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
         // Tab Switching
         const tabButtons = document.querySelectorAll('.tab-button');
@@ -618,11 +741,8 @@
 
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
-                // Remove active from all tabs
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 tabContents.forEach(content => content.classList.remove('active'));
-                
-                // Add active to clicked tab
                 button.classList.add('active');
                 const tabId = button.getAttribute('data-tab');
                 document.getElementById(tabId).classList.add('active');
@@ -633,13 +753,11 @@
         const mainImage = document.getElementById('mainImage');
         const thumbnailItems = document.querySelectorAll('.thumbnail-item');
 
-        thumbnailItems.forEach((item, index) => {
+        thumbnailItems.forEach((item) => {
             item.addEventListener('click', function() {
                 const img = this.querySelector('img');
                 if (img) {
                     mainImage.src = img.src;
-                    
-                    // Update active thumbnail
                     thumbnailItems.forEach(thumb => {
                         thumb.classList.remove('active', 'border-green-500');
                         thumb.classList.add('border-gray-200');
@@ -649,67 +767,13 @@
                 }
             });
         });
-
-        // Booking Price Calculation
+        
+        // Setup event listeners for price calculation
         const pickupDateInput = document.getElementById('pickupDate');
         const returnDateInput = document.getElementById('returnDate');
         const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
-        const dailyPriceInput = document.getElementById('dailyPriceInput');
         
-        const BASIC_INSURANCE = 110401;
-        const ADDITIONAL_INSURANCE_PER_DAY = 50000;
-        
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
-        }
-        
-        function calculatePrice() {
-            if (!pickupDateInput.value || !returnDateInput.value) {
-                return;
-            }
-            
-            const pickupDate = new Date(pickupDateInput.value);
-            const returnDate = new Date(returnDateInput.value);
-            
-            // Calculate days
-            const diffTime = Math.abs(returnDate - pickupDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
-            
-            if (diffDays < 1) {
-                return;
-            }
-            
-            // Show duration
-            document.getElementById('rentalDuration').classList.remove('hidden');
-            document.getElementById('durationText').textContent = diffDays + ' ngày';
-            document.getElementById('daysCount').textContent = diffDays;
-            document.getElementById('insuranceDays').textContent = diffDays;
-            
-            // Get daily price
-            const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
-            
-            // Calculate rental price
-            const rentalPrice = dailyPrice * diffDays;
-            document.getElementById('rentalPrice').textContent = formatCurrency(rentalPrice);
-            
-            // Calculate additional insurance
-            const additionalInsurance = additionalInsuranceCheckbox.checked ? 
-                (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
-            document.getElementById('additionalInsurancePrice').textContent = formatCurrency(additionalInsurance);
-            
-            // Calculate total
-            const total = rentalPrice + BASIC_INSURANCE + additionalInsurance;
-            document.getElementById('totalAmount').textContent = formatCurrency(total) + 'đ';
-            
-            // Update hidden inputs
-            document.getElementById('totalAmountInput').value = total;
-            document.getElementById('rentalDaysInput').value = diffDays;
-            document.getElementById('additionalInsuranceInput').value = additionalInsuranceCheckbox.checked;
-        }
-        
-        // Date validation and calculation
         if (pickupDateInput && returnDateInput) {
-            // Set minimum date to today
             const today = new Date().toISOString().split('T')[0];
             pickupDateInput.min = today;
             returnDateInput.min = today;
@@ -728,17 +792,71 @@
         if (additionalInsuranceCheckbox) {
             additionalInsuranceCheckbox.addEventListener('change', calculatePrice);
         }
-        
-        // Form validation before submit
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
-            const totalAmount = parseFloat(document.getElementById('totalAmountInput').value);
-            if (!totalAmount || totalAmount <= 0) {
-                e.preventDefault();
-                alert('Vui lòng chọn ngày nhận và trả xe!');
-                return false;
-            }
-        });
     });
+
+    // Apply discount function
+    async function applyDiscount() {
+        const discountCode = document.getElementById('discountCodeInput').value.trim();
+        const totalAmount = parseFloat(document.getElementById('totalAmountInput').value);
+        
+        if (!discountCode) {
+            showDiscountMessage('Vui lòng nhập mã giảm giá!', 'error');
+            return;
+        }
+        
+        if (!totalAmount || totalAmount <= 0) {
+            showDiscountMessage('Vui lòng chọn ngày thuê trước!', 'error');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/discounts/validate?code=${encodeURIComponent(discountCode)}&amount=${totalAmount}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('API Response:', data);
+            
+            if (data.valid) {
+                appliedDiscount = data.discount;
+                showDiscountMessage(`Áp dụng mã giảm giá thành công! Giảm ${formatCurrency(data.calculatedAmount)}`, 'success');
+                calculatePrice();
+            } else {
+                appliedDiscount = null;
+                showDiscountMessage(data.message || 'Mã giảm giá không hợp lệ!', 'error');
+                calculatePrice();
+            }
+        } catch (error) {
+            console.error('Error applying discount:', error);
+            appliedDiscount = null;
+            showDiscountMessage('Có lỗi xảy ra khi áp dụng mã giảm giá! Chi tiết: ' + error.message, 'error');
+        }
+    }
+
+    function showDiscountMessage(message, type) {
+        const messageEl = document.getElementById('discountMessage');
+        messageEl.textContent = message;
+        messageEl.className = 'mt-2 text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
+        messageEl.classList.remove('hidden');
+    }
+
+    // Proceed to checkout page
+    function proceedToCheckout() {
+        const totalAmount = parseFloat(document.getElementById('totalAmountInput').value);
+        if (!totalAmount || totalAmount <= 0) {
+            alert('Vui lòng chọn ngày nhận và trả xe!');
+            return;
+        }
+        
+        // Submit form to checkout page
+        document.getElementById('bookingForm').submit();
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' ₫';
+    }
 
     // Toggle Fees Function
     function toggleFees() {

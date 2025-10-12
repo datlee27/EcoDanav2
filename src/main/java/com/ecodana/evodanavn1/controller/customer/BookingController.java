@@ -21,9 +21,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.Booking;
-
+import com.ecodana.evodanavn1.model.Discount;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
+import com.ecodana.evodanavn1.service.DiscountService;
+import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.service.VehicleService;
 
 import jakarta.servlet.http.HttpSession;
@@ -37,6 +39,103 @@ public class BookingController {
 
     @Autowired
     private VehicleService vehicleService;
+
+    @Autowired
+    private DiscountService discountService;
+    
+    @Autowired
+    private NotificationService notificationService;
+
+    /**
+     * Show checkout page
+     */
+    @PostMapping("/checkout")
+    public String showCheckout(@ModelAttribute BookingRequest bookingRequest, HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đặt xe!");
+            return "redirect:/login";
+        }
+
+        try {
+            // Get vehicle
+            Vehicle vehicle = vehicleService.getVehicleById(bookingRequest.getVehicleId()).orElse(null);
+            if (vehicle == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy xe!");
+                return "redirect:/vehicles";
+            }
+
+            // Parse dates and times for display
+            LocalDate pickupDate = LocalDate.parse(bookingRequest.getPickupDate());
+            LocalDate returnDate = LocalDate.parse(bookingRequest.getReturnDate());
+            LocalTime pickupTime = LocalTime.parse(bookingRequest.getPickupTime());
+            LocalTime returnTime = LocalTime.parse(bookingRequest.getReturnTime());
+            
+            // Format for display
+            String pickupDateTime = pickupDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " " + pickupTime;
+            String returnDateTime = returnDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " " + returnTime;
+            
+            // Calculate rental price
+            BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
+            BigDecimal rentalPrice = dailyPrice.multiply(new BigDecimal(bookingRequest.getRentalDays()));
+            
+            // Calculate basic insurance
+            BigDecimal basicInsurance = new BigDecimal("110401");
+            
+            // Calculate additional insurance
+            BigDecimal additionalInsuranceAmount = BigDecimal.ZERO;
+            if (bookingRequest.getAdditionalInsurance() != null && bookingRequest.getAdditionalInsurance()) {
+                additionalInsuranceAmount = new BigDecimal("50000").multiply(new BigDecimal(bookingRequest.getRentalDays()));
+            }
+            
+            // Get discount info and calculate discount amount
+            String discountCode = null;
+            BigDecimal discountAmount = BigDecimal.ZERO;
+            
+            if (bookingRequest.getDiscountId() != null && !bookingRequest.getDiscountId().isEmpty()) {
+                Discount discount = discountService.findByVoucherCode(bookingRequest.getDiscountId()).orElse(null);
+                if (discount != null && discountService.isDiscountValid(discount)) {
+                    discountCode = discount.getVoucherCode();
+                    
+                    // Calculate subtotal before discount
+                    BigDecimal subtotal = rentalPrice.add(basicInsurance).add(additionalInsuranceAmount);
+                    
+                    // Calculate discount amount
+                    discountAmount = discountService.calculateDiscountAmount(discount, subtotal);
+                }
+            }
+            
+            // Calculate total amount
+            BigDecimal totalAmount = rentalPrice.add(basicInsurance).add(additionalInsuranceAmount).subtract(discountAmount);
+            
+            // Add attributes to model
+            model.addAttribute("vehicle", vehicle);
+            model.addAttribute("vehicleId", vehicle.getVehicleId());
+            model.addAttribute("pickupDateTime", pickupDateTime);
+            model.addAttribute("returnDateTime", returnDateTime);
+            model.addAttribute("pickupDate", bookingRequest.getPickupDate());
+            model.addAttribute("pickupTime", bookingRequest.getPickupTime());
+            model.addAttribute("returnDate", bookingRequest.getReturnDate());
+            model.addAttribute("returnTime", bookingRequest.getReturnTime());
+            model.addAttribute("pickupLocation", bookingRequest.getPickupLocation());
+            model.addAttribute("rentalDays", bookingRequest.getRentalDays());
+            model.addAttribute("rentalPrice", rentalPrice);
+            model.addAttribute("additionalInsurance", bookingRequest.getAdditionalInsurance());
+            model.addAttribute("additionalInsuranceAmount", additionalInsuranceAmount);
+            model.addAttribute("discountId", bookingRequest.getDiscountId());
+            model.addAttribute("discountCode", discountCode);
+            model.addAttribute("discountAmount", discountAmount);
+            model.addAttribute("totalAmount", totalAmount);
+            model.addAttribute("user", user);
+            
+            return "customer/booking-checkout";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/vehicles/" + bookingRequest.getVehicleId();
+        }
+    }
 
     /**
      * Create new booking
@@ -84,6 +183,20 @@ public class BookingController {
                 return "redirect:/vehicles/" + bookingRequest.getVehicleId();
             }
 
+            // Handle discount if provided
+            Discount discount = null;
+            if (bookingRequest.getDiscountId() != null && !bookingRequest.getDiscountId().isEmpty()) {
+                discount = discountService.findByVoucherCode(bookingRequest.getDiscountId())
+                    .orElse(null);
+                
+                // Validate discount again on server side
+                if (discount != null && discountService.isDiscountValid(discount)) {
+                    // Increment usage count
+                    discount.setUsedCount(discount.getUsedCount() + 1);
+                    discountService.updateDiscount(discount);
+                }
+            }
+
             // Create booking
             Booking booking = new Booking();
             booking.setBookingId(UUID.randomUUID().toString());
@@ -98,16 +211,45 @@ public class BookingController {
             booking.setCreatedDate(LocalDateTime.now());
             booking.setTermsAgreed(true);
             booking.setTermsAgreedAt(LocalDateTime.now());
-            booking.setExpectedPaymentMethod("Cash");
+            booking.setExpectedPaymentMethod(bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod() : "Cash");
+            booking.setDiscount(discount);
 
             bookingService.addBooking(booking);
+            
+            // Create notification for all admins
+            try {
+                String customerName = user.getUsername(); // Use username if fullName not available
+                String notificationMessage = String.format(
+                    "Đơn đặt xe mới #%s - Khách hàng: %s - Xe: %s - Tổng: %,d ₫",
+                    booking.getBookingCode(),
+                    customerName,
+                    vehicle.getVehicleModel(),
+                    bookingRequest.getTotalAmount().longValue()
+                );
+                notificationService.createNotificationForAllAdmins(
+                    notificationMessage, 
+                    booking.getBookingId(), 
+                    "BOOKING"
+                );
+            } catch (Exception notifError) {
+                System.out.println("Warning: Failed to create notification: " + notifError.getMessage());
+                // Continue anyway - notification failure shouldn't block booking
+            }
             
             redirectAttributes.addFlashAttribute("success", "Đặt xe thành công!");
             redirectAttributes.addFlashAttribute("bookingCode", booking.getBookingCode());
             
+            System.out.println("=== Booking created successfully ===");
+            System.out.println("Booking ID: " + booking.getBookingId());
+            System.out.println("Booking Code: " + booking.getBookingCode());
+            System.out.println("Redirecting to: /booking/confirmation/" + booking.getBookingId());
+            
             return "redirect:/booking/confirmation/" + booking.getBookingId();
             
         } catch (Exception e) {
+            System.out.println("=== ERROR creating booking ===");
+            System.out.println("Error: " + e.getMessage());
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/vehicles/" + bookingRequest.getVehicleId();
         }
@@ -156,7 +298,7 @@ public class BookingController {
         if (user == null) {
             return "redirect:/login";
         }
-
+        
         List<Booking> bookings = bookingService.getBookingsByUser(user);
         model.addAttribute("bookings", bookings);
         model.addAttribute("user", user);
@@ -195,6 +337,39 @@ public class BookingController {
         if (booking.getStatus() != Booking.BookingStatus.Pending) {
             redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đang chờ duyệt!");
             return "redirect:/booking/my-bookings";
+        }
+
+        // Check cancellation policy
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime pickupDateTime = booking.getPickupDateTime();
+        LocalDateTime createdDate = booking.getCreatedDate();
+        
+        // Calculate hours until pickup
+        long hoursUntilPickup = java.time.Duration.between(now, pickupDateTime).toHours();
+        
+        // Calculate hours from booking creation to pickup
+        long hoursFromCreationToPickup = java.time.Duration.between(createdDate, pickupDateTime).toHours();
+        
+        // Rule 1: If booked less than 24 hours before pickup, cannot cancel
+        if (hoursFromCreationToPickup < 24) {
+            redirectAttributes.addFlashAttribute("error", "Không thể hủy! Đơn đặt xe trong vòng 24 giờ trước ngày nhận không được hủy.");
+            return "redirect:/booking/my-bookings";
+        }
+        
+        // Rule 2: If booked 1-2 days before pickup, must cancel at least 8 hours before
+        if (hoursFromCreationToPickup >= 24 && hoursFromCreationToPickup < 48) {
+            if (hoursUntilPickup < 8) {
+                redirectAttributes.addFlashAttribute("error", "Không thể hủy! Phải hủy trước ngày nhận xe ít nhất 8 tiếng.");
+                return "redirect:/booking/my-bookings";
+            }
+        }
+        
+        // Rule 3: If booked more than 2 days before pickup, must cancel at least 24 hours before
+        if (hoursFromCreationToPickup >= 48) {
+            if (hoursUntilPickup < 24) {
+                redirectAttributes.addFlashAttribute("error", "Không thể hủy! Phải hủy trước ngày nhận xe ít nhất 24 tiếng.");
+                return "redirect:/booking/my-bookings";
+            }
         }
 
         booking.setStatus(Booking.BookingStatus.Cancelled);

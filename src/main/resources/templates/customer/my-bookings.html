@@ -21,9 +21,15 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Đơn đặt xe của tôi</h1>
-            <p class="text-gray-600">Quản lý tất cả các đơn đặt xe của bạn</p>
+        <div class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Đơn đặt xe của tôi</h1>
+                <p class="text-gray-600">Quản lý tất cả các đơn đặt xe của bạn</p>
+            </div>
+            <button id="refreshBtn" class="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all">
+                <i class="fas fa-sync-alt mr-2"></i>
+                Làm mới
+            </button>
         </div>
 
         <!-- Alert Messages -->
@@ -45,22 +51,22 @@
         <div class="bg-white rounded-lg shadow-md mb-6">
             <div class="flex border-b border-gray-200 overflow-x-auto">
                 <button class="filter-tab active px-6 py-3 font-medium text-green-500 border-b-2 border-green-500" data-status="all">
-                    Tất cả (<span th:text="${bookings.size()}">0</span>)
+                    Tất cả (<span id="count-all" th:text="${bookings.size()}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Pending">
-                    Chờ duyệt
+                    Chờ duyệt (<span id="count-pending" th:text="${#lists.size(bookings.?[status.name() == 'Pending'])}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Approved">
-                    Đã duyệt
+                    Đã duyệt (<span id="count-approved" th:text="${#lists.size(bookings.?[status.name() == 'Approved'])}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Ongoing">
-                    Đang thuê
+                    Đang thuê (<span id="count-ongoing" th:text="${#lists.size(bookings.?[status.name() == 'Ongoing'])}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Completed">
-                    Hoàn thành
+                    Hoàn thành (<span id="count-completed" th:text="${#lists.size(bookings.?[status.name() == 'Completed'])}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Cancelled">
-                    Đã hủy
+                    Đã hủy (<span id="count-cancelled" th:text="${#lists.size(bookings.?[status.name() == 'Cancelled'])}">0</span>)
                 </button>
             </div>
         </div>
@@ -240,6 +246,78 @@
             closeCancelModal();
         }
     });
+    
+    // Check URL parameter for status filter
+    window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterStatus = urlParams.get('status');
+        
+        if (filterStatus) {
+            // Find and click the corresponding tab
+            const tab = document.querySelector(`.filter-tab[data-status="${filterStatus}"]`);
+            if (tab) {
+                tab.click();
+            }
+        }
+    });
+    
+    // Update refresh button
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) {
+        refreshBtn.onclick = function() {
+            location.reload();
+        };
+    }
+    
+    // Show notification if there are newly approved bookings
+    window.addEventListener('DOMContentLoaded', function() {
+        // Check if we just reloaded
+        const justReloaded = sessionStorage.getItem('justReloaded');
+        
+        if (justReloaded === 'true') {
+            sessionStorage.removeItem('justReloaded');
+            
+            // Count approved bookings
+            const approvedBookings = document.querySelectorAll('.booking-card[data-status="Approved"]');
+            
+            if (approvedBookings.length > 0) {
+                // Show notification
+                showNotification('Có ' + approvedBookings.length + ' đơn đặt xe đã được duyệt!');
+                
+                // Auto switch to Approved tab after 1 second
+                setTimeout(function() {
+                    const approvedTab = document.querySelector('.filter-tab[data-status="Approved"]');
+                    if (approvedTab) {
+                        approvedTab.click();
+                    }
+                }, 1000);
+            }
+        }
+    });
+    
+    // Override refresh button to set flag
+    if (refreshBtn) {
+        refreshBtn.onclick = function() {
+            sessionStorage.setItem('justReloaded', 'true');
+            location.reload();
+        };
+    }
+    
+    // Show notification function
+    function showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in';
+        notification.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + message;
+        document.body.appendChild(notification);
+        
+        setTimeout(function() {
+            notification.style.opacity = '0';
+            notification.style.transition = 'opacity 0.5s';
+            setTimeout(function() {
+                notification.remove();
+            }, 500);
+        }, 3000);
+    }
 </script>
 
 </body>

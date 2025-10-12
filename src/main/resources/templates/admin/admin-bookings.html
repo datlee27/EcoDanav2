@@ -310,8 +310,22 @@
             })
             .then(function(result) {
                 if (result.success) {
-                    alert('Booking status updated successfully');
+                    // Show success message
+                    showSuccessNotification('Booking status updated to ' + newStatus);
+                    
+                    // Reload bookings data
                     loadDashboardBookings();
+                    
+                    // Auto-switch filter to show the new status
+                    if (newStatus === 'Approved' || newStatus === 'Rejected') {
+                        setTimeout(function() {
+                            var statusFilter = document.getElementById('dashboardStatusFilter');
+                            if (statusFilter) {
+                                statusFilter.value = newStatus;
+                                statusFilter.dispatchEvent(new Event('change'));
+                            }
+                        }, 500);
+                    }
                 } else {
                     throw new Error(result.message || 'Update failed');
                 }
@@ -372,6 +386,26 @@
         function createDetailItem(label, value) {
             return '<div class="p-3 bg-gray-50 rounded"><div class="text-xs font-semibold text-gray-500 uppercase mb-1">' + 
                    escapeHtml(label) + '</div><div class="text-sm text-gray-900 font-medium">' + value + '</div></div>';
+        }
+        
+        // Show success notification
+        function showSuccessNotification(message) {
+            // Create notification element
+            var notification = document.createElement('div');
+            notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center space-x-2 animate-slide-in';
+            notification.innerHTML = '<i class="fas fa-check-circle"></i><span>' + message + '</span>';
+            
+            // Add to page
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(function() {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(function() {
+                    notification.remove();
+                }, 500);
+            }, 3000);
         }
     })();
     </script>
