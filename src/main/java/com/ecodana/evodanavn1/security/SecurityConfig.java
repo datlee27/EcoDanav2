@@ -90,7 +90,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/vehicles/api/**", "/admin/api/**", "/admin/contracts/**")
+                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/vehicles/api/**", "/admin/api/**", "/admin/contracts/**", "/admin/payments/**")
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
