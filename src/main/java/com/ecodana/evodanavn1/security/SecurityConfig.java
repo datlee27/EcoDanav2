@@ -82,7 +82,7 @@ public class SecurityConfig {
         http
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles/**", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/forgot-password", "/reset-password").permitAll()
+                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles/**", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/forgot-password", "/reset-password", "/api/discounts/validate").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
@@ -90,7 +90,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/vehicles/api/**", "/admin/api/**")
+                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/admin/vehicles/api/**", "/admin/api/**", "/admin/contracts/**", "/admin/payments/**", "/admin/discounts/**")
                 )
                 .formLogin(form -> form
                         .loginPage("/login")

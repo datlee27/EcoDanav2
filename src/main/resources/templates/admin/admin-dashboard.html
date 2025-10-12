@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>EvoDana Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -101,12 +103,38 @@
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden lg:ml-0">
-        <div class="lg:hidden flex items-center justify-between h-16 px-4 bg-white shadow-sm">
-            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900">
+        <!-- Top Bar -->
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
+            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
             </button>
-            <h1 class="text-lg font-semibold text-gray-900">EvoDana Admin</h1>
-            <div class="w-8"></div>
+            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">EvoDana Admin</h1>
+            
+            <!-- Desktop: Empty space -->
+            <div class="hidden lg:block flex-1"></div>
+            
+            <!-- Notification Bell -->
+            <div class="relative">
+                <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span id="notificationBadge" class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">0</span>
+                </button>
+                
+                <!-- Notification Dropdown -->
+                <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                    <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                        <h3 class="font-semibold text-gray-900">Thông báo</h3>
+                        <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
+                    </div>
+                    <div id="notificationList" class="max-h-96 overflow-y-auto">
+                        <!-- Notifications will be loaded here -->
+                        <div class="p-4 text-center text-gray-500">
+                            <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                            <p>Không có thông báo mới</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
             <!-- Page Content -->
@@ -440,11 +468,16 @@
                     
                     <!-- Contract Management Tab -->
                     <div id="contracts" class="tab-content" th:class="${tab == 'contracts' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-contracts :: contracts-tab"></div>
+                        <div th:include="admin/admin-contracts-fragment :: contracts-tab"></div>
                     </div>
                     
                     <!-- Payment Management Tab -->
                     <div id="payments" class="tab-content" th:class="${tab == 'payments' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-payments-fragment :: payments-tab"></div>
+                    </div>
+                    
+                    <!-- OLD Payment Tab (Deprecated) -->
+                    <div style="display: none;">
                         <div class="bg-white shadow rounded-lg">
                             <div class="px-6 py-4 border-b border-gray-200">
                                 <div class="flex justify-between items-center">
@@ -487,6 +520,11 @@
                     
                     <!-- Discount Management Tab -->
                     <div id="discounts" class="tab-content" th:class="${tab == 'discounts' ? 'tab-content active' : 'tab-content'}">
+                        <div th:include="admin/admin-discounts-fragment :: discounts-tab"></div>
+                    </div>
+                    
+                    <!-- OLD Discount Tab (Deprecated) -->
+                    <div style="display: none;">
                         <div class="bg-white shadow rounded-lg">
                             <div class="px-6 py-4 border-b border-gray-200">
                                 <div class="flex justify-between items-center">
@@ -617,6 +655,161 @@
             // Reset form
             document.querySelector('#addUserForm form').reset();
         }
+        
+        // ========== NOTIFICATION SYSTEM ==========
+        
+        // Toggle notification dropdown
+        document.getElementById('notificationBell').addEventListener('click', function(e) {
+            e.stopPropagation();
+            const dropdown = document.getElementById('notificationDropdown');
+            dropdown.classList.toggle('hidden');
+            if (!dropdown.classList.contains('hidden')) {
+                loadNotifications();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.getElementById('notificationBell');
+            if (!bell.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        
+        // Load notifications
+        async function loadNotifications() {
+            try {
+                const response = await fetch('/api/notifications');
+                const data = await response.json();
+                
+                updateNotificationBadge(data.unreadCount);
+                renderNotifications(data.notifications);
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+            }
+        }
+        
+        // Update notification badge
+        function updateNotificationBadge(count) {
+            const badge = document.getElementById('notificationBadge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        // Render notifications
+        function renderNotifications(notifications) {
+            const list = document.getElementById('notificationList');
+            
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="p-4 text-center text-gray-500">
+                        <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                        <p>Không có thông báo mới</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            list.innerHTML = notifications.map(notif => `
+                <div class="p-4 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${notif.isRead ? 'bg-white' : 'bg-blue-50'}"
+                     onclick="handleNotificationClick('${notif.id}', '${notif.relatedId}', '${notif.notificationType}')">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-car text-blue-500 text-lg"></i>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <p class="text-sm text-gray-900">${notif.message}</p>
+                            <p class="text-xs text-gray-500 mt-1">${formatDate(notif.createdDate)}</p>
+                        </div>
+                        ${!notif.isRead ? '<div class="flex-shrink-0"><span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span></div>' : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Handle notification click
+        async function handleNotificationClick(notificationId, relatedId, notificationType) {
+            try {
+                // Mark as read
+                await fetch(`/api/notifications/${notificationId}/mark-read`, { method: 'POST' });
+                
+                // Close dropdown
+                document.getElementById('notificationDropdown').classList.add('hidden');
+                
+                // Navigate based on notification type
+                if (notificationType === 'BOOKING' && relatedId) {
+                    // Switch to bookings tab
+                    switchTab('bookings');
+                    // Optionally scroll to specific booking or highlight it
+                    // You can add more logic here to filter/highlight the specific booking
+                } else if (notificationType === 'PAYMENT' && relatedId) {
+                    switchTab('payments');
+                } else if (notificationType === 'CONTRACT' && relatedId) {
+                    switchTab('contracts');
+                }
+                
+                // Reload notifications to update count
+                loadNotificationCount();
+            } catch (error) {
+                console.error('Error handling notification click:', error);
+            }
+        }
+        
+        // Mark notification as read (kept for backward compatibility)
+        async function markNotificationAsRead(id) {
+            try {
+                await fetch(`/api/notifications/${id}/mark-read`, { method: 'POST' });
+                loadNotifications();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+        
+        // Mark all as read
+        async function markAllAsRead() {
+            try {
+                await fetch('/api/notifications/mark-all-read', { method: 'POST' });
+                loadNotifications();
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+            
+            if (minutes < 1) return 'Vừa xong';
+            if (minutes < 60) return `${minutes} phút trước`;
+            if (hours < 24) return `${hours} giờ trước`;
+            if (days < 7) return `${days} ngày trước`;
+            return date.toLocaleDateString('vi-VN');
+        }
+        
+        // Load notification count on page load
+        async function loadNotificationCount() {
+            try {
+                const response = await fetch('/api/notifications/unread-count');
+                const data = await response.json();
+                updateNotificationBadge(data.unreadCount);
+            } catch (error) {
+                console.error('Error loading notification count:', error);
+            }
+        }
+        
+        // Load count initially and every 30 seconds
+        loadNotificationCount();
+        setInterval(loadNotificationCount, 30000);
     </script>
 
 </body>
