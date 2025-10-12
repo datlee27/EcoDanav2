@@ -317,7 +317,7 @@ public class OwnerController {
                 car.put("seats", vehicle.getSeats());
                 car.put("odometer", vehicle.getOdometer());
                 try {
-                    Map<String, Object> prices = new ObjectMapper().readValue(vehicle.getRentalPrices(), new TypeReference<>() {});
+                    Map<String, Object> prices = new ObjectMapper().readValue(vehicle.getRentalPrices(), new TypeReference<Map<String, Object>>() {});
                     car.put("dailyRate", prices.get("daily"));
                     car.put("hourlyRate", prices.get("hourly"));
                     car.put("monthlyRate", prices.get("monthly"));
