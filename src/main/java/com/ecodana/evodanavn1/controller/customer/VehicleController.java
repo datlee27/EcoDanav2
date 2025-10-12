@@ -5,6 +5,7 @@ import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +18,10 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+
+    // Inject the Google API key from application.properties
+    @Value("${google.api.key}")
+    private String googleApiKey;
 
     @Autowired
     public VehicleController(VehicleService vehicleService) {
@@ -69,6 +74,9 @@ public class VehicleController {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy xe"));
 
         model.addAttribute("vehicle", vehicle);
+
+        // Add the API key to the model to pass it to the view
+        model.addAttribute("googleApiKey", googleApiKey);
 
         // Get related vehicles (same type, different model)
         List<Vehicle> relatedVehicles = vehicleService.getVehiclesByType(vehicle.getVehicleType())

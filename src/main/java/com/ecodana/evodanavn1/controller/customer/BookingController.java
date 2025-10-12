@@ -142,7 +142,7 @@ public class BookingController {
 
         model.addAttribute("booking", booking);
         model.addAttribute("vehicle", vehicle);
-        model.addAttribute("user", user);
+        model.addAttribute("currentUser", user);
         
         return "customer/booking-confirmation";
     }
@@ -159,7 +159,7 @@ public class BookingController {
 
         List<Booking> bookings = bookingService.getBookingsByUser(user);
         model.addAttribute("bookings", bookings);
-        model.addAttribute("user", user);
+        model.addAttribute("currentUser", user);
         
         return "customer/my-bookings";
     }

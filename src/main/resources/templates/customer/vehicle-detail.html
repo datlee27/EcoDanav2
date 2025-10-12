@@ -8,6 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}">
+    <!-- Google Maps API Script -->
+    <script th:inline="javascript">
+        const apiKey = /*[[${googleApiKey}]]*/ "YOUR_FALLBACK_API_KEY";
+    </script>
     <style>
         * { font-family: 'Poppins', sans-serif; }
         
@@ -55,6 +59,10 @@
         }
         .hover\:text-accent:hover {
             color: #059669;
+        }
+        /* Style for Google Maps Autocomplete dropdown */
+        .pac-container {
+            z-index: 9999 !important;
         }
     </style>
 </head>
@@ -448,17 +456,17 @@
                         <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0">
                         <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false">
                         
-                        <!-- Location Pickup -->
+                        <!-- Location Pickup (New Interactive Input) -->
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
                                 Địa điểm giao xe
                             </label>
-                            <select name="pickupLocation" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                                <option value="Quận Bình Thạnh, TP. Đà Nẵng">Quận Bình Thạnh, TP. Đà Nẵng</option>
-                                <option value="Quận Hải Châu, TP. Đà Nẵng">Quận Hải Châu, TP. Đà Nẵng</option>
-                                <option value="Quận Sơn Trà, TP. Đà Nẵng">Quận Sơn Trà, TP. Đà Nẵng</option>
-                            </select>
+                            <div id="locationDisplay" onclick="openLocationModal()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer flex justify-between items-center">
+                                <span id="selectedLocationText" class="text-gray-800">Chọn địa điểm giao xe</span>
+                                <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                            </div>
+                            <input type="hidden" name="pickupLocation" id="pickupLocationInput" value="Chọn địa điểm giao xe">
                         </div>
 
                         <!-- Date Time Inputs -->
@@ -500,9 +508,12 @@
                                 <span class="text-gray-600">Đơn giá thuê (<span id="daysCount">0</span> ngày)</span>
                                 <span class="font-semibold" id="rentalPrice" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
-                                <span class="font-semibold" id="basicInsurance">110.401 ₫</span>
+                            <div class="flex items-center justify-between">
+                                <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
+                                    <input type="checkbox" id="basicInsuranceCheckbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
+                                    <span>Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
+                                </label>
+                                <span class="font-semibold" id="basicInsurancePrice">0 ₫</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
@@ -605,13 +616,66 @@
     </div>
 </main>
 
+<!-- Location Modal -->
+<div id="locationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Chọn địa điểm giao xe</h3>
+            <button type="button" onclick="closeLocationModal()" class="text-gray-500 hover:text-gray-800">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="mb-4">
+            <label for="locationSearchInput" class="sr-only">Tìm kiếm địa điểm</label>
+            <div class="relative">
+                <input type="text" id="locationSearchInput" placeholder="Nhập địa chỉ hoặc chọn trên bản đồ"
+                       class="w-full p-3 border rounded-lg focus:ring-green-500 focus:border-green-500 pl-10">
+                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div id="map" class="w-full h-64 bg-gray-200 rounded-lg mb-4"></div>
+
+        <!-- Options -->
+        <div class="space-y-3 mb-6">
+            <div id="currentLocationBtn" class="border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 onclick="getAndSetCurrentLocation()">
+                <i class="fas fa-location-arrow text-green-500"></i>
+                <p class="text-gray-700 font-semibold" id="currentLocationDisplay">Sử dụng vị trí hiện tại</p>
+            </div>
+        </div>
+
+        <!-- Selected Location Display -->
+        <div class="bg-green-50 p-3 rounded-lg">
+            <p class="text-xs text-gray-600">Địa điểm đã chọn:</p>
+            <p id="modalSelectedLocation" class="font-semibold text-green-800">Chưa có</p>
+        </div>
+
+        <button type="button" onclick="confirmLocation()" class="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-semibold">
+            Xác nhận
+        </button>
+    </div>
+</div>
+
 <!-- Footer -->
 <div th:replace="~{fragments/footer :: footer}"></div>
 <div th:replace="~{fragments/chatbot :: chatbot}"></div>
 
 <!-- JavaScript -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    // Dynamically load Google Maps API
+    (function() {
+        var script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap&language=vi`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    })();
+
+    document.addEventListener('DOMContentLoaded', function() { // Keep this wrapper
         // Tab Switching
         const tabButtons = document.querySelectorAll('.tab-button');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -653,6 +717,10 @@
         // Booking Price Calculation
         const pickupDateInput = document.getElementById('pickupDate');
         const returnDateInput = document.getElementById('returnDate');
+        const pickupTimeInput = document.getElementById('pickupTime');
+        const returnTimeInput = document.getElementById('returnTime');
+
+        const basicInsuranceCheckbox = document.getElementById('basicInsuranceCheckbox');
         const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
         const dailyPriceInput = document.getElementById('dailyPriceInput');
         
@@ -664,51 +732,82 @@
         }
         
         function calculatePrice() {
-            if (!pickupDateInput.value || !returnDateInput.value) {
+            const pickupDateVal = pickupDateInput.value;
+            const returnDateVal = returnDateInput.value;
+            const pickupTimeVal = pickupTimeInput.value;
+            const returnTimeVal = returnTimeInput.value;
+
+            if (!pickupDateVal || !returnDateVal || !pickupTimeVal || !returnTimeVal) {
                 return;
             }
-            
-            const pickupDate = new Date(pickupDateInput.value);
-            const returnDate = new Date(returnDateInput.value);
-            
-            // Calculate days
-            const diffTime = Math.abs(returnDate - pickupDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // +1 to include both days
-            
-            if (diffDays < 1) {
+
+            const pickupDateTime = new Date(`${pickupDateVal}T${pickupTimeVal}`);
+            const returnDateTime = new Date(`${returnDateVal}T${returnTimeVal}`);
+
+            if (returnDateTime <= pickupDateTime) {
+                // Nếu ngày trả không hợp lệ, ẩn thông tin và dừng lại
+                document.getElementById('rentalDuration').classList.add('hidden');
+                document.getElementById('totalAmount').textContent = formatCurrency(0);
+                document.getElementById('totalAmountInput').value = 0;
                 return;
             }
-            
+
+            // Tính tổng số giờ chênh lệch
+            const diffMilliseconds = returnDateTime - pickupDateTime;
+            const totalHours = diffMilliseconds / (1000 * 60 * 60);
+
+            // Điều kiện: phải thuê >= 23 giờ
+            if (totalHours < 23) {
+                document.getElementById('rentalDuration').classList.remove('hidden');
+                document.getElementById('durationText').innerHTML = '<span class="text-red-500">Thời gian thuê phải từ 23 giờ trở lên</span>';
+                document.getElementById('totalAmount').textContent = formatCurrency(0);
+                document.getElementById('totalAmountInput').value = 0;
+                return;
+            }
+
+            // Tính số ngày và số giờ lẻ
+            let rentalDays = Math.floor(totalHours / 24);
+            const remainingHours = totalHours % 24;
+
+            // Nếu số giờ lẻ > 2 tiếng, làm tròn thành 1 ngày
+            if (remainingHours > 2) {
+                rentalDays += 1;
+            }
+
             // Show duration
             document.getElementById('rentalDuration').classList.remove('hidden');
-            document.getElementById('durationText').textContent = diffDays + ' ngày';
-            document.getElementById('daysCount').textContent = diffDays;
-            document.getElementById('insuranceDays').textContent = diffDays;
+            document.getElementById('durationText').textContent = `${Math.floor(totalHours / 24)} ngày ${Math.round(remainingHours)} giờ`;
+            document.getElementById('daysCount').textContent = rentalDays;
+            document.getElementById('insuranceDays').textContent = rentalDays;
             
             // Get daily price
             const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
             
             // Calculate rental price
-            const rentalPrice = dailyPrice * diffDays;
+            const rentalPrice = dailyPrice * rentalDays;
             document.getElementById('rentalPrice').textContent = formatCurrency(rentalPrice);
             
+            // Calculate basic insurance
+            const basicInsurance = basicInsuranceCheckbox.checked ? BASIC_INSURANCE : 0;
+            document.getElementById('basicInsurancePrice').textContent = formatCurrency(basicInsurance);
+
             // Calculate additional insurance
             const additionalInsurance = additionalInsuranceCheckbox.checked ? 
-                (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
+                (ADDITIONAL_INSURANCE_PER_DAY * rentalDays) : 0;
             document.getElementById('additionalInsurancePrice').textContent = formatCurrency(additionalInsurance);
             
             // Calculate total
-            const total = rentalPrice + BASIC_INSURANCE + additionalInsurance;
-            document.getElementById('totalAmount').textContent = formatCurrency(total) + 'đ';
+            const total = rentalPrice + basicInsurance + additionalInsurance;
+            document.getElementById('totalAmount').textContent = formatCurrency(total);
             
             // Update hidden inputs
             document.getElementById('totalAmountInput').value = total;
-            document.getElementById('rentalDaysInput').value = diffDays;
+            document.getElementById('rentalDaysInput').value = rentalDays;
             document.getElementById('additionalInsuranceInput').value = additionalInsuranceCheckbox.checked;
         }
         
         // Date validation and calculation
-        if (pickupDateInput && returnDateInput) {
+        if (pickupDateInput && returnDateInput && pickupTimeInput && returnTimeInput) {
             // Set minimum date to today
             const today = new Date().toISOString().split('T')[0];
             pickupDateInput.min = today;
@@ -723,8 +822,14 @@
             });
             
             returnDateInput.addEventListener('change', calculatePrice);
+            pickupTimeInput.addEventListener('change', calculatePrice);
+            returnTimeInput.addEventListener('change', calculatePrice);
         }
         
+        if (basicInsuranceCheckbox) {
+            basicInsuranceCheckbox.addEventListener('change', calculatePrice);
+        }
+
         if (additionalInsuranceCheckbox) {
             additionalInsuranceCheckbox.addEventListener('change', calculatePrice);
         }
@@ -733,12 +838,140 @@
         document.getElementById('bookingForm').addEventListener('submit', function(e) {
             const totalAmount = parseFloat(document.getElementById('totalAmountInput').value);
             if (!totalAmount || totalAmount <= 0) {
-                e.preventDefault();
+                e.preventDefault(); // Ngăn form được gửi đi
                 alert('Vui lòng chọn ngày nhận và trả xe!');
                 return false;
             }
         });
-    });
+    }); // Keep this closing bracket
+
+    // --- Location Modal Logic ---
+    let map, marker, geocoder, autocomplete;
+    let tempSelectedLocation = {
+        address: "Khu đô thị FPT, Ngũ Hành Sơn, Đà Nẵng",
+        lat: 15.9649, // Default to Da Nang FPT City
+        lng: 108.2602
+    };
+
+    function initMap() {
+        const daNang = { lat: 16.0544, lng: 108.2022 }; // Center of Da Nang
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: daNang,
+            zoom: 12,
+            disableDefaultUI: true,
+            zoomControl: true,
+        });
+
+        geocoder = new google.maps.Geocoder();
+
+        marker = new google.maps.Marker({
+            map: map,
+            draggable: true,
+        });
+
+        // Autocomplete
+        const searchInput = document.getElementById('locationSearchInput');
+        autocomplete = new google.maps.places.Autocomplete(searchInput, {
+            types: ['geocode'],
+            componentRestrictions: { country: 'vn' } // Restrict to Vietnam
+        });
+        autocomplete.bindTo('bounds', map);
+
+        // Event listener for place selection
+        autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (!place.geometry) {
+                console.log("No details available for input: '" + place.name + "'");
+                return;
+            }
+            map.setCenter(place.geometry.location);
+            map.setZoom(15);
+            placeMarkerAndGeocode(place.geometry.location);
+        });
+
+        // Event listener for map click
+        map.addListener('click', (e) => {
+            placeMarkerAndGeocode(e.latLng);
+        });
+
+        // Event listener for marker drag
+        marker.addListener('dragend', (e) => {
+            placeMarkerAndGeocode(e.latLng);
+        });
+    }
+
+    function placeMarkerAndGeocode(latLng) {
+        marker.setPosition(latLng);
+        map.panTo(latLng);
+
+        geocoder.geocode({ 'location': latLng }, (results, status) => {
+            if (status === 'OK') {
+                if (results[0]) {
+                    tempSelectedLocation = {
+                        address: results[0].formatted_address,
+                        lat: latLng.lat(),
+                        lng: latLng.lng()
+                    };
+                    document.getElementById('locationSearchInput').value = tempSelectedLocation.address;
+                    document.getElementById('modalSelectedLocation').textContent = tempSelectedLocation.address;
+                } else {
+                    window.alert('Không tìm thấy kết quả');
+                }
+            } else {
+                window.alert('Geocoder thất bại vì: ' + status);
+            }
+        });
+    }
+
+    function openLocationModal() {
+        document.getElementById('locationModal').classList.remove('hidden');
+        // Resize map when modal is opened
+        setTimeout(() => {
+            google.maps.event.trigger(map, 'resize');
+            const currentAddress = document.getElementById('pickupLocationInput').value;
+            if (currentAddress && currentAddress !== 'Chọn địa điểm giao xe') {
+                document.getElementById('locationSearchInput').value = currentAddress;
+                document.getElementById('modalSelectedLocation').textContent = currentAddress;
+                // You might want to geocode the address to place the marker if you have lat/lng stored
+            } else {
+                 document.getElementById('locationSearchInput').value = '';
+                 document.getElementById('modalSelectedLocation').textContent = 'Chưa có';
+            }
+        }, 100);
+    }
+
+    function closeLocationModal() {
+        document.getElementById('locationModal').classList.add('hidden');
+    }
+
+    function getAndSetCurrentLocation() {
+        const displayElement = document.getElementById('currentLocationDisplay');
+        displayElement.textContent = 'Đang tìm vị trí...';
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                map.setCenter(pos);
+                map.setZoom(15);
+                placeMarkerAndGeocode(pos);
+                displayElement.textContent = "Sử dụng vị trí hiện tại";
+            }, () => {
+                alert('Không thể lấy vị trí. Vui lòng cấp quyền truy cập.');
+                displayElement.textContent = "Sử dụng vị trí hiện tại";
+            });
+        } else {
+            alert('Trình duyệt không hỗ trợ Geolocation.');
+            displayElement.textContent = "Sử dụng vị trí hiện tại";
+        }
+    }
+
+    function confirmLocation() {
+        if (tempSelectedLocation && tempSelectedLocation.address) {
+            document.getElementById('selectedLocationText').textContent = tempSelectedLocation.address;
+            document.getElementById('pickupLocationInput').value = tempSelectedLocation.address;
+        }
+        closeLocationModal();
+    }
 
     // Toggle Fees Function
     function toggleFees() {
