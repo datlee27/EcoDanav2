@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.controller.owner;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.TransmissionType;
@@ -14,13 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -162,7 +157,7 @@ public class OwnerController {
         return "redirect:/owner/dashboard?section=cars";
     }
 
-    @PostMapping("/cars/{id}")
+    @PutMapping("/cars/{id}")
     public String updateCar(@PathVariable String id, @RequestParam Map<String, String> carData,
                             @RequestParam(value = "images", required = false) MultipartFile[] images,
                             HttpSession session, RedirectAttributes redirectAttributes, Model model) {
@@ -215,15 +210,12 @@ public class OwnerController {
     public String toggleAvailability(@PathVariable String id, HttpSession session, RedirectAttributes redirectAttributes, Model model) {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
-        try {
-            vehicleService.getVehicleById(id).ifPresent(vehicle -> {
+        Optional<Vehicle> verhicles = vehicleService.getVehicleById(id);
+        verhicles.ifPresent(vehicle -> {
                 vehicle.setStatus(vehicle.getStatus() == Vehicle.VehicleStatus.Available ? Vehicle.VehicleStatus.Unavailable : Vehicle.VehicleStatus.Available);
                 vehicleService.updateVehicle(vehicle);
                 redirectAttributes.addFlashAttribute("success", "Vehicle status updated");
-            });
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Failed to update status: " + e.getMessage());
-        }
+        });
         return "redirect:/owner/dashboard?section=cars";
     }
 

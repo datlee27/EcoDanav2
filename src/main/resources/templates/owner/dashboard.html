@@ -488,15 +488,15 @@
                                 <input
                                         type="checkbox"
                                         class="sr-only peer status-toggle"
-                                        th:attr="data-id=${v.vehicleId}, onclick='toggleVehicleStatus(this)'"
-                                        th:checked="${v.status == 'Available'}"
+                                        th:attr="data-id=${v.vehicleId},data=${v.status}, onclick='toggleVehicleStatus(this)'"
+                                        th:checked="${v.status.toString() == 'Available'}"
                                 />
                                 <div
                                         class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-300 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"
                                         style="position: relative"
                                 ></div>
                             </label>
-                            <span class="text-sm" th:text="${v.status ?: 'Unknown'}">Available</span>
+                            <span class="text-sm" th:text="${v.status ?: 'Unknown'}"></span>
                         </div>
                     </td>
                     <td class="px-6 py-4 space-x-2">
@@ -1042,8 +1042,9 @@
         }
     }, 5000);
 
-    function toggleVehicleStatus(checkbox) {
-        console.log("Status toggle triggered");
+    function toggleVehicleStatus(checkbox, v) {
+        const d = checkbox.getAttribute("data");
+        console.log(d == 'Available');
         const id = checkbox.getAttribute("data-id");
         console.log("Vehicle ID:", id);
         fetch(`/owner/cars/${id}/toggle-availability`, { method: "POST" }).catch((err) => {
