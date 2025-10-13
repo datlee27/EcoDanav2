@@ -335,4 +335,287 @@ public class OwnerController {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to get vehicle: " + e.getMessage()));
         }
     }
+
+    // Booking Management Endpoints
+    @GetMapping("/management")
+    public String managementPage(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
+        String redirect = checkAuthentication(session, redirectAttributes, model);
+        if (redirect != null) return redirect;
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        try {
+            java.util.List<Booking> allBookings = bookingService.getAllBookings();
+            Map<String, Long> statusCounts = bookingService.getBookingCountsByStatus();
+
+            model.addAttribute("bookings", allBookings);
+            model.addAttribute("pendingBookings", bookingService.getPendingBookings());
+            model.addAttribute("pendingCount", statusCounts.get("pending"));
+            model.addAttribute("approvedCount", statusCounts.get("approved"));
+            model.addAttribute("ongoingCount", statusCounts.get("ongoing"));
+            model.addAttribute("completedCount", statusCounts.get("completed"));
+
+            return "owner/owner-management";
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to load management page: " + e.getMessage());
+            return "redirect:/owner/dashboard";
+        }
+    }
+
+    @GetMapping("/management/bookings/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getBookingDetail(@PathVariable String id, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Access denied"));
+        }
+
+        try {
+            return bookingService.findById(id).map(booking -> {
+                Map<String, Object> bookingData = new HashMap<>();
+                bookingData.put("bookingId", booking.getBookingId());
+                bookingData.put("bookingCode", booking.getBookingCode());
+                bookingData.put("status", booking.getStatus().name());
+                bookingData.put("pickupDateTime", booking.getPickupDateTime());
+                bookingData.put("returnDateTime", booking.getReturnDateTime());
+                bookingData.put("totalAmount", booking.getTotalAmount());
+                bookingData.put("rentalType", booking.getRentalType().name());
+                bookingData.put("createdDate", booking.getCreatedDate());
+                bookingData.put("paymentMethod", booking.getExpectedPaymentMethod());
+                bookingData.put("cancelReason", booking.getCancelReason());
+
+                // Customer information
+                if (booking.getUser() != null) {
+                    bookingData.put("customerId", booking.getUser().getId());
+                    bookingData.put("customerName", booking.getUser().getFirstName() + " " + booking.getUser().getLastName());
+                    bookingData.put("customerEmail", booking.getUser().getEmail());
+                    bookingData.put("customerPhone", booking.getUser().getPhoneNumber());
+                    bookingData.put("customerDOB", booking.getUser().getUserDOB());
+                }
+
+                // Vehicle information
+                if (booking.getVehicle() != null) {
+                    bookingData.put("vehicleModel", booking.getVehicle().getVehicleModel());
+                    bookingData.put("licensePlate", booking.getVehicle().getLicensePlate());
+                    bookingData.put("vehicleCategory", booking.getVehicle().getCategory() != null ? 
+                        booking.getVehicle().getCategory().getCategoryName() : "N/A");
+                    bookingData.put("transmission", booking.getVehicle().getTransmissionType() != null ? 
+                        booking.getVehicle().getTransmissionType().getTransmissionTypeName() : "N/A");
+                }
+
+                // Discount information
+                if (booking.getDiscount() != null) {
+                    bookingData.put("discount", booking.getDiscount().getDiscountName());
+                }
+
+                return ResponseEntity.ok(bookingData);
+            }).orElse(ResponseEntity.status(404).body(Map.of("status", "error", "message", "Booking not found")));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to load booking: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/management/bookings/{id}/approve")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approveBookingManagement(@PathVariable String id, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
+        }
+
+        try {
+            Booking booking = bookingService.approveBooking(id, currentUser);
+            if (booking != null) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Booking approved successfully"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to approve booking: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/management/bookings/{id}/reject")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> rejectBookingManagement(@PathVariable String id, 
+                                                                        @org.springframework.web.bind.annotation.RequestBody Map<String, String> payload,
+                                                                        HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
+        }
+
+        try {
+            String reason = payload.get("reason");
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("success", false, "message", "Rejection reason is required"));
+            }
+
+            Booking booking = bookingService.rejectBooking(id, reason, currentUser);
+            if (booking != null) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Booking rejected successfully"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to reject booking: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/management/bookings/{id}/complete")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> completeBookingManagement(@PathVariable String id, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
+        }
+
+        try {
+            Booking booking = bookingService.completeBooking(id);
+            if (booking != null) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Booking marked as completed"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to complete booking: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/management/bookings/{id}/cancel")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> cancelBookingManagement(@PathVariable String id, 
+                                                                        @org.springframework.web.bind.annotation.RequestBody Map<String, String> payload,
+                                                                        HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null || (!userService.isAdmin(currentUser) && !userService.isStaff(currentUser) && !userService.isOwner(currentUser))) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Access denied"));
+        }
+
+        try {
+            String reason = payload.get("reason");
+            if (reason == null || reason.trim().isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("success", false, "message", "Cancellation reason is required"));
+            }
+
+            Booking booking = bookingService.cancelBooking(id, reason);
+            if (booking != null) {
+                return ResponseEntity.ok(Map.of("success", true, "message", "Booking cancelled successfully"));
+            } else {
+                return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to cancel booking: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/management/calendar-events")
+    @ResponseBody
+    public ResponseEntity<java.util.List<Map<String, Object>>> getCalendarEvents(HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(403).body(new ArrayList<>());
+        }
+
+        try {
+            java.util.List<Booking> bookings = bookingService.getAllBookings();
+            java.util.List<Map<String, Object>> events = new ArrayList<>();
+
+            for (Booking booking : bookings) {
+                Map<String, Object> event = new HashMap<>();
+                event.put("id", booking.getBookingId());
+                event.put("title", booking.getBookingCode() + " - " + 
+                    (booking.getVehicle() != null ? booking.getVehicle().getVehicleModel() : "Vehicle"));
+                event.put("start", booking.getPickupDateTime().toString());
+                event.put("end", booking.getReturnDateTime().toString());
+                event.put("status", booking.getStatus().name());
+                event.put("className", "fc-event-" + booking.getStatus().name().toLowerCase());
+                
+                // Color coding based on status
+                String color = switch (booking.getStatus()) {
+                    case Pending -> "#fbbf24";
+                    case Approved -> "#10b981";
+                    case Ongoing -> "#3b82f6";
+                    case Completed -> "#6b7280";
+                    case Rejected, Cancelled -> "#ef4444";
+                };
+                event.put("backgroundColor", color);
+                
+                // Extended properties for timeline view
+                Map<String, Object> extendedProps = new HashMap<>();
+                extendedProps.put("bookingCode", booking.getBookingCode());
+                extendedProps.put("amount", booking.getTotalAmount() != null ? booking.getTotalAmount().toString() : "0");
+                
+                // Customer information
+                if (booking.getUser() != null) {
+                    extendedProps.put("customerName", booking.getUser().getFirstName() + " " + booking.getUser().getLastName());
+                    extendedProps.put("customerEmail", booking.getUser().getEmail());
+                }
+                
+                // Vehicle information
+                if (booking.getVehicle() != null) {
+                    extendedProps.put("vehicleModel", booking.getVehicle().getVehicleModel());
+                    extendedProps.put("licensePlate", booking.getVehicle().getLicensePlate());
+                }
+                
+                event.put("extendedProps", extendedProps);
+                event.put("borderColor", color);
+                
+                // Tooltip information
+                String tooltip = String.format("%s - %s\nCustomer: %s\nStatus: %s",
+                    booking.getBookingCode(),
+                    booking.getVehicle() != null ? booking.getVehicle().getVehicleModel() : "Vehicle",
+                    booking.getUser() != null ? booking.getUser().getFirstName() + " " + booking.getUser().getLastName() : "Unknown",
+                    booking.getStatus().name()
+                );
+                event.put("tooltip", tooltip);
+
+                events.add(event);
+            }
+
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ArrayList<>());
+        }
+    }
+
+    @GetMapping("/management/customer/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getCustomerProfile(@PathVariable String id, HttpSession session) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Access denied"));
+        }
+
+        try {
+            User customer = userService.findById(id);
+            if (customer == null) {
+                return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Customer not found"));
+            }
+
+            Map<String, Object> customerData = new HashMap<>();
+            customerData.put("userId", customer.getId());
+            customerData.put("username", customer.getUsername());
+            customerData.put("fullName", customer.getFirstName() + " " + customer.getLastName());
+            customerData.put("email", customer.getEmail());
+            customerData.put("phoneNumber", customer.getPhoneNumber());
+            customerData.put("dateOfBirth", customer.getUserDOB());
+            customerData.put("gender", customer.getGender() != null ? customer.getGender().name() : "N/A");
+            customerData.put("avatarUrl", customer.getAvatarUrl());
+            customerData.put("status", customer.getStatus().name());
+            customerData.put("role", customer.getRoleName());
+            customerData.put("createdDate", customer.getCreatedDate());
+
+            // Get booking statistics for this customer
+            java.util.List<Booking> customerBookings = bookingService.getBookingsByUser(customer);
+            customerData.put("totalBookings", customerBookings.size());
+            customerData.put("completedBookings", customerBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
+            customerData.put("cancelledBookings", customerBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
+
+            return ResponseEntity.ok(customerData);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to load customer profile: " + e.getMessage()));
+        }
+    }
 }
