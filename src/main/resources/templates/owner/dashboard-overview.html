@@ -74,11 +74,11 @@
             <i class="fas fa-car text-white"></i>
           </div>
           <div class="flex-1">
-            <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
-            <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>
-            <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
+            <p class="font-semibold text-gray-800" th:text="${booking.vehicle.vehicleModel}">BMW X5</p>
+            <p class="text-sm text-gray-600" th:text="${(booking.user.firstName + ' ' + booking.user.lastName) + ' • ' + #temporals.format(booking.pickupDateTime, 'dd/MM/yyyy')}">Sarah Johnson • Feb 15-18, 2025</p>
+            <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.vehicle.dailyPriceFromJson} + '/day'">$320/day</p>
           </div>
-          <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
+          <span th:class="'px-3 py-1 rounded-full text-sm font-medium status-' + ${#strings.toLowerCase(booking.status.name())}" th:text="${booking.status}">Active</span>
         </div>
       </div>
     </div>

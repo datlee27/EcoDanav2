@@ -133,11 +133,11 @@
               <i class="fas fa-car text-white"></i>
             </div>
             <div class="flex-1">
-              <p class="font-semibold text-gray-800" th:text="${booking.carModel}">BMW X5</p>
-              <p class="text-sm text-gray-600" th:text="${booking.customerName + ' • ' + booking.dateRange}">Sarah Johnson • Feb 15-18, 2025</p>
-              <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.dailyRate} + '/day'">$320/day</p>
+              <p class="font-semibold text-gray-800" th:text="${booking.vehicle.vehicleModel}">BMW X5</p>
+              <p class="text-sm text-gray-600" th:text="${(booking.user.firstName + ' ' + booking.user.lastName) + ' • ' + #temporals.format(booking.pickupDateTime, 'dd/MM/yyyy')}">Sarah Johnson • Feb 15-18, 2025</p>
+              <p class="text-sm font-medium text-primary" th:text="'$' + ${booking.vehicle.dailyPriceFromJson} + '/day'">$320/day</p>
             </div>
-            <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
+            <span th:class="'px-3 py-1 rounded-full text-sm font-medium status-' + ${#strings.toLowerCase(booking.status.name())}" th:text="${booking.status}">Active</span>
           </div>
         </div>
       </div>
@@ -257,45 +257,45 @@
           </tr>
           </thead>
           <tbody class="divide-y divide-gray-200">
-          <tr th:each="booking : ${bookings}" class="hover:bg-gray-50" th:attr="data-status=${booking.status.toLowerCase()}">
+          <tr th:each="booking : ${bookings}" class="hover:bg-gray-50" th:attr="data-status=${#strings.toLowerCase(booking.status.name())}">
             <td class="px-6 py-4">
               <div class="flex items-center space-x-3">
                 <div class="w-10 h-10 bg-gray-300 rounded-full">
-                  <img th:if="${booking.customer.avatar}" th:src="${booking.customer.avatar}" th:alt="${booking.customer.name}" class="w-full h-full rounded-full object-cover">
+                  <img th:if="${booking.user.avatarUrl}" th:src="${booking.user.avatarUrl}" th:alt="${booking.user.firstName + ' ' + booking.user.lastName}" class="w-full h-full rounded-full object-cover">
                 </div>
                 <div>
-                  <p class="font-semibold text-gray-800" th:text="${booking.customer.name}">Sarah Johnson</p>
-                  <p class="text-sm text-gray-600" th:text="${booking.customer.email}">sarah@example.com</p>
+                  <p class="font-semibold text-gray-800" th:text="${booking.user.firstName + ' ' + booking.user.lastName}">Sarah Johnson</p>
+                  <p class="text-sm text-gray-600" th:text="${booking.user.email}">sarah@example.com</p>
                 </div>
               </div>
             </td>
             <td class="px-6 py-4">
               <div>
-                <p class="font-medium text-gray-800" th:text="${booking.car.brand + ' ' + booking.car.model}">BMW X5</p>
-                <p class="text-sm text-gray-600" th:text="${booking.car.type + ' • ' + booking.car.year}">SUV • 2023</p>
+                <p class="font-medium text-gray-800" th:text="${booking.vehicle.vehicleModel}">BMW X5</p>
+                <p class="text-sm text-gray-600" th:text="${booking.vehicle.vehicleType + ' • ' + booking.vehicle.yearManufactured}">SUV • 2023</p>
               </div>
             </td>
             <td class="px-6 py-4">
               <div>
-                <p class="font-medium text-gray-800" th:text="${booking.dateRange}">Feb 15-18, 2025</p>
-                <p class="text-sm text-gray-600" th:text="${booking.duration + ' days'}">3 days</p>
+                <p class="font-medium text-gray-800" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy') + ' - ' + #temporals.format(booking.returnDateTime, 'dd/MM/yyyy')}">Feb 15-18, 2025</p>
+                <p class="text-sm text-gray-600" th:text="${#temporals.day(booking.returnDateTime) - #temporals.day(booking.pickupDateTime) + ' days'}">3 days</p>
               </div>
             </td>
             <td class="px-6 py-4">
               <p class="font-semibold text-primary" th:text="'$' + ${booking.totalAmount}">$960</p>
             </td>
             <td class="px-6 py-4">
-              <span th:class="'px-3 py-1 rounded-full text-sm font-medium ' + ${booking.statusClass}" th:text="${booking.status}">Active</span>
+              <span th:class="'px-3 py-1 rounded-full text-sm font-medium status-' + ${#strings.toLowerCase(booking.status.name())}" th:text="${booking.status}">Active</span>
             </td>
             <td class="px-6 py-4">
               <div class="flex space-x-3">
-                <button th:onclick="'viewBooking(' + ${booking.id} + ')'" class="text-primary hover:text-blue-600" title="View Details">
+                <button th:onclick="'viewBooking(' + ${booking.bookingId} + ')'" class="text-primary hover:text-blue-600" title="View Details">
                   <i class="fas fa-eye"></i>
                 </button>
-                <button th:if="${booking.status == 'PENDING'}" th:onclick="'acceptBooking(' + ${booking.id} + ')'" class="text-green-500 hover:text-green-600" title="Accept">
+                <button th:if="${booking.status.name() == 'Pending'}" th:onclick="'acceptBooking(' + ${booking.bookingId} + ')'" class="text-green-500 hover:text-green-600" title="Accept">
                   <i class="fas fa-check"></i>
                 </button>
-                <button th:if="${booking.status == 'PENDING'}" th:onclick="'declineBooking(' + ${booking.id} + ')'" class="text-red-500 hover:text-red-600" title="Decline">
+                <button th:if="${booking.status.name() == 'Pending'}" th:onclick="'declineBooking(' + ${booking.bookingId} + ')'" class="text-red-500 hover:text-red-600" title="Decline">
                   <i class="fas fa-times"></i>
                 </button>
               </div>

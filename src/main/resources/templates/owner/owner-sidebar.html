@@ -1,38 +1,69 @@
 <div th:fragment="sidebar" class="lg:w-1/4" xmlns:th="http://www.thymeleaf.org">
-    <div class="bg-white rounded-xl shadow-md p-6 sticky top-8">
-        <nav class="space-y-2">
-            <button onclick="showSection('dashboard')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn bg-blue-50 text-primary">
-                <i class="fas fa-tachometer-alt"></i>
-                <span class="font-medium">Dashboard</span>
-            </button>
-            <button onclick="showSection('cars')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-car"></i>
-                <span class="font-medium">My Cars</span>
-            </button>
-            <button onclick="showSection('bookings')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-calendar-check"></i>
-                <span class="font-medium">Bookings</span>
-            </button>
-            <button onclick="showSection('driving')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-steering-wheel"></i>
-                <span class="font-medium">Driving Services</span>
-            </button>
-            <button onclick="showSection('income')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-chart-line"></i>
-                <span class="font-medium">Income Reports</span>
-            </button>
-            <button onclick="showSection('chat')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-comments"></i>
-                <span class="font-medium">Customer Chat</span>
-            </button>
-            <button onclick="showSection('analytics')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-chart-bar"></i>
-                <span class="font-medium">Analytics</span>
-            </button>
-            <button onclick="showSection('profile')" class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn">
-                <i class="fas fa-user-cog"></i>
-                <span class="font-medium">Profile Settings</span>
-            </button>
-        </nav>
-    </div>
+  <div class="bg-white rounded-xl shadow-md p-6 sticky top-8">
+    <nav class="space-y-2">
+      <button
+        onclick="showSection('dashboard')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn bg-blue-50 text-primary"
+      >
+        <i class="fas fa-tachometer-alt"></i>
+        <span class="font-medium">Dashboard</span>
+      </button>
+      <button
+        onclick="showSection('cars')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-car"></i>
+        <span class="font-medium">My Cars</span>
+      </button>
+      <button
+        onclick="showSection('bookings')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-calendar-check"></i>
+        <span class="font-medium">Bookings</span>
+      </button>
+      <a
+        href="/owner/management"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-tasks"></i>
+        <span class="font-medium">Management</span>
+      </a>
+      <button
+        onclick="showSection('driving')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-steering-wheel"></i>
+        <span class="font-medium">Driving Services</span>
+      </button>
+      <button
+        onclick="showSection('income')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-chart-line"></i>
+        <span class="font-medium">Income Reports</span>
+      </button>
+      <button
+        onclick="showSection('chat')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-comments"></i>
+        <span class="font-medium">Customer Chat</span>
+      </button>
+      <button
+        onclick="showSection('analytics')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-chart-bar"></i>
+        <span class="font-medium">Analytics</span>
+      </button>
+      <button
+        onclick="showSection('profile')"
+        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
+      >
+        <i class="fas fa-user-cog"></i>
+        <span class="font-medium">Profile Settings</span>
+      </button>
+    </nav>
+  </div>
 </div>
