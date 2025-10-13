@@ -216,7 +216,7 @@ public class AuthController {
         // --- STEP 2: Provide information for the PROFILE page content ---
         // Get the latest user information from the database based on the email or username in the session
         User userForProfile = userService.findByEmail(currentUser.getEmail());
-        // Add to the model with the name "user" for profile.html to use
+        // Add to the model with the name "user" for profile-management.html to use
         model.addAttribute("user", userForProfile);
 
         // Return the view of the profile page

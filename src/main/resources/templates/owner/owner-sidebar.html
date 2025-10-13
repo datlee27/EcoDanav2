@@ -1,69 +1,42 @@
-<div th:fragment="sidebar" class="lg:w-1/4" xmlns:th="http://www.thymeleaf.org">
-  <div class="bg-white rounded-xl shadow-md p-6 sticky top-8">
-    <nav class="space-y-2">
-      <button
-        onclick="showSection('dashboard')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn bg-blue-50 text-primary"
-      >
-        <i class="fas fa-tachometer-alt"></i>
-        <span class="font-medium">Dashboard</span>
-      </button>
-      <button
-        onclick="showSection('cars')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-car"></i>
-        <span class="font-medium">My Cars</span>
-      </button>
-      <button
-        onclick="showSection('bookings')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-calendar-check"></i>
-        <span class="font-medium">Bookings</span>
-      </button>
-      <a
-        href="/owner/management"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-tasks"></i>
-        <span class="font-medium">Management</span>
-      </a>
-      <button
-        onclick="showSection('driving')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-steering-wheel"></i>
-        <span class="font-medium">Driving Services</span>
-      </button>
-      <button
-        onclick="showSection('income')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-chart-line"></i>
-        <span class="font-medium">Income Reports</span>
-      </button>
-      <button
-        onclick="showSection('chat')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-comments"></i>
-        <span class="font-medium">Customer Chat</span>
-      </button>
-      <button
-        onclick="showSection('analytics')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-chart-bar"></i>
-        <span class="font-medium">Analytics</span>
-      </button>
-      <button
-        onclick="showSection('profile')"
-        class="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg hover:bg-blue-50 hover:text-primary transition-colors dashboard-nav-btn"
-      >
-        <i class="fas fa-user-cog"></i>
-        <span class="font-medium">Profile Settings</span>
-      </button>
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Sidebar -->
+<div th:fragment="sidebar" class="fixed top-16 left-0 h-full w-64 bg-gray-800 text-white p-4 z-40">
+    <nav>
+        <ul>
+            <li class="mb-4">
+                <a th:href="@{/owner/dashboard}" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-300 rounded-lg hover:bg-gray-700" th:classappend="${currentPage == 'dashboard' ? 'bg-gray-700' : ''}">
+                    <i class="fas fa-chart-pie mr-3"></i>
+                    OVERVIEW
+                </a>
+            </li>
+            <li class="mb-4">
+                <a th:href="@{/owner/cars}" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-300 rounded-lg hover:bg-gray-700" th:classappend="${currentPage == 'cars' ? 'bg-gray-700' : ''}">
+                    <i class="fas fa-car mr-3"></i>
+                    CAR MANAGEMENT
+                </a>
+            </li>
+            <li class="mb-4">
+                <a th:href="@{/owner/bookings}" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-300 rounded-lg hover:bg-gray-700" th:classappend="${currentPage == 'bookings' ? 'bg-gray-700' : ''}">
+                    <i class="fas fa-book-open mr-3"></i>
+                    BOOKING MANAGEMENT
+                </a>
+            </li>
+            <li class="mb-4">
+                <a th:href="@{/owner/customers}" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-300 rounded-lg hover:bg-gray-700" th:classappend="${currentPage == 'customers' ? 'bg-gray-700' : ''}">
+                    <i class="fas fa-users mr-3"></i>
+                    CUSTOMER MANAGEMENT
+                </a>
+            </li>
+            <li class="mb-4">
+                <a th:href="@{/owner/profile}" class="sidebar-link flex items-center p-2 text-base font-normal text-gray-300 rounded-lg hover:bg-gray-700" th:classappend="${currentPage == 'profile' ? 'bg-gray-700' : ''}">
+                    <i class="fas fa-user-cog mr-3"></i>
+                    PROFILE
+                </a>
+            </li>
+        </ul>
     </nav>
-  </div>
 </div>
+</body>
+</html>

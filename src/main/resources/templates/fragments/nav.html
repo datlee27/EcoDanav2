@@ -1,120 +1,87 @@
 <div th:fragment="nav" class="bg-white shadow-lg fixed w-full top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex justify-between items-center h-16">
-      <div class="flex items-center">
-        <a th:href="@{/}" class="logo flex items-center">
-          <div class="logo-icon bg-primary w-8 h-8 rounded-lg mr-2 flex items-center justify-center">
-            <i class="fas fa-leaf text-white text-sm"></i>
-          </div>
-          <span class="logo-text font-bold text-xl text-primary">EcoDana</span>
-        </a>
-      </div>
-
-      <div class="hidden md:flex space-x-8">
-        <a th:href="@{/}" class="text-gray-700 hover:text-primary transition-colors">Home</a>
-        <a th:href="@{/vehicles}" class="text-gray-700 hover:text-primary transition-colors">Vehicles</a>
-        <a th:href="@{/about}" class="text-gray-700 hover:text-primary transition-colors">About</a>
-        <a th:href="@{/contact}" class="text-gray-700 hover:text-primary transition-colors">Contact</a>
-      </div>
-
-      <!-- User Menu -->
-      <div class="flex items-center space-x-4" th:if="${currentUser == null}">
-        <a th:href="@{/login}" class="text-primary hover:text-accent transition-colors flex items-center">
-          <i class="fas fa-sign-in-alt mr-1"></i>Sign In
-        </a>
-        <a
-          th:href="@{/register}"
-          class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors flex items-center"
-        >
-          <i class="fas fa-user-plus mr-1"></i>Sign Up
-        </a>
-      </div>
-
-      <!-- Logged in User Menu -->
-      <div class="flex items-center space-x-4" th:if="${currentUser != null}">
-        <div class="relative group">
-          <button class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
-            <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <i class="fas fa-user text-white text-sm"></i>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <div class="flex items-center">
+                <a th:href="@{/}" class="logo flex items-center">
+                    <div class="logo-icon bg-primary w-8 h-8 rounded-lg mr-2 flex items-center justify-center">
+                        <i class="fas fa-leaf text-white text-sm"></i>
+                    </div>
+                    <span class="logo-text font-bold text-xl text-primary">EcoDana</span>
+                </a>
             </div>
-            <span
-              id="navbar-username"
-              th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}"
-              >Username</span
-            >
-            <i class="fas fa-chevron-down text-xs"></i>
-          </button>
 
-          <!-- Dropdown Menu -->
-          <div
-            class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
-          >
-            <div class="py-2">
-              <div class="px-4 py-2 border-b border-gray-100">
-                <p
-                  id="dropdown-username"
-                  class="text-sm font-medium text-gray-900"
-                  th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}"
-                >
-                  Username
-                </p>
-                <p class="text-xs text-gray-500" th:text="${currentUser.email}">email@example.com</p>
-              </div>
-
-              <!-- Dashboard based on role -->
-              <a
-                th:href="@{/dashboard-router}"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-              </a>
-
-              <!-- Role-specific menu items -->
-              <a
-                th:href="@{/owner/management}"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                th:if="${currentUser.role != null and currentUser.role.roleName == 'Owner'}"
-              >
-                <i class="fas fa-tasks mr-2"></i>Booking Management
-              </a>
-
-              <a
-                th:href="@{/owner}"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                th:if="${currentUser.role != null and (currentUser.role.roleName == 'Staff' or currentUser.role.roleName == 'Admin')}"
-              >
-                <i class="fas fa-cogs mr-2"></i>Management Panel
-              </a>
-
-              <a
-                th:href="@{/admin}"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                th:if="${currentUser.role != null and currentUser.role.roleName == 'Admin'}"
-              >
-                <i class="fas fa-shield-alt mr-2"></i>Admin Panel
-              </a>
-
-              <div class="border-t border-gray-100"></div>
-
-              <a
-                th:href="@{/profile}"
-                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                <i class="fas fa-user-edit mr-2"></i>Profile
-              </a>
-
-              <div class="border-t border-gray-100"></div>
-
-              <a
-                th:href="@{/logout}"
-                class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-              >
-                <i class="fas fa-sign-out-alt mr-2"></i>Logout
-              </a>
+            <div class="hidden md:flex space-x-8">
+                <a th:href="@{/}" class="text-gray-700 hover:text-primary transition-colors">Home</a>
+                <a th:href="@{/vehicles}" class="text-gray-700 hover:text-primary transition-colors">Vehicles</a>
+                <a th:href="${currentUser == null ? '/login' : '/booking/my-bookings'}" class="text-gray-700 hover:text-primary transition-colors">My booking</a>
+                <a th:href="@{/contact}" class="text-gray-700 hover:text-primary transition-colors">Contact</a>
             </div>
-          </div>
+
+            <!-- User Menu -->
+
+            <div class="flex items-center space-x-4" th:if="${currentUser == null}">
+                <a th:href="@{/login}" class="text-primary hover:text-accent transition-colors flex items-center">
+                    <i class="fas fa-sign-in-alt mr-1"></i>Sign In
+                </a>
+                <a th:href="@{/register}" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent transition-colors flex items-center">
+                    <i class="fas fa-user-plus mr-1"></i>Sign Up
+                </a>
+            </div>
+
+            <!-- Logged in User Menu -->
+            <div class="flex items-center space-x-4" th:if="${currentUser != null}">
+                <div class="relative group">
+                    <button class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
+                        <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+
+                        <span id="navbar-username" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+
+                    <!-- Dropdown Menu -->
+                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                        <div class="py-2">
+                            <div class="px-4 py-2 border-b border-gray-100">
+                                <p id="dropdown-username" class="text-sm font-medium text-gray-900" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</p>
+                                <p class="text-xs text-gray-500" th:text="${currentUser.email}">email@example.com</p>
+                            </div>
+
+                            <!-- Dashboard based on role -->
+                            <a th:href="@{/dashboard-router}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                            </a>
+                            <!-- Role-specific menu items -->
+                            <a th:href="@{/owner}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                               th:if="${currentUser.role != null and (currentUser.role.roleName == 'Staff' or currentUser.role.roleName == 'Admin')}">
+                                <i class="fas fa-cogs mr-2"></i>Management Panel
+                            </a>
+
+                            <a th:href="@{/admin}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                               th:if="${currentUser.role != null and currentUser.role.roleName == 'Admin'}">
+                                <i class="fas fa-shield-alt mr-2"></i>Admin Panel
+                            </a>
+
+                            <div class="border-t border-gray-100"></div>
+
+                            <a th:href="@{/profile}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-user-edit mr-2"></i>Profile
+                            </a>
+
+                            <a th:href="@{/booking/my-bookings}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                                <i class="fas fa-history mr-2"></i>Lịch sử đặt xe
+                            </a>
+
+                            <div class="border-t border-gray-100"></div>
+
+                            <a th:href="@{/logout}" class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>

@@ -83,6 +83,26 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    public Booking updateBookingDetails(String bookingId, Map<String, String> data) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    if (data.containsKey("pickupDateTime")) {
+                        booking.setPickupDateTime(LocalDateTime.parse(data.get("pickupDateTime")));
+                    }
+                    if (data.containsKey("returnDateTime")) {
+                        booking.setReturnDateTime(LocalDateTime.parse(data.get("returnDateTime")));
+                    }
+                    if (data.containsKey("totalAmount")) {
+                        booking.setTotalAmount(new BigDecimal(data.get("totalAmount")));
+                    }
+                    if (data.containsKey("status")) {
+                        booking.setStatus(Booking.BookingStatus.valueOf(data.get("status")));
+                    }
+                    return bookingRepository.save(booking);
+                })
+                .orElse(null);
+    }
+
     public void deleteBooking(String bookingId) {
         bookingRepository.deleteById(bookingId);
     }
