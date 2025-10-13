@@ -153,4 +153,70 @@ public class BookingService {
         }
         return analytics;
     }
+
+    // Owner Management Methods
+    public List<Booking> getBookingsByOwner(String ownerId) {
+        // For now, return all bookings - can be filtered later if owner field is added to Vehicle
+        return bookingRepository.findAll();
+    }
+
+    public Booking approveBooking(String bookingId, User approver) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    booking.setStatus(Booking.BookingStatus.Approved);
+                    booking.setHandledBy(approver);
+                    return bookingRepository.save(booking);
+                })
+                .orElse(null);
+    }
+
+    public Booking rejectBooking(String bookingId, String reason, User rejector) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    booking.setStatus(Booking.BookingStatus.Rejected);
+                    booking.setCancelReason(reason);
+                    booking.setHandledBy(rejector);
+                    return bookingRepository.save(booking);
+                })
+                .orElse(null);
+    }
+
+    public Booking completeBooking(String bookingId) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    booking.setStatus(Booking.BookingStatus.Completed);
+                    return bookingRepository.save(booking);
+                })
+                .orElse(null);
+    }
+
+    public Booking cancelBooking(String bookingId, String reason) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    booking.setStatus(Booking.BookingStatus.Cancelled);
+                    booking.setCancelReason(reason);
+                    return bookingRepository.save(booking);
+                })
+                .orElse(null);
+    }
+
+    public Map<String, Long> getBookingCountsByStatus() {
+        Map<String, Long> counts = new HashMap<>();
+        List<Booking> allBookings = getAllBookings();
+        
+        counts.put("pending", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending).count());
+        counts.put("approved", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Approved).count());
+        counts.put("ongoing", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Ongoing).count());
+        counts.put("completed", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
+        counts.put("rejected", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Rejected).count());
+        counts.put("cancelled", allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
+        
+        return counts;
+    }
 }
