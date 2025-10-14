@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <div th:replace="~{fragments/nav :: nav}"></div>
+        <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+            <div class="max-w-6xl mx-auto px-4">
+                <!-- Header -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">Chi Tiết Đơn Đặt Xe</h1>
+                            <p class="text-gray-600 mt-1">Mã đơn: <span class="font-semibold" th:text="${booking.bookingCode}">BK123</span></p>
+                        </div>
+                        <a th:href="@{/staff/dashboard}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Booking Information -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Thông Tin Đơn Đặt</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs text-gray-500">Mã Đơn</p>
+                            <p class="font-semibold text-gray-800" th:text="${booking.bookingCode}">BK123</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Trạng Thái</p>
+                            <span th:class="${'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
+                                (booking.status.name() == 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                booking.status.name() == 'Approved' ? 'bg-green-100 text-green-800' : 
+                                booking.status.name() == 'Ongoing' ? 'bg-blue-100 text-blue-800' : 
+                                'bg-gray-100 text-gray-800')}"
+                                th:text="${booking.status.name()}">Status</span>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Khách Hàng</p>
+                            <p class="font-semibold text-gray-800" th:text="${booking.user.username}">Customer</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Xe</p>
+                            <p class="text-gray-800" th:text="${booking.vehicle.vehicleModel}">Vehicle</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Thời Gian Nhận</p>
+                            <p class="text-gray-800" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">Date</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-500">Thời Gian Trả</p>
+                            <p class="text-gray-800" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">Date</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Flow V2 Actions -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-tasks mr-2"></i>Hành Động
+                    </h2>
+                    
+                    <!-- Payment Status -->
+                    <div class="mb-4 p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600">Trạng thái thanh toán:</p>
+                        <p class="font-semibold text-lg" th:text="${booking.paymentStatus}">Unpaid</p>
+                    </div>
+
+                    <!-- Action Buttons Based on Status -->
+                    <div class="space-y-3">
+                        
+                        <!-- 1. Confirm Payment Received (when Pending) -->
+                        <div th:if="${booking.status.name() == 'Pending' && booking.paymentStatus == 'Pending'}">
+                            <form th:action="@{/staff/booking/{id}/confirm-payment-received(id=${booking.bookingId})}" method="post" class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Ghi chú (tùy chọn):</label>
+                                <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ví dụ: Đã nhận chuyển khoản">
+                                <button type="submit" class="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                                    <i class="fas fa-check-circle mr-2"></i>Xác Nhận Đã Nhận Tiền
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 2. Confirm Pickup (when Approved) -->
+                        <div th:if="${booking.status.name() == 'Approved'}">
+                            <form th:action="@{/staff/booking/{id}/confirm-pickup(id=${booking.bookingId})}" method="post" onsubmit="return confirm('Xác nhận giao xe cho khách hàng?')">
+                                <button type="submit" class="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                                    <i class="fas fa-car mr-2"></i>Xác Nhận Giao Xe
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 3. Refund Payment (when Rejected) -->
+                        <div th:if="${booking.status.name() == 'Rejected' && booking.paymentStatus == 'Refunding'}">
+                            <form th:action="@{/staff/booking/{id}/refund-payment(id=${booking.bookingId})}" method="post" class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Ghi chú hoàn tiền:</label>
+                                <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ví dụ: Đã hoàn tiền qua chuyển khoản">
+                                <button type="submit" class="w-full bg-red-600 text-white px-4 py-3 rounded-lg hover:bg-red-700 transition-colors" onclick="return confirm('Xác nhận đã hoàn tiền cho khách hàng?')">
+                                    <i class="fas fa-undo mr-2"></i>Xác Nhận Đã Hoàn Tiền
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- 4. Transfer to Owner (when Completed and both confirmed) -->
+                        <div th:if="${booking.status.name() == 'Completed' && booking.paymentStatus == 'PendingTransferToOwner'}">
+                            <div class="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <p class="text-sm text-green-800">
+                                    <i class="fas fa-check-double mr-2"></i>
+                                    Cả khách hàng và chủ xe đã xác nhận trả xe
+                                </p>
+                            </div>
+                            <form th:action="@{/staff/booking/{id}/transfer-to-owner(id=${booking.bookingId})}" method="post" class="space-y-2">
+                                <label class="block text-sm font-medium text-gray-700">Ghi chú chuyển tiền:</label>
+                                <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ví dụ: Đã chuyển khoản cho chủ xe">
+                                <button type="submit" class="w-full bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors" onclick="return confirm('Xác nhận đã chuyển tiền cho chủ xe?')">
+                                    <i class="fas fa-money-bill-transfer mr-2"></i>Xác Nhận Đã Chuyển Tiền Cho Chủ Xe
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Status Info Messages -->
+                        <div th:if="${booking.status.name() == 'PendingOwnerApproval'}" class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-sm text-yellow-800">
+                                <i class="fas fa-clock mr-2"></i>
+                                Đang chờ chủ xe duyệt đơn
+                            </p>
+                        </div>
+
+                        <div th:if="${booking.status.name() == 'Ongoing'}" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p class="text-sm text-blue-800">
+                                <i class="fas fa-car-side mr-2"></i>
+                                Xe đang được thuê. Chờ khách hàng và chủ xe xác nhận trả xe.
+                            </p>
+                        </div>
+
+                        <div th:if="${booking.paymentStatus == 'PaidToOwner'}" class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p class="text-sm text-green-800">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Đã hoàn tất! Tiền đã được chuyển cho chủ xe.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Condition Logs -->
+                <div th:if="${conditionLogs != null && !conditionLogs.isEmpty()}" class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Lịch Sử Giao/Nhận Xe</h2>
+                    <div th:each="log : ${conditionLogs}" class="border-l-4 border-blue-500 pl-4 py-2 mb-4">
+                        <p class="font-semibold" th:text="${log.checkType}">Type</p>
+                        <p class="text-sm text-gray-600" th:text="${#temporals.format(log.checkTime, 'dd/MM/yyyy HH:mm')}">Time</p>
+                        <p class="text-sm">Số km: <span th:text="${log.odometer}">0</span> km</p>
+                        <p class="text-sm">Pin: <span th:text="${log.fuelLevel}">0%</span></p>
+                        <p class="text-sm">Tình trạng: <span th:text="${log.conditionStatus}">Good</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/chatbot :: chatbot}"></div>
+</body>
+</html>

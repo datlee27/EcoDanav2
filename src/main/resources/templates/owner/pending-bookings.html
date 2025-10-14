@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking chờ duyệt - EcoDana Owner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .badge-new { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Header -->
+<div th:replace="~{owner/owner-header :: header}"></div>
+
+<!-- Main Content -->
+<div class="flex">
+    <!-- Sidebar -->
+    <div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+    
+    <!-- Content Area -->
+    <main class="flex-1 p-8 ml-64">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Page Header -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                            <i class="fas fa-clock text-yellow-500"></i>
+                            Booking chờ duyệt
+                            <span th:if="${bookings.size() > 0}" 
+                                  class="bg-red-500 text-white text-sm px-3 py-1 rounded-full badge-new"
+                                  th:text="${bookings.size()}">0</span>
+                        </h1>
+                        <p class="text-gray-600 mt-2">Các đơn đặt xe đã thanh toán và đang chờ bạn duyệt</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Tổng số booking chờ duyệt</p>
+                        <p class="text-4xl font-bold text-yellow-500" th:text="${bookings.size()}">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Messages -->
+            <div th:if="${success}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle mr-3"></i>
+                    <p th:text="${success}"></p>
+                </div>
+            </div>
+            
+            <div th:if="${error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-circle mr-3"></i>
+                    <p th:text="${error}"></p>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${bookings.isEmpty()}" class="bg-white rounded-xl shadow-md p-12 text-center">
+                <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Không có booking nào chờ duyệt</h3>
+                <p class="text-gray-500">Khi có booking mới đã thanh toán, chúng sẽ hiển thị ở đây</p>
+            </div>
+
+            <!-- Bookings List -->
+            <div th:if="${!bookings.isEmpty()}" class="space-y-4">
+                <div th:each="booking : ${bookings}" 
+                     class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                    
+                    <!-- Booking Header -->
+                    <div class="bg-gradient-to-r from-yellow-50 to-orange-50 px-6 py-4 border-b">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-4">
+                                <span class="bg-yellow-500 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                                    <i class="fas fa-clock mr-2"></i>CHỜ DUYỆT
+                                </span>
+                                <div>
+                                    <p class="text-sm text-gray-600">Mã đặt xe</p>
+                                    <p class="text-xl font-bold text-gray-900" th:text="${booking.bookingCode}">BK123456</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-600">Đã thanh toán</p>
+                                <p class="text-2xl font-bold text-green-600" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.000.000 ₫</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Booking Content -->
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            
+                            <!-- Customer Info -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-user text-blue-500"></i>
+                                    Thông tin khách hàng
+                                </h4>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600 text-xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900" th:text="${booking.user.firstName + ' ' + booking.user.lastName}">Nguyễn Văn A</p>
+                                        <p class="text-sm text-gray-600" th:text="${booking.user.email}">email@example.com</p>
+                                        <p class="text-sm text-gray-600" th:text="${booking.user.phoneNumber}">0123456789</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Vehicle Info -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-car text-green-500"></i>
+                                    Thông tin xe
+                                </h4>
+                                <div class="flex items-center gap-3">
+                                    <img th:if="${booking.vehicle.mainImageUrl}" 
+                                         th:src="${booking.vehicle.mainImageUrl}" 
+                                         class="w-20 h-20 object-cover rounded-lg"
+                                         th:alt="${booking.vehicle.vehicleModel}">
+                                    <div th:unless="${booking.vehicle.mainImageUrl}" 
+                                         class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-car text-gray-400 text-2xl"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900" th:text="${booking.vehicle.vehicleModel}">VinFast VF8</p>
+                                        <p class="text-sm text-gray-600" th:text="${booking.vehicle.licensePlate}">29A-12345</p>
+                                        <p class="text-sm text-gray-600" th:text="${booking.vehicle.seats + ' chỗ'}">5 chỗ</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Rental Period -->
+                            <div class="space-y-3">
+                                <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                    <i class="fas fa-calendar text-purple-500"></i>
+                                    Thời gian thuê
+                                </h4>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-calendar-check text-green-500"></i>
+                                        <span class="text-gray-600">Nhận xe:</span>
+                                        <span class="font-semibold" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">15/02/2025 10:00</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-calendar-times text-red-500"></i>
+                                        <span class="text-gray-600">Trả xe:</span>
+                                        <span class="font-semibold" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">18/02/2025 10:00</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 text-sm">
+                                        <i class="fas fa-clock text-blue-500"></i>
+                                        <span class="text-gray-600">Loại thuê:</span>
+                                        <span class="font-semibold uppercase" th:text="${booking.rentalType}">DAILY</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="mt-6 pt-6 border-t flex items-center justify-between">
+                            <a th:href="@{'/owner/bookings/detail/' + ${booking.bookingId}}" 
+                               class="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
+                                <i class="fas fa-eye"></i>
+                                Xem chi tiết
+                            </a>
+                            
+                            <div class="flex gap-3">
+                                <!-- Reject Button -->
+                                <button onclick="showRejectModal(this)" 
+                                        th:attr="data-booking-id=${booking.bookingId}, data-booking-code=${booking.bookingCode}"
+                                        class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold flex items-center gap-2">
+                                    <i class="fas fa-times-circle"></i>
+                                    Từ chối
+                                </button>
+                                
+                                <!-- Approve Button -->
+                                <form th:action="@{'/owner/bookings/approve/' + ${booking.bookingId}}" 
+                                      method="post" 
+                                      onsubmit="return confirm('Bạn chắc chắn muốn duyệt đơn đặt xe này?')">
+                                    <button type="submit" 
+                                            class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold flex items-center gap-2">
+                                        <i class="fas fa-check-circle"></i>
+                                        Duyệt đơn
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-bold text-gray-900">Từ chối đơn đặt xe</h3>
+                <button onclick="closeRejectModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <form id="rejectForm" method="post">
+                <input type="hidden" id="rejectBookingId" name="bookingId">
+                
+                <div class="mb-4">
+                    <p class="text-gray-600 mb-2">Mã đặt xe: <span id="rejectBookingCode" class="font-bold"></span></p>
+                    <p class="text-sm text-red-600 mb-4">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        Hệ thống sẽ tự động hoàn tiền cho khách hàng
+                    </p>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        Lý do từ chối <span class="text-red-500">*</span>
+                    </label>
+                    <textarea name="rejectionReason" 
+                              required
+                              rows="4" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                              placeholder="Vui lòng nhập lý do từ chối..."></textarea>
+                </div>
+                
+                <div class="flex gap-3">
+                    <button type="button" 
+                            onclick="closeRejectModal()"
+                            class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
+                        Hủy
+                    </button>
+                    <button type="submit" 
+                            class="flex-1 px-4 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold">
+                        Xác nhận từ chối
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showRejectModal(button) {
+        const bookingId = button.getAttribute('data-booking-id');
+        const bookingCode = button.getAttribute('data-booking-code');
+        
+        document.getElementById('rejectBookingId').value = bookingId;
+        document.getElementById('rejectBookingCode').textContent = bookingCode;
+        document.getElementById('rejectForm').action = '/owner/bookings/reject/' + bookingId;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+    
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+        document.getElementById('rejectForm').reset();
+    }
+    
+    // Close modal when clicking outside
+    document.getElementById('rejectModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeRejectModal();
+        }
+    });
+    
+    // Auto refresh every 30 seconds to check for new bookings
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+</script>
+
+</body>
+</html>

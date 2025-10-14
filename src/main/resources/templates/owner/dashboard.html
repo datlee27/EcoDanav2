@@ -1110,8 +1110,67 @@
             })
             .catch((err) => alert(err.message || "Update failed"));
     }
+
+    // Payment Flow V2 - Reject Booking Modal
+    function showRejectModal(bookingId) {
+        document.getElementById('rejectBookingId').value = bookingId;
+        document.getElementById('rejectModal').classList.remove('hidden');
+    }
+
+    function closeRejectModal() {
+        document.getElementById('rejectModal').classList.add('hidden');
+        document.getElementById('rejectReason').value = '';
+    }
+
+    function submitReject() {
+        const bookingId = document.getElementById('rejectBookingId').value;
+        const reason = document.getElementById('rejectReason').value;
+        
+        if (!reason || reason.trim() === '') {
+            alert('Vui lòng nhập lý do từ chối!');
+            return;
+        }
+
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/owner/booking/${bookingId}/reject`;
+        
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'rejectReason';
+        input.value = reason;
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
     /*]]>*/
 </script>
+
+<!-- Reject Booking Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Từ Chối Đơn Đặt Xe</h3>
+        <input type="hidden" id="rejectBookingId">
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Lý do từ chối:</label>
+            <textarea id="rejectReason" 
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500" 
+                      rows="4" 
+                      placeholder="Ví dụ: Xe đang bảo trì, không thể cho thuê trong thời gian này"></textarea>
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="closeRejectModal()" 
+                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Hủy
+            </button>
+            <button onclick="submitReject()" 
+                    class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Xác Nhận Từ Chối
+            </button>
+        </div>
+    </div>
+</div>
 
 <div th:replace="~{fragments/footer :: footer}"></div>
 </body>

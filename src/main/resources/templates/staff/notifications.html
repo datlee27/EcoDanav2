@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo - Staff Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .notification-item {
+            transition: all 0.3s ease;
+        }
+        .notification-item:hover {
+            transform: translateX(5px);
+        }
+        .notification-unread {
+            background: linear-gradient(to right, #eff6ff, #dbeafe);
+            border-left: 4px solid #3b82f6;
+        }
+        .notification-read {
+            background: #f9fafb;
+            opacity: 0.8;
+        }
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<nav class="bg-white shadow-md fixed w-full top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/staff/dashboard" class="flex items-center">
+                    <i class="fas fa-leaf text-green-600 text-2xl mr-2"></i>
+                    <span class="text-xl font-bold text-gray-900">EcoDana Staff</span>
+                </a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/staff/dashboard" class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/staff/notifications" class="text-blue-600 font-semibold">
+                    <i class="fas fa-bell mr-2"></i>Thông báo
+                    <span th:if="${unreadCount > 0}" 
+                          class="ml-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full badge-pulse"
+                          th:text="${unreadCount}">0</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-user-circle text-gray-600 text-2xl"></i>
+                    <span class="text-gray-700" th:text="${currentUser.firstName + ' ' + currentUser.lastName}">Staff</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fas fa-bell text-blue-500"></i>
+                        Thông báo
+                    </h1>
+                    <p class="text-gray-600 mt-2">Quản lý thông báo và cập nhật hệ thống</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Chưa đọc</p>
+                    <p class="text-4xl font-bold text-blue-500" th:text="${unreadCount}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+            <div class="flex flex-wrap gap-3">
+                <button onclick="markAllAsRead()" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
+                    <i class="fas fa-check-double"></i>
+                    Đánh dấu tất cả đã đọc
+                </button>
+                <button onclick="deleteReadNotifications()" 
+                        class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2">
+                    <i class="fas fa-trash"></i>
+                    Xóa thông báo đã đọc
+                </button>
+                <button onclick="location.reload()" 
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i>
+                    Làm mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${notifications.isEmpty()}" class="bg-white rounded-xl shadow-md p-12 text-center">
+            <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Không có thông báo</h3>
+            <p class="text-gray-500">Bạn chưa có thông báo nào</p>
+        </div>
+
+        <!-- Notifications List -->
+        <div th:if="${!notifications.isEmpty()}" class="space-y-3">
+            <div th:each="notification : ${notifications}" 
+                 th:classappend="${notification.isRead ? 'notification-read' : 'notification-unread'}"
+                 class="notification-item bg-white rounded-xl shadow-md p-6 relative">
+                
+                <!-- Unread Badge -->
+                <div th:if="${!notification.isRead}" 
+                     class="absolute top-4 right-4 w-3 h-3 bg-blue-500 rounded-full"></div>
+                
+                <!-- Content -->
+                <div class="flex items-start gap-4">
+                    <!-- Icon -->
+                    <div class="flex-shrink-0">
+                        <div th:if="${notification.notificationType == 'REFUND'}" 
+                             class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-money-bill-wave text-red-600 text-xl"></i>
+                        </div>
+                        <div th:if="${notification.notificationType == 'BOOKING'}" 
+                             class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-calendar-check text-green-600 text-xl"></i>
+                        </div>
+                        <div th:if="${notification.notificationType == 'PAYMENT'}" 
+                             class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-credit-card text-blue-600 text-xl"></i>
+                        </div>
+                        <div th:if="${notification.notificationType == null || notification.notificationType == 'GENERAL'}" 
+                             class="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-info-circle text-gray-600 text-xl"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- Message -->
+                    <div class="flex-1">
+                        <p class="text-gray-900 font-medium mb-2" th:text="${notification.message}">
+                            Thông báo mẫu
+                        </p>
+                        <div class="flex items-center gap-4 text-sm text-gray-500">
+                            <span>
+                                <i class="fas fa-clock mr-1"></i>
+                                <span th:text="${#temporals.format(notification.createdDate, 'dd/MM/yyyy HH:mm')}">14/10/2025 10:30</span>
+                            </span>
+                            <span th:if="${notification.relatedId != null}">
+                                <i class="fas fa-link mr-1"></i>
+                                <span th:text="${notification.relatedId}">REF123</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="flex-shrink-0 flex gap-2">
+                        <!-- Mark as read -->
+                        <button th:if="${!notification.isRead}" 
+                                th:data-notification-id="${notification.notificationId}"
+                                onclick="markAsRead(this.dataset.notificationId)"
+                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Đánh dấu đã đọc">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        
+                        <!-- Delete -->
+                        <button th:data-notification-id="${notification.notificationId}"
+                                onclick="deleteNotification(this.dataset.notificationId)"
+                                class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Toast Container -->
+<div id="toast-container" class="fixed top-20 right-4 z-50 space-y-2"></div>
+
+<script>
+    // Show toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = `px-6 py-4 rounded-lg shadow-lg text-white transform transition-all duration-300 ${
+            type === 'success' ? 'bg-green-500' : 
+            type === 'error' ? 'bg-red-500' : 
+            'bg-blue-500'
+        }`;
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        document.getElementById('toast-container').appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+    
+    // Mark as read
+    function markAsRead(notificationId) {
+        fetch(`/staff/notifications/${notificationId}/mark-read`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Đã đánh dấu đã đọc');
+                setTimeout(() => location.reload(), 500);
+            }
+        })
+        .catch(error => {
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+    
+    // Mark all as read
+    function markAllAsRead() {
+        if (!confirm('Đánh dấu tất cả thông báo là đã đọc?')) return;
+        
+        fetch('/staff/notifications/mark-all-read', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 500);
+            }
+        })
+        .catch(error => {
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+    
+    // Delete notification
+    function deleteNotification(notificationId) {
+        if (!confirm('Xóa thông báo này?')) return;
+        
+        fetch(`/staff/notifications/${notificationId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Đã xóa thông báo');
+                setTimeout(() => location.reload(), 500);
+            }
+        })
+        .catch(error => {
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+    
+    // Delete read notifications
+    function deleteReadNotifications() {
+        if (!confirm('Xóa tất cả thông báo đã đọc?')) return;
+        
+        fetch('/staff/notifications/delete-read', {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message);
+                setTimeout(() => location.reload(), 500);
+            }
+        })
+        .catch(error => {
+            showToast('Có lỗi xảy ra', 'error');
+        });
+    }
+    
+    // Auto refresh every 30 seconds
+    setInterval(() => {
+        fetch('/staff/notifications/unread-count')
+            .then(response => response.json())
+            .then(data => {
+                const currentCount = parseInt(document.querySelector('.badge-pulse')?.textContent || 0);
+                if (data.count > currentCount) {
+                    showToast('Có thông báo mới!', 'info');
+                    setTimeout(() => location.reload(), 1000);
+                }
+            });
+    }, 30000);
+</script>
+
+</body>
+</html>

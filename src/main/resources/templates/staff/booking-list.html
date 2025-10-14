@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <div th:replace="~{fragments/nav :: nav}"></div>
+        <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+            <div class="max-w-7xl mx-auto px-4">
+                <!-- Header -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800" th:text="${pageTitle}">Danh Sách Đơn Đặt Xe</h1>
+                            <p class="text-gray-600 mt-1">Quản lý và xử lý đơn đặt xe</p>
+                        </div>
+                        <a th:href="@{/staff/dashboard}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>Quay lại Dashboard
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                <div th:if="${success}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg" role="alert">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-3"></i>
+                        <p th:text="${success}"></p>
+                    </div>
+                </div>
+                <div th:if="${error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg" role="alert">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle mr-3"></i>
+                        <p th:text="${error}"></p>
+                    </div>
+                </div>
+
+                <!-- Bookings Table -->
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã Đơn</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách Hàng</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Xe</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thời Gian Thuê</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng Tiền</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng Thái</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr th:if="${bookings == null || bookings.isEmpty()}">
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                                        <p>Không có đơn đặt xe nào</p>
+                                    </td>
+                                </tr>
+                                <tr th:each="booking : ${bookings}" class="hover:bg-gray-50 transition-colors">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${booking.bookingCode}">BK123</div>
+                                        <div class="text-xs text-gray-500" th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">01/01/2024</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div>
+                                                <div class="text-sm font-medium text-gray-900" th:text="${booking.user.firstName != null ? booking.user.firstName + ' ' + booking.user.lastName : booking.user.username}">Customer Name</div>
+                                                <div class="text-xs text-gray-500" th:text="${booking.user.email}">email@example.com</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${booking.vehicle.vehicleModel}">VF8</div>
+                                        <div class="text-xs text-gray-500" th:text="${booking.vehicle.licensePlate}">29A-12345</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900">
+                                            <div><i class="fas fa-calendar-alt text-green-500 mr-1"></i><span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2024</span></div>
+                                            <div><i class="fas fa-calendar-check text-red-500 mr-1"></i><span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">05/01/2024</span></div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-bold text-green-600" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,000,000 ₫</div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span th:class="${'px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ' + 
+                                            (booking.status.name() == 'Pending' ? 'bg-yellow-100 text-yellow-800' : 
+                                            booking.status.name() == 'Approved' ? 'bg-green-100 text-green-800' : 
+                                            booking.status.name() == 'Ongoing' ? 'bg-blue-100 text-blue-800' : 
+                                            booking.status.name() == 'Completed' ? 'bg-gray-100 text-gray-800' : 
+                                            booking.status.name() == 'Rejected' ? 'bg-red-100 text-red-800' : 
+                                            'bg-gray-100 text-gray-800')}"
+                                            th:text="${booking.status.name() == 'Pending' ? 'Chờ Duyệt' : 
+                                                booking.status.name() == 'Approved' ? 'Đã Duyệt' : 
+                                                booking.status.name() == 'Ongoing' ? 'Đang Diễn Ra' : 
+                                                booking.status.name() == 'Completed' ? 'Hoàn Thành' : 
+                                                booking.status.name() == 'Rejected' ? 'Từ Chối' : 
+                                                booking.status.name()}">
+                                            Status
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <!-- Pending Bookings Actions -->
+                                        <div th:if="${bookingType == 'pending'}" class="flex space-x-2">
+                                            <button onclick="showApproveModal(this)" 
+                                                th:attr="data-booking-id=${booking.bookingId}, data-booking-code=${booking.bookingCode}"
+                                                class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition-colors">
+                                                <i class="fas fa-check mr-1"></i>Duyệt
+                                            </button>
+                                            <button onclick="showRejectModal(this)" 
+                                                th:attr="data-booking-id=${booking.bookingId}, data-booking-code=${booking.bookingCode}"
+                                                class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition-colors">
+                                                <i class="fas fa-times mr-1"></i>Từ Chối
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Approved Bookings Actions -->
+                                        <div th:if="${bookingType == 'approved'}">
+                                            <a th:href="@{/staff/bookings/{id}/pickup(id=${booking.bookingId})}" 
+                                                class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition-colors inline-block">
+                                                <i class="fas fa-handshake mr-1"></i>Giao Xe
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Ongoing Bookings Actions -->
+                                        <div th:if="${bookingType == 'ongoing'}">
+                                            <a th:href="@{/staff/bookings/{id}/return(id=${booking.bookingId})}" 
+                                                class="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition-colors inline-block">
+                                                <i class="fas fa-undo mr-1"></i>Nhận Trả Xe
+                                            </a>
+                                        </div>
+                                        
+                                        <a th:href="@{/staff/bookings/{id}(id=${booking.bookingId})}" 
+                                            class="text-blue-600 hover:text-blue-800 ml-2">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approve Modal -->
+        <div id="approveModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Xác Nhận Duyệt Đơn</h3>
+                    <p class="text-sm text-gray-500 mb-4">Bạn có chắc chắn muốn duyệt đơn đặt xe <span id="approveBookingCode" class="font-bold"></span>?</p>
+                    <form id="approveForm" method="post">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Ghi Chú (Tùy Chọn)</label>
+                            <textarea name="note" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Nhập ghi chú..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeApproveModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Hủy</button>
+                            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600">Xác Nhận Duyệt</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reject Modal -->
+        <div id="rejectModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">Xác Nhận Từ Chối Đơn</h3>
+                    <p class="text-sm text-gray-500 mb-4">Bạn có chắc chắn muốn từ chối đơn đặt xe <span id="rejectBookingCode" class="font-bold"></span>?</p>
+                    <form id="rejectForm" method="post">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Lý Do Từ Chối <span class="text-red-500">*</span></label>
+                            <textarea name="rejectionReason" rows="3" required class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500" placeholder="Nhập lý do từ chối..."></textarea>
+                        </div>
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" onclick="closeRejectModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">Hủy</button>
+                            <button type="submit" class="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600">Xác Nhận Từ Chối</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            function showApproveModal(button) {
+                const bookingId = button.getAttribute('data-booking-id');
+                const bookingCode = button.getAttribute('data-booking-code');
+                document.getElementById('approveBookingCode').textContent = bookingCode;
+                document.getElementById('approveForm').action = '/staff/bookings/' + bookingId + '/approve';
+                document.getElementById('approveModal').classList.remove('hidden');
+            }
+
+            function closeApproveModal() {
+                document.getElementById('approveModal').classList.add('hidden');
+            }
+
+            function showRejectModal(button) {
+                const bookingId = button.getAttribute('data-booking-id');
+                const bookingCode = button.getAttribute('data-booking-code');
+                document.getElementById('rejectBookingCode').textContent = bookingCode;
+                document.getElementById('rejectForm').action = '/staff/bookings/' + bookingId + '/reject';
+                document.getElementById('rejectModal').classList.remove('hidden');
+            }
+
+            function closeRejectModal() {
+                document.getElementById('rejectModal').classList.add('hidden');
+            }
+
+            // Close modals when clicking outside
+            window.onclick = function(event) {
+                const approveModal = document.getElementById('approveModal');
+                const rejectModal = document.getElementById('rejectModal');
+                if (event.target == approveModal) {
+                    closeApproveModal();
+                }
+                if (event.target == rejectModal) {
+                    closeRejectModal();
+                }
+            }
+        </script>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/chatbot :: chatbot}"></div>
+</body>
+</html>

@@ -32,4 +32,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
      */
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.userId = :userId AND n.isRead = false")
     void markAllAsReadByUserId(@Param("userId") String userId);
+    
+    /**
+     * Find read notifications by user ID
+     */
+    List<Notification> findByUserIdAndIsReadTrueOrderByCreatedDateDesc(String userId);
 }

@@ -1,13 +1,14 @@
 package com.ecodana.evodanavn1.controller.owner;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.TransmissionType;
+import com.ecodana.evodanavn1.model.BookingApproval;
+import com.ecodana.evodanavn1.model.Payment;
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.VehicleCategories;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,11 +27,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.BookingService;
+import com.ecodana.evodanavn1.service.PaymentService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
+import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
-
+import com.ecodana.evodanavn1.repository.BookingApprovalRepository;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -51,6 +54,15 @@ public class OwnerController {
     private TransmissionTypeRepository transmissionTypeRepository;
     @Autowired
     private VehicleCategoriesRepository vehicleCategoriesRepository;
+    
+    @Autowired
+    private PaymentService paymentService;
+    
+    @Autowired
+    private BookingApprovalRepository bookingApprovalRepository;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -333,6 +345,245 @@ public class OwnerController {
             }).orElse(ResponseEntity.status(404).body(Map.of("status", "error", "message", "Vehicle not found")));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to get vehicle: " + e.getMessage()));
+        }
+    }
+
+    // ============================================
+    // Payment Flow V2 Endpoints
+    // ============================================
+
+    /**
+     * Approve booking (after staff confirmed payment received)
+     */
+    @PostMapping("/booking/{bookingId}/approve")
+    public String approveBooking(@PathVariable String bookingId,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập!");
+            return "redirect:/login";
+        }
+
+        try {
+            Optional<Booking> bookingOpt = bookingService.findById(bookingId);
+            if (!bookingOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+                return "redirect:/owner/dashboard";
+            }
+
+            Booking booking = bookingOpt.get();
+
+            // Check if payment is completed
+            if (!"Paid".equals(booking.getPaymentStatus())) {
+                redirectAttributes.addFlashAttribute("error", "Khách hàng chưa thanh toán!");
+                return "redirect:/owner/dashboard";
+            }
+
+            // Create approval record
+            BookingApproval approval = new BookingApproval();
+            approval.setApprovalId(java.util.UUID.randomUUID().toString());
+            approval.setBooking(booking);
+            approval.setStaff(currentUser); // Owner ID
+            approval.setApprovalStatus("Approved");
+            approval.setApprovalDate(LocalDateTime.now());
+            approval.setNote("Chủ xe đã duyệt đơn");
+            bookingApprovalRepository.save(approval);
+
+            // Update booking status
+            booking.setStatus(Booking.BookingStatus.Approved);
+            booking.setPaymentStatus("Approved");
+            bookingService.updateBooking(booking);
+
+            // Send notifications
+            try {
+                // Notify customer
+                String customerMessage = String.format(
+                    "✅ Đơn đặt xe #%s đã được duyệt! Xe: %s. Vui lòng đến nhận xe đúng giờ.",
+                    booking.getBookingCode(),
+                    booking.getVehicle().getVehicleModel()
+                );
+                notificationService.createNotification(
+                    booking.getUser().getId(),
+                    customerMessage,
+                    bookingId,
+                    "BOOKING_APPROVED"
+                );
+
+                // Notify staff
+                String staffMessage = String.format(
+                    "📋 Đơn #%s đã được chủ xe duyệt. Vui lòng chuẩn bị giao xe. Xe: %s",
+                    booking.getBookingCode(),
+                    booking.getVehicle().getVehicleModel()
+                );
+                notificationService.createNotificationForAllStaff(
+                    staffMessage,
+                    bookingId,
+                    "BOOKING_APPROVED_FOR_STAFF"
+                );
+            } catch (Exception notifError) {
+                System.out.println("Warning: Failed to send notification: " + notifError.getMessage());
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Đã duyệt đơn đặt xe thành công!");
+            return "redirect:/owner/dashboard";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/owner/dashboard";
+        }
+    }
+
+    /**
+     * Reject booking (staff will refund to customer)
+     */
+    @PostMapping("/booking/{bookingId}/reject")
+    public String rejectBooking(@PathVariable String bookingId,
+                               @RequestParam String rejectReason,
+                               HttpSession session,
+                               RedirectAttributes redirectAttributes) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập!");
+            return "redirect:/login";
+        }
+
+        try {
+            Optional<Booking> bookingOpt = bookingService.findById(bookingId);
+            if (!bookingOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+                return "redirect:/owner/dashboard";
+            }
+
+            Booking booking = bookingOpt.get();
+
+            // Create rejection record
+            BookingApproval approval = new BookingApproval();
+            approval.setApprovalId(java.util.UUID.randomUUID().toString());
+            approval.setBooking(booking);
+            approval.setStaff(currentUser); // Owner ID
+            approval.setApprovalStatus("Rejected");
+            approval.setApprovalDate(LocalDateTime.now());
+            approval.setRejectionReason(rejectReason);
+            bookingApprovalRepository.save(approval);
+
+            // Update booking status
+            booking.setStatus(Booking.BookingStatus.Rejected);
+            booking.setCancelReason(rejectReason);
+            booking.setPaymentStatus("Refunding");
+            bookingService.updateBooking(booking);
+
+            // Send notifications
+            try {
+                // Notify customer
+                String customerMessage = String.format(
+                    "❌ Đơn đặt xe #%s đã bị từ chối. Lý do: %s. Tiền sẽ được hoàn lại sớm.",
+                    booking.getBookingCode(),
+                    rejectReason
+                );
+                notificationService.createNotification(
+                    booking.getUser().getId(),
+                    customerMessage,
+                    bookingId,
+                    "BOOKING_REJECTED"
+                );
+
+                // Notify staff to refund
+                String staffMessage = String.format(
+                    "💰 Đơn #%s bị từ chối. Vui lòng hoàn tiền cho khách hàng. Lý do: %s",
+                    booking.getBookingCode(),
+                    rejectReason
+                );
+                notificationService.createNotificationForAllStaff(
+                    staffMessage,
+                    bookingId,
+                    "BOOKING_REJECTED_REFUND_NEEDED"
+                );
+            } catch (Exception notifError) {
+                System.out.println("Warning: Failed to send notification: " + notifError.getMessage());
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Đã từ chối đơn đặt xe. Staff sẽ hoàn tiền cho khách hàng.");
+            return "redirect:/owner/dashboard";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/owner/dashboard";
+        }
+    }
+
+    /**
+     * Confirm vehicle return (owner side)
+     */
+    @PostMapping("/booking/{bookingId}/confirm-return")
+    public String confirmReturn(@PathVariable String bookingId,
+                               @RequestParam(required = false) String notes,
+                               HttpSession session,
+                               RedirectAttributes redirectAttributes) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập!");
+            return "redirect:/login";
+        }
+
+        try {
+            Optional<Booking> bookingOpt = bookingService.findById(bookingId);
+            if (!bookingOpt.isPresent()) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+                return "redirect:/owner/dashboard";
+            }
+
+            Booking booking = bookingOpt.get();
+
+            // Check if booking is ongoing
+            if (booking.getStatus() != Booking.BookingStatus.Ongoing) {
+                redirectAttributes.addFlashAttribute("error", "Xe chưa được giao!");
+                return "redirect:/owner/dashboard";
+            }
+
+            // Update to completed
+            booking.setStatus(Booking.BookingStatus.Completed);
+            booking.setPaymentStatus("PendingTransferToOwner");
+            bookingService.updateBooking(booking);
+
+            // Send notifications
+            try {
+                // Notify customer
+                String customerMessage = String.format(
+                    "🎉 Chuyến đi #%s đã hoàn thành! Cảm ơn bạn đã sử dụng dịch vụ.",
+                    booking.getBookingCode()
+                );
+                notificationService.createNotification(
+                    booking.getUser().getId(),
+                    customerMessage,
+                    bookingId,
+                    "BOOKING_COMPLETED"
+                );
+
+                // Notify staff to transfer money
+                String staffMessage = String.format(
+                    "💸 Đơn #%s đã hoàn thành. Vui lòng chuyển tiền cho chủ xe. Xe: %s",
+                    booking.getBookingCode(),
+                    booking.getVehicle().getVehicleModel()
+                );
+                notificationService.createNotificationForAllStaff(
+                    staffMessage,
+                    bookingId,
+                    "TRANSFER_TO_OWNER_NEEDED"
+                );
+            } catch (Exception notifError) {
+                System.out.println("Warning: Failed to send notification: " + notifError.getMessage());
+            }
+
+            redirectAttributes.addFlashAttribute("success", "Đã xác nhận nhận xe! Chờ staff chuyển tiền.");
+            return "redirect:/owner/dashboard";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/owner/dashboard";
         }
     }
 }

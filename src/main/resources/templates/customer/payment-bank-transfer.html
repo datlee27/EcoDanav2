@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}">
+    <title>Thông tin chuyển khoản - EcoDana</title>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Pending Message -->
+        <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex items-center">
+                <i class="fas fa-clock text-yellow-500 text-2xl mr-3"></i>
+                <div>
+                    <h3 class="text-lg font-bold text-yellow-800">Đang chờ thanh toán</h3>
+                    <p class="text-sm text-yellow-700">Vui lòng chuyển khoản theo thông tin bên dưới. Sau khi chuyển khoản, đơn hàng sẽ được xác nhận trong vòng 5-10 phút.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            <!-- Bank Transfer Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-university text-green-500 mr-2"></i>
+                    Thông tin chuyển khoản
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- Bank Name -->
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Ngân hàng</p>
+                        <p class="font-bold text-gray-900">Vietcombank - Chi nhánh Đà Nẵng</p>
+                    </div>
+                    
+                    <!-- Account Number -->
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Số tài khoản</p>
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-gray-900 text-lg" id="accountNumber">1234567890</p>
+                            <button onclick="copyToClipboard('accountNumber')" 
+                                    class="text-green-600 hover:text-green-700">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Account Name -->
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Chủ tài khoản</p>
+                        <p class="font-bold text-gray-900">CÔNG TY ECODANA</p>
+                    </div>
+                    
+                    <!-- Amount -->
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Số tiền</p>
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-green-600 text-2xl" id="amount" 
+                               th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">960.401 ₫</p>
+                            <button onclick="copyToClipboard('amount')" 
+                                    class="text-green-600 hover:text-green-700">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Transfer Content -->
+                    <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-1">Nội dung chuyển khoản</p>
+                        <div class="flex items-center justify-between">
+                            <p class="font-bold text-gray-900" id="transferContent" th:text="${booking.bookingCode}">BK1234567890</p>
+                            <button onclick="copyToClipboard('transferContent')" 
+                                    class="text-yellow-600 hover:text-yellow-700">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <p class="text-xs text-yellow-700 mt-2">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Vui lòng nhập chính xác nội dung để hệ thống tự động xác nhận
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- QR Code -->
+                <div class="mt-6 p-4 bg-gray-50 rounded-lg text-center">
+                    <p class="text-sm text-gray-600 mb-3">Quét mã QR để chuyển khoản nhanh</p>
+                    <div class="inline-block p-4 bg-white rounded-lg shadow">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=VietQR" 
+                             alt="QR Code" class="w-48 h-48 mx-auto">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Booking Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-file-invoice text-green-500 mr-2"></i>
+                    Thông tin đơn hàng
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- Booking Code -->
+                    <div class="flex justify-between items-center pb-3 border-b">
+                        <span class="text-gray-600">Mã đơn hàng</span>
+                        <span class="font-bold" th:text="${booking.bookingCode}">BK1234567890</span>
+                    </div>
+                    
+                    <!-- Vehicle -->
+                    <div class="flex justify-between items-center pb-3 border-b">
+                        <span class="text-gray-600">Xe</span>
+                        <span class="font-bold" th:text="${vehicle.vehicleModel}">VinFast VF3</span>
+                    </div>
+                    
+                    <!-- Pickup Date -->
+                    <div class="flex justify-between items-center pb-3 border-b">
+                        <span class="text-gray-600">Ngày nhận xe</span>
+                        <span class="font-semibold" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">22/11/2025 21:00</span>
+                    </div>
+                    
+                    <!-- Return Date -->
+                    <div class="flex justify-between items-center pb-3 border-b">
+                        <span class="text-gray-600">Ngày trả xe</span>
+                        <span class="font-semibold" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">25/11/2025 20:00</span>
+                    </div>
+                    
+                    <!-- Total Amount -->
+                    <div class="flex justify-between items-center pt-3">
+                        <span class="text-lg font-bold text-gray-900">Tổng tiền</span>
+                        <span class="text-2xl font-bold text-green-500" 
+                              th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">960.401 ₫</span>
+                    </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <h3 class="font-bold text-blue-800 mb-2">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Hướng dẫn
+                    </h3>
+                    <ul class="text-sm text-blue-700 space-y-1">
+                        <li>1. Chuyển khoản đúng số tiền và nội dung</li>
+                        <li>2. Hệ thống sẽ tự động xác nhận trong vòng 5-10 phút</li>
+                        <li>3. Bạn sẽ nhận được email xác nhận sau khi thanh toán thành công</li>
+                        <li>4. Liên hệ hotline nếu cần hỗ trợ: 1900 xxxx</li>
+                    </ul>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="mt-6 space-y-3">
+                    <a th:href="@{'/booking/confirmation/' + ${booking.bookingId}}" 
+                       class="block w-full text-center bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all">
+                        <i class="fas fa-check mr-2"></i>
+                        Đã chuyển khoản
+                    </a>
+                    
+                    <a th:href="@{'/payment/select-method/' + ${booking.bookingId}}" 
+                       class="block w-full text-center border-2 border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition-all">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        Chọn phương thức khác
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- JavaScript -->
+<script>
+    function copyToClipboard(elementId) {
+        const element = document.getElementById(elementId);
+        const text = element.textContent.trim();
+        
+        navigator.clipboard.writeText(text).then(() => {
+            // Show success message
+            const originalHTML = element.innerHTML;
+            element.innerHTML = '<i class="fas fa-check text-green-500"></i> Đã sao chép';
+            
+            setTimeout(() => {
+                element.innerHTML = originalHTML;
+            }, 2000);
+        }).catch(err => {
+            alert('Không thể sao chép. Vui lòng sao chép thủ công.');
+        });
+    }
+</script>
+
+</body>
+</html>

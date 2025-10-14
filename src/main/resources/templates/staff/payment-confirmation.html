@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận thanh toán - Staff Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .badge-new { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<nav class="bg-white shadow-md fixed w-full top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/staff/dashboard" class="flex items-center">
+                    <i class="fas fa-leaf text-green-600 text-2xl mr-2"></i>
+                    <span class="text-xl font-bold text-gray-900">EcoDana Staff</span>
+                </a>
+            </div>
+            <div class="flex items-center gap-4">
+                <a href="/staff/dashboard" class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-home mr-2"></i>Dashboard
+                </a>
+                <a href="/staff/payment-confirmation" class="text-blue-600 font-semibold">
+                    <i class="fas fa-money-check-alt mr-2"></i>Xác nhận thanh toán
+                </a>
+                <a href="/staff/notifications" class="text-gray-600 hover:text-gray-900">
+                    <i class="fas fa-bell mr-2"></i>Thông báo
+                </a>
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-user-circle text-gray-600 text-2xl"></i>
+                    <span class="text-gray-700" th:text="${currentUser.firstName + ' ' + currentUser.lastName}">Staff</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                        <i class="fas fa-money-check-alt text-green-500"></i>
+                        Xác nhận thanh toán
+                        <span th:if="${bookings.size() > 0}" 
+                              class="bg-red-500 text-white text-sm px-3 py-1 rounded-full badge-new"
+                              th:text="${bookings.size()}">0</span>
+                    </h1>
+                    <p class="text-gray-600 mt-2">Xác nhận các đơn đặt xe đã thanh toán thành công</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm text-gray-500">Chờ xác nhận</p>
+                    <p class="text-4xl font-bold text-green-500" th:text="${bookings.size()}">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${success}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+            <div class="flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                <p th:text="${success}"></p>
+            </div>
+        </div>
+        
+        <div th:if="${error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+            <div class="flex items-center">
+                <i class="fas fa-exclamation-circle mr-3"></i>
+                <p th:text="${error}"></p>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div th:if="${bookings.isEmpty()}" class="bg-white rounded-xl shadow-md p-12 text-center">
+            <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Không có đơn nào chờ xác nhận</h3>
+            <p class="text-gray-500">Khi có đơn đặt xe mới thanh toán, chúng sẽ hiển thị ở đây</p>
+        </div>
+
+        <!-- Bookings List -->
+        <div th:if="${!bookings.isEmpty()}" class="space-y-4">
+            <div th:each="booking : ${bookings}" 
+                 class="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow overflow-hidden">
+                
+                <!-- Booking Header -->
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 px-6 py-4 border-b">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <span class="bg-green-500 text-white px-4 py-2 rounded-lg font-bold text-lg">
+                                <i class="fas fa-money-check-alt mr-2"></i>ĐÃ THANH TOÁN
+                            </span>
+                            <div>
+                                <p class="text-sm text-gray-600">Mã đặt xe</p>
+                                <p class="text-xl font-bold text-gray-900" th:text="${booking.bookingCode}">BK123456</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">Số tiền đã nhận</p>
+                            <p class="text-2xl font-bold text-green-600" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.000.000 ₫</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Content -->
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        
+                        <!-- Customer Info -->
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-user text-blue-500"></i>
+                                Thông tin khách hàng
+                            </h4>
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-blue-600 text-xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900" th:text="${booking.user.firstName + ' ' + booking.user.lastName}">Nguyễn Văn A</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.user.email}">email@example.com</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.user.phoneNumber}">0123456789</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Info -->
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-car text-green-500"></i>
+                                Thông tin xe
+                            </h4>
+                            <div class="flex items-center gap-3">
+                                <img th:if="${booking.vehicle.mainImageUrl}" 
+                                     th:src="${booking.vehicle.mainImageUrl}" 
+                                     class="w-20 h-20 object-cover rounded-lg"
+                                     th:alt="${booking.vehicle.vehicleModel}">
+                                <div th:unless="${booking.vehicle.mainImageUrl}" 
+                                     class="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-car text-gray-400 text-2xl"></i>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-gray-900" th:text="${booking.vehicle.vehicleModel}">VinFast VF8</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.vehicle.licensePlate}">29A-12345</p>
+                                    <p class="text-sm text-gray-600" th:text="${booking.vehicle.seats + ' chỗ'}">5 chỗ</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rental Period -->
+                        <div class="space-y-3">
+                            <h4 class="font-semibold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-calendar text-purple-500"></i>
+                                Thời gian thuê
+                            </h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="fas fa-calendar-check text-green-500"></i>
+                                    <span class="text-gray-600">Nhận xe:</span>
+                                    <span class="font-semibold" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">15/02/2025 10:00</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="fas fa-calendar-times text-red-500"></i>
+                                    <span class="text-gray-600">Trả xe:</span>
+                                    <span class="font-semibold" th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">18/02/2025 10:00</span>
+                                </div>
+                                <div class="flex items-center gap-2 text-sm">
+                                    <i class="fas fa-credit-card text-blue-500"></i>
+                                    <span class="text-gray-600">Phương thức:</span>
+                                    <span class="font-semibold" th:text="${booking.expectedPaymentMethod}">VNPay</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-6 pt-6 border-t flex items-center justify-between">
+                        <a th:href="@{'/staff/payment-confirmation/detail/' + ${booking.bookingId}}" 
+                           class="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
+                            <i class="fas fa-eye"></i>
+                            Xem chi tiết
+                        </a>
+                        
+                        <div class="flex gap-3">
+                            <!-- Confirm Payment Button -->
+                            <form th:action="@{'/staff/payment-confirmation/confirm/' + ${booking.bookingId}}" 
+                                  method="post" 
+                                  onsubmit="return confirm('Xác nhận đã nhận tiền cho đơn này?\n\nĐơn sẽ được gửi đến Owner để duyệt.')">
+                                <button type="submit" 
+                                        class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold flex items-center gap-2">
+                                    <i class="fas fa-check-circle"></i>
+                                    Xác nhận đã nhận tiền
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+</body>
+</html>

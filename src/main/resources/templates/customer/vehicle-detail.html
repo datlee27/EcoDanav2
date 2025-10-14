@@ -709,80 +709,101 @@
 <!-- JavaScript -->
 <script>
     let map, marker, geocoder, autocomplete;
-
-    // Dynamically load Google Maps API
-    (function() {
-        var script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap&language=vi`;
-        script.async = true;
-        script.defer = true;
-        document.head.appendChild(script);
-    })();
+    let isMapInitialized = false;
 
     // Google Maps Initialization
     function initMap() {
-        geocoder = new google.maps.Geocoder();
-        const daNang = { lat: 16.054407, lng: 108.202164 };
+        if (isMapInitialized) return;
+        isMapInitialized = true;
+        
+        try {
+            geocoder = new google.maps.Geocoder();
+            const daNang = { lat: 16.054407, lng: 108.202164 };
 
-        map = new google.maps.Map(document.getElementById("map"), {
-            center: daNang,
-            zoom: 13,
-        });
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: daNang,
+                zoom: 13,
+            });
 
-        marker = new google.maps.Marker({
-            map: map,
-            anchorPoint: new google.maps.Point(0, -29),
-        });
+            marker = new google.maps.Marker({
+                map: map,
+                anchorPoint: new google.maps.Point(0, -29),
+            });
 
-        // Autocomplete
-        const searchInput = document.getElementById("locationSearchInput");
-        autocomplete = new google.maps.places.Autocomplete(searchInput);
-        autocomplete.setFields(["formatted_address", "geometry", "name"]);
+            // Autocomplete
+            const searchInput = document.getElementById("locationSearchInput");
+            if (searchInput) {
+                autocomplete = new google.maps.places.Autocomplete(searchInput);
+                autocomplete.setFields(["formatted_address", "geometry", "name"]);
+                autocomplete.bindTo("bounds", map);
 
-        // Bias the Autocomplete results to the map's viewport.
-        autocomplete.bindTo("bounds", map);
+                autocomplete.addListener("place_changed", () => {
+                    marker.setVisible(false);
+                    const place = autocomplete.getPlace();
 
-        autocomplete.addListener("place_changed", () => {
-            marker.setVisible(false);
-            const place = autocomplete.getPlace();
+                    if (!place.geometry || !place.geometry.location) {
+                        console.warn("Không tìm thấy chi tiết cho địa điểm:", place.name);
+                        return;
+                    }
 
-            if (!place.geometry || !place.geometry.location) {
-                window.alert("Không tìm thấy chi tiết cho địa điểm: '" + place.name + "'");
-                return;
+                    if (place.geometry.viewport) {
+                        map.fitBounds(place.geometry.viewport);
+                    } else {
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(17);
+                    }
+
+                    marker.setPosition(place.geometry.location);
+                    marker.setVisible(true);
+                    updateSelectedLocation(place.formatted_address);
+                });
             }
 
-            // If the place has a geometry, then present it on a map.
-            if (place.geometry.viewport) {
-                map.fitBounds(place.geometry.viewport);
-            } else {
-                map.setCenter(place.geometry.location);
-                map.setZoom(17);
-            }
-
-            marker.setPosition(place.geometry.location);
-            marker.setVisible(true);
-
-            updateSelectedLocation(place.formatted_address);
-        });
-
-        // Handle map clicks
-        map.addListener("click", (e) => {
-            geocoder.geocode({ location: e.latLng }, (results, status) => {
-                if (status === "OK") {
-                    if (results[0]) {
+            // Handle map clicks
+            map.addListener("click", (e) => {
+                geocoder.geocode({ location: e.latLng }, (results, status) => {
+                    if (status === "OK" && results[0]) {
                         map.setZoom(17);
                         marker.setPosition(e.latLng);
                         marker.setVisible(true);
                         updateSelectedLocation(results[0].formatted_address);
-                        document.getElementById("locationSearchInput").value = results[0].formatted_address;
+                        if (searchInput) {
+                            searchInput.value = results[0].formatted_address;
+                        }
                     } else {
-                        window.alert("Không tìm thấy kết quả");
+                        console.warn("Geocoder failed:", status);
                     }
-                } else {
-                    window.alert("Geocoder thất bại do: " + status);
-                }
+                });
             });
-        });
+            
+            console.log('Google Maps initialized successfully');
+        } catch (error) {
+            console.error('Error initializing Google Maps:', error);
+        }
+    }
+
+    // Load Google Maps API
+    function loadGoogleMaps() {
+        if (typeof google !== 'undefined' && google.maps) {
+            initMap();
+            return;
+        }
+        
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap&language=vi`;
+        script.async = true;
+        script.defer = true;
+        script.onerror = function() {
+            console.error('Failed to load Google Maps API');
+        };
+        document.head.appendChild(script);
+    }
+
+    // Load when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadGoogleMaps);
+    } else {
+        loadGoogleMaps();
     }
 
     // Location Modal Functions

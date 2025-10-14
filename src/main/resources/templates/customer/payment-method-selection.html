@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}">
+    <title>Chọn phương thức thanh toán - EcoDana</title>
+    <style>
+        * { font-family: 'Poppins', sans-serif; }
+        .payment-method-card {
+            transition: all 0.3s ease;
+            cursor: pointer !important;
+            border: 2px solid #e5e7eb;
+            position: relative;
+            z-index: 10;
+            user-select: none;
+        }
+        .payment-method-card:hover {
+            border-color: #10b981 !important;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.1);
+        }
+        .payment-method-card.selected {
+            border-color: #10b981 !important;
+            background-color: #f0fdf4 !important;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .payment-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            pointer-events: none !important;
+        }
+        .payment-method-card h3,
+        .payment-method-card p,
+        .payment-method-card i,
+        .payment-method-card img,
+        .payment-method-card div {
+            pointer-events: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+<!-- Navigation -->
+<div th:replace="~{fragments/nav :: nav}"></div>
+
+<!-- Main Content -->
+<main class="pt-20 pb-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-credit-card text-green-500 mr-2"></i>
+                Phương thức thanh toán
+            </h1>
+            <p class="text-gray-600">Chọn phương thức thanh toán phù hợp với bạn</p>
+        </div>
+
+        <!-- Booking Summary -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg font-semibold mb-4">Thông tin đơn hàng</h2>
+            <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <p class="text-gray-600">Mã đặt xe</p>
+                    <p class="font-semibold" th:text="${booking.bookingCode}">BK1234567890</p>
+                </div>
+                <div>
+                    <p class="text-gray-600">Xe</p>
+                    <p class="font-semibold" th:text="${vehicle.vehicleModel}">VinFast VF8</p>
+                </div>
+                <div class="col-span-2 pt-4 border-t">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-semibold">Tổng tiền:</span>
+                        <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.231.937 ₫</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-6 flex items-center">
+                <i class="fas fa-wallet text-green-500 mr-2"></i>
+                Chọn phương thức thanh toán
+            </h2>
+
+            <form id="paymentForm" th:action="@{/payment/process}" method="post">
+                <input type="hidden" name="bookingId" th:value="${booking.bookingId}">
+                <input type="hidden" name="paymentMethod" id="selectedPaymentMethod">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    
+                    <!-- Cash Payment -->
+                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="CASH" onclick="selectPaymentMethod('CASH')">
+                        <div class="payment-icon bg-green-100">
+                            <i class="fas fa-money-bill-wave text-4xl text-green-500"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Tiền mặt</h3>
+                        <p class="text-sm text-gray-600">Thanh toán khi nhận xe</p>
+                    </div>
+
+                    <!-- Bank Transfer -->
+                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="BANK_TRANSFER" onclick="selectPaymentMethod('BANK_TRANSFER')">
+                        <div class="payment-icon bg-blue-100">
+                            <i class="fas fa-university text-4xl text-blue-500"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Chuyển khoản</h3>
+                        <p class="text-sm text-gray-600">Chuyển khoản ngân hàng</p>
+                    </div>
+
+                    <!-- QR Code -->
+                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="QR_CODE" onclick="selectPaymentMethod('QR_CODE')">
+                        <div class="payment-icon bg-purple-100">
+                            <i class="fas fa-qrcode text-4xl text-purple-500"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Mã QR</h3>
+                        <p class="text-sm text-gray-600">Quét mã QR để thanh toán</p>
+                    </div>
+
+                    <!-- VNPay -->
+                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="VNPAY" onclick="selectPaymentMethod('VNPAY')">
+                        <div class="payment-icon bg-red-100">
+                            <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png" 
+                                 alt="VNPay" class="h-12 mx-auto">
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">VNPay</h3>
+                        <p class="text-sm text-gray-600">Visa, Mastercard, ATM</p>
+                    </div>
+
+                    <!-- Credit Card -->
+                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="CREDIT_CARD" onclick="selectPaymentMethod('CREDIT_CARD')">
+                        <div class="payment-icon bg-indigo-100">
+                            <i class="fas fa-credit-card text-4xl text-indigo-500"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Thẻ tín dụng</h3>
+                        <p class="text-sm text-gray-600">Visa, Mastercard</p>
+                    </div>
+
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <h3 class="font-semibold text-yellow-800 mb-2 flex items-center">
+                        <i class="fas fa-file-contract mr-2"></i>
+                        Điều khoản & Điều kiện
+                    </h3>
+                    <ul class="text-sm text-yellow-700 space-y-1">
+                        <li><i class="fas fa-check-circle mr-2"></i>Sử dụng xe đúng mục đích, không vi phạm pháp luật</li>
+                        <li><i class="fas fa-check-circle mr-2"></i>Không sử dụng xe để cầm cố, thế chấp</li>
+                        <li><i class="fas fa-check-circle mr-2"></i>Giữ gìn xe sạch sẽ, không hút thuốc trong xe</li>
+                        <li><i class="fas fa-check-circle mr-2"></i>Trả xe đúng thời gian đã thỏa thuận</li>
+                    </ul>
+                    <div class="mt-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="checkbox" id="agreeTerms" class="w-4 h-4 text-green-500 rounded focus:ring-green-500" required>
+                            <span class="ml-2 text-sm text-gray-700">
+                                Tôi đã đọc và đồng ý với 
+                                <a href="#" class="text-green-600 hover:underline">Điều khoản sử dụng</a> 
+                                và 
+                                <a href="#" class="text-green-600 hover:underline">Chính sách bảo mật</a> 
+                                của EcoDana
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="submitBtn" disabled
+                        class="w-full bg-gray-400 text-white text-center font-semibold py-4 px-6 rounded-lg transition-all flex items-center justify-center shadow-lg text-lg cursor-not-allowed">
+                    <i class="fas fa-lock mr-2"></i>
+                    Chọn phương thức thanh toán
+                </button>
+            </form>
+        </div>
+
+        <!-- Back Button -->
+        <div class="text-center">
+            <a th:href="@{'/booking/confirmation/' + ${booking.bookingId}}" 
+               class="text-gray-600 hover:text-gray-800 font-semibold">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Quay lại
+            </a>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<script>
+// Global variables
+let selectedMethod = null;
+
+// Function to select payment method (called by onclick)
+function selectPaymentMethod(method) {
+    console.log('=== Payment method clicked ===');
+    console.log('Method:', method);
+    
+    try {
+        // Remove selected class from all cards
+        const allCards = document.querySelectorAll('.payment-method-card');
+        console.log('Found cards:', allCards.length);
+        
+        allCards.forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked card
+        const selectedCard = document.querySelector(`[data-method="${method}"]`);
+        console.log('Selected card:', selectedCard);
+        
+        if (selectedCard) {
+            selectedCard.classList.add('selected');
+            console.log('Added selected class');
+        }
+        
+        // Store selected method
+        selectedMethod = method;
+        const hiddenInput = document.getElementById('selectedPaymentMethod');
+        if (hiddenInput) {
+            hiddenInput.value = method;
+            console.log('Updated hidden input:', hiddenInput.value);
+        }
+        
+        // Update button state
+        updateSubmitButton();
+        console.log('=== Selection complete ===');
+    } catch (error) {
+        console.error('Error in selectPaymentMethod:', error);
+    }
+}
+
+// Update submit button state
+function updateSubmitButton() {
+    const submitBtn = document.getElementById('submitBtn');
+    const agreeTerms = document.getElementById('agreeTerms');
+    
+    if (selectedMethod && agreeTerms.checked) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        submitBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
+        submitBtn.innerHTML = '<i class="fas fa-check-circle mr-2"></i>Xác nhận thanh toán';
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
+        submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
+        submitBtn.innerHTML = '<i class="fas fa-lock mr-2"></i>Chọn phương thức thanh toán';
+    }
+}
+
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Payment selection page loaded');
+    
+    const agreeTerms = document.getElementById('agreeTerms');
+    const paymentForm = document.getElementById('paymentForm');
+    
+    // Handle terms checkbox
+    agreeTerms.addEventListener('change', updateSubmitButton);
+    
+    // Handle form submission
+    paymentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!selectedMethod) {
+            alert('Vui lòng chọn phương thức thanh toán!');
+            return;
+        }
+        
+        if (!agreeTerms.checked) {
+            alert('Vui lòng đồng ý với điều khoản sử dụng!');
+            return;
+        }
+        
+        console.log('Submitting payment form with method:', selectedMethod);
+        this.submit();
+    });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảo Trì Xe - EcoDana Staff</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234CAF50'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'>E</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/staff-dashboard.css}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="staff-sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="sidebar-logo">
+                <i class="fas fa-leaf"></i>
+                <span>EcoDana</span>
+            </a>
+            <div class="sidebar-user">
+                <div class="sidebar-user-name" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Staff Name</div>
+                <div class="sidebar-user-role">Nhân Viên Quản Lý</div>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="/staff" class="sidebar-menu-link">
+                    <i class="fas fa-home"></i>
+                    <span>Tổng Quan</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/pending" class="sidebar-menu-link">
+                    <i class="fas fa-clock"></i>
+                    <span>Đơn Chờ Duyệt</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/approved" class="sidebar-menu-link">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Đơn Đã Duyệt</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/ongoing" class="sidebar-menu-link">
+                    <i class="fas fa-car"></i>
+                    <span>Đơn Đang Thuê</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/vehicles" class="sidebar-menu-link">
+                    <i class="fas fa-list"></i>
+                    <span>Danh Sách Xe</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/maintenance" class="sidebar-menu-link active">
+                    <i class="fas fa-tools"></i>
+                    <span>Bảo Trì Xe</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/reports" class="sidebar-menu-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Báo Cáo</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/customers" class="sidebar-menu-link">
+                    <i class="fas fa-users"></i>
+                    <span>Khách Hàng</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/profile" class="sidebar-menu-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Hồ Sơ Cá Nhân</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/logout" class="sidebar-menu-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng Xuất</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="staff-main">
+        <!-- Header -->
+        <header class="staff-header">
+            <div class="header-title">
+                <h1>Quản Lý Bảo Trì Xe</h1>
+                <p>Lên lịch và theo dõi bảo trì định kỳ cho các phương tiện</p>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openMaintenanceModal()">
+                    <i class="fas fa-plus"></i>
+                    Lên Lịch Bảo Trì
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Cần Bảo Trì</div>
+                        <div class="stat-value">5</div>
+                    </div>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-calendar-alt"></i> Trong 7 ngày tới
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Đang Bảo Trì</div>
+                        <div class="stat-value">2</div>
+                    </div>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-wrench"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-tools"></i> Đang xử lý
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Hoàn Thành</div>
+                        <div class="stat-value">28</div>
+                    </div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-calendar-check"></i> Tháng này
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Chi Phí</div>
+                        <div class="stat-value" style="font-size: 24px;">45M</div>
+                    </div>
+                    <div class="stat-icon purple">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-chart-line"></i> Tháng này
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Maintenance -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>
+                    Lịch Bảo Trì Sắp Tới
+                </h2>
+            </div>
+            <div class="section-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Xe</th>
+                            <th>Loại Bảo Trì</th>
+                            <th>Ngày Hẹn</th>
+                            <th>Số Km Hiện Tại</th>
+                            <th>Ưu Tiên</th>
+                            <th>Trạng Thái</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <strong>VinFast VF8</strong><br>
+                                <small style="color: #718096;">29A-12345</small>
+                            </td>
+                            <td>Thay dầu & Kiểm tra phanh</td>
+                            <td>
+                                <i class="fas fa-calendar"></i> 15/10/2025<br>
+                                <small style="color: #f44336;">Còn 2 ngày</small>
+                            </td>
+                            <td>15,000 km</td>
+                            <td><span class="status-badge" style="background: #ffebee; color: #c62828;">Cao</span></td>
+                            <td><span class="status-badge status-pending">Đã Lên Lịch</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn action-btn-view" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn action-btn-approve" title="Hoàn thành">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>VinFast VF9</strong><br>
+                                <small style="color: #718096;">30B-67890</small>
+                            </td>
+                            <td>Kiểm tra pin & Hệ thống điện</td>
+                            <td>
+                                <i class="fas fa-calendar"></i> 18/10/2025<br>
+                                <small style="color: #ff9800;">Còn 5 ngày</small>
+                            </td>
+                            <td>8,500 km</td>
+                            <td><span class="status-badge" style="background: #fff3cd; color: #856404;">Trung Bình</span></td>
+                            <td><span class="status-badge status-pending">Đã Lên Lịch</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn action-btn-view" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn action-btn-approve" title="Hoàn thành">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>VinFast VF5</strong><br>
+                                <small style="color: #718096;">51C-11111</small>
+                            </td>
+                            <td>Bảo dưỡng định kỳ 10,000km</td>
+                            <td>
+                                <i class="fas fa-calendar"></i> 20/10/2025<br>
+                                <small style="color: #4CAF50;">Còn 7 ngày</small>
+                            </td>
+                            <td>9,800 km</td>
+                            <td><span class="status-badge" style="background: #e8f5e9; color: #2e7d32;">Thấp</span></td>
+                            <td><span class="status-badge status-pending">Đã Lên Lịch</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn action-btn-view" title="Chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn action-btn-approve" title="Hoàn thành">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Maintenance History -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-history"></i>
+                    Lịch Sử Bảo Trì
+                </h2>
+                <div class="filter-dropdown">
+                    <button class="filter-btn" onclick="toggleFilter()">
+                        <i class="fas fa-filter"></i>
+                        Lọc
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="filter-menu" id="filterMenu">
+                        <div class="filter-menu-item">Tất cả</div>
+                        <div class="filter-menu-item">Tuần này</div>
+                        <div class="filter-menu-item">Tháng này</div>
+                        <div class="filter-menu-item">3 tháng</div>
+                    </div>
+                </div>
+            </div>
+            <div class="section-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Xe</th>
+                            <th>Loại Bảo Trì</th>
+                            <th>Nhân Viên</th>
+                            <th>Chi Phí</th>
+                            <th>Trạng Thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>10/10/2025</td>
+                            <td>
+                                <strong>VinFast VF8</strong><br>
+                                <small style="color: #718096;">29A-12345</small>
+                            </td>
+                            <td>Thay lốp xe</td>
+                            <td th:text="${currentUser.firstName + ' ' + currentUser.lastName}">Nhân Viên A</td>
+                            <td><strong style="color: #4CAF50;">2,500,000 ₫</strong></td>
+                            <td><span class="status-badge status-completed">Hoàn Thành</span></td>
+                        </tr>
+                        <tr>
+                            <td>08/10/2025</td>
+                            <td>
+                                <strong>VinFast VF9</strong><br>
+                                <small style="color: #718096;">30B-67890</small>
+                            </td>
+                            <td>Kiểm tra hệ thống phanh</td>
+                            <td th:text="${currentUser.firstName + ' ' + currentUser.lastName}">Nhân Viên A</td>
+                            <td><strong style="color: #4CAF50;">1,200,000 ₫</strong></td>
+                            <td><span class="status-badge status-completed">Hoàn Thành</span></td>
+                        </tr>
+                        <tr>
+                            <td>05/10/2025</td>
+                            <td>
+                                <strong>VinFast VF5</strong><br>
+                                <small style="color: #718096;">51C-11111</small>
+                            </td>
+                            <td>Bảo dưỡng định kỳ</td>
+                            <td th:text="${currentUser.firstName + ' ' + currentUser.lastName}">Nhân Viên A</td>
+                            <td><strong style="color: #4CAF50;">800,000 ₫</strong></td>
+                            <td><span class="status-badge status-completed">Hoàn Thành</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Maintenance Modal -->
+    <div id="maintenanceModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 30px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0; font-size: 24px; color: #2d3748;">Lên Lịch Bảo Trì</h2>
+                <button onclick="closeMaintenanceModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #718096;">&times;</button>
+            </div>
+            
+            <form style="display: flex; flex-direction: column; gap: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2d3748;">Chọn Xe <span style="color: #f44336;">*</span></label>
+                    <select required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">-- Chọn xe --</option>
+                        <option>VinFast VF8 - 29A-12345</option>
+                        <option>VinFast VF9 - 30B-67890</option>
+                        <option>VinFast VF5 - 51C-11111</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2d3748;">Loại Bảo Trì <span style="color: #f44336;">*</span></label>
+                    <select required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option value="">-- Chọn loại --</option>
+                        <option>Bảo dưỡng định kỳ</option>
+                        <option>Thay dầu</option>
+                        <option>Kiểm tra phanh</option>
+                        <option>Thay lốp</option>
+                        <option>Kiểm tra pin</option>
+                        <option>Sửa chữa</option>
+                        <option>Khác</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2d3748;">Ngày Hẹn <span style="color: #f44336;">*</span></label>
+                    <input type="date" required style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2d3748;">Ưu Tiên</label>
+                    <select style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px;">
+                        <option>Thấp</option>
+                        <option selected>Trung Bình</option>
+                        <option>Cao</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #2d3748;">Ghi Chú</label>
+                    <textarea rows="4" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; resize: vertical;" placeholder="Mô tả chi tiết công việc cần làm..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 10px;">
+                    <button type="button" onclick="closeMaintenanceModal()" class="btn btn-secondary">Hủy</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i>
+                        Lưu Lịch
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openMaintenanceModal() {
+            document.getElementById('maintenanceModal').style.display = 'flex';
+        }
+
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').style.display = 'none';
+        }
+
+        function toggleFilter() {
+            document.getElementById('filterMenu').classList.toggle('active');
+        }
+
+        // Close filter when clicking outside
+        window.onclick = function(event) {
+            if (!event.target.matches('.filter-btn') && !event.target.matches('.filter-btn *')) {
+                const filterMenu = document.getElementById('filterMenu');
+                if (filterMenu && filterMenu.classList.contains('active')) {
+                    filterMenu.classList.remove('active');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

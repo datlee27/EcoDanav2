@@ -150,6 +150,33 @@ public class BookingController {
         }
 
         try {
+            // Debug logging
+            System.out.println("=== Creating booking ===");
+            System.out.println("Vehicle ID: " + bookingRequest.getVehicleId());
+            System.out.println("Pickup Date: " + bookingRequest.getPickupDate());
+            System.out.println("Pickup Time: " + bookingRequest.getPickupTime());
+            System.out.println("Return Date: " + bookingRequest.getReturnDate());
+            System.out.println("Return Time: " + bookingRequest.getReturnTime());
+            System.out.println("Total Amount: " + bookingRequest.getTotalAmount());
+            System.out.println("Rental Days: " + bookingRequest.getRentalDays());
+            
+            // Validate required fields
+            if (bookingRequest.getVehicleId() == null || bookingRequest.getVehicleId().isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Thiếu thông tin xe!");
+                return "redirect:/vehicles";
+            }
+            
+            if (bookingRequest.getPickupDate() == null || bookingRequest.getPickupTime() == null ||
+                bookingRequest.getReturnDate() == null || bookingRequest.getReturnTime() == null) {
+                redirectAttributes.addFlashAttribute("error", "Thiếu thông tin ngày giờ thuê xe!");
+                return "redirect:/vehicles/" + bookingRequest.getVehicleId();
+            }
+            
+            if (bookingRequest.getTotalAmount() == null) {
+                redirectAttributes.addFlashAttribute("error", "Thiếu thông tin tổng tiền!");
+                return "redirect:/vehicles/" + bookingRequest.getVehicleId();
+            }
+            
             // Parse dates and times
             LocalDate pickup = LocalDate.parse(bookingRequest.getPickupDate());
             LocalDate returnD = LocalDate.parse(bookingRequest.getReturnDate());
@@ -242,14 +269,26 @@ public class BookingController {
             System.out.println("=== Booking created successfully ===");
             System.out.println("Booking ID: " + booking.getBookingId());
             System.out.println("Booking Code: " + booking.getBookingCode());
-            System.out.println("Redirecting to: /booking/confirmation/" + booking.getBookingId());
+            System.out.println("Redirecting to payment method selection");
             
-            return "redirect:/booking/confirmation/" + booking.getBookingId();
+            // Redirect to payment method selection page
+            return "redirect:/payment/select-method/" + booking.getBookingId();
             
         } catch (Exception e) {
             System.out.println("=== ERROR creating booking ===");
             System.out.println("Error: " + e.getMessage());
+            System.out.println("Error class: " + e.getClass().getName());
             e.printStackTrace();
+            
+            // Log all request parameters for debugging
+            System.out.println("=== Request Parameters ===");
+            System.out.println("Vehicle ID: " + bookingRequest.getVehicleId());
+            System.out.println("Pickup Date: " + bookingRequest.getPickupDate());
+            System.out.println("Pickup Time: " + bookingRequest.getPickupTime());
+            System.out.println("Return Date: " + bookingRequest.getReturnDate());
+            System.out.println("Return Time: " + bookingRequest.getReturnTime());
+            System.out.println("Total Amount: " + bookingRequest.getTotalAmount());
+            
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/vehicles/" + bookingRequest.getVehicleId();
         }
@@ -378,5 +417,55 @@ public class BookingController {
 
         redirectAttributes.addFlashAttribute("success", "Đã hủy booking thành công!");
         return "redirect:/booking/my-bookings";
+    }
+
+    // ============================================
+    // Payment Flow V2 Endpoint
+    // ============================================
+
+    /**
+     * Customer confirms vehicle return
+     */
+    @PostMapping("/{bookingId}/confirm-return")
+    public String confirmReturn(@PathVariable String bookingId,
+                               HttpSession session,
+                               RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập!");
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Verify booking belongs to user
+            if (!booking.getUser().getId().equals(user.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Không có quyền truy cập!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check if booking is ongoing
+            if (booking.getStatus() != Booking.BookingStatus.Ongoing) {
+                redirectAttributes.addFlashAttribute("error", "Chỉ có thể xác nhận trả xe khi đang trong chuyến đi!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Just add a note - owner will confirm return
+            booking.setPaymentStatus("CustomerConfirmedReturn");
+            bookingService.updateBooking(booking);
+
+            redirectAttributes.addFlashAttribute("success", "Đã xác nhận trả xe. Chờ chủ xe xác nhận.");
+            return "redirect:/booking/my-bookings";
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/booking/my-bookings";
+        }
     }
 }

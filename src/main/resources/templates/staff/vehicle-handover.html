@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+    <div th:replace="~{fragments/nav :: nav}"></div>
+        <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
+            <div class="max-w-5xl mx-auto px-4">
+                <!-- Header -->
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-800">
+                                <span th:if="${actionType == 'pickup'}">Giao Xe Cho Khách Hàng</span>
+                                <span th:if="${actionType == 'return'}">Nhận Trả Xe Từ Khách Hàng</span>
+                            </h1>
+                            <p class="text-gray-600 mt-1">Ghi nhận tình trạng xe và hoàn tất thủ tục</p>
+                        </div>
+                        <a th:href="@{/staff/dashboard}" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                            <i class="fas fa-arrow-left mr-2"></i>Quay lại
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Flash Messages -->
+                <div th:if="${success}" class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-lg" role="alert">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle mr-3"></i>
+                        <p th:text="${success}"></p>
+                    </div>
+                </div>
+                <div th:if="${error}" class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-lg" role="alert">
+                    <div class="flex items-center">
+                        <i class="fas fa-exclamation-circle mr-3"></i>
+                        <p th:text="${error}"></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Column - Booking & Vehicle Info -->
+                    <div class="lg:col-span-1">
+                        <!-- Booking Info -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-file-alt text-blue-500 mr-2"></i>Thông Tin Đơn Đặt
+                            </h2>
+                            <div class="space-y-3">
+                                <div>
+                                    <p class="text-xs text-gray-500">Mã Đơn</p>
+                                    <p class="font-semibold text-gray-800" th:text="${booking.bookingCode}">BK123</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Khách Hàng</p>
+                                    <p class="font-semibold text-gray-800" th:text="${booking.user.firstName != null ? booking.user.firstName + ' ' + booking.user.lastName : booking.user.username}">Customer</p>
+                                    <p class="text-xs text-gray-600" th:text="${booking.user.phoneNumber}">Phone</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Thời Gian Thuê</p>
+                                    <p class="text-sm text-gray-800">
+                                        <i class="fas fa-calendar-alt text-green-500 mr-1"></i>
+                                        <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2024</span>
+                                    </p>
+                                    <p class="text-sm text-gray-800">
+                                        <i class="fas fa-calendar-check text-red-500 mr-1"></i>
+                                        <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">05/01/2024</span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Tổng Tiền</p>
+                                    <p class="font-bold text-green-600 text-lg" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,000,000 ₫</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vehicle Info -->
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-car text-blue-500 mr-2"></i>Thông Tin Xe
+                            </h2>
+                            <div th:if="${vehicle.mainImageUrl}" class="mb-4">
+                                <img th:src="${vehicle.mainImageUrl}" alt="Vehicle" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <p class="text-xs text-gray-500">Mẫu Xe</p>
+                                    <p class="font-semibold text-gray-800" th:text="${vehicle.vehicleModel}">VF8</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Biển Số</p>
+                                    <p class="font-semibold text-gray-800" th:text="${vehicle.licensePlate}">29A-12345</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Số Chỗ Ngồi</p>
+                                    <p class="text-gray-800" th:text="${vehicle.seats} + ' chỗ'">5 chỗ</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Dung Lượng Pin</p>
+                                    <p class="text-gray-800" th:text="${vehicle.batteryCapacity} + ' kWh'">87.7 kWh</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pickup Log (for return action) -->
+                        <div th:if="${actionType == 'return' && pickupLog != null}" class="bg-blue-50 rounded-xl shadow-lg p-6 mt-6">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>Thông Tin Giao Xe
+                            </h2>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Số Km Giao:</span>
+                                    <span class="font-semibold" th:text="${pickupLog.odometer} + ' km'">1000 km</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Pin Giao:</span>
+                                    <span class="font-semibold" th:text="${pickupLog.fuelLevel}">100%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Tình Trạng:</span>
+                                    <span class="font-semibold" th:text="${pickupLog.conditionStatus}">Tốt</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Condition Form -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <h2 class="text-lg font-semibold text-gray-800 mb-6 flex items-center">
+                                <i class="fas fa-clipboard-check text-blue-500 mr-2"></i>
+                                <span th:if="${actionType == 'pickup'}">Kiểm Tra Tình Trạng Xe Trước Khi Giao</span>
+                                <span th:if="${actionType == 'return'}">Kiểm Tra Tình Trạng Xe Khi Nhận Trả</span>
+                            </h2>
+
+                            <form th:action="@{${actionType == 'pickup' ? '/staff/bookings/' + booking.bookingId + '/pickup' : '/staff/bookings/' + booking.bookingId + '/return'}}" 
+                                  method="post" class="space-y-6">
+                                
+                                <!-- Odometer -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Số Km <span class="text-red-500">*</span>
+                                    </label>
+                                    <div class="relative">
+                                        <input type="number" name="odometer" required 
+                                               th:value="${actionType == 'pickup' ? vehicle.odometer : ''}"
+                                               min="0" step="1"
+                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Nhập số km hiện tại">
+                                        <span class="absolute right-4 top-3 text-gray-500">km</span>
+                                    </div>
+                                    <p th:if="${actionType == 'return' && pickupLog != null}" class="text-xs text-gray-500 mt-1">
+                                        Số km khi giao: <span class="font-semibold" th:text="${pickupLog.odometer}">0</span> km
+                                    </p>
+                                </div>
+
+                                <!-- Battery Level -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Mức Pin <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="batteryLevel" required 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Chọn mức pin --</option>
+                                        <option value="100%">100% - Đầy</option>
+                                        <option value="90%">90%</option>
+                                        <option value="80%">80%</option>
+                                        <option value="70%">70%</option>
+                                        <option value="60%">60%</option>
+                                        <option value="50%">50%</option>
+                                        <option value="40%">40%</option>
+                                        <option value="30%">30%</option>
+                                        <option value="20%">20%</option>
+                                        <option value="10%">10%</option>
+                                        <option value="<10%">&lt;10% - Sắp hết</option>
+                                    </select>
+                                    <p th:if="${actionType == 'return' && pickupLog != null}" class="text-xs text-gray-500 mt-1">
+                                        Mức pin khi giao: <span class="font-semibold" th:text="${pickupLog.fuelLevel}">100%</span>
+                                    </p>
+                                </div>
+
+                                <!-- Condition Status -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Tình Trạng Tổng Quan <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="conditionStatus" required 
+                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">-- Chọn tình trạng --</option>
+                                        <option value="Tốt">✅ Tốt - Không có vấn đề</option>
+                                        <option value="Bình Thường">⚠️ Bình Thường - Có vết xước nhỏ</option>
+                                        <option value="Cần Kiểm Tra">🔧 Cần Kiểm Tra - Có vấn đề cần xử lý</option>
+                                        <option value="Hư Hỏng">❌ Hư Hỏng - Cần sửa chữa</option>
+                                    </select>
+                                </div>
+
+                                <!-- Condition Description -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Mô Tả Chi Tiết
+                                    </label>
+                                    <textarea name="conditionDescription" rows="4"
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              placeholder="Mô tả chi tiết tình trạng xe (vết xước, hư hỏng, vệ sinh...)"></textarea>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Ghi chú: Vị trí vết xước, hư hỏng, mức độ vệ sinh, phụ kiện...
+                                    </p>
+                                </div>
+
+                                <!-- Damage Images (JSON format) -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Hình Ảnh Hư Hỏng (URL)
+                                    </label>
+                                    <textarea name="damageImages" rows="2"
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              placeholder='["url1", "url2"]'></textarea>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Nhập URL hình ảnh dạng JSON array. Ví dụ: ["https://example.com/img1.jpg", "https://example.com/img2.jpg"]
+                                    </p>
+                                </div>
+
+                                <!-- Note -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Ghi Chú Thêm
+                                    </label>
+                                    <textarea name="note" rows="3"
+                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                              placeholder="Ghi chú thêm về quá trình giao/nhận xe..."></textarea>
+                                </div>
+
+                                <!-- Checklist -->
+                                <div class="bg-blue-50 rounded-lg p-4">
+                                    <h3 class="font-semibold text-gray-800 mb-3">
+                                        <i class="fas fa-tasks text-blue-500 mr-2"></i>Danh Sách Kiểm Tra
+                                    </h3>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" required>
+                                            <span class="ml-2 text-sm text-gray-700">Đã kiểm tra ngoại thất xe (vỏ, kính, đèn)</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" required>
+                                            <span class="ml-2 text-sm text-gray-700">Đã kiểm tra nội thất xe (ghế, vô lăng, màn hình)</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" required>
+                                            <span class="ml-2 text-sm text-gray-700">Đã kiểm tra mức pin và số km</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" required>
+                                            <span class="ml-2 text-sm text-gray-700">Đã chụp ảnh tình trạng xe (nếu có hư hỏng)</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600" required>
+                                            <span class="ml-2 text-sm text-gray-700">Đã xác nhận với khách hàng về tình trạng xe</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Submit Buttons -->
+                                <div class="flex justify-end space-x-4 pt-4">
+                                    <a th:href="@{/staff/dashboard}" 
+                                       class="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors">
+                                        <i class="fas fa-times mr-2"></i>Hủy
+                                    </a>
+                                    <button type="submit" 
+                                            th:class="${actionType == 'pickup' ? 'bg-blue-500 hover:bg-blue-600' : 'bg-purple-500 hover:bg-purple-600'}"
+                                            class="px-6 py-3 text-white rounded-lg transition-colors">
+                                        <i th:class="${actionType == 'pickup' ? 'fas fa-handshake' : 'fas fa-check'}" class="mr-2"></i>
+                                        <span th:if="${actionType == 'pickup'}">Xác Nhận Giao Xe</span>
+                                        <span th:if="${actionType == 'return'}">Xác Nhận Nhận Trả Xe</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/chatbot :: chatbot}"></div>
+</body>
+</html>

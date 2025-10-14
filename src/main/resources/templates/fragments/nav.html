@@ -30,6 +30,20 @@
 
             <!-- Logged in User Menu -->
             <div class="flex items-center space-x-4" th:if="${currentUser != null}">
+                <!-- Notification Bell -->
+                <a th:href="${currentUser.role != null and currentUser.role.roleName == 'Staff' ? '/staff/notifications' : 
+                             currentUser.role != null and (currentUser.role.roleName == 'Admin' or currentUser.role.roleName == 'Owner') ? '/owner/notifications' : 
+                             '/notifications'}" 
+                   class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <i class="fas fa-bell text-gray-700 text-xl"></i>
+                    <span class="notification-badge hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        0
+                    </span>
+                </a>
+                
+                <!-- WebSocket Status Indicator -->
+                <div id="ws-status-indicator" class="w-2 h-2 bg-gray-400 rounded-full" title="WebSocket Status"></div>
+                
                 <div class="relative group">
                     <button class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
                         <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center">

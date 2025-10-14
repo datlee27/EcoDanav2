@@ -79,6 +79,10 @@ public class BookingService {
         return bookingRepository.findById(bookingId);
     }
 
+    public java.util.Optional<Booking> findByBookingCode(String bookingCode) {
+        return bookingRepository.findByBookingCode(bookingCode);
+    }
+
     public Booking updateBooking(Booking booking) {
         return bookingRepository.save(booking);
     }

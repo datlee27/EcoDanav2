@@ -151,6 +151,46 @@
             </div>
         </div>
 
+        <!-- Payment Section (if pending and unpaid) -->
+        <div th:if="${booking.status.name() == 'Pending' && (booking.paymentStatus == null || booking.paymentStatus == 'Unpaid')}" 
+             class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4 flex items-center">
+                <i class="fas fa-credit-card text-green-500 mr-2"></i>
+                Thanh toán
+            </h2>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p class="text-sm text-blue-800">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Chọn phương thức thanh toán phù hợp với bạn
+                </p>
+            </div>
+
+            <a th:href="@{'/payment/select-method/' + ${booking.bookingId}}" 
+               class="block w-full bg-green-500 text-white text-center font-semibold py-4 px-6 rounded-lg hover:bg-green-600 transition-all shadow-lg text-lg">
+                <i class="fas fa-wallet mr-2"></i>
+                Chọn phương thức thanh toán
+            </a>
+
+            <p class="text-xs text-gray-500 text-center mt-3">
+                <i class="fas fa-shield-alt mr-1"></i>
+                Hỗ trợ nhiều phương thức: Tiền mặt, Chuyển khoản, QR Code, VNPay, Thẻ tín dụng
+            </p>
+        </div>
+        
+        <!-- Payment Status (if paid) -->
+        <div th:if="${booking.paymentStatus == 'Paid'}" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div class="flex items-center">
+                    <i class="fas fa-check-circle text-green-500 text-3xl mr-4"></i>
+                    <div>
+                        <p class="font-semibold text-green-800 text-lg">Đã thanh toán</p>
+                        <p class="text-sm text-green-600">Đơn đặt xe của bạn đã được thanh toán thành công</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Actions -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <!-- Option 1: View Vehicle Details -->

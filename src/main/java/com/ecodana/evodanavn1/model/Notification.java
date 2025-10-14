@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 
 @Entity
 @Table(name = "Notification")
@@ -26,11 +27,11 @@ public class Notification {
     @Column(name = "IsRead", nullable = false)
     private Boolean isRead = false;
     
-    @Column(name = "RelatedId", length = 36)
-    private String relatedId; // ID của booking, payment, etc.
+    @Transient
+    private String relatedId; // ID của booking, payment, etc. (chỉ dùng trong code)
     
-    @Column(name = "NotificationType", length = 50)
-    private String notificationType; // "BOOKING", "PAYMENT", "CONTRACT", etc.
+    @Transient
+    private String notificationType; // "BOOKING", "PAYMENT", "CONTRACT", etc. (chỉ dùng trong code)
     
     // Constructors
     public Notification() {

@@ -6,10 +6,6 @@
                 <p class="text-gray-600">Manage your rental business</p>
             </div>
             <div class="flex items-center space-x-4">
-                <button class="relative p-2 text-gray-600 hover:text-primary">
-                    <i class="fas fa-bell text-xl"></i>
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center" th:text="${notificationCount ?: 3}">3</span>
-                </button>
                 <div class="flex items-center space-x-3">
                     <div class="w-10 h-10 bg-gray-300 rounded-full">
                         <img th:if="${owner?.avatar}" th:src="${owner.avatar}" th:alt="${owner.name}" class="w-full h-full rounded-full object-cover">

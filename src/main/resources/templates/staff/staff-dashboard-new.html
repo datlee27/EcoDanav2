@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - EcoDana</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234CAF50'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'>E</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/staff-dashboard.css}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="staff-sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="sidebar-logo">
+                <i class="fas fa-leaf"></i>
+                <span>EcoDana</span>
+            </a>
+            <div class="sidebar-user">
+                <div class="sidebar-user-name" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Staff Name</div>
+                <div class="sidebar-user-role">Nhân Viên Quản Lý</div>
+            </div>
+        </div>
+        
+        <ul class="sidebar-menu">
+            <li class="sidebar-menu-item">
+                <a href="/staff" class="sidebar-menu-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Tổng Quan</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/pending" class="sidebar-menu-link">
+                    <i class="fas fa-clock"></i>
+                    <span>Đơn Chờ Duyệt</span>
+                    <span class="sidebar-menu-badge" th:if="${pendingBookings != null && !pendingBookings.isEmpty()}" th:text="${pendingBookings.size()}">0</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/approved" class="sidebar-menu-link">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Đơn Đã Duyệt</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/bookings/ongoing" class="sidebar-menu-link">
+                    <i class="fas fa-car"></i>
+                    <span>Đơn Đang Thuê</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/vehicles" class="sidebar-menu-link">
+                    <i class="fas fa-list"></i>
+                    <span>Danh Sách Xe</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/maintenance" class="sidebar-menu-link">
+                    <i class="fas fa-tools"></i>
+                    <span>Bảo Trì Xe</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/reports" class="sidebar-menu-link">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Báo Cáo</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/staff/customers" class="sidebar-menu-link">
+                    <i class="fas fa-users"></i>
+                    <span>Khách Hàng</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/profile" class="sidebar-menu-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Hồ Sơ Cá Nhân</span>
+                </a>
+            </li>
+            <li class="sidebar-menu-item">
+                <a href="/logout" class="sidebar-menu-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Đăng Xuất</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="staff-main">
+        <!-- Header -->
+        <header class="staff-header">
+            <div class="header-title">
+                <h1>Dashboard Nhân Viên</h1>
+                <p>Chào mừng trở lại! Quản lý đơn đặt xe và phương tiện</p>
+            </div>
+            <div class="header-actions">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Tìm kiếm đơn đặt xe...">
+                </div>
+                <button class="btn btn-primary">
+                    <i class="fas fa-plus"></i>
+                    Tạo Đơn Mới
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Chờ Duyệt</div>
+                        <div class="stat-value" th:text="${pendingBookings != null ? pendingBookings.size() : 0}">0</div>
+                    </div>
+                    <div class="stat-icon yellow">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-arrow-up"></i> Cần xử lý ngay
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Đã Duyệt</div>
+                        <div class="stat-value" th:text="${approvedBookings != null ? approvedBookings.size() : 0}">0</div>
+                    </div>
+                    <div class="stat-icon green">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-calendar-check"></i> Chờ giao xe
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Đang Thuê</div>
+                        <div class="stat-value" th:text="${ongoingBookings != null ? ongoingBookings.size() : 0}">0</div>
+                    </div>
+                    <div class="stat-icon blue">
+                        <i class="fas fa-car"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-road"></i> Xe đang chạy
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div>
+                        <div class="stat-label">Đã Xử Lý</div>
+                        <div class="stat-value" th:text="${stats != null ? stats.totalApprovals : 0}">0</div>
+                    </div>
+                    <div class="stat-icon purple">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <i class="fas fa-check"></i> Tổng số đơn
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-bolt"></i>
+                    Thao Tác Nhanh
+                </h2>
+            </div>
+            <div class="section-body">
+                <div class="quick-actions-grid">
+                    <a th:href="@{/staff/bookings/pending}" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: #fff3cd; color: #ff9800;">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="quick-action-content">
+                            <h3>Duyệt Đơn</h3>
+                            <p>Xử lý đơn chờ duyệt</p>
+                        </div>
+                    </a>
+
+                    <a th:href="@{/staff/bookings/approved}" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: #d4edda; color: #4CAF50;">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="quick-action-content">
+                            <h3>Giao Xe</h3>
+                            <p>Giao xe cho khách hàng</p>
+                        </div>
+                    </a>
+
+                    <a th:href="@{/staff/bookings/ongoing}" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: #cfe2ff; color: #2196F3;">
+                            <i class="fas fa-undo"></i>
+                        </div>
+                        <div class="quick-action-content">
+                            <h3>Nhận Trả Xe</h3>
+                            <p>Nhận xe từ khách hàng</p>
+                        </div>
+                    </a>
+
+                    <a th:href="@{/staff/vehicles}" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: #e7d4f5; color: #9c27b0;">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <div class="quick-action-content">
+                            <h3>Quản Lý Xe</h3>
+                            <p>Xem danh sách xe</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pending Bookings Table -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-clock"></i>
+                    Đơn Đặt Xe Chờ Duyệt
+                </h2>
+                <a th:href="@{/staff/bookings/pending}" class="btn btn-secondary">
+                    Xem Tất Cả
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="section-body">
+                <table class="data-table" th:if="${pendingBookings != null && !pendingBookings.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Xe</th>
+                            <th>Thời Gian Thuê</th>
+                            <th>Tổng Tiền</th>
+                            <th>Trạng Thái</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${pendingBookings}">
+                            <td>
+                                <strong th:text="${booking.bookingCode}">BK001</strong><br>
+                                <small style="color: #718096;" th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">01/01/2024</small>
+                            </td>
+                            <td>
+                                <strong th:text="${booking.user.firstName != null ? booking.user.firstName + ' ' + booking.user.lastName : booking.user.username}">Customer</strong><br>
+                                <small style="color: #718096;" th:text="${booking.user.phoneNumber}">Phone</small>
+                            </td>
+                            <td>
+                                <strong th:text="${booking.vehicle.vehicleModel}">VF8</strong><br>
+                                <small style="color: #718096;" th:text="${booking.vehicle.licensePlate}">29A-12345</small>
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">
+                                    <div><i class="fas fa-calendar-alt" style="color: #4CAF50;"></i> <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2024</span></div>
+                                    <div><i class="fas fa-calendar-check" style="color: #f44336;"></i> <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yyyy HH:mm')}">05/01/2024</span></div>
+                                </div>
+                            </td>
+                            <td>
+                                <strong style="color: #4CAF50;" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,000,000 ₫</strong>
+                            </td>
+                            <td>
+                                <span class="status-badge status-pending">Chờ Duyệt</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="action-btn action-btn-view" title="Xem chi tiết" th:onclick="'window.location.href=\'/staff/bookings/' + ${booking.bookingId} + '\''">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-btn action-btn-approve" title="Duyệt đơn">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button class="action-btn action-btn-reject" title="Từ chối">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="empty-state" th:if="${pendingBookings == null || pendingBookings.isEmpty()}">
+                    <i class="fas fa-inbox"></i>
+                    <h3>Không có đơn chờ duyệt</h3>
+                    <p>Tất cả đơn đặt xe đã được xử lý</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approved Bookings -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-check-circle"></i>
+                    Đơn Đã Duyệt - Chờ Giao Xe
+                </h2>
+                <a th:href="@{/staff/bookings/approved}" class="btn btn-secondary">
+                    Xem Tất Cả
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+            <div class="section-body">
+                <table class="data-table" th:if="${approvedBookings != null && !approvedBookings.isEmpty()}">
+                    <thead>
+                        <tr>
+                            <th>Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Xe</th>
+                            <th>Thời Gian Nhận</th>
+                            <th>Trạng Thái</th>
+                            <th>Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="booking : ${approvedBookings}">
+                            <td><strong th:text="${booking.bookingCode}">BK001</strong></td>
+                            <td th:text="${booking.user.firstName != null ? booking.user.firstName + ' ' + booking.user.lastName : booking.user.username}">Customer</td>
+                            <td th:text="${booking.vehicle.vehicleModel}">VF8</td>
+                            <td th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy HH:mm')}">01/01/2024</td>
+                            <td><span class="status-badge status-approved">Đã Duyệt</span></td>
+                            <td>
+                                <a th:href="@{/staff/bookings/{id}/pickup(id=${booking.bookingId})}" class="btn btn-primary" style="padding: 6px 12px; font-size: 13px;">
+                                    <i class="fas fa-handshake"></i> Giao Xe
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="empty-state" th:if="${approvedBookings == null || approvedBookings.isEmpty()}">
+                    <i class="fas fa-check-circle"></i>
+                    <h3>Không có đơn chờ giao xe</h3>
+                    <p>Tất cả đơn đã duyệt đã được giao xe</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Mobile menu toggle
+        const menuToggle = document.querySelector('.menu-toggle');
+        const sidebar = document.querySelector('.staff-sidebar');
+        
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+
+        // Search functionality
+        const searchInput = document.querySelector('.search-bar input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                console.log('Searching for:', searchTerm);
+                // Implement search logic here
+            });
+        }
+
+        // Auto-hide flash messages
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 300);
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

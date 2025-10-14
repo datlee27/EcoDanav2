@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông báo - Owner Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+
+<!-- Header -->
+<div th:replace="~{owner/owner-header :: header}"></div>
+
+<!-- Main Content -->
+<div class="flex">
+    <!-- Sidebar -->
+    <div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+    
+    <!-- Content Area -->
+    <main class="flex-1 p-8 ml-64">
+        <div class="max-w-4xl mx-auto">
+            
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <i class="fas fa-bell text-blue-500"></i>
+                    Thông báo
+                    <span th:if="${unreadCount > 0}" 
+                          class="bg-red-500 text-white text-sm px-3 py-1 rounded-full"
+                          th:text="${unreadCount}">0</span>
+                </h1>
+                <p class="text-gray-600 mt-2">Quản lý thông báo của bạn</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 mb-6">
+                <button onclick="markAllAsRead()" 
+                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                    <i class="fas fa-check-double mr-2"></i>
+                    Đánh dấu tất cả đã đọc
+                </button>
+                <button onclick="deleteReadNotifications()" 
+                        class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                    <i class="fas fa-trash mr-2"></i>
+                    Xóa đã đọc
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div th:if="${notifications.isEmpty()}" class="bg-white rounded-xl shadow-md p-12 text-center">
+                <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                <h3 class="text-xl font-semibold text-gray-700 mb-2">Không có thông báo</h3>
+                <p class="text-gray-500">Bạn chưa có thông báo nào</p>
+            </div>
+
+            <!-- Notifications List -->
+            <div th:if="${!notifications.isEmpty()}" class="space-y-3">
+                <div th:each="notification : ${notifications}" 
+                     th:classappend="${notification.isRead ? 'bg-white' : 'bg-blue-50 border-l-4 border-blue-500'}"
+                     class="rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+                    
+                    <div class="flex items-start gap-4">
+                        <!-- Icon -->
+                        <div class="flex-shrink-0">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center"
+                                 th:classappend="${notification.isRead ? 'bg-gray-100' : 'bg-blue-100'}">
+                                <i class="fas fa-bell text-xl"
+                                   th:classappend="${notification.isRead ? 'text-gray-500' : 'text-blue-600'}"></i>
+                            </div>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1 min-w-0">
+                            <p class="text-gray-900 font-medium" th:text="${notification.message}">
+                                Notification message here
+                            </p>
+                            <p class="text-sm text-gray-500 mt-1" 
+                               th:text="${#temporals.format(notification.createdDate, 'dd/MM/yyyy HH:mm')}">
+                                15/02/2025 10:30
+                            </p>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="flex-shrink-0 flex gap-2">
+                            <!-- Mark as read -->
+                            <button th:if="${!notification.isRead}" 
+                                    th:data-notification-id="${notification.notificationId}"
+                                    onclick="markAsRead(this.dataset.notificationId)"
+                                    class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Đánh dấu đã đọc">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            
+                            <!-- Delete -->
+                            <button th:data-notification-id="${notification.notificationId}"
+                                    onclick="deleteNotification(this.dataset.notificationId)"
+                                    class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Xóa">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+function markAsRead(notificationId) {
+    fetch(`/owner/notifications/${notificationId}/mark-read`, {
+        method: 'POST'
+    })
+    .then(response => response.text())
+    .then(result => {
+        if (result === 'success') {
+            location.reload();
+        }
+    });
+}
+
+function markAllAsRead() {
+    fetch('/owner/notifications/mark-all-read', {
+        method: 'POST'
+    })
+    .then(response => response.text())
+    .then(result => {
+        if (result === 'success') {
+            location.reload();
+        }
+    });
+}
+
+function deleteNotification(notificationId) {
+    if (confirm('Bạn có chắc muốn xóa thông báo này?')) {
+        fetch(`/owner/notifications/${notificationId}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.text())
+        .then(result => {
+            if (result === 'success') {
+                location.reload();
+            }
+        });
+    }
+}
+
+function deleteReadNotifications() {
+    if (confirm('Bạn có chắc muốn xóa tất cả thông báo đã đọc?')) {
+        fetch('/owner/notifications/delete-read', {
+            method: 'DELETE'
+        })
+        .then(response => response.text())
+        .then(count => {
+            alert(`Đã xóa ${count} thông báo`);
+            location.reload();
+        });
+    }
+}
+</script>
+
+</body>
+</html>

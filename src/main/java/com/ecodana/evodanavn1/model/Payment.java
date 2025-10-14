@@ -96,7 +96,10 @@ public class Payment {
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
 
     public enum PaymentStatus {
-        Pending, Completed, Failed, Refunded
+        Pending,        // Waiting for payment
+        Completed,      // Payment completed
+        Failed,         // Payment failed
+        Refunded        // Refunded to customer
     }
 
     public enum PaymentType {

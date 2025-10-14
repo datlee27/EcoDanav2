@@ -1,9 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" th:replace="~{fragments/layout}">
-<head th:replace="~{fragments/layout :: head}"></head>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Dashboard - EcoDana</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%234CAF50'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial, sans-serif' font-weight='bold'>E</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/staff-modern.css}">
+</head>
 <body>
     <div th:replace="~{fragments/nav :: nav}"></div>
-    <div th:fragment="content">
     <div class="pt-20 pb-8 bg-gray-50 min-h-screen">
         <div class="max-w-7xl mx-auto px-4">
             <!-- Header -->
@@ -13,7 +20,18 @@
                         <h1 class="text-3xl font-bold text-gray-800">Staff Dashboard</h1>
                         <p class="text-gray-600 mt-2">Vehicle & Booking Management - <span th:text="${user.firstName != null ? user.firstName + ' ' + user.lastName : user.username}">Staff</span></p>
                     </div>
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-4 relative z-10">
+                        <!-- Notification Bell -->
+                        <a href="/staff/notifications" class="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                            <i class="fas fa-bell text-gray-600 text-xl"></i>
+                            <span class="notification-badge hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs px-2 py-1 rounded-full z-20">
+                                0
+                            </span>
+                        </a>
+                        
+                        <!-- WebSocket Status -->
+                        <div id="ws-status-indicator" class="w-2 h-2 bg-gray-400 rounded-full" title="WebSocket"></div>
+                        
                         <div class="text-right">
                             <p class="text-sm text-gray-600">Role</p>
                             <span th:if="${user.role != null}"
@@ -33,13 +51,13 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                            <i class="fas fa-car text-xl"></i>
+                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                            <i class="fas fa-clock text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Total Vehicles</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${totalVehicles != null ? totalVehicles.size() : 0}">0</p>
-                            <p class="text-xs text-green-600">Fleet size</p>
+                            <p class="text-sm font-medium text-gray-600">Chờ Duyệt</p>
+                            <p class="text-2xl font-bold text-gray-900" th:text="${pendingBookings != null ? pendingBookings.size() : 0}">0</p>
+                            <p class="text-xs text-yellow-600">Đơn cần xử lý</p>
                         </div>
                     </div>
                 </div>
@@ -47,25 +65,25 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-green-100 text-green-600">
-                            <i class="fas fa-calendar-check text-xl"></i>
+                            <i class="fas fa-check-circle text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Active Bookings</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${activeBookings != null ? activeBookings.size() : 0}">0</p>
-                            <p class="text-xs text-green-600">Currently rented</p>
+                            <p class="text-sm font-medium text-gray-600">Đã Duyệt</p>
+                            <p class="text-2xl font-bold text-gray-900" th:text="${approvedBookings != null ? approvedBookings.size() : 0}">0</p>
+                            <p class="text-xs text-green-600">Chờ giao xe</p>
                         </div>
                     </div>
                 </div>
                 
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                            <i class="fas fa-clock text-xl"></i>
+                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
+                            <i class="fas fa-car text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Pending Bookings</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${pendingBookings != null ? pendingBookings.size() : 0}">0</p>
-                            <p class="text-xs text-yellow-600">Awaiting approval</p>
+                            <p class="text-sm font-medium text-gray-600">Đang Thuê</p>
+                            <p class="text-2xl font-bold text-gray-900" th:text="${ongoingBookings != null ? ongoingBookings.size() : 0}">0</p>
+                            <p class="text-xs text-blue-600">Xe đang chạy</p>
                         </div>
                     </div>
                 </div>
@@ -73,12 +91,12 @@
                 <div class="bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow">
                     <div class="flex items-center">
                         <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                            <i class="fas fa-dollar-sign text-xl"></i>
+                            <i class="fas fa-tasks text-xl"></i>
                         </div>
                         <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Today's Revenue</p>
-                            <p class="text-2xl font-bold text-gray-900" th:text="${todayRevenue != null ? #numbers.formatCurrency(todayRevenue) : '0'}">0</p>
-                            <p class="text-xs text-green-600">Daily earnings</p>
+                            <p class="text-sm font-medium text-gray-600">Đã Xử Lý</p>
+                            <p class="text-2xl font-bold text-gray-900" th:text="${stats != null ? stats.totalApprovals : 0}">0</p>
+                            <p class="text-xs text-purple-600">Tổng số đơn</p>
                         </div>
                     </div>
                 </div>
@@ -86,17 +104,17 @@
 
             <!-- Quick Actions -->
             <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-6">Quick Actions</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Thao Tác Nhanh</h2>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <a href="#" class="flex items-center p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all">
-                        <i class="fas fa-plus-circle text-blue-600 text-xl mr-3"></i>
+                    <a th:href="@{/staff/notifications}" class="flex items-center p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all">
+                        <i class="fas fa-bell text-blue-600 text-xl mr-3"></i>
                         <div>
-                            <span class="text-gray-700 font-medium">Add Vehicle</span>
-                            <p class="text-xs text-gray-500">Add new vehicle to fleet</p>
+                            <span class="text-gray-700 font-medium">Thông báo</span>
+                            <p class="text-xs text-gray-500">Xem thông báo thanh toán</p>
                         </div>
                     </a>
-                    <a href="#" class="flex items-center p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all">
-                        <i class="fas fa-calendar-plus text-green-600 text-xl mr-3"></i>
+                    <a th:href="@{/staff/bookings/approved}" class="flex items-center p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 hover:border-green-300 transition-all">
+                        <i class="fas fa-handshake text-green-600 text-xl mr-3"></i>
                         <div>
                             <span class="text-gray-700 font-medium">Manage Bookings</span>
                             <p class="text-xs text-gray-500">Approve and manage bookings</p>
@@ -358,6 +376,8 @@
                                 <h4 class="text-lg font-semibold mb-4">Maintenance Costs</h4>
                                 <div class="h-64 bg-gray-100 rounded flex items-center justify-center">
                                     <i class="fas fa-wrench text-4xl text-gray-400"></i>
+                                    <!-- JavaScript -->
+                                    <script th:src="@{/js/staff-dashboard.js}"></script>
                                 </div>
                             </div>
                         </div>
@@ -373,22 +393,31 @@
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.add('hidden');
             });
-            
-            // Remove active class from all buttons
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.classList.remove('border-primary', 'text-primary');
-                button.classList.add('border-transparent', 'text-gray-500');
-            });
-            
-            // Show selected tab
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-            
-            // Add active class to clicked button
-            event.target.classList.remove('border-transparent', 'text-gray-500');
-            event.target.classList.add('border-primary', 'text-primary');
+            // Show the selected tab content
+            document.getElementById(tabName).classList.remove('hidden');
         }
     </script>
-    </div>
+    
+    <!-- WebSocket Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    
+    <!-- Staff WebSocket Notification -->
+    <script src="/js/staff-websocket-notification.js"></script>
+    
+    <style>
+        .badge-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</body>
+</html>
+
     <div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/chatbot :: chatbot}"></div>
 </body>
 </html>

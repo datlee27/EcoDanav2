@@ -57,7 +57,10 @@ public class AuthController {
                 if ("Admin".equalsIgnoreCase(roleName)) {
                     redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng Admin " + userWithRole.getFirstName() + "! Bạn có quyền truy cập đầy đủ hệ thống.");
                     return "redirect:/admin";
-                } else if ("Staff".equalsIgnoreCase(roleName) || "Owner".equalsIgnoreCase(roleName)) {
+                } else if ("Staff".equalsIgnoreCase(roleName)) {
+                    redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý đơn đặt xe và xe.");
+                    return "redirect:/staff";
+                } else if ("Owner".equalsIgnoreCase(roleName)) {
                     redirectAttributes.addFlashAttribute("success", "🎉 Đăng nhập thành công! Chào mừng " + userWithRole.getFirstName() + "! Bạn có thể quản lý xe và đặt chỗ.");
                     return "redirect:/owner/dashboard";
                 } else if ("Customer".equalsIgnoreCase(roleName)) {

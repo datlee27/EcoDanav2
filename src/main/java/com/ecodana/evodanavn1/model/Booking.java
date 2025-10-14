@@ -70,6 +70,9 @@ public class Booking {
     @Column(name = "TermsVersion", length = 10)
     private String termsVersion = "v1.0";
 
+    @Column(name = "PaymentStatus", length = 20)
+    private String paymentStatus = "Unpaid";
+ 
     // Constructors
     public Booking() {
         this.createdDate = LocalDateTime.now();
@@ -110,9 +113,16 @@ public class Booking {
     public void setTermsAgreedAt(LocalDateTime termsAgreedAt) { this.termsAgreedAt = termsAgreedAt; }
     public String getTermsVersion() { return termsVersion; }
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
 
     public enum BookingStatus {
-        Pending, Approved, Rejected, Ongoing, Completed, Cancelled
+        Pending,      // Chờ thanh toán / Chờ Owner duyệt (sau khi thanh toán)
+        Approved,     // Owner đã duyệt
+        Rejected,     // Owner từ chối
+        Ongoing,      // Đang thuê
+        Completed,    // Hoàn thành
+        Cancelled     // Đã hủy / Đã hoàn tiền
     }
 
     public enum RentalType {

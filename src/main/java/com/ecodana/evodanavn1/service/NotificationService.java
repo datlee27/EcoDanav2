@@ -88,11 +88,54 @@ public class NotificationService {
     /**
      * Mark notification as read
      */
-    public void markAsRead(String notificationId) {
-        notificationRepository.findById(notificationId).ifPresent(notification -> {
-            notification.setIsRead(true);
-            notificationRepository.save(notification);
-        });
+    public boolean markAsRead(String notificationId) {
+        try {
+            notificationRepository.findById(notificationId).ifPresent(notification -> {
+                notification.setIsRead(true);
+                notificationRepository.save(notification);
+            });
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get unread count
+     */
+    public long getUnreadCount(String userId) {
+        return notificationRepository.countUnreadByUserId(userId);
+    }
+    
+    /**
+     * Get recent notifications (limit)
+     */
+    public List<Notification> getRecentNotifications(String userId, int limit) {
+        List<Notification> all = notificationRepository.findByUserIdOrderByCreatedDateDesc(userId);
+        return all.size() > limit ? all.subList(0, limit) : all;
+    }
+    
+    /**
+     * Delete notification
+     */
+    public boolean deleteNotification(String notificationId) {
+        try {
+            notificationRepository.deleteById(notificationId);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Delete all read notifications for a user
+     */
+    @Transactional
+    public int deleteReadNotifications(String userId) {
+        List<Notification> readNotifications = notificationRepository.findByUserIdAndIsReadTrueOrderByCreatedDateDesc(userId);
+        int count = readNotifications.size();
+        notificationRepository.deleteAll(readNotifications);
+        return count;
     }
     
     /**
@@ -108,9 +151,29 @@ public class NotificationService {
     }
     
     /**
-     * Delete notification
+     * Create notification for all staff
      */
-    public void deleteNotification(String notificationId) {
-        notificationRepository.deleteById(notificationId);
+    public void createNotificationForAllStaff(String message) {
+        List<User> staffList = userRepository.findByRoleName("STAFF");
+        for (User staff : staffList) {
+            createNotification(staff.getId(), message);
+        }
+    }
+    
+    /**
+     * Create notification for all staff with related entity
+     */
+    public void createNotificationForAllStaff(String message, String relatedId, String notificationType) {
+        List<User> staffList = userRepository.findByRoleName("STAFF");
+        for (User staff : staffList) {
+            createNotification(staff.getId(), message, relatedId, notificationType);
+        }
+    }
+    
+    /**
+     * Create notification for owner of a vehicle
+     */
+    public void createNotificationForOwner(String ownerId, String message, String relatedId, String notificationType) {
+        createNotification(ownerId, message, relatedId, notificationType);
     }
 }
