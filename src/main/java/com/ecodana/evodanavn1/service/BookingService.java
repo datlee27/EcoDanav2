@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.Vehicle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ public class BookingService {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    @Autowired
+    private VehicleService vehicleService; // Inject VehicleService
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -185,6 +189,12 @@ public class BookingService {
                 .map(booking -> {
                     booking.setStatus(Booking.BookingStatus.Approved);
                     booking.setHandledBy(approver);
+                    // Update vehicle status to Rented
+                    if (booking.getVehicle() != null) {
+                        Vehicle vehicle = booking.getVehicle();
+                        vehicle.setStatus(Vehicle.VehicleStatus.Rented);
+                        vehicleService.updateVehicle(vehicle); // Assuming updateVehicle method exists in VehicleService
+                    }
                     return bookingRepository.save(booking);
                 })
                 .orElse(null);
@@ -196,7 +206,12 @@ public class BookingService {
                     booking.setStatus(Booking.BookingStatus.Rejected);
                     booking.setCancelReason(reason);
                     booking.setHandledBy(rejector);
-                    return bookingRepository.save(booking);
+                    Booking updatedBooking = bookingRepository.save(booking);
+
+                    // Update vehicle status back to Available if no other active bookings exist
+                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+
+                    return updatedBooking;
                 })
                 .orElse(null);
     }
@@ -205,7 +220,10 @@ public class BookingService {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
                     booking.setStatus(Booking.BookingStatus.Completed);
-                    return bookingRepository.save(booking);
+                    // Update vehicle status back to Available when booking is completed
+                    Booking updatedBooking = bookingRepository.save(booking);
+                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+                    return updatedBooking;
                 })
                 .orElse(null);
     }
@@ -215,9 +233,30 @@ public class BookingService {
                 .map(booking -> {
                     booking.setStatus(Booking.BookingStatus.Cancelled);
                     booking.setCancelReason(reason);
-                    return bookingRepository.save(booking);
+                    // Update vehicle status back to Available when booking is cancelled
+                    Booking updatedBooking = bookingRepository.save(booking);
+                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+                    return updatedBooking;
                 })
                 .orElse(null);
+    }
+
+    /**
+     * Updates the vehicle status to 'Available' if there are no other active
+     * (Approved, Ongoing) bookings for it.
+     * @param vehicle The vehicle to check and update.
+     */
+    private void updateVehicleStatusOnBookingCompletionOrCancellation(Vehicle vehicle) {
+        if (vehicle == null) {
+            return;
+        }
+        // Check if there are any other 'Approved' or 'Ongoing' bookings for this vehicle
+        boolean hasOtherActiveBookings = bookingRepository.hasActiveBookings(vehicle.getVehicleId());
+
+        if (!hasOtherActiveBookings) {
+            vehicle.setStatus(Vehicle.VehicleStatus.Available);
+            vehicleService.updateVehicle(vehicle);
+        }
     }
 
     public Map<String, Long> getBookingCountsByStatus() {

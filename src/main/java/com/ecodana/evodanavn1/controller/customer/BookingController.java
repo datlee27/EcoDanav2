@@ -372,9 +372,8 @@ public class BookingController {
             }
         }
 
-        booking.setStatus(Booking.BookingStatus.Cancelled);
-        booking.setCancelReason(cancelReason != null ? cancelReason : "Khách hàng hủy");
-        bookingService.updateBooking(booking);
+        String reason = cancelReason != null ? cancelReason : "Khách hàng hủy";
+        bookingService.cancelBooking(bookingId, reason);
 
         redirectAttributes.addFlashAttribute("success", "Đã hủy booking thành công!");
         return "redirect:/booking/my-bookings";
