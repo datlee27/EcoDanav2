@@ -28,6 +28,9 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     @Query("SELECT b FROM Booking b WHERE b.status = com.ecodana.evodanavn1.model.Booking$BookingStatus.Approved")
     List<Booking> findAllActiveBookings();
 
+    @Query("SELECT COUNT(b) > 0 FROM Booking b WHERE b.vehicle.vehicleId = :vehicleId AND b.status IN (com.ecodana.evodanavn1.model.Booking$BookingStatus.Approved, com.ecodana.evodanavn1.model.Booking$BookingStatus.Ongoing)")
+    boolean hasActiveBookings(@Param("vehicleId") String vehicleId);
+
     @Query("SELECT b FROM Booking b WHERE b.status = com.ecodana.evodanavn1.model.Booking$BookingStatus.Pending")
     List<Booking> findAllPendingBookings();
 
