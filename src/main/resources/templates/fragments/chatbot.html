@@ -5,11 +5,9 @@
 <div th:fragment="chatbot">
     <!-- Chatbot Toggler -->
     <button id="chatbot-toggler" class="fixed bottom-6 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-40 hover:bg-green-600 transition-all duration-300 transform hover:scale-110">
-        <!-- New SVG Icon -->
         <svg id="icon-open" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 transition-opacity duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
-        <!-- Close Icon -->
         <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 transition-opacity duration-300 absolute opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -20,7 +18,7 @@
         <!-- Header -->
         <div class="bg-primary text-white p-4 rounded-t-2xl flex items-center space-x-3">
             <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center">
-                <i class="fas fa-leaf text-white"></i> <!-- Eco-related icon -->
+                <i class="fas fa-leaf text-white"></i>
             </div>
             <div>
                 <h3 class="font-bold text-lg">EvoDana Assistant</h3>
@@ -30,19 +28,16 @@
 
         <!-- Chatbox -->
         <ul id="chatbox" class="p-4 h-[300px] overflow-y-auto bg-gray-50 space-y-4">
-            <!-- Initial message from bot -->
             <li class="flex">
                 <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none">
                     <p class="text-sm">Xin chào! Tôi là trợ lý ảo của EvoDana. Tôi có thể giúp gì cho bạn?</p>
                 </div>
             </li>
-            <!-- Suggested Questions -->
             <li id="suggestion-buttons" class="pt-2">
                 <div class="flex flex-wrap gap-2">
                     <button class="suggestion-btn">Thủ tục thuê xe?</button>
                     <button class="suggestion-btn">Giá thuê xe?</button>
                     <button class="suggestion-btn">Hướng dẫn đặt xe</button>
-                    <button class="suggestion-btn">Các loại xe hiện có</button>
                 </div>
             </li>
         </ul>
@@ -59,174 +54,120 @@
     </div>
 
     <script th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function () {
-            const chatbotToggler = document.getElementById('chatbot-toggler');
-            const chatbotContainer = document.getElementById('chatbot-container');
-            const chatbox = document.getElementById('chatbox');
-            const chatInput = document.getElementById('chat-input');
-            const sendChatBtn = document.getElementById('send-chat-btn');
-            const iconOpen = document.getElementById('icon-open');
-            const iconClose = document.getElementById('icon-close');
-            const suggestionContainer = document.getElementById('suggestion-buttons');
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatbotToggler = document.getElementById('chatbot-toggler');
+        const chatbotContainer = document.getElementById('chatbot-container');
+        const chatbox = document.getElementById('chatbox');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat-btn');
+        const iconOpen = document.getElementById('icon-open');
+        const iconClose = document.getElementById('icon-close');
+        const suggestionContainer = document.getElementById('suggestion-buttons');
 
-            const toggleChatbot = () => {
-                const isOpen = chatbotContainer.classList.contains('chatbot-open');
-                if (isOpen) {
-                    // Close it
-                    chatbotContainer.classList.remove('chatbot-open');
-                    iconOpen.style.opacity = '1';
-                    iconClose.style.opacity = '0';
-                } else {
-                    // Open it
-                    chatbotContainer.classList.add('chatbot-open');
-                    iconOpen.style.opacity = '0';
-                    iconClose.style.opacity = '1';
-                    chatInput.focus();
-                }
-            };
+        // Lấy CSRF token từ Thymeleaf một cách an toàn
+        const csrfToken = /*[[${_csrf.token}]]*/ null;
+        const csrfHeaderName = /*[[${_csrf.headerName}]]*/ null;
 
-            chatbotToggler.addEventListener('click', toggleChatbot);
+        const toggleChatbot = () => {
+            chatbotContainer.classList.toggle('chatbot-open');
+            const isOpen = chatbotContainer.classList.contains('chatbot-open');
+            iconOpen.style.opacity = isOpen ? '0' : '1';
+            iconClose.style.opacity = isOpen ? '1' : '0';
+            if (isOpen) chatInput.focus();
+        };
 
-            const createChatLi = (message, type) => {
-                const chatLi = document.createElement("li");
-                chatLi.classList.add("flex");
+        chatbotToggler.addEventListener('click', toggleChatbot);
 
-                let chatContent = '';
-                if (type === "user") {
-                    chatLi.classList.add("justify-end");
-                    chatContent = `<div class="bg-primary text-white p-3 rounded-xl max-w-xs rounded-br-none"><p class="text-sm">${message}</p></div>`;
-                } else if (type === "bot") {
-                    chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none"><p class="text-sm">${message}</p></div>`;
-                } else { // thinking...
-                    chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none flex items-center space-x-2">
-                                     <span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span>
-                                   </div>`;
-                }
-                chatLi.innerHTML = chatContent;
-                return chatLi;
-            };
+        const createChatLi = (message, type) => {
+            const chatLi = document.createElement("li");
+            chatLi.classList.add("flex");
+            let chatContent = '';
+            if (type === "user") {
+                chatLi.classList.add("justify-end");
+                chatContent = `<div class="bg-primary text-white p-3 rounded-xl max-w-xs rounded-br-none"><p class="text-sm">${message}</p></div>`;
+            } else if (type === "bot") {
+                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none"><p class="text-sm">${message}</p></div>`;
+            } else { // thinking...
+                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none flex items-center space-x-2"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>`;
+            }
+            chatLi.innerHTML = chatContent;
+            return chatLi;
+        };
 
-            const generateResponse = (userMessage) => {
-                const thinkingLi = createChatLi("...", "thinking");
-                chatbox.appendChild(thinkingLi);
-                chatbox.scrollTop = chatbox.scrollHeight;
+        // *** LOGIC MỚI: GỌI API BACKEND ***
+        const generateResponse = async (userMessage) => {
+            const thinkingLi = createChatLi("...", "thinking");
+            chatbox.appendChild(thinkingLi);
+            chatbox.scrollTop = chatbox.scrollHeight;
+            if (suggestionContainer) suggestionContainer.style.display = 'none';
 
-                // Simple keyword-based AI logic
-                let botResponse = "Xin lỗi, tôi chưa hiểu câu hỏi của bạn. Bạn có thể hỏi về 'thủ tục thuê xe', 'giá thuê', hoặc 'hướng dẫn'.";
-                const lowerCaseMessage = userMessage.toLowerCase();
-
-                if (suggestionContainer) {
-                    suggestionContainer.style.display = 'none'; // Hide suggestions after first interaction
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (csrfToken) {
+                    headers[csrfHeaderName] = csrfToken;
                 }
 
-                if (lowerCaseMessage.includes("thủ tục") || lowerCaseMessage.includes("giấy tờ")) {
-                    botResponse = "Để thuê xe, bạn cần chuẩn bị CMND/CCCD và Bằng lái xe (nếu loại xe yêu cầu). Quy trình rất đơn giản, chỉ cần chọn xe, đặt lịch và xác nhận thông tin là xong!";
-                } else if (lowerCaseMessage.includes("giá") || lowerCaseMessage.includes("chi phí")) {
-                    botResponse = "Giá thuê xe phụ thuộc vào loại xe và thời gian thuê. Bạn có thể xem chi tiết giá của từng xe tại trang <a href='/vehicles' class='text-blue-600 underline'>Danh sách xe</a>.";
-                } else if (lowerCaseMessage.includes("hướng dẫn") || lowerCaseMessage.includes("cách thuê")) {
-                    botResponse = "Rất đơn giản! Bạn chỉ cần: 1. Tìm xe bạn thích. 2. Chọn ngày nhận và trả xe. 3. Đặt cọc và chờ xác nhận từ chủ xe. Mọi thứ đều có thể thực hiện online!";
-                } else if (lowerCaseMessage.includes("chào") || lowerCaseMessage.includes("hello")) {
-                    botResponse = "Chào bạn, tôi có thể giúp gì cho bạn hôm nay?";
-                } else if (lowerCaseMessage.includes("loại xe")) {
-                    botResponse = "Chúng tôi có cả ô tô điện và xe máy điện. Bạn có thể xem tất cả các mẫu xe hiện có tại trang <a href='/vehicles' class='text-blue-600 underline'>Danh sách xe</a> của chúng tôi.";
+                const response = await fetch('/api/chatbot/ask', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                setTimeout(() => {
-                    thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">${botResponse}</p>`;
-                    chatbox.scrollTop = chatbox.scrollHeight;
-                }, 800); // Simulate thinking time
-            };
+                const data = await response.json();
+                // Cập nhật ô "thinking" với câu trả lời thật
+                thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">${data.reply}</p>`;
+            } catch (error) {
+                console.error('Error fetching AI response:', error);
+                thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">Xin lỗi, đã có lỗi xảy ra khi kết nối với trợ lý. Vui lòng thử lại sau.</p>`;
+            }
+            chatbox.scrollTop = chatbox.scrollHeight;
+        };
 
-            const handleChat = () => {
-                const userMessage = chatInput.value.trim();
-                if (!userMessage) return;
+        const handleChat = async () => {
+            const userMessage = chatInput.value.trim();
+            if (!userMessage) return;
 
-                chatInput.value = "";
-                chatbox.appendChild(createChatLi(userMessage, "user"));
-                chatbox.scrollTop = chatbox.scrollHeight;
+            chatInput.value = "";
+            chatbox.appendChild(createChatLi(userMessage, "user"));
+            chatbox.scrollTop = chatbox.scrollHeight;
 
-                setTimeout(() => generateResponse(userMessage), 300);
-            };
+            await generateResponse(userMessage);
+        };
 
-            sendChatBtn.addEventListener('click', handleChat);
-            chatInput.addEventListener('keydown', (e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleChat();
-                }
-            });
+        sendChatBtn.addEventListener('click', handleChat);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleChat();
+            }
         });
 
         document.addEventListener('click', function(e) {
             if (e.target && e.target.classList.contains('suggestion-btn')) {
                 const userMessage = e.target.textContent;
-                const chatbox = document.getElementById('chatbox');
-                const chatInput = document.getElementById('chat-input');
-
-                chatInput.value = userMessage; // Put text in input
-                document.getElementById('send-chat-btn').click(); // Simulate send click
-                chatInput.value = ''; // Clear input after sending
+                chatInput.value = userMessage;
+                sendChatBtn.click();
             }
         });
-
+    });
     </script>
 
     <style>
-        /* Smooth transition for chatbot container */
-        #chatbot-container.chatbot-open {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        /* Scrollbar styling */
-        #chatbox::-webkit-scrollbar {
-            width: 6px;
-        }
-        #chatbox::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        #chatbox::-webkit-scrollbar-thumb {
-            background: #cbd5e1; /* gray-300 */
-            border-radius: 10px;
-        }
-        #chatbox::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8; /* gray-400 */
-        }
-
-        /* Thinking animation */
-        .thinking-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            background-color: #94a3b8;
-            border-radius: 50%;
-            animation: thinking-bounce 1.4s infinite ease-in-out both;
-        }
+        #chatbot-container.chatbot-open { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        #chatbox::-webkit-scrollbar { width: 6px; }
+        #chatbox::-webkit-scrollbar-track { background: transparent; }
+        #chatbox::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        #chatbox::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .thinking-dot { display: inline-block; width: 8px; height: 8px; background-color: #94a3b8; border-radius: 50%; animation: thinking-bounce 1.4s infinite ease-in-out both; }
         .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
         .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes thinking-bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1.0); }
-        }
-
-        /* Suggestion buttons styling */
-        .suggestion-btn {
-            background-color: #fff;
-            border: 1px solid #4CAF50;
-            color: #4CAF50;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-        .suggestion-btn:hover {
-            background-color: #4CAF50;
-            color: #fff;
-            transform: translateY(-2px);
-        }
+        @keyframes thinking-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        .suggestion-btn { background-color: #fff; border: 1px solid #4CAF50; color: #4CAF50; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease-in-out; }
+        .suggestion-btn:hover { background-color: #4CAF50; color: #fff; transform: translateY(-2px); }
     </style>
 </div>
 

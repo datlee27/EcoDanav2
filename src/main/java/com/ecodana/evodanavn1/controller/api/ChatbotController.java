@@ -1,7 +1,6 @@
 package com.ecodana.evodanavn1.controller.api;
 
 import com.ecodana.evodanavn1.service.AIService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,8 +13,11 @@ import java.util.Map;
 @RequestMapping("/api/chatbot")
 public class ChatbotController {
 
-    @Autowired
-    private AIService aiService;
+    private final AIService aiService;
+
+    public ChatbotController(AIService aiService) {
+        this.aiService = aiService;
+    }
 
     @PostMapping("/ask")
     public ResponseEntity<Map<String, String>> ask(@RequestBody Map<String, String> request) {
