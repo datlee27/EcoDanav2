@@ -41,21 +41,28 @@ public class AIService {
 
     public String getAIResponse(String userMessage) {
         // --- BẮT ĐẦU LỜI NHẮC HỆ THỐNG ---
-        String systemContent =
-            "Bạn là trợ lý ảo của EvoDana, chuyên hỗ trợ về dịch vụ cho thuê xe điện. " +
-            "Hãy trả lời thân thiện, chuyên nghiệp và ngắn gọn bằng tiếng Việt.\n\n" +
-            "## Quy tắc trả lời:\n" +
-            "1. **Phát hiện ý định tìm kiếm xe:** Nếu người dùng muốn tìm xe với các tiêu chí cụ thể (số chỗ, loại xe), hãy trả lời bằng một chuỗi JSON duy nhất, không có văn bản nào khác.\n" +
-            "   - **JSON format:** `{\"intent\": \"search\", \"filters\": {\"seats\": <số>, \"type\": \"<loại xe>\"}}`\n" +
-            "   - `seats`: số chỗ ngồi (ví dụ: 2, 4, 7).\n" +
-            "   - `type`: loại xe. Các giá trị hợp lệ là 'ElectricCar' hoặc 'ElectricMotorcycle'.\n" +
-            "   - **Ví dụ 1:** Nếu người dùng nói \"tìm xe 2 chỗ\", bạn chỉ trả về: `{\"intent\": \"search\", \"filters\": {\"seats\": 2}}`\n" +
-            "   - **Ví dụ 2:** Nếu người dùng nói \"tôi muốn thuê xe máy điện\", bạn chỉ trả về: `{\"intent\": \"search\", \"filters\": {\"type\": \"ElectricMotorcycle\"}}`\n\n" +
-            "2. **Trả lời thông thường:** Đối với các câu hỏi khác, hãy trả lời như bình thường.\n" +
-            "   - **Thông tin chính:**\n" +
-            "     - Thủ tục: Cần CMND/Bằng lái xe, quy trình online.\n" +
-            "     - Giá & Các loại xe (chung chung): Hướng dẫn người dùng xem tại trang <a href='/vehicles' class='text-blue-600 underline'>Danh sách xe</a>.\n" +
-            "     - Hỗ trợ thêm: Hướng dẫn người dùng tới <a href='/contact' class='text-blue-600 underline'>trang liên hệ</a>.";
+        String systemContent = """
+            Bạn là trợ lý ảo của EvoDana, chuyên cho thuê xe điện. Luôn trả lời bằng tiếng Việt, thân thiện và chính xác.
+
+            **QUY TẮC TUYỆT ĐỐI:**
+
+            1.  **PHÁT HIỆN Ý ĐỊNH TÌM KIẾM (QUAN TRỌNG NHẤT):**
+                - Khi người dùng muốn tìm kiếm, lọc, hoặc hỏi về xe với các tiêu chí cụ thể, **CHỈ** trả về một chuỗi JSON duy nhất.
+                - **Định dạng JSON:** `{"intent": "search", "filters": {...}}`
+                - **Các `filters` hợp lệ:**
+                  - `type`: 'ElectricCar' (ô tô điện), 'ElectricMotorcycle' (xe máy điện).
+                  - `seats`: số chỗ ngồi (số nguyên).
+                  - `price_range`: một mảng hai phần tử `[min, max]`. Nếu chỉ có một giá trị, coi đó là `max`. Ví dụ: "dưới 500k" -> `[0, 500000]`.
+                  - `pickup_date`, `return_date`: ngày tháng theo định dạng 'YYYY-MM-DD'.
+                - **VÍ DỤ:**
+                  - "Tìm xe 4 chỗ" -> `{"intent": "search", "filters": {"seats": 4}}`
+                  - "Tìm ô tô điện 7 chỗ, giá dưới 1 triệu" -> `{"intent": "search", "filters": {"type": "ElectricCar", "seats": 7, "price_range": [0, 1000000]}}`
+
+            2.  **TRẢ LỜI CÁC CÂU HỎI KHÁC (NGẮN GỌN):**
+                -   **Thủ tục thuê xe?**: Trả lời: "Bạn cần CCCD/Bằng lái xe và đăng ký online."
+                -   **Giá/Loại xe?**: Trả lời: "Bạn xem chi tiết tại <a href='/vehicles' class='text-blue-600 underline'>Danh sách xe</a>."
+                -   **Hỗ trợ khác?**: Trả lời: "Bạn vui lòng vào <a href='/contact' class='text-blue-600 underline'>trang liên hệ</a> để được hỗ trợ."
+            """;
 
         // --- KẾT THÚC LỜI NHẮC HỆ THỐNG ---
 
@@ -124,10 +131,32 @@ public class AIService {
             description.add(type.equals("ElectricCar") ? "ô tô điện" : "xe máy điện");
         }
 
+        if (filtersNode.has("price_range")) {
+            JsonNode priceNode = filtersNode.get("price_range");
+            if (priceNode.isArray() && priceNode.size() > 0) {
+                // Lấy giá trị cuối cùng trong mảng làm giá tối đa
+                long maxPrice = priceNode.get(priceNode.size() - 1).asLong();
+                queryParams.add("budget=" + maxPrice); // Giả sử param là 'budget'
+                description.add("giá dưới " + String.format("%,d", maxPrice) + "đ");
+            }
+        }
+
+        if (filtersNode.has("pickup_date")) {
+            String pickupDate = filtersNode.get("pickup_date").asText();
+            queryParams.add("pickupDate=" + pickupDate);
+            description.add("nhận từ ngày " + pickupDate);
+        }
+
+        if (filtersNode.has("return_date")) {
+            String returnDate = filtersNode.get("return_date").asText();
+            queryParams.add("returnDate=" + returnDate);
+            description.add("trả trước ngày " + returnDate);
+        }
+
         String url = "/vehicles?" + queryParams.toString();
         String link = "<a href='" + url + "' class='text-blue-600 underline'>đây</a>";
 
-        return "Tuyệt vời! Tôi đã tìm thấy các xe có " + description.toString() + ". Bạn có thể xem kết quả tại " + link + ".";
+        return "Đã tìm thấy xe " + description.toString() + ". Xem kết quả tại " + link + ".";
     }
 
 

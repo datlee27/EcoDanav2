@@ -4,13 +4,22 @@
 
 <div th:fragment="chatbot">
     <!-- Chatbot Toggler -->
-    <button id="chatbot-toggler" class="fixed bottom-6 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-40 hover:bg-green-600 transition-all duration-300 transform hover:scale-110">
+    <button id="chatbot-toggler" class="fixed bottom-6 right-6 w-16 h-16 bg-primary text-white rounded-full shadow-lg flex items-center justify-center text-2xl z-40 hover:bg-green-600 transition-all duration-300 transform hover:scale-110 chatbot-jiggle">
         <svg id="icon-open" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 transition-opacity duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
         </svg>
         <svg id="icon-close" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 transition-opacity duration-300 absolute opacity-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
+    </button>
+
+    <!-- Welcome Bubble -->
+    <button id="welcome-bubble" class="hidden fixed bottom-24 right-6 w-auto max-w-xs bg-gradient-to-r from-green-500 to-primary text-white p-4 rounded-xl rounded-br-none shadow-xl z-40 transition-all duration-500 ease-in-out transform origin-bottom-right cursor-pointer">
+        <div class="absolute -bottom-2 right-0 w-4 h-4 bg-primary transform rotate-45" style="clip-path: polygon(100% 0, 0 100%, 100% 100%);"></div>
+        <p class="text-sm text-gray-800 flex items-center">
+            <span class="wave-hand mr-2 text-2xl">👋</span>
+            <span class="text-white font-medium">Chào bạn, tôi có thể giúp gì không?</span>
+        </p>
     </button>
 
     <!-- Chatbot Container -->
@@ -35,9 +44,9 @@
             </li>
             <li id="suggestion-buttons" class="pt-2">
                 <div class="flex flex-wrap gap-2">
-                    <button class="suggestion-btn">Thủ tục thuê xe?</button>
-                    <button class="suggestion-btn">Giá thuê xe?</button>
-                    <button class="suggestion-btn">Hướng dẫn đặt xe</button>
+                    <span class="suggestion-btn">Thủ tục thuê xe?</span>
+                    <span class="suggestion-btn">Giá thuê xe?</span>
+                    <span class="suggestion-btn">Hướng dẫn đặt xe</span>
                 </div>
             </li>
         </ul>
@@ -62,7 +71,11 @@
         const sendChatBtn = document.getElementById('send-chat-btn');
         const iconOpen = document.getElementById('icon-open');
         const iconClose = document.getElementById('icon-close');
+        const welcomeBubble = document.getElementById('welcome-bubble');
         const suggestionContainer = document.getElementById('suggestion-buttons');
+
+        // Key để lưu lịch sử chat trong sessionStorage
+        const CHAT_HISTORY_KEY = 'evodana_chat_history';
 
         // Lấy CSRF token từ Thymeleaf một cách an toàn
         const csrfToken = /*[[${_csrf.token}]]*/ null;
@@ -72,12 +85,20 @@
             chatbotContainer.classList.toggle('chatbot-open');
             const isOpen = chatbotContainer.classList.contains('chatbot-open');
             iconOpen.style.opacity = isOpen ? '0' : '1';
-            iconClose.style.opacity = isOpen ? '1' : '0';
-            if (isOpen) chatInput.focus();
+            iconClose.style.opacity = isOpen ? '1' : '0'; 
+            if (isOpen) {
+                chatInput.focus();
+                // Ẩn bong bóng chào mừng khi mở chat
+                welcomeBubble.classList.add('hidden');
+                sessionStorage.setItem('evodana_chat_opened', 'true'); // Đánh dấu là đã mở chat
+            }
         };
 
         chatbotToggler.addEventListener('click', toggleChatbot);
-
+        welcomeBubble.addEventListener('click', () => {
+            toggleChatbot();
+            welcomeBubble.classList.add('hidden');
+        });
         const createChatLi = (message, type) => {
             const chatLi = document.createElement("li");
             chatLi.classList.add("flex");
@@ -92,6 +113,29 @@
             }
             chatLi.innerHTML = chatContent;
             return chatLi;
+        };
+
+        // *** LOGIC MỚI: LƯU VÀ TẢI LỊCH SỬ CHAT ***
+        const saveHistory = () => {
+            const messages = [];
+            chatbox.querySelectorAll('li').forEach(li => {
+                const p = li.querySelector('p');
+                if (p) {
+                    const type = li.classList.contains('justify-end') ? 'user' : 'bot';
+                    messages.push({ message: p.innerHTML, type: type });
+                }
+            });
+            sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        };
+
+        const loadHistory = () => {
+            const storedHistory = sessionStorage.getItem(CHAT_HISTORY_KEY);
+            if (storedHistory) {
+                const history = JSON.parse(storedHistory);
+                chatbox.innerHTML = ''; // Xóa nội dung chat mặc định
+                history.forEach(item => chatbox.appendChild(createChatLi(item.message, item.type)));
+                if (history.length > 1) suggestionContainer.style.display = 'none';
+            }
         };
 
         // *** LOGIC MỚI: GỌI API BACKEND ***
@@ -120,9 +164,11 @@
                 const data = await response.json();
                 // Cập nhật ô "thinking" với câu trả lời thật
                 thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">${data.reply}</p>`;
+                saveHistory(); // Lưu lại lịch sử sau khi bot trả lời
             } catch (error) {
                 console.error('Error fetching AI response:', error);
                 thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">Xin lỗi, đã có lỗi xảy ra khi kết nối với trợ lý. Vui lòng thử lại sau.</p>`;
+                saveHistory(); // Lưu lại cả thông báo lỗi
             }
             chatbox.scrollTop = chatbox.scrollHeight;
         };
@@ -134,6 +180,7 @@
             chatInput.value = "";
             chatbox.appendChild(createChatLi(userMessage, "user"));
             chatbox.scrollTop = chatbox.scrollHeight;
+            saveHistory(); // Lưu lại lịch sử sau khi người dùng gửi
 
             await generateResponse(userMessage);
         };
@@ -146,13 +193,35 @@
             }
         });
 
-        document.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('suggestion-btn')) {
-                const userMessage = e.target.textContent;
+        // Gán sự kiện click cho từng nút gợi ý một cách tường minh
+        const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+        suggestionButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Chỉ xử lý khi người dùng thực sự click chuột
+                const userMessage = this.textContent;
                 chatInput.value = userMessage;
-                sendChatBtn.click();
-            }
+                handleChat(); // Gọi trực tiếp handleChat thay vì giả lập click
+            });
         });
+
+        // Tải lịch sử chat khi trang được load
+        loadHistory();
+
+        // Hiển thị bong bóng chào mừng sau 3 giây và tự động ẩn sau 7 giây nữa
+        const welcomeTimeout = setTimeout(() => {
+            const chatOpened = sessionStorage.getItem('evodana_chat_opened');
+            const chatbotIsOpen = chatbotContainer.classList.contains('chatbot-open');
+            if (!chatOpened && !chatbotIsOpen) {
+                welcomeBubble.classList.remove('hidden');
+                welcomeBubble.classList.add('welcome-bubble-visible');
+
+                // Tự động ẩn bong bóng sau 7 giây
+                setTimeout(() => {
+                    welcomeBubble.classList.remove('welcome-bubble-visible');
+                    welcomeBubble.classList.add('hidden');
+                }, 7000);
+            }
+        }, 3000);
     });
     </script>
 
@@ -166,6 +235,31 @@
         .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
         .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes thinking-bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+
+        /* Welcome Bubble Animation */
+        @keyframes pop-in {
+            0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .welcome-bubble-visible {
+            animation: pop-in 0.5s ease-out forwards;
+        }
+
+        /* Chatbot toggler jiggle animation */
+        @keyframes jiggle {
+            0%, 100% { transform: rotate(-1deg); }
+            50% { transform: rotate(1deg); }
+        }
+        .chatbot-jiggle { animation: jiggle 0.4s infinite alternate; }
+
+        /* Waving hand animation */
+        @keyframes wave {
+            0%, 60%, 100% { transform: rotate(0deg); }
+            10%, 30% { transform: rotate(14deg); }
+            20%, 40% { transform: rotate(-8deg); }
+        }
+        .wave-hand { animation: wave 2.5s infinite; transform-origin: 70% 70%; display: inline-block; }
+
         .suggestion-btn { background-color: #fff; border: 1px solid #4CAF50; color: #4CAF50; padding: 6px 12px; border-radius: 16px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s ease-in-out; }
         .suggestion-btn:hover { background-color: #4CAF50; color: #fff; transform: translateY(-2px); }
     </style>
