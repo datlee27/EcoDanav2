@@ -4,24 +4,70 @@
     <title>Chọn phương thức thanh toán - EcoDana</title>
     <style>
         * { font-family: 'Poppins', sans-serif; }
+        
+        /* Payment Card Base Styles */
         .payment-method-card {
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             cursor: pointer !important;
-            border: 2px solid #e5e7eb;
+            border: 3px solid #e5e7eb;
             position: relative;
-            z-index: 10;
+            background: white;
             user-select: none;
         }
-        .payment-method-card:hover {
-            border-color: #10b981 !important;
-            transform: translateY(-4px);
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.1);
+        
+        /* Hover Effect */
+        .payment-method-card:hover:not(.selected) {
+            border-color: #10b981;
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15);
         }
+        
+        /* Selected State */
         .payment-method-card.selected {
             border-color: #10b981 !important;
-            background-color: #f0fdf4 !important;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+            transform: translateY(-8px) scale(1.03);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2), 0 20px 40px rgba(16, 185, 129, 0.25);
         }
+        
+        /* Checkmark */
+        .checkmark {
+            display: none !important;
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border-radius: 50%;
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 40px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+        
+        .payment-method-card.selected .checkmark {
+            display: block !important;
+            animation: checkmark-bounce 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        @keyframes checkmark-bounce {
+            0% {
+                transform: scale(0) rotate(-180deg);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.3) rotate(10deg);
+            }
+            100% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+        
+        /* Payment Icon */
         .payment-icon {
             width: 80px;
             height: 80px;
@@ -30,14 +76,20 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .payment-method-card.selected .payment-icon {
+            transform: scale(1.1);
+        }
+        
+        /* Prevent pointer events on children */
+        .payment-method-card * {
             pointer-events: none !important;
         }
-        .payment-method-card h3,
-        .payment-method-card p,
-        .payment-method-card i,
-        .payment-method-card img,
-        .payment-method-card div {
-            pointer-events: none !important;
+        
+        .payment-method-card {
+            pointer-events: auto !important;
         }
     </style>
 </head>
@@ -93,17 +145,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                     
-                    <!-- Cash Payment -->
-                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="CASH" onclick="selectPaymentMethod('CASH')">
-                        <div class="payment-icon bg-green-100">
-                            <i class="fas fa-money-bill-wave text-4xl text-green-500"></i>
-                        </div>
-                        <h3 class="font-semibold text-lg mb-2">Tiền mặt</h3>
-                        <p class="text-sm text-gray-600">Thanh toán khi nhận xe</p>
-                    </div>
-
                     <!-- Bank Transfer -->
                     <div class="payment-method-card rounded-lg p-6 text-center" data-method="BANK_TRANSFER" onclick="selectPaymentMethod('BANK_TRANSFER')">
+                        <div class="checkmark">✓</div>
                         <div class="payment-icon bg-blue-100">
                             <i class="fas fa-university text-4xl text-blue-500"></i>
                         </div>
@@ -113,6 +157,7 @@
 
                     <!-- QR Code -->
                     <div class="payment-method-card rounded-lg p-6 text-center" data-method="QR_CODE" onclick="selectPaymentMethod('QR_CODE')">
+                        <div class="checkmark">✓</div>
                         <div class="payment-icon bg-purple-100">
                             <i class="fas fa-qrcode text-4xl text-purple-500"></i>
                         </div>
@@ -122,21 +167,13 @@
 
                     <!-- VNPay -->
                     <div class="payment-method-card rounded-lg p-6 text-center" data-method="VNPAY" onclick="selectPaymentMethod('VNPAY')">
+                        <div class="checkmark">✓</div>
                         <div class="payment-icon bg-red-100">
                             <img src="https://vnpay.vn/s1/statics.vnpay.vn/2023/9/06ncktiwd6dc1694418196384.png" 
                                  alt="VNPay" class="h-12 mx-auto">
                         </div>
                         <h3 class="font-semibold text-lg mb-2">VNPay</h3>
                         <p class="text-sm text-gray-600">Visa, Mastercard, ATM</p>
-                    </div>
-
-                    <!-- Credit Card -->
-                    <div class="payment-method-card rounded-lg p-6 text-center" data-method="CREDIT_CARD" onclick="selectPaymentMethod('CREDIT_CARD')">
-                        <div class="payment-icon bg-indigo-100">
-                            <i class="fas fa-credit-card text-4xl text-indigo-500"></i>
-                        </div>
-                        <h3 class="font-semibold text-lg mb-2">Thẻ tín dụng</h3>
-                        <p class="text-sm text-gray-600">Visa, Mastercard</p>
                     </div>
 
                 </div>
@@ -191,46 +228,28 @@
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
-// Global variables
+// Global state
 let selectedMethod = null;
 
-// Function to select payment method (called by onclick)
+// Select payment method
 function selectPaymentMethod(method) {
-    console.log('=== Payment method clicked ===');
-    console.log('Method:', method);
+    // Remove selected from all cards
+    document.querySelectorAll('.payment-method-card').forEach(card => {
+        card.classList.remove('selected');
+    });
     
-    try {
-        // Remove selected class from all cards
-        const allCards = document.querySelectorAll('.payment-method-card');
-        console.log('Found cards:', allCards.length);
-        
-        allCards.forEach(card => {
-            card.classList.remove('selected');
-        });
-        
-        // Add selected class to clicked card
-        const selectedCard = document.querySelector(`[data-method="${method}"]`);
-        console.log('Selected card:', selectedCard);
-        
-        if (selectedCard) {
-            selectedCard.classList.add('selected');
-            console.log('Added selected class');
-        }
-        
-        // Store selected method
-        selectedMethod = method;
-        const hiddenInput = document.getElementById('selectedPaymentMethod');
-        if (hiddenInput) {
-            hiddenInput.value = method;
-            console.log('Updated hidden input:', hiddenInput.value);
-        }
-        
-        // Update button state
-        updateSubmitButton();
-        console.log('=== Selection complete ===');
-    } catch (error) {
-        console.error('Error in selectPaymentMethod:', error);
+    // Add selected to clicked card
+    const clickedCard = document.querySelector(`[data-method="${method}"]`);
+    if (clickedCard) {
+        clickedCard.classList.add('selected');
     }
+    
+    // Update state
+    selectedMethod = method;
+    document.getElementById('selectedPaymentMethod').value = method;
+    
+    // Update button
+    updateSubmitButton();
 }
 
 // Update submit button state
@@ -238,7 +257,7 @@ function updateSubmitButton() {
     const submitBtn = document.getElementById('submitBtn');
     const agreeTerms = document.getElementById('agreeTerms');
     
-    if (selectedMethod && agreeTerms.checked) {
+    if (selectedMethod && agreeTerms && agreeTerms.checked) {
         submitBtn.disabled = false;
         submitBtn.classList.remove('bg-gray-400', 'cursor-not-allowed');
         submitBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');

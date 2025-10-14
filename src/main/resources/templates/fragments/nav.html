@@ -61,19 +61,18 @@
                                 <p id="dropdown-username" class="text-sm font-medium text-gray-900" th:text="${currentUser.firstName != null ? currentUser.firstName + ' ' + currentUser.lastName : currentUser.username}">Username</p>
                                 <p class="text-xs text-gray-500" th:text="${currentUser.email}">email@example.com</p>
                             </div>
-                            
+
                             <!-- Dashboard based on role -->
                             <a th:href="@{/dashboard-router}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                             </a>
-                            
                             <!-- Role-specific menu items -->
-                            <a th:href="@{/owner}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" 
+                            <a th:href="@{/owner}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                th:if="${currentUser.role != null and (currentUser.role.roleName == 'Staff' or currentUser.role.roleName == 'Admin')}">
                                 <i class="fas fa-cogs mr-2"></i>Management Panel
                             </a>
-                            
-                            <a th:href="@{/admin}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors" 
+
+                            <a th:href="@{/admin}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                                th:if="${currentUser.role != null and currentUser.role.roleName == 'Admin'}">
                                 <i class="fas fa-shield-alt mr-2"></i>Admin Panel
                             </a>

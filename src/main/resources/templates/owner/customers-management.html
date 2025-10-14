@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<style>
+    .primary { color: #4CAF50; }
+    .bg-primary { background-color: #4CAF50; }
+    .hidden { display: none; }
+</style>
+<div th:replace="~{fragments/nav :: nav}"></div>
+<div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+
+<div class="ml-64 mt-16">
+    <div class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Customer Management</h1>
+                    <p class="text-gray-600">Manage your customers</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}">Owner</p>
+                        <p class="text-sm text-gray-600">Car Owner</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- Customer Management Content -->
+        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Customer</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Email</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Phone Number</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Total Bookings</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                <tr th:each="customerInfo : ${customers}">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full">
+                                <img th:if="${customerInfo.user != null and customerInfo.user.avatarUrl != null}" th:src="${customerInfo.user.avatarUrl}" class="w-full h-full rounded-full object-cover"/>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-gray-800" th:text="${customerInfo.user != null ? (customerInfo.user.firstName + ' ' + customerInfo.user.lastName) : 'N/A'}"></p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4" th:text="${customerInfo.user != null ? customerInfo.user.email : 'N/A'}"></td>
+                    <td class="px-6 py-4" th:text="${customerInfo.user != null ? customerInfo.user.phoneNumber : 'N/A'}"></td>
+                    <td class="px-6 py-4"><span class="text-gray-600" th:text="${customerInfo.bookingCount}"></span></td>
+                    <td class="px-6 py-4">
+                        <button th:attr="onclick=|viewCustomer('${customerInfo.user.id}')|" class="text-primary hover:text-blue-600" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Customer Detail Modal -->
+        <div id="customer-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <!-- Modal content will be populated by JS -->
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function viewCustomer(customerId) {
+        fetch(`/owner/management/customer/${customerId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch customer details.');
+                return response.json();
+            })
+            .then(data => {
+                const modal = document.getElementById('customer-detail-modal');
+                // You can create a more detailed modal structure here
+                modal.innerHTML = `<div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl"><div class="p-6">... Customer details for ${data.fullName} ...</div></div>`;
+                modal.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error fetching customer details:', error);
+                alert('Could not load customer details.');
+            });
+    }
+    /*]]>*/
+</script>
+
+</body>
+</html>

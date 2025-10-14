@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+<!-- Include Owner Cars Management JS -->
+<script th:src="@{/js/owner-cars-management.js}" defer></script>
+<style>
+    .primary { color: #4CAF50; }
+    .bg-primary { background-color: #4CAF50; }
+    .hidden { display: none; }
+</style>
+<div th:replace="~{fragments/nav :: nav}"></div>
+<div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+
+<div class="ml-64 mt-16">
+    <div class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">Car Management</h1>
+                    <p class="text-gray-600">Manage your vehicles</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}">Owner</p>
+                        <p class="text-sm text-gray-600">Car Owner</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6">
+        <!-- Car Management Content -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">My Cars</h2>
+            <button onclick="toggleAddCar()" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors flex items-center">
+                <i class="fas fa-plus mr-2"></i>Add New Car
+            </button>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-md overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Image</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Plate</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                    <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                <tr th:each="v : ${vehicles}">
+                    <td class="px-6 py-4">
+                        <img th:src="${v.mainImageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}" class="w-20 h-12 object-cover rounded" th:alt="${v.vehicleModel ?: 'Vehicle'}"/>
+                    </td>
+                    <td class="px-6 py-4" th:text="${v.vehicleModel ?: 'N/A'}">Model</td>
+                    <td class="px-6 py-4" th:text="${v.licensePlate ?: 'N/A'}">Plate</td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-3">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer status-toggle" th:attr="data-id=${v.vehicleId}, onclick='toggleVehicleStatus(this)'" th:checked="${v.status.name() == 'Available'}"/>
+                                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-300 peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                            <span class="text-sm" th:text="${v.status ?: 'Unknown'}">Available</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 space-x-2">
+                        <button class="px-3 py-1 text-xs rounded bg-blue-100 text-blue-700 hover:bg-blue-200" th:attr="onclick=|openEditCarModal('${v.vehicleId}')|">
+                            <i class="fas fa-edit mr-1"></i>Edit
+                        </button>
+                        <button class="px-3 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200" th:attr="onclick=|confirmDeleteCar('${v.vehicleId}', '${v.vehicleModel}')|">
+                            <i class="fas fa-trash-alt mr-1"></i>Delete
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Car Modal -->
+        <div id="add-car-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                    <h3 class="text-2xl font-bold text-gray-800">Add New Vehicle</h3>
+                    <button onclick="closeAddCarModal()" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-2xl"></i>
+                    </button>
+                </div>
+                
+                <form id="add-car-form" th:action="@{/owner/cars}" method="post" enctype="multipart/form-data" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Model -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Model *</label>
+                            <input type="text" name="model" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., Tesla Model 3">
+                        </div>
+                        
+                        <!-- Type -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type *</label>
+                            <select name="type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="ElectricCar">Electric Car</option>
+                                <option value="ElectricMotorcycle">Electric Motorcycle</option>
+                            </select>
+                        </div>
+                        
+                        <!-- License Plate -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">License Plate *</label>
+                            <input type="text" name="licensePlate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="e.g., 29A-12345">
+                        </div>
+                        
+                        <!-- Year -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
+                            <input type="number" name="yearManufactured" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="2024">
+                        </div>
+                        
+                        <!-- Transmission -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                            <select name="transmissionTypeId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Transmission</option>
+                                <option th:each="t : ${transmissions}" th:value="${t.transmissionTypeId}" th:text="${t.transmissionTypeName}"></option>
+                            </select>
+                        </div>
+                        
+                        <!-- Category -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                            <select name="categoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Category</option>
+                                <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}"></option>
+                            </select>
+                        </div>
+                        
+                        <!-- Seats -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
+                            <input type="number" name="seats" value="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Odometer -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Odometer (km)</label>
+                            <input type="number" name="odometer" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Hourly Rate -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate ($)</label>
+                            <input type="number" name="hourlyRate" step="0.01" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Daily Rate -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate ($)</label>
+                            <input type="number" name="dailyRate" step="0.01" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Monthly Rate -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate ($)</label>
+                            <input type="number" name="monthlyRate" step="0.01" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Battery Capacity -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
+                            <input type="number" name="batteryCapacity" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                            <textarea name="description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="Enter vehicle description..."></textarea>
+                        </div>
+                        
+                        <!-- Requires License -->
+                        <div>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="requiresLicense" value="true" checked class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">Requires Driver License</span>
+                            </label>
+                        </div>
+                        
+                        <!-- Status -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                            <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="Available">Available</option>
+                                <option value="Unavailable">Unavailable</option>
+                                <option value="Maintenance">Maintenance</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Image Upload -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Image</label>
+                            <input type="file" id="add-car-image" name="images" accept="image/*" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <div id="add-car-preview" class="hidden mt-2"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3 mt-6 pt-6 border-t">
+                        <button type="button" onclick="closeAddCarModal()" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Add Vehicle
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script th:inline="javascript">
+    /* Car management specific JS */
+    function toggleAddCar() {
+        const modal = document.getElementById('add-car-modal');
+        if (modal) {
+            modal.classList.toggle('hidden');
+        }
+    }
+    
+    function closeAddCarModal() {
+        const modal = document.getElementById('add-car-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+    
+    function toggleVehicleStatus(checkbox) {
+        const id = checkbox.getAttribute('data-id');
+        fetch(`/owner/cars/${id}/toggle-availability`, { 
+            method: 'POST' 
+        })
+        .then(response => {
+            if (!response.ok) {
+                checkbox.checked = !checkbox.checked;
+                alert('Failed to update status');
+            }
+        })
+        .catch(err => {
+            checkbox.checked = !checkbox.checked;
+            alert('Failed to update status');
+        });
+    }
+</script>
+
+</body>
+</html>

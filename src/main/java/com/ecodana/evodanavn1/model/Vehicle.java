@@ -60,6 +60,10 @@ public class Vehicle {
     private User lastUpdatedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "OwnerId", referencedColumnName = "UserId")
+    private User owner;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryId", referencedColumnName = "CategoryId")
     private VehicleCategories category;
 
@@ -192,6 +196,9 @@ public class Vehicle {
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
     public User getLastUpdatedBy() { return lastUpdatedBy; }
     public void setLastUpdatedBy(User lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
+
+    public User getOwner() { return owner; }
+    public void setOwner(User owner) { this.owner = owner; }
 
     public VehicleCategories getCategory() {
         return category;
