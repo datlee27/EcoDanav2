@@ -405,6 +405,8 @@ CREATE TABLE `Notification` (
                                 `Message` text NOT NULL,
                                 `CreatedDate` datetime NOT NULL,
                                 `IsRead` tinyint(1) NOT NULL,
+                                `RelatedId` char(36) DEFAULT NULL COMMENT 'ID của booking, payment, etc.',
+                                `NotificationType` varchar(50) DEFAULT NULL COMMENT '"BOOKING", "PAYMENT", "CONTRACT", etc.',
                                 PRIMARY KEY (`NotificationId`),
                                 KEY `UserId` (`UserId`),
                                 CONSTRAINT `notification_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE

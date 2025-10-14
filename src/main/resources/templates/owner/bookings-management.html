@@ -198,6 +198,14 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
     let currentBookingData = null; // Store the whole booking object
+    
+    // Lấy CSRF token từ Thymeleaf một cách an toàn
+    const csrfToken = /*[[${_csrf.token}]]*/ null;
+    const csrfHeaderName = /*[[${_csrf.headerName}]]*/ null;
+    const csrfHeaders = { 'Content-Type': 'application/json' };
+    if (csrfToken) {
+        csrfHeaders[csrfHeaderName] = csrfToken;
+    }
 
     function viewBooking(bookingId) {
         console.log('viewBooking triggered for ID:', bookingId);
@@ -309,9 +317,7 @@
 
         fetch(`/owner/bookings/${bookingId}/update`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: csrfHeaders,
             body: JSON.stringify(data)
         })
         .then(response => response.json())
@@ -332,10 +338,7 @@
     function acceptBooking(bookingId) {
         console.log('acceptBooking triggered for ID:', bookingId);
         if (!confirm("Are you sure you want to approve this booking?")) return;
-        fetch(`/owner/management/bookings/${bookingId}/approve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        })
+        fetch(`/owner/management/bookings/${bookingId}/approve`, { method: 'POST', headers: csrfHeaders })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -373,7 +376,7 @@
 
         fetch(`/owner/management/bookings/${currentBookingId}/reject`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: csrfHeaders,
             body: JSON.stringify({ reason: reason })
         })
         .then(response => response.json())
@@ -396,10 +399,7 @@
         console.log('completeBooking triggered for ID:', bookingId);
         if (!confirm("Are you sure you want to mark this booking as completed?")) return;
 
-        fetch(`/owner/management/bookings/${bookingId}/complete`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        })
+        fetch(`/owner/management/bookings/${bookingId}/complete`, { method: 'POST', headers: csrfHeaders })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -437,7 +437,7 @@
 
         fetch(`/owner/management/bookings/${currentBookingId}/cancel`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: csrfHeaders,
             body: JSON.stringify({ reason: reason })
         })
         .then(response => response.json())
