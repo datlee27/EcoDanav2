@@ -150,7 +150,6 @@ public class PaymentMethodController {
 
         // Update booking
         booking.setExpectedPaymentMethod("Cash");
-        booking.setPaymentStatus("Pending");
         bookingService.updateBooking(booking);
 
         redirectAttributes.addFlashAttribute("success", "Đã chọn thanh toán bằng tiền mặt. Vui lòng thanh toán khi nhận xe.");
@@ -173,7 +172,6 @@ public class PaymentMethodController {
 
         // Update booking
         booking.setExpectedPaymentMethod("Bank Transfer");
-        booking.setPaymentStatus("Pending");
         bookingService.updateBooking(booking);
 
         redirectAttributes.addFlashAttribute("success", "Vui lòng chuyển khoản theo thông tin được cung cấp.");
@@ -196,7 +194,6 @@ public class PaymentMethodController {
 
         // Update booking
         booking.setExpectedPaymentMethod("QR Code");
-        booking.setPaymentStatus("Pending");
         bookingService.updateBooking(booking);
 
         return "redirect:/payment/qr-code/" + booking.getBookingId();
@@ -255,7 +252,6 @@ public class PaymentMethodController {
 
         // Update booking
         booking.setExpectedPaymentMethod("Credit Card");
-        booking.setPaymentStatus("Pending");
         bookingService.updateBooking(booking);
 
         redirectAttributes.addFlashAttribute("info", "Chức năng thanh toán thẻ tín dụng đang được phát triển.");
@@ -417,7 +413,6 @@ public class PaymentMethodController {
                 }
                 
                 // Update booking - Chờ Owner duyệt
-                booking.setPaymentStatus("Paid");
                 booking.setStatus(Booking.BookingStatus.Pending); // Chờ Owner duyệt
                 bookingService.updateBooking(booking);
                 
@@ -499,7 +494,6 @@ public class PaymentMethodController {
                     }
                     
                     // Update booking - Giữ trạng thái Pending, chờ Owner duyệt
-                    booking.setPaymentStatus("Paid");
                     booking.setStatus(Booking.BookingStatus.Pending);
                     bookingService.updateBooking(booking);
                     

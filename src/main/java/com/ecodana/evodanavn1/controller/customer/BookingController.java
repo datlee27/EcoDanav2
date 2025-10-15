@@ -456,7 +456,6 @@ public class BookingController {
             }
 
             // Just add a note - owner will confirm return
-            booking.setPaymentStatus("CustomerConfirmedReturn");
             bookingService.updateBooking(booking);
 
             redirectAttributes.addFlashAttribute("success", "Đã xác nhận trả xe. Chờ chủ xe xác nhận.");

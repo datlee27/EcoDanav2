@@ -495,7 +495,6 @@ public class StaffController {
             paymentService.savePayment(payment);
 
             // Update booking status - Payment received, waiting for owner approval
-            booking.setPaymentStatus("Paid");
             booking.setHandledBy(currentUser);
             bookingService.updateBooking(booking);
 
@@ -584,7 +583,6 @@ public class StaffController {
             paymentService.savePayment(refund);
 
             // Update booking
-            booking.setPaymentStatus("Refunded");
             bookingService.updateBooking(booking);
 
             redirectAttributes.addFlashAttribute("success", "Đã hoàn tiền cho khách hàng thành công!");
@@ -650,7 +648,6 @@ public class StaffController {
             paymentService.savePayment(transfer);
 
             // Update booking
-            booking.setPaymentStatus("PaidToOwner");
             bookingService.updateBooking(booking);
 
             redirectAttributes.addFlashAttribute("success", "Đã chuyển tiền cho chủ xe thành công!");

@@ -63,14 +63,14 @@
                     <!-- Payment Status -->
                     <div class="mb-4 p-4 bg-gray-50 rounded-lg">
                         <p class="text-sm text-gray-600">Trạng thái thanh toán:</p>
-                        <p class="font-semibold text-lg" th:text="${booking.paymentStatus}">Unpaid</p>
+                        <p class="font-semibold text-lg" th:text="${booking.paymentStatusString}">Unpaid</p>
                     </div>
 
                     <!-- Action Buttons Based on Status -->
                     <div class="space-y-3">
                         
                         <!-- 1. Confirm Payment Received (when Pending) -->
-                        <div th:if="${booking.status.name() == 'Pending' && booking.paymentStatus == 'Pending'}">
+                        <div th:if="${booking.status.name() == 'Pending' && booking.paymentStatusString == 'Pending'}">
                             <form th:action="@{/staff/booking/{id}/confirm-payment-received(id=${booking.bookingId})}" method="post" class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">Ghi chú (tùy chọn):</label>
                                 <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ví dụ: Đã nhận chuyển khoản">
@@ -90,7 +90,7 @@
                         </div>
 
                         <!-- 3. Refund Payment (when Rejected) -->
-                        <div th:if="${booking.status.name() == 'Rejected' && booking.paymentStatus == 'Refunding'}">
+                        <div th:if="${booking.status.name() == 'Rejected' && (booking.paymentStatusString == 'Pending' || booking.paymentStatusString == 'Completed')}">
                             <form th:action="@{/staff/booking/{id}/refund-payment(id=${booking.bookingId})}" method="post" class="space-y-2">
                                 <label class="block text-sm font-medium text-gray-700">Ghi chú hoàn tiền:</label>
                                 <input type="text" name="notes" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Ví dụ: Đã hoàn tiền qua chuyển khoản">
@@ -101,7 +101,7 @@
                         </div>
 
                         <!-- 4. Transfer to Owner (when Completed and both confirmed) -->
-                        <div th:if="${booking.status.name() == 'Completed' && booking.paymentStatus == 'PendingTransferToOwner'}">
+                        <div th:if="${booking.status.name() == 'Completed' && booking.paymentStatusString == 'Completed'}">
                             <div class="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                                 <p class="text-sm text-green-800">
                                     <i class="fas fa-check-double mr-2"></i>
@@ -132,7 +132,7 @@
                             </p>
                         </div>
 
-                        <div th:if="${booking.paymentStatus == 'PaidToOwner'}" class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div th:if="${booking.paymentStatusString == 'Completed' && booking.status.name() != 'Completed'}" class="p-4 bg-green-50 border border-green-200 rounded-lg">
                             <p class="text-sm text-green-800">
                                 <i class="fas fa-check-circle mr-2"></i>
                                 Đã hoàn tất! Tiền đã được chuyển cho chủ xe.

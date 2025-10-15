@@ -40,7 +40,7 @@ public class PaymentStatusApiController {
             boolean hasCompletedPayment = paymentService.hasCompletedPayment(booking);
             
             // Get payment status
-            String paymentStatus = booking.getPaymentStatus() != null ? booking.getPaymentStatus() : "Unpaid";
+            String paymentStatus = booking.getPaymentStatusString();
             
             Map<String, Object> response = new HashMap<>();
             response.put("bookingId", booking.getBookingId());
@@ -83,7 +83,6 @@ public class PaymentStatusApiController {
             }
             
             // Update booking
-            booking.setPaymentStatus("Paid");
             booking.setStatus(Booking.BookingStatus.Approved);
             bookingService.updateBooking(booking);
             

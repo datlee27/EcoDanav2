@@ -497,7 +497,6 @@ public class OwnerController {
 
             // Update booking status
             booking.setStatus(Booking.BookingStatus.Approved);
-            booking.setPaymentStatus("Approved");
             bookingService.updateBooking(booking);
 
             // Send notifications
@@ -576,7 +575,6 @@ public class OwnerController {
             // Update booking status
             booking.setStatus(Booking.BookingStatus.Rejected);
             booking.setCancelReason(rejectReason);
-            booking.setPaymentStatus("Refunding");
             bookingService.updateBooking(booking);
 
             // Send notifications
@@ -650,7 +648,6 @@ public class OwnerController {
 
             // Update to completed
             booking.setStatus(Booking.BookingStatus.Completed);
-            booking.setPaymentStatus("PendingTransferToOwner");
             bookingService.updateBooking(booking);
 
             // Send notifications

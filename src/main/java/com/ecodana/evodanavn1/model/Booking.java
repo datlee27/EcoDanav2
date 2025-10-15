@@ -2,6 +2,8 @@ package com.ecodana.evodanavn1.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -70,8 +72,8 @@ public class Booking {
     @Column(name = "TermsVersion", length = 10)
     private String termsVersion = "v1.0";
 
-    @Column(name = "PaymentStatus", length = 20)
-    private String paymentStatus = "Unpaid";
+    @OneToMany(mappedBy = "booking", fetch = FetchType.LAZY)
+    private List<Payment> payments = new ArrayList<>();
  
     // Constructors
     public Booking() {
@@ -113,8 +115,42 @@ public class Booking {
     public void setTermsAgreedAt(LocalDateTime termsAgreedAt) { this.termsAgreedAt = termsAgreedAt; }
     public String getTermsVersion() { return termsVersion; }
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
-    public String getPaymentStatus() { return paymentStatus; }
-    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+  
+    public List<Payment> getPayments() { return payments; }
+    public void setPayments(List<Payment> payments) { this.payments = payments; }
+    
+    /**
+     * Get the primary/latest payment for this booking
+     * @return The most recent payment or null if no payments exist
+     */
+    public Payment getPrimaryPayment() {
+        if (payments == null || payments.isEmpty()) {
+            return null;
+        }
+        // Return the most recent payment (last in list)
+        return payments.get(payments.size() - 1);
+    }
+    
+    /**
+     * Get payment status from associated Payment entity
+     * @return PaymentStatus enum or null if no payment exists
+     */
+    public Payment.PaymentStatus getPaymentStatus() {
+        Payment primary = getPrimaryPayment();
+        return primary != null ? primary.getPaymentStatus() : null;
+    }
+    
+    /**
+     * Get payment status as String for backward compatibility
+     * @return "Unpaid" if no payment, otherwise the payment status name
+     */
+    public String getPaymentStatusString() {
+        Payment primary = getPrimaryPayment();
+        if (primary == null) {
+            return "Unpaid";
+        }
+        return primary.getPaymentStatus() != null ? primary.getPaymentStatus().name() : "Unpaid";
+    }
 
     public enum BookingStatus {
         Pending,      // Chờ thanh toán / Chờ Owner duyệt (sau khi thanh toán)

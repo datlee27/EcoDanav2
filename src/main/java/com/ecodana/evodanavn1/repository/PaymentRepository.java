@@ -19,7 +19,7 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
     @Query("SELECT p FROM Payment p WHERE p.user.id = :userId")
     List<Payment> findByUserId(@Param("userId") String userId);
 
-    List<Payment> findByPaymentStatus(String paymentStatus);
+    List<Payment> findByPaymentStatus(Payment.PaymentStatus paymentStatus);
 
     List<Payment> findByPaymentMethod(String paymentMethod);
 
@@ -29,9 +29,9 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     boolean existsByTransactionId(String transactionId);
 
-    @Query("SELECT p FROM Payment p WHERE p.paymentStatus = 'Paid'")
+    @Query("SELECT p FROM Payment p WHERE p.paymentStatus = com.ecodana.evodanavn1.model.Payment$PaymentStatus.Completed")
     List<Payment> findSuccessfulPayments();
 
-    @Query("SELECT p FROM Payment p WHERE p.paymentStatus = 'Pending'")
+    @Query("SELECT p FROM Payment p WHERE p.paymentStatus = com.ecodana.evodanavn1.model.Payment$PaymentStatus.Pending")
     List<Payment> findPendingPayments();
 }

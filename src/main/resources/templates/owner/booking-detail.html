@@ -36,7 +36,7 @@
                         <p class="text-gray-600">Mã đặt xe: <span class="font-bold text-blue-600" th:text="${booking.bookingCode}">BK123456</span></p>
                     </div>
                     <div class="text-right">
-                        <span th:if="${booking.status.name() == 'Pending' && booking.paymentStatus == 'Paid'}"
+                        <span th:if="${booking.status.name() == 'Pending' && booking.paymentStatusString == 'Completed'}"
                               class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full font-semibold">
                             <i class="fas fa-clock mr-2"></i>Chờ duyệt
                         </span>
@@ -179,15 +179,15 @@
                             </div>
                             <div class="flex justify-between pt-3 border-t">
                                 <span class="text-gray-600">Trạng thái</span>
-                                <span th:if="${booking.paymentStatus == 'Paid'}"
+                                <span th:if="${booking.paymentStatusString == 'Completed'}"
                                       class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                                     Đã thanh toán
                                 </span>
-                                <span th:if="${booking.paymentStatus == 'Refunded'}"
+                                <span th:if="${booking.paymentStatusString == 'Refunded'}"
                                       class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
                                     Đã hoàn tiền
                                 </span>
-                                <span th:if="${booking.paymentStatus == 'Unpaid'}"
+                                <span th:if="${booking.paymentStatusString == 'Unpaid'}"
                                       class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-semibold">
                                     Chưa thanh toán
                                 </span>
@@ -204,7 +204,7 @@
                     </div>
 
                     <!-- Actions (if pending) -->
-                    <div th:if="${booking.status.name() == 'Pending' && booking.paymentStatus == 'Paid'}" 
+                    <div th:if="${booking.status.name() == 'Pending' && booking.paymentStatusString == 'Completed'}" 
                          class="bg-white rounded-xl shadow-md p-6">
                         <h3 class="text-xl font-bold text-gray-900 mb-4">Thao tác</h3>
                         <div class="space-y-3">

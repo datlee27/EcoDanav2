@@ -170,7 +170,6 @@ public class OwnerBookingController {
                 paymentService.savePayment(refundPayment);
 
                 // Cập nhật trạng thái booking
-                booking.setPaymentStatus("Refunded");
                 booking.setStatus(Booking.BookingStatus.Cancelled);
                 bookingService.updateBooking(booking);
             }
