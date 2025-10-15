@@ -49,7 +49,8 @@
                             </div>
 
                             <!-- Dashboard based on role -->
-                            <a th:href="@{/dashboard-router}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <a th:href="@{/dashboard-router}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                               th:if="${currentUser.role != null and currentUser.role.roleName == 'Customer'}">
                                 <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                             </a>
                             <!-- Role-specific menu items -->
@@ -65,11 +66,13 @@
 
                             <div class="border-t border-gray-100"></div>
 
-                            <a th:href="@{/profile}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <a th:href="@{/profile}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                th:if="${currentUser.role != null and currentUser.role.roleName == 'Customer'}">
                                 <i class="fas fa-user-edit mr-2"></i>Profile
                             </a>
 
-                            <a th:href="@{/booking/my-bookings}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <a th:href="@{/booking/my-bookings}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                                th:if="${currentUser.role != null and currentUser.role.roleName == 'Customer'}">
                                 <i class="fas fa-history mr-2"></i>Lịch sử đặt xe
                             </a>
 
