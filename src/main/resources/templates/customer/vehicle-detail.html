@@ -100,7 +100,7 @@
                         <!-- Main Image (3 cols x 2 rows) -->
                         <div class="col-span-3 row-span-2">
                             <img id="mainImage"
-                                 th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                                 th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/800x450?text=No+Image'}"
                                  th:alt="${vehicle.vehicleModel}"
                                  class="w-full h-full object-cover rounded-lg cursor-pointer"
                                  style="max-height: 400px;">
@@ -108,7 +108,7 @@
 
                         <!-- Thumbnail Images (right side) -->
                         <div class="thumbnail-item active cursor-pointer rounded-lg overflow-hidden border-2 border-green-500">
-                            <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                            <img th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
                                  th:alt="${vehicle.vehicleModel}"
                                  class="w-full h-full object-cover"
                                  style="height: 95px;">

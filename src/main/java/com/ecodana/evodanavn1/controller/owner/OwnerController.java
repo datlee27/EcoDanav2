@@ -8,8 +8,6 @@ import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -28,19 +26,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/owner")
 public class OwnerController {
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private VehicleService vehicleService;
-
-    @Autowired
-    private BookingService bookingService;
-
-    @Autowired
-    private TransmissionTypeRepository transmissionTypeRepository;
-    @Autowired
-    private VehicleCategoriesRepository vehicleCategoriesRepository;
+    private final UserService userService;
+    private final VehicleService vehicleService;
+    private final BookingService bookingService;
+    private final TransmissionTypeRepository transmissionTypeRepository;
+    private final VehicleCategoriesRepository vehicleCategoriesRepository;
 
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -50,6 +40,15 @@ public class OwnerController {
 
     @org.springframework.beans.factory.annotation.Value("${cloudinary.api_secret:}")
     private String cloudApiSecret;
+
+    @Autowired
+    public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService, TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository) {
+        this.userService = userService;
+        this.vehicleService = vehicleService;
+        this.bookingService = bookingService;
+        this.transmissionTypeRepository = transmissionTypeRepository;
+        this.vehicleCategoriesRepository = vehicleCategoriesRepository;
+    }
 
     private String checkAuthentication(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
         User currentUser = (User) session.getAttribute("currentUser");
@@ -176,15 +175,20 @@ public class OwnerController {
             vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.getOrDefault("status", "Available")));
             vehicle.setCreatedDate(java.time.LocalDateTime.now());
 
-            if (images != null && images.length > 0 && !images[0].isEmpty() && cloudName != null && !cloudName.isBlank()) {
-                try {
-                    com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(Map.of("cloud_name", cloudName, "api_key", cloudApiKey, "api_secret", cloudApiSecret));
-                    Map uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
-                    vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
-                } catch (Exception ex) {
-                    redirectAttributes.addFlashAttribute("error", "Image upload failed: " + ex.getMessage());
+            if (images != null && images.length > 0 && !images[0].isEmpty()) {
+                if (cloudName != null && !cloudName.isBlank()) {
+                    try {
+                        com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(Map.of("cloud_name", cloudName, "api_key", cloudApiKey, "api_secret", cloudApiSecret));
+                        Map<String, Object> uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
+                        vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
+                    } catch (Exception ex) {
+                        redirectAttributes.addFlashAttribute("error", "Image upload failed: " + ex.getMessage());
+                    }
+                } else {
+                    redirectAttributes.addFlashAttribute("error", "Image upload failed: Cloudinary credentials are not configured.");
                 }
             }
+
             vehicleService.saveVehicle(vehicle);
             redirectAttributes.addFlashAttribute("success", "Vehicle added successfully!");
         } catch (Exception e) {
@@ -200,45 +204,76 @@ public class OwnerController {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
         try {
-            vehicleService.getVehicleById(id).ifPresent(vehicle -> {
-                vehicle.setVehicleModel(carData.get("model"));
-                vehicle.setVehicleType(Vehicle.VehicleType.valueOf(carData.get("type")));
-                if (carData.get("transmissionTypeId") != null && !carData.get("transmissionTypeId").isBlank()) {
-                    transmissionTypeRepository.findById(Integer.parseInt(carData.get("transmissionTypeId"))).ifPresent(vehicle::setTransmissionType);
-                }
-                if (carData.get("categoryId") != null && !carData.get("categoryId").isBlank()) {
-                    vehicleCategoriesRepository.findById(Integer.parseInt(carData.get("categoryId"))).ifPresent(vehicle::setCategory);
-                }
-                vehicle.setLicensePlate(carData.get("licensePlate"));
-                if (carData.get("yearManufactured") != null && !carData.get("yearManufactured").isBlank()) {
-                    vehicle.setYearManufactured(Integer.parseInt(carData.get("yearManufactured")));
-                }
-                vehicle.setSeats(Integer.parseInt(carData.getOrDefault("seats", "4")));
-                vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
-                vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", carData.getOrDefault("hourlyRate", "0"), carData.getOrDefault("dailyRate", "0"), carData.getOrDefault("monthlyRate", "0")));
-                if (carData.get("batteryCapacity") != null && !carData.get("batteryCapacity").isEmpty()) {
-                    vehicle.setBatteryCapacity(new java.math.BigDecimal(carData.get("batteryCapacity")));
-                }
-                vehicle.setDescription(carData.get("description"));
-                vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
-                if (carData.containsKey("status")) {
-                    vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.get("status")));
-                }
-                if (images != null && images.length > 0 && !images[0].isEmpty() && cloudName != null && !cloudName.isBlank()) {
+            java.util.Optional<Vehicle> vehicleOptional = vehicleService.getVehicleById(id);
+            if (vehicleOptional.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Vehicle not found.");
+                return "redirect:/owner/cars";
+            }
+
+            Vehicle vehicle = vehicleOptional.get();
+            vehicle.setVehicleModel(carData.get("model"));
+            vehicle.setVehicleType(Vehicle.VehicleType.valueOf(carData.get("type")));
+
+            String transmissionTypeId = carData.get("transmissionTypeId");
+            if (transmissionTypeId != null && !transmissionTypeId.isBlank()) {
+                transmissionTypeRepository.findById(Integer.parseInt(transmissionTypeId)).ifPresent(vehicle::setTransmissionType);
+            }
+
+            String categoryId = carData.get("categoryId");
+            if (categoryId != null && !categoryId.isBlank()) {
+                vehicleCategoriesRepository.findById(Integer.parseInt(categoryId)).ifPresent(vehicle::setCategory);
+            }
+
+            vehicle.setLicensePlate(carData.get("licensePlate"));
+
+            String yearManufactured = carData.get("yearManufactured");
+            if (yearManufactured != null && !yearManufactured.isBlank()) {
+                vehicle.setYearManufactured(Integer.parseInt(yearManufactured));
+            }
+
+            vehicle.setSeats(Integer.parseInt(carData.getOrDefault("seats", "4")));
+            vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
+
+            String hourlyRate = carData.getOrDefault("hourlyRate", "0").isBlank() ? "0" : carData.get("hourlyRate");
+            String dailyRate = carData.getOrDefault("dailyRate", "0").isBlank() ? "0" : carData.get("dailyRate");
+            String monthlyRate = carData.getOrDefault("monthlyRate", "0").isBlank() ? "0" : carData.get("monthlyRate");
+            vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", hourlyRate, dailyRate, monthlyRate));
+
+            String batteryCapacity = carData.get("batteryCapacity");
+            if (batteryCapacity != null && !batteryCapacity.isBlank()) {
+                vehicle.setBatteryCapacity(new java.math.BigDecimal(batteryCapacity));
+            }
+
+            vehicle.setDescription(carData.get("description"));
+            vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
+
+            if (carData.containsKey("status")) {
+                vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.get("status")));
+            }
+
+            if (images != null && images.length > 0 && !images[0].isEmpty()) {
+                if (cloudName != null && !cloudName.isBlank()) {
                     try {
                         com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(Map.of("cloud_name", cloudName, "api_key", cloudApiKey, "api_secret", cloudApiSecret));
-                        Map uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
+                        Map<String, Object> uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
                         vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
                     } catch (Exception ex) {
                         redirectAttributes.addFlashAttribute("error", "Image upload failed: " + ex.getMessage());
                     }
+                } else {
+                     redirectAttributes.addFlashAttribute("warning", "Image could not be uploaded: Cloudinary credentials not configured.");
                 }
-                vehicleService.updateVehicle(vehicle);
-                redirectAttributes.addFlashAttribute("success", "Vehicle updated successfully!");
-            });
+            }
+
+            vehicleService.updateVehicle(vehicle);
+            redirectAttributes.addFlashAttribute("success", "Vehicle updated successfully!");
+
+        } catch (NumberFormatException e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update vehicle: Invalid number format provided.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to update vehicle: " + e.getMessage());
         }
+
         return "redirect:/owner/cars";
     }
 
@@ -260,7 +295,7 @@ public class OwnerController {
 
     @DeleteMapping("/cars/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteCar(@PathVariable String id, HttpSession session, Model model) {
+    public ResponseEntity<Map<String, Object>> deleteCar(@PathVariable String id, HttpSession session) {
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser == null || (!userService.isOwner(currentUser))) {
             return ResponseEntity.status(403).body(Map.of("status", "error", "message", "Access denied"));
@@ -316,44 +351,9 @@ public class OwnerController {
         }
     }
 
-    @GetMapping("/cars/{id}/edit")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getCarForEdit(@PathVariable String id, HttpSession session) {
-        // Auth check can be added here if needed
-        try {
-            return vehicleService.getVehicleById(id).map(vehicle -> {
-                Map<String, Object> car = new HashMap<>();
-                car.put("id", vehicle.getVehicleId());
-                car.put("model", vehicle.getVehicleModel());
-                car.put("type", vehicle.getVehicleType().name());
-                car.put("transmissionTypeId", vehicle.getTransmissionType() != null ? vehicle.getTransmissionType().getTransmissionTypeId() : null);
-                car.put("categoryId", vehicle.getCategory() != null ? vehicle.getCategory().getCategoryId() : null);
-                car.put("licensePlate", vehicle.getLicensePlate());
-                car.put("seats", vehicle.getSeats());
-                car.put("odometer", vehicle.getOdometer());
-                try {
-                    Map<String, Object> prices = new ObjectMapper().readValue(vehicle.getRentalPrices(), new TypeReference<Map<String, Object>>() {});
-                    car.put("dailyRate", prices.get("daily"));
-                    car.put("hourlyRate", prices.get("hourly"));
-                    car.put("monthlyRate", prices.get("monthly"));
-                } catch (Exception e) {
-                    car.put("dailyRate", 0); car.put("hourlyRate", 0); car.put("monthlyRate", 0);
-                }
-                car.put("batteryCapacity", vehicle.getBatteryCapacity());
-                car.put("description", vehicle.getDescription());
-                car.put("requiresLicense", vehicle.getRequiresLicense());
-                car.put("status", vehicle.getStatus().name());
-                car.put("yearManufactured", vehicle.getYearManufactured());
-                return ResponseEntity.ok(Map.of("status", "success", "data", car));
-            }).orElse(ResponseEntity.status(404).body(Map.of("status", "error", "message", "Vehicle not found")));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to get vehicle: " + e.getMessage()));
-        }
-    }
-
     @GetMapping("/management/bookings/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getBookingDetail(@PathVariable String id, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> getBookingDetail(@PathVariable String id) {
         // Auth check can be added here if needed
         try {
             return bookingService.findById(id).map(booking -> {
@@ -493,7 +493,7 @@ public class OwnerController {
 
     @GetMapping("/management/customer/{id}")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getCustomerProfile(@PathVariable String id, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> getCustomerProfile(@PathVariable String id) {
         // Auth check can be added here if needed
         try {
             User customer = userService.findById(id);

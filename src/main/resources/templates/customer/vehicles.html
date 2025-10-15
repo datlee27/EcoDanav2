@@ -119,9 +119,8 @@
             <!-- Vehicle Card -->
             <div th:each="vehicle : ${vehicles}" class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
                 <div class="relative">
-                    <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
-                         th:alt="${vehicle.vehicleModel}" class="w-full h-56 object-cover"
-                         onerror="this.src='https://via.placeholder.com/400x224?text=No+Image'">
+                    <img th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
+                         th:alt="${vehicle.vehicleModel}" class="w-full h-56 object-cover">
                     <div class="absolute top-0 right-0 px-3 py-1 m-2 rounded-md text-sm font-medium"
                          th:classappend="${vehicle.status.name() == 'Available' ? 'bg-green-500 text-white' :
                                           vehicle.status.name() == 'Rented' ? 'bg-yellow-500 text-white' :
