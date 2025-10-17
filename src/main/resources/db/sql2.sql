@@ -447,3 +447,29 @@ CREATE TABLE `Terms` (
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- 1. Mở rộng trạng thái của bảng 'Booking' để theo dõi quy trình đặt cọc
+ALTER TABLE `Booking`
+    MODIFY COLUMN `Status` ENUM(
+        'Pending',          -- Khách vừa tạo, chờ chủ xe duyệt
+        'Approved',         -- Chủ xe đã duyệt (trạng thái trung gian)
+        'AwaitingDeposit',  -- Đã duyệt, chờ khách thanh toán 20% cọc
+        'Confirmed',        -- Khách đã thanh toán cọc, đơn đã chắc chắn
+        'Rejected',         -- Chủ xe từ chối
+        'Ongoing',          -- Đang trong quá trình thuê (đã nhận xe)
+        'Completed',        -- Đã hoàn tất chuyến đi và thanh toán
+        'Cancelled'         -- Đơn bị hủy
+        ) NOT NULL DEFAULT 'Pending';
+
+
+-- 2. Thêm cột 'OwnerId' vào bảng 'Vehicle' để xác định "người cho thuê"
+-- Điều này rất quan trọng cho mô hình P2P (peer-to-peer)
+ALTER TABLE `Vehicle`
+    ADD COLUMN `OwnerId` CHAR(36) NULL COMMENT 'ID của User là chủ sở hữu xe' AFTER `LastUpdatedBy`,
+    ADD CONSTRAINT `fk_vehicle_owner` FOREIGN KEY (`OwnerId`) REFERENCES `Users` (`UserId`) ON DELETE SET NULL;
+
+
+-- 3. Thêm các cột theo dõi tiền cọc và số tiền còn lại vào bảng 'Booking'
+ALTER TABLE `Booking`
+    ADD COLUMN `DepositAmountRequired` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Số tiền cọc 20% cần thanh toán' AFTER `TotalAmount`,
+    ADD COLUMN `RemainingAmount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Số tiền 80% còn lại thanh toán khi nhận xe' AFTER `DepositAmountRequired`;
