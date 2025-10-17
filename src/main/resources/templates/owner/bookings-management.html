@@ -1,204 +1,344 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head}"></head>
-<body>
-<style>
-    .primary { color: #4CAF50; }
-    .bg-primary { background-color: #4CAF50; }
-    .hidden { display: none; }
-    .status-pending { background-color: #fef9c3; color: #a16207; }
-    .status-approved, .status-active { background-color: #dcfce7; color: #166534; }
-    .status-ongoing { background-color: #dbeafe; color: #1e40af; }
-    .status-completed { background-color: #e5e7eb; color: #374151; } /* Reverted to original color */
-    .status-rejected, .status-cancelled { background-color: #fee2e2; color: #991b1b; }
-</style>
-<div th:replace="~{fragments/nav :: nav}"></div>
-<div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+<head>
+    <div th:replace="~{fragments/layout :: head}"></div>
+    <link href="/css/sidebar-common.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+    <style>
+        .primary { color: #4CAF50; }
+        .bg-primary { background-color: #4CAF50; }
+        .text-primary { color: #4CAF50; }
+        .hover\:bg-accent:hover { background-color: #45a049; }
+        .hidden { display: none; }
+        .modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 100; display: flex; align-items: center; justify-content: center;
+            animation: modalFadeIn 0.3s ease-in-out;
+        }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal.hidden { display: none; }
+        .modal-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-content {
+            position: relative; background-color: white; border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column;
+            max-width: 800px; width: 90%; max-height: 90vh;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        .modal-content.max-w-md { max-width: 28rem; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; flex-shrink: 0; }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
+        .modal-footer { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
 
-<div class="ml-64 mt-16">
-    <div class="bg-white shadow-sm border-b">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Booking Management</h1>
-                    <p class="text-gray-600">Manage your bookings</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-white text-lg"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}">Owner</p>
-                        <p class="text-sm text-gray-600">Car Owner</p>
-                    </div>
-                </div>
+        .status-badge {
+            padding: 0.25rem 0.75rem; border-radius: 9999px;
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+        }
+        .status-pending { background-color: #fef3c7; color: #92400e; }
+        .status-approved { background-color: #d1fae5; color: #065f46; }
+        .status-rejected { background-color: #fee2e2; color: #991b1b; }
+        .status-ongoing { background-color: #dbeafe; color: #1e40af; }
+        .status-completed { background-color: #e5e7eb; color: #374151; }
+        .status-cancelled { background-color: #f3f4f6; color: #6b7280; }
+
+        .tab-button { transition: all 0.3s ease; }
+        .tab-button.active { color: #4caf50; border-color: #4caf50; }
+        .tab-button:not(.active):hover { color: #4caf50; }
+    </style>
+</head>
+<body class="bg-gray-100">
+<div class="flex h-screen bg-gray-100 overflow-hidden">
+
+    <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
+            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div class="flex-grow md:flex-grow-0">
+                <h1 class="text-lg font-semibold text-gray-800 truncate">Booking Management</h1>
+                <p class="text-xs text-gray-500 hidden sm:block">Manage your bookings and rental calendar</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button class="relative p-2 text-gray-600 hover:text-primary">
+                    <i class="fas fa-bell text-xl"></i>
+                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+                          th:text="${pendingBookings?.size() ?: 0}">0</span>
+                </button>
+                <div th:replace="~{fragments/nav :: #userMenu}"></div>
             </div>
         </div>
-    </div>
 
-    <div class="container mx-auto px-4 py-6">
-        <!-- Booking Management Content -->
-        <div class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="p-6 border-b">
-                <div class="flex flex-wrap gap-4">
-                    <button class="px-4 py-2 bg-primary text-white rounded-lg font-medium filter-btn" data-status="all">All Bookings</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="pending">Pending</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="approved">Approved</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="ongoing">Ongoing</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="completed">Completed</button>
-                    <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium filter-btn" data-status="cancelled">Cancelled</button>
-                </div>
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            <div class="container mx-auto px-0"> <div th:if="${success}" id="success-notification" class="fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Customer</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Car</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rental Period</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Amount</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                    <tr th:each="booking : ${bookings}" class="hover:bg-gray-50" th:attr="data-status=${#strings.toLowerCase(booking.status.name())}">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-gray-300 rounded-full"><img th:if="${booking.user != null and booking.user.avatarUrl != null}" th:src="${booking.user.avatarUrl}" class="w-full h-full rounded-full object-cover"/></div>
+                <div th:if="${error}" id="error-notification" class="fixed top-20 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
+                </div>
+
+                <div class="flex space-x-4 mb-6 border-b border-gray-200">
+                    <button onclick="switchTab('bookings')" id="bookings-tab" class="tab-button active px-6 py-3 font-semibold border-b-2 border-primary text-primary transition-colors">
+                        <i class="fas fa-list mr-2"></i>Booking Management
+                    </button>
+                    <button onclick="switchTab('calendar')" id="calendar-tab" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-600 hover:text-primary transition-colors">
+                        <i class="fas fa-calendar-alt mr-2"></i>Calendar View
+                    </button>
+                </div>
+
+                <div id="bookings-section" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                            <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="font-semibold text-gray-800" th:text="${booking.user != null ? (booking.user.firstName + ' ' + booking.user.lastName) : 'N/A'}"></p>
-                                    <p class="text-sm text-gray-600" th:text="${booking.user != null ? booking.user.email : 'N/A'}"></p>
+                                    <p class="text-gray-600 text-sm">Pending</p>
+                                    <p class="text-2xl font-bold text-gray-800" th:text="${pendingCount ?: 0}">0</p>
                                 </div>
+                                <i class="fas fa-clock text-3xl text-yellow-500 opacity-70"></i>
                             </div>
-                        </td>
-                        <td class="px-6 py-4">
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-600 text-sm">Approved</p>
+                                    <p class="text-2xl font-bold text-gray-800" th:text="${approvedCount ?: 0}">0</p>
+                                </div>
+                                <i class="fas fa-check-circle text-3xl text-green-500 opacity-70"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-600 text-sm">Ongoing</p>
+                                    <p class="text-2xl font-bold text-gray-800" th:text="${ongoingCount ?: 0}">0</p>
+                                </div>
+                                <i class="fas fa-car text-3xl text-blue-500 opacity-70"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-600 text-sm">Completed</p>
+                                    <p class="text-2xl font-bold text-gray-800" th:text="${completedCount ?: 0}">0</p>
+                                </div>
+                                <i class="fas fa-flag-checkered text-3xl text-gray-500 opacity-70"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
-                                <p class="font-medium text-gray-800" th:text="${booking.vehicle != null ? booking.vehicle.vehicleModel : 'N/A'}"></p>
-                                <p class="text-sm text-gray-600" th:text="${booking.vehicle != null ? (booking.vehicle.vehicleType + ' • ' + booking.vehicle.yearManufactured) : 'N/A'}"></p>
+                                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status Filter</label>
+                                <select id="status-filter" onchange="filterBookings()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                                    <option value="">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Ongoing">Ongoing</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
                             </div>
-                        </td>
-                        <td class="px-6 py-4">
                             <div>
-                                <p class="font-medium text-gray-800" th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yyyy') + ' - ' + #temporals.format(booking.returnDateTime, 'dd/MM/yyyy')}"></p>
+                                <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                                <input type="text" id="search-input" onkeyup="filterBookings()" placeholder="Search by code or customer..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"/>
                             </div>
-                        </td>
-                        <td class="px-6 py-4"><p class="font-semibold text-primary" th:text="${booking.totalAmount != null ? ('$' + booking.totalAmount) : '$0'}"></p></td>
-                        <td class="px-6 py-4"><span th:class="'px-3 py-1 rounded-full text-sm font-medium status-' + ${#strings.toLowerCase(booking.status.name())}" th:text="${booking.status ?: 'Unknown'}"></span></td>
-                        <td class="px-6 py-4">
-                            <div class="flex space-x-3">
-                                <button th:attr="onclick=|viewBooking('${booking.bookingId}')|" class="text-blue-600 hover:text-blue-800" title="View Details"><i class="fas fa-eye"></i></button>
-                                <th:block th:if="${booking.status.name() == 'Pending'}">
-                                    <button th:attr="onclick=|acceptBooking('${booking.bookingId}')|" class="text-green-600 hover:text-green-800" title="Approve"><i class="fas fa-check"></i></button>
-                                    <button th:attr="onclick=|openDeclineBookingModal('${booking.bookingId}')|" class="text-red-600 hover:text-red-800" title="Reject"><i class="fas fa-times"></i></button>
-                                </th:block>
+                            <div>
+                                <label for="sort-select" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                                <select id="sort-select" onchange="filterBookings()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="amount-high">Amount: High to Low</option>
+                                    <option value="amount-low">Amount: Low to High</option>
+                                </select>
                             </div>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200" id="bookings-table-body">
+                                <tr th:each="booking : ${bookings}" class="booking-row hover:bg-gray-50 transition-colors"
+                                    th:data-status="${#strings.toLowerCase(booking.status.name())}"
+                                    th:data-code="${booking.bookingCode}"
+                                    th:data-customer="${booking.user?.firstName + ' ' + booking.user?.lastName}"
+                                    th:data-created="${booking.createdDate}"
+                                    th:data-amount="${booking.totalAmount}">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-semibold text-primary text-sm" th:text="${booking.bookingCode}">BK001</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
+                                                <i class="fas fa-user text-gray-600 text-xs"></i>
+                                            </div>
+                                            <div>
+                                                <p class="font-medium text-gray-800 text-sm" th:text="${booking.user?.firstName + ' ' + booking.user?.lastName}">Customer Name</p>
+                                                <p class="text-xs text-gray-500 truncate max-w-[150px]" th:text="${booking.user?.email}">email@example.com</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <p class="font-medium text-gray-800 text-sm" th:text="${booking.vehicle?.vehicleModel}">Vehicle Model</p>
+                                        <p class="text-xs text-gray-500" th:text="${booking.vehicle?.licensePlate}">License Plate</p>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <div><span class="font-medium">Từ:</span> <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yy HH:mm')}"></span></div>
+                                        <div><span class="font-medium">Đến:</span> <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yy HH:mm')}"></span></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="font-semibold text-gray-800 text-sm" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">1,000,000 VND</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge" th:classappend="'status-' + ${booking.status.name()}" th:text="${booking.status.name()}">Pending</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
+                                        <button onclick="viewBookingDetail(this)" th:data-booking-id="${booking.bookingId}" class="text-blue-600 hover:text-blue-800" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="approveBooking(this)" th:data-booking-id="${booking.bookingId}" class="text-green-600 hover:text-green-800" title="Approve">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="rejectBooking(this)" th:data-booking-id="${booking.bookingId}" class="text-red-600 hover:text-red-800" title="Reject">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(bookings)}">
+                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500">
+                                        <i class="fas fa-inbox text-4xl mb-2"></i>
+                                        <p>No bookings found</p>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="calendar-section" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow p-6">
+                        <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                            <h3 class="text-lg font-semibold text-gray-800">Booking Timeline</h3>
+                            <div class="flex items-center space-x-3">
+                                <select id="group-by-select" onchange="changeGrouping(this.value)" class="px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-primary">
+                                    <option value="day">By Day</option>
+                                    <option value="month" selected>By Month</option>
+                                    <option value="year">By Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="timeline-container">
+                            <p class="text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading timeline...</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div> </main> </div> </div> <div id="booking-detail-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('booking-detail-modal')"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-2xl font-bold text-gray-800">Booking Details</h3>
+            <button onclick="closeModal('booking-detail-modal')" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="modal-body" id="booking-detail-content">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                <p class="mt-2 text-gray-600">Loading...</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Booking Detail Modal -->
-<div id="booking-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[95vh] flex flex-col">
-        <div class="flex justify-between items-center px-6 py-4 border-b bg-gray-50 rounded-t-xl">
-            <h3 class="text-xl font-semibold text-gray-800">Booking Details</h3>
-            <button onclick="closeBookingDetailModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+<div id="customer-profile-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('customer-profile-modal')"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-2xl font-bold text-gray-800">Customer Profile</h3>
+            <button onclick="closeModal('customer-profile-modal')" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-        <div class="p-6 space-y-6 overflow-y-auto" id="booking-detail-content">
-            <!-- Dynamic content will be injected here by JavaScript -->
-        </div>
-        <div class="flex justify-end space-x-4 px-6 py-4 bg-gray-50 rounded-b-xl border-t" id="booking-detail-actions">
-            <button onclick="closeBookingDetailModal()" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300">Close</button>
-            <button id="modal-edit-button" onclick="openEditBookingModal()" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"><i class="fas fa-edit mr-2"></i>Edit</button>
-            <!-- Action buttons will be dynamically added/removed here -->
-            <button id="modal-complete-button" onclick="completeBooking(currentBookingData.bookingId)" class="hidden bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"><i class="fas fa-flag-checkered mr-2"></i>Complete</button>
-            <button id="modal-cancel-button" onclick="openCancelBookingModal(currentBookingData.bookingId)" class="hidden bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600"><i class="fas fa-ban mr-2"></i>Cancel</button>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Booking Modal -->
-<div id="edit-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-        <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h3 class="text-xl font-semibold text-gray-800">Edit Booking</h3>
-            <button onclick="closeEditBookingModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        <form id="edit-booking-form" onsubmit="submitEditBookingForm(event)">
-            <div class="p-6 space-y-4">
-                <input type="hidden" id="edit-booking-id" name="bookingId">
-                <div>
-                    <label for="edit-pickup-datetime" class="block text-sm font-medium text-gray-700">Pickup DateTime</label>
-                    <input type="datetime-local" id="edit-pickup-datetime" name="pickupDateTime" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="edit-return-datetime" class="block text-sm font-medium text-gray-700">Return DateTime</label>
-                    <input type="datetime-local" id="edit-return-datetime" name="returnDateTime" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="edit-total-amount" class="block text-sm font-medium text-gray-700">Total Amount</label>
-                    <input type="number" id="edit-total-amount" name="totalAmount" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                </div>
-                <div>
-                    <label for="edit-booking-status" class="block text-sm font-medium text-gray-700">Status</label>
-                    <select id="edit-booking-status" name="status" class="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md">
-                        <option th:each="status : ${T(com.ecodana.evodanavn1.model.Booking.BookingStatus).values()}" th:value="${status}" th:text="${status.name()}"></option>
-                    </select>
-                </div>
+        <div class="modal-body" id="customer-profile-content">
+            <div class="text-center py-8">
+                <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
+                <p class="mt-2 text-gray-600">Loading...</p>
             </div>
-            <div class="flex justify-end space-x-4 px-6 py-4 bg-gray-50 border-t">
-                <button type="button" onclick="closeEditBookingModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
-                <button type="submit" class="bg-primary text-white px-6 py-2 rounded-lg hover:bg-blue-600">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<div id="approve-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('approve-modal')"></div>
+    <div class="modal-content max-w-md">
+        <div class="modal-header">
+            <h3 class="text-xl font-bold text-gray-800">Approve Booking</h3>
+            <button onclick="closeModal('approve-modal')" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p class="text-gray-700 mb-4">
+                Are you sure you want to approve this booking? The vehicle will be marked as unavailable for the rental
+                period.
+            </p>
+            <div class="flex justify-end space-x-3">
+                <button onclick="closeModal('approve-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="confirmApprove()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    <i class="fas fa-check mr-2"></i>Approve
+                </button>
             </div>
-        </form>
-    </div>
-</div>
-
-<!-- Decline Booking Modal -->
-<div id="decline-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h3 class="text-xl font-semibold text-gray-800">Decline Booking</h3>
-            <button onclick="closeDeclineBookingModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        <div class="p-6">
-            <label for="decline-reason" class="block text-sm font-medium text-gray-700 mb-2">Reason for declining:</label>
-            <textarea id="decline-reason" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Enter reason here..."></textarea>
-        </div>
-        <div class="flex justify-end space-x-4 px-6 py-4 bg-gray-50 border-t">
-            <button type="button" onclick="closeDeclineBookingModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
-            <button type="button" onclick="submitDeclineBooking()" class="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600">Decline Booking</button>
         </div>
     </div>
 </div>
 
-<!-- Cancel Booking Modal -->
-<div id="cancel-booking-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h3 class="text-xl font-semibold text-gray-800">Cancel Booking</h3>
-            <button onclick="closeCancelBookingModal()" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+<div id="reject-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('reject-modal')"></div>
+    <div class="modal-content max-w-md">
+        <div class="modal-header">
+            <h3 class="text-xl font-bold text-gray-800">Reject Booking</h3>
+            <button onclick="closeModal('reject-modal')" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
-        <div class="p-6">
-            <label for="cancel-reason" class="block text-sm font-medium text-gray-700 mb-2">Reason for cancellation:</label>
-            <textarea id="cancel-reason" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="Enter reason here..."></textarea>
-        </div>
-        <div class="flex justify-end space-x-4 px-6 py-4 bg-gray-50 border-t">
-                <button type="button" onclick="closeCancelBookingModal()" class="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600">Cancel</button>
-                <button type="button" onclick="submitCancelBooking()" class="bg-yellow-500 text-white px-6 py-2 rounded-lg hover:bg-yellow-600">Confirm Cancellation</button>
+        <div class="modal-body">
+            <p class="text-gray-700 mb-4">Please provide a reason for rejecting this booking:</p>
+            <textarea id="reject-reason" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      placeholder="Enter rejection reason..."></textarea>
+            <div class="flex justify-end space-x-3 mt-4">
+                <button onclick="closeModal('reject-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Cancel
+                </button>
+                <button onclick="confirmReject()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    <i class="fas fa-times mr-2"></i>Reject
+                </button>
             </div>
+        </div>
     </div>
 </div>
-
+<script th:src="@{/js/sidebar-common.js}"></script>
+<script th:src="@{/js/owner-management.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     let currentBookingData = null; // Store the whole booking object
-    
+
     // Lấy CSRF token từ Thymeleaf một cách an toàn
     const csrfToken = /*[[${_csrf.token}]]*/ null;
     const csrfHeaderName = /*[[${_csrf.headerName}]]*/ null;
@@ -219,7 +359,7 @@
             .then(data => {
                 currentBookingData = data;
                 const content = document.getElementById('booking-detail-content');
-                
+
                 let detailsHtml = `
                     <div class="p-4 border rounded-lg">
                         <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-receipt mr-3 text-primary"></i>Booking Information</h4>
@@ -254,7 +394,7 @@
                     </div>
                 `;
                 content.innerHTML = detailsHtml;
-                
+
                 // Show/hide action buttons in detail modal based on status
                 const completeBtn = document.getElementById('modal-complete-button');
                 const cancelBtn = document.getElementById('modal-cancel-button');
@@ -288,7 +428,7 @@
 
     function openEditBookingModal() {
         if (!currentBookingData) return;
-        
+
         const pickupDate = new Date(currentBookingData.pickupDateTime).toISOString().slice(0, 16);
         const returnDate = new Date(currentBookingData.returnDateTime).toISOString().slice(0, 16);
 
@@ -311,7 +451,7 @@
         const form = document.getElementById('edit-booking-form');
         const formData = new FormData(form);
         const bookingId = formData.get('bookingId');
-        
+
         const data = {};
         formData.forEach((value, key) => data[key] = value);
 
@@ -469,6 +609,22 @@
             document.querySelectorAll(".filter-btn").forEach((btn) => btn.classList.replace("bg-primary", "bg-gray-100"));
             button.classList.replace("bg-gray-100", "bg-primary");
         });
+    });
+    /*]]>*/
+
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPage = /*[[${currentPage}]]*/ null; // Lấy giá trị từ model
+        if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
+            highlightOwnerSidebarLink(currentPage);
+        } else if (!currentPage) {
+            console.warn("CurrentPage variable not set in model for highlighting Owner sidebar.");
+        } else if (typeof highlightOwnerSidebarLink !== 'function') {
+            console.error("highlightOwnerSidebarLink function not found in sidebar-common.js.");
+        }
+
+        // Gọi các hàm setup JS khác của trang này nếu có
+        // Ví dụ: setupOwnerDashboardSpecificFunctions();
     });
     /*]]>*/
 </script>

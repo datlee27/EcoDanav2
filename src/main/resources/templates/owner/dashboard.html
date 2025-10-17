@@ -1,71 +1,93 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head}"></head>
-<body>
-<style>
-    .primary { color: #4CAF50; }
-    .bg-primary { background-color: #4CAF50; }
-    .hidden { display: none; }
-</style>
-<div th:replace="~{fragments/nav :: nav}"></div>
-<div th:replace="~{owner/owner-sidebar :: sidebar}"></div>
+<head>
+    <div th:replace="~{fragments/layout :: head}"></div>
+    <link href="/css/sidebar-common.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100">
+<div class="flex h-screen bg-gray-100 overflow-hidden"> <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
 
-<div class="ml-64 mt-16">
-    <div class="bg-white shadow-sm border-b">
-        <div class="container mx-auto px-4 py-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Owner Dashboard</h1>
-                    <p class="text-gray-600">An overview of your rental business</p>
-                </div>
-                <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                        <i class="fas fa-user text-white text-lg"></i>
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
+            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+            <div>
+                <h1 class="text-lg font-semibold text-gray-800">Owner Dashboard</h1>
+                <p class="text-xs text-gray-500">An overview of your rental business</p>
+            </div>
+            <div th:replace="~{fragments/nav :: #userMenu}"></div>
+        </div>
+
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            <div class="container mx-auto px-0"> <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-2">
+                    Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
+                </h2>
+                <p class="text-gray-600">Here's what's happening with your rental business today.</p>
+            </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Total Cars</p>
+                                <p class="text-3xl font-bold text-gray-800" th:text="${totalVehicles ?: 0}">0</p>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-full">
+                                <i class="fas fa-car text-2xl text-blue-600"></i>
+                            </div>
+                        </div>
                     </div>
-                    <div>
-                        <p class="font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName ?: 'Owner'}">Owner</p>
-                        <p class="text-sm text-gray-600">Car Owner</p>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Available Cars</p>
+                                <p class="text-3xl font-bold text-gray-800" th:text="${availableVehicles ?: 0}">0</p>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-full">
+                                <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-yellow-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Rented Cars</p>
+                                <p class="text-3xl font-bold text-gray-800" th:text="${rentedVehicles ?: 0}">0</p>
+                            </div>
+                            <div class="bg-yellow-100 p-3 rounded-full">
+                                <i class="fas fa-key text-2xl text-yellow-600"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Pending Bookings</p>
+                                <p class="text-3xl font-bold text-gray-800" th:text="${pendingBookings ?: 0}">0</p>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-full">
+                                <i class="fas fa-clock text-2xl text-purple-600"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="container mx-auto px-4 py-6">
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-800 mb-2">
-                Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
-            </h2>
-            <p class="text-gray-600">Here's what's happening with your rental business today.</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Total Cars</p>
-                        <p class="text-3xl font-bold text-gray-800" th:text="${totalVehicles ?: 0}">0</p>
-                    </div>
-                    <div class="bg-blue-100 p-3 rounded-full">
-                        <i class="fas fa-car text-2xl text-blue-600"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-gray-600 text-sm font-medium">Available Cars</p>
-                        <p class="text-3xl font-bold text-gray-800" th:text="${availableVehicles ?: 0}">0</p>
-                    </div>
-                    <div class="bg-purple-100 p-3 rounded-full">
-                        <i class="fas fa-check-circle text-2xl text-purple-600"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </main>
     </div>
 </div>
 
+<script th:src="@{/js/sidebar-common.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function() {
+        const currentPage = /*[[${currentPage}]]*/ 'dashboard'; // Trang dashboard
+        if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
+            highlightOwnerSidebarLink(currentPage);
+        }
+    });
+    /*]]>*/
+</script>
 </body>
 </html>

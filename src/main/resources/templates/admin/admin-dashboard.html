@@ -9,9 +9,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/css/admin-dashboard.css" rel="stylesheet">
+    <link href="/css/sidebar-common.css" rel="stylesheet">
     <link href="/css/admin-users.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script th:src="@{/js/sidebar-common.js}"></script>
     <script th:src="@{/js/admin-dashboard.js}"></script>
     <script th:src="@{/js/admin-users.js}"></script>
     <style>
@@ -23,62 +24,7 @@
 <body class="bg-gray-100">
 <div class="flex h-screen bg-gray-100">
     <div id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0">
-        <div class="flex items-center justify-between h-16 px-6 bg-gradient-to-r from-blue-600 to-purple-600">
-            <div class="flex items-center">
-                <i class="fas fa-car text-2xl text-white mr-3"></i>
-                <h1 class="text-xl font-bold text-white">EcoDana</h1>
-            </div>
-            <button id="sidebar-close" class="text-white lg:hidden">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <nav class="mt-6 px-3">
-            <div class="space-y-1">
-                <button onclick="switchTab('overview')" data-tab="overview" class="sidebar-item active w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-chart-pie mr-3 text-lg"></i>
-                    <span>Dashboard</span>
-                </button>
-                <button onclick="switchTab('users')" data-tab="users" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-users mr-3 text-lg"></i>
-                    <span>User Management</span>
-                </button>
-                <button onclick="switchTab('vehicles')" data-tab="vehicles" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-car mr-3 text-lg"></i>
-                    <span>Vehicle Management</span>
-                </button>
-                <button onclick="switchTab('bookings')" data-tab="bookings" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-calendar-check mr-3 text-lg"></i>
-                    <span>Booking Management</span>
-                </button>
-                <button onclick="switchTab('contracts')" data-tab="contracts" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-file-contract mr-3 text-lg"></i>
-                    <span>Contract Management</span>
-                </button>
-                <button onclick="switchTab('payments')" data-tab="payments" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-credit-card mr-3 text-lg"></i>
-                    <span>Payment Management</span>
-                </button>
-                <button onclick="switchTab('discounts')" data-tab="discounts" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-tags mr-3 text-lg"></i>
-                    <span>Discount Management</span>
-                </button>
-                <button onclick="switchTab('insurance')" data-tab="insurance" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-shield-alt mr-3 text-lg"></i>
-                    <span>Insurance Management</span>
-                </button>
-                <button onclick="switchTab('notifications')" data-tab="notifications" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-bell mr-3 text-lg"></i>
-                    <span>Notifications</span>
-                </button>
-                <button onclick="switchTab('reports')" data-tab="reports" class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group">
-                    <i class="fas fa-chart-bar mr-3 text-lg"></i>
-                    <span>Reports & Analytics</span>
-                </button>
-            </div>
-
-            <!-- User info and logout will be in the top bar -->
-        </nav>
+        <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{admin/admin-sidebar-nav :: nav})}"></div>
     </div>
 
     <div class="flex-1 flex flex-col overflow-hidden lg:ml-0">
