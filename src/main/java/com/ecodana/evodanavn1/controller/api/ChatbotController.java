@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -20,12 +21,18 @@ public class ChatbotController {
     }
 
     @PostMapping("/ask")
-    public ResponseEntity<Map<String, String>> ask(@RequestBody Map<String, String> request) {
-        String userMessage = request.get("message");
-        if (userMessage == null || userMessage.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("reply", "Vui lòng nhập câu hỏi."));
+    public ResponseEntity<Map<String, Object>> askChatbot(@RequestBody Map<String, String> payload) {
+        String message = payload.get("message");
+        if (message == null || message.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Message cannot be empty."));
         }
-        String aiReply = aiService.getAIResponse(userMessage);
-        return ResponseEntity.ok(Map.of("reply", aiReply));
+
+        String reply = aiService.askAI(message);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("reply", reply);
+
+        return ResponseEntity.ok(response);
     }
 }

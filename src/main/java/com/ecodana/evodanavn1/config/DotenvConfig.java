@@ -70,6 +70,8 @@ public class DotenvConfig {
         validateProperty("GOOGLE_API_KEY");
         validateProperty("MAIL_USERNAME");
         validateProperty("MAIL_PASSWORD");
+        validateProperty("CLOUDFLARE_ACCOUNT_ID");
+        validateProperty("CLOUDFLARE_API_TOKEN");
 
         System.out.println("✅ Environment validation completed");
     }

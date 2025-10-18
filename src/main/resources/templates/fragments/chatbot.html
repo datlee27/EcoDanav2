@@ -25,14 +25,17 @@
     <!-- Chatbot Container -->
     <div id="chatbot-container" class="fixed bottom-24 right-4 left-4 md:w-112 md:left-auto bg-white rounded-2xl shadow-2xl z-50 flex flex-col transition-all duration-400 ease-in-out transform opacity-0 -translate-y-4 pointer-events-none">
         <!-- Header -->
-        <div class="bg-primary text-white p-4 rounded-t-2xl flex items-center space-x-3">
+        <div class="bg-primary text-white p-4 rounded-t-2xl flex items-center justify-between">
             <div class="w-10 h-10 bg-white/30 rounded-full flex items-center justify-center">
                 <i class="fas fa-leaf text-white"></i>
             </div>
-            <div>
+            <div class="flex-1 ml-3">
                 <h3 class="font-bold text-lg">EvoDana Assistant</h3>
                 <p class="text-xs text-green-100">Online</p>
             </div>
+            <button id="close-chatbot-btn" class="text-white/70 hover:text-white transition-colors" title="Đóng và kết thúc trò chuyện">
+                <i class="fas fa-times text-xl"></i>
+            </button>
         </div>
 
         <!-- Chatbox -->
@@ -73,6 +76,7 @@
         const iconClose = document.getElementById('icon-close');
         const welcomeBubble = document.getElementById('welcome-bubble');
         const suggestionContainer = document.getElementById('suggestion-buttons');
+        const closeChatbotBtn = document.getElementById('close-chatbot-btn');
 
         // Key để lưu lịch sử chat trong sessionStorage
         const CHAT_HISTORY_KEY = 'evodana_chat_history';
@@ -99,6 +103,19 @@
             toggleChatbot();
             welcomeBubble.classList.add('hidden');
         });
+
+        // *** LOGIC MỚI: NÚT ĐÓNG CHATBOT ***
+        closeChatbotBtn.addEventListener('click', () => {
+            // Đóng cửa sổ chat
+            if (chatbotContainer.classList.contains('chatbot-open')) {
+                toggleChatbot();
+            }
+            // Xóa lịch sử chat để lần sau mở lại là một phiên mới
+            sessionStorage.removeItem(CHAT_HISTORY_KEY);
+            // Tải lại giao diện mặc định (có thể cần hoặc không tùy vào luồng)
+            loadHistory();
+        });
+
         const createChatLi = (message, type) => {
             const chatLi = document.createElement("li");
             chatLi.classList.add("flex");
@@ -107,7 +124,11 @@
                 chatLi.classList.add("justify-end");
                 chatContent = `<div class="bg-primary text-white p-3 rounded-xl max-w-xs rounded-br-none"><p class="text-sm">${message}</p></div>`;
             } else if (type === "bot") {
-                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none"><p class="text-sm">${message}</p></div>`;
+                // *** SỬA LỖI: Kiểm tra xem message đã là HTML (chứa thẻ <p>) chưa ***
+                // Nếu message đã là một đoạn HTML hoàn chỉnh từ server, dùng trực tiếp.
+                // Nếu không, bọc nó trong thẻ <p> như bình thường.
+                const botMessageHtml = message.trim().startsWith('<p>') ? message : `<p class="text-sm">${message}</p>`;
+                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none">${botMessageHtml}</div>`;
             } else { // thinking...
                 chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none flex items-center space-x-2"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>`;
             }
@@ -119,10 +140,16 @@
         const saveHistory = () => {
             const messages = [];
             chatbox.querySelectorAll('li').forEach(li => {
-                const p = li.querySelector('p');
-                if (p) {
+                // *** SỬA LỖI: Bỏ qua thẻ <li> chứa các nút gợi ý khi lưu lịch sử ***
+                if (li.id === 'suggestion-buttons') return;
+
+                // Thay vì chỉ tìm thẻ <p>, chúng ta tìm div chứa nội dung chat
+                const chatContentDiv = li.querySelector('div');
+                if (chatContentDiv && chatContentDiv.innerHTML.trim() !== '') {
                     const type = li.classList.contains('justify-end') ? 'user' : 'bot';
-                    messages.push({ message: p.innerHTML, type: type });
+                    // Lưu lại toàn bộ nội dung HTML của div.
+                    // Điều này đảm bảo cấu trúc <p>...<a>...</a></p> được bảo toàn.
+                    messages.push({ message: chatContentDiv.innerHTML, type: type });
                 }
             });
             sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
@@ -133,7 +160,18 @@
             if (storedHistory) {
                 const history = JSON.parse(storedHistory);
                 chatbox.innerHTML = ''; // Xóa nội dung chat mặc định
-                history.forEach(item => chatbox.appendChild(createChatLi(item.message, item.type)));
+                if (history.length > 0) {
+                    history.forEach(item => chatbox.appendChild(createChatLi(item.message, item.type)));
+                } else {
+                    // Nếu lịch sử trống, hiển thị lại tin nhắn chào mừng và gợi ý
+                    chatbox.innerHTML = `
+                        <li class="flex">
+                            <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none"><p class="text-sm">Xin chào! Tôi là trợ lý ảo của EvoDana. Tôi có thể giúp gì cho bạn?</p></div>
+                        </li>
+                        <li id="suggestion-buttons" class="pt-2">${suggestionContainer.innerHTML}</li>
+                    `;
+                    addSuggestionButtonListeners(); // Gắn lại sự kiện cho các nút mới
+                }
                 if (history.length > 1) suggestionContainer.style.display = 'none';
             }
         };
@@ -185,6 +223,25 @@
             await generateResponse(userMessage);
         };
 
+        // *** LOGIC MỚI: XỬ LÝ KHI CLICK VÀO LINK TRONG CHATBOX ***
+        chatbox.addEventListener('click', function(e) {
+            // Sử dụng event delegation để bắt sự kiện click trên các thẻ <a>
+            const link = e.target.closest('a');
+            if (link) {
+                e.preventDefault(); // Ngăn hành vi điều hướng mặc định
+
+                // *** SỬA LỖI: Lấy đường dẫn tương đối thay vì đường dẫn tuyệt đối ***
+                // link.href trả về URL đầy đủ (http://localhost:8080/...), có thể gây mất sessionStorage nếu origin không nhất quán.
+                const url = link.getAttribute('href'); // Lấy chính xác giá trị trong href="/vehicles?..."
+
+                // Đóng chatbot trước khi điều hướng
+                if (chatbotContainer.classList.contains('chatbot-open')) {
+                    toggleChatbot();
+                }
+                window.location.href = url; // Điều hướng đến trang mới
+            }
+        });
+
         sendChatBtn.addEventListener('click', handleChat);
         chatInput.addEventListener('keydown', (e) => {
             if (e.key === "Enter" && !e.shiftKey) {
@@ -193,16 +250,21 @@
             }
         });
 
-        // Gán sự kiện click cho từng nút gợi ý một cách tường minh
-        const suggestionButtons = document.querySelectorAll('.suggestion-btn');
-        suggestionButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                // Chỉ xử lý khi người dùng thực sự click chuột
-                const userMessage = this.textContent;
-                chatInput.value = userMessage;
-                handleChat(); // Gọi trực tiếp handleChat thay vì giả lập click
+        // Hàm để gán lại sự kiện cho các nút gợi ý
+        const addSuggestionButtonListeners = () => {
+            const suggestionButtons = document.querySelectorAll('.suggestion-btn');
+            suggestionButtons.forEach(button => {
+                // Xóa listener cũ để tránh bị lặp
+                button.replaceWith(button.cloneNode(true));
             });
-        });
+            // Gắn listener mới
+            document.querySelectorAll('.suggestion-btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    chatInput.value = this.textContent;
+                    handleChat();
+                });
+            });
+        };
 
         // Tải lịch sử chat khi trang được load
         loadHistory();
@@ -222,6 +284,9 @@
                 }, 7000);
             }
         }, 3000);
+
+        // Gắn sự kiện cho các nút gợi ý ban đầu
+        addSuggestionButtonListeners();
     });
     </script>
 
