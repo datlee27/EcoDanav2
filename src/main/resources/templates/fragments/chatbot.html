@@ -30,7 +30,7 @@
                 <i class="fas fa-leaf text-white"></i>
             </div>
             <div class="flex-1 ml-3">
-                <h3 class="font-bold text-lg">EvoDana Assistant</h3>
+                <h3 class="font-bold text-lg">EcoDana Assistant</h3>
                 <p class="text-xs text-green-100">Online</p>
             </div>
             <button id="close-chatbot-btn" class="text-white/70 hover:text-white transition-colors" title="Đóng và kết thúc trò chuyện">
@@ -40,8 +40,12 @@
 
         <!-- Chatbox -->
         <ul id="chatbox" class="p-4 h-[300px] overflow-y-auto bg-gray-50 space-y-4">
-            <li class="flex">
-                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none">
+            <li class="flex items-start space-x-3">
+                <!-- Bot Avatar -->
+                <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-leaf text-white text-lg"></i>
+                </div>
+                <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none" style="min-width: 60px;">
                     <p class="text-sm">Xin chào! Tôi là trợ lý ảo của EvoDana. Tôi có thể giúp gì cho bạn?</p>
                 </div>
             </li>
@@ -118,19 +122,36 @@
 
         const createChatLi = (message, type) => {
             const chatLi = document.createElement("li");
-            chatLi.classList.add("flex");
+            chatLi.classList.add("flex", "items-start", "space-x-3");
             let chatContent = '';
+
             if (type === "user") {
+                // YÊU CẦU 1: Bỏ avatar của người dùng, chỉ giữ lại bong bóng chat
                 chatLi.classList.add("justify-end");
-                chatContent = `<div class="bg-primary text-white p-3 rounded-xl max-w-xs rounded-br-none"><p class="text-sm">${message}</p></div>`;
+                chatContent = `
+                    <!-- User Message Bubble -->
+                    <div class="bg-primary text-white p-3 rounded-xl max-w-xs rounded-br-none"><p class="text-sm">${message}</p></div>
+                `;
             } else if (type === "bot") {
-                // *** SỬA LỖI: Kiểm tra xem message đã là HTML (chứa thẻ <p>) chưa ***
-                // Nếu message đã là một đoạn HTML hoàn chỉnh từ server, dùng trực tiếp.
-                // Nếu không, bọc nó trong thẻ <p> như bình thường.
                 const botMessageHtml = message.trim().startsWith('<p>') ? message : `<p class="text-sm">${message}</p>`;
-                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none">${botMessageHtml}</div>`;
+                chatContent = `
+                    <!-- Bot Avatar -->
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-leaf text-white text-lg"></i>
+                    </div>
+                    <!-- Bot Message Bubble -->
+                    <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none" style="min-width: 60px;">${botMessageHtml}</div>
+                `;
             } else { // thinking...
-                chatContent = `<div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none flex items-center space-x-2"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>`;
+                // YÊU CẦU 2: Thêm avatar cho tin nhắn "đang suy nghĩ" của bot
+                chatContent = `
+                    <!-- Bot Avatar -->
+                    <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-leaf text-white text-lg"></i>
+                    </div>
+                    <!-- Thinking Bubble -->
+                    <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none flex items-center space-x-2" style="min-width: 60px;"><span class="thinking-dot"></span><span class="thinking-dot"></span><span class="thinking-dot"></span></div>
+                `;
             }
             chatLi.innerHTML = chatContent;
             return chatLi;
@@ -144,10 +165,13 @@
                 if (li.id === 'suggestion-buttons') return;
 
                 // Thay vì chỉ tìm thẻ <p>, chúng ta tìm div chứa nội dung chat
-                const chatContentDiv = li.querySelector('div');
+                // Sửa lại để lấy đúng div bong bóng chat, bỏ qua div avatar
+                const chatContentDiv = li.querySelector('div:last-child');
                 if (chatContentDiv && chatContentDiv.innerHTML.trim() !== '') {
                     const type = li.classList.contains('justify-end') ? 'user' : 'bot';
                     // Lưu lại toàn bộ nội dung HTML của div.
+                    // Đối với tin nhắn user, nó sẽ là div duy nhất.
+                    // Đối với tin nhắn bot, nó sẽ là div thứ hai (bong bóng chat).
                     // Điều này đảm bảo cấu trúc <p>...<a>...</a></p> được bảo toàn.
                     messages.push({ message: chatContentDiv.innerHTML, type: type });
                 }
@@ -165,8 +189,13 @@
                 } else {
                     // Nếu lịch sử trống, hiển thị lại tin nhắn chào mừng và gợi ý
                     chatbox.innerHTML = `
-                        <li class="flex">
-                            <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none"><p class="text-sm">Xin chào! Tôi là trợ lý ảo của EvoDana. Tôi có thể giúp gì cho bạn?</p></div>
+                        <li class="flex items-start space-x-3">
+                            <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-leaf text-white text-lg"></i>
+                            </div>
+                            <div class="bg-gray-200 text-gray-800 p-3 rounded-xl max-w-xs rounded-bl-none" style="min-width: 60px;">
+                                <p class="text-sm">Xin chào! Tôi là trợ lý ảo của EvoDana. Tôi có thể giúp gì cho bạn?</p>
+                            </div>
                         </li>
                         <li id="suggestion-buttons" class="pt-2">${suggestionContainer.innerHTML}</li>
                     `;
@@ -201,11 +230,11 @@
 
                 const data = await response.json();
                 // Cập nhật ô "thinking" với câu trả lời thật
-                thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">${data.reply}</p>`;
+                thinkingLi.querySelector("div:last-child").innerHTML = data.reply.trim().startsWith('<p>') ? data.reply : `<p class="text-sm">${data.reply}</p>`;
                 saveHistory(); // Lưu lại lịch sử sau khi bot trả lời
             } catch (error) {
                 console.error('Error fetching AI response:', error);
-                thinkingLi.querySelector("div").innerHTML = `<p class="text-sm">Xin lỗi, đã có lỗi xảy ra khi kết nối với trợ lý. Vui lòng thử lại sau.</p>`;
+                thinkingLi.querySelector("div:last-child").innerHTML = `<p class="text-sm">Xin lỗi, đã có lỗi xảy ra khi kết nối với trợ lý. Vui lòng thử lại sau.</p>`;
                 saveHistory(); // Lưu lại cả thông báo lỗi
             }
             chatbox.scrollTop = chatbox.scrollHeight;
