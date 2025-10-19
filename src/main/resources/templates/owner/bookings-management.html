@@ -4,6 +4,9 @@
     <div th:replace="~{fragments/layout :: head}"></div>
     <link href="/css/sidebar-common.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+
+    <link href="/css/owner-dashboard.css" rel="stylesheet">
+
     <style>
         .primary { color: #4CAF50; }
         .bg-primary { background-color: #4CAF50; }
@@ -45,6 +48,10 @@
         .tab-button { transition: all 0.3s ease; }
         .tab-button.active { color: #4caf50; border-color: #4caf50; }
         .tab-button:not(.active):hover { color: #4caf50; }
+
+        /* GHI ĐÈ LỖI CSS TỪ ADMIN-DASHBOARD.CSS */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -53,28 +60,89 @@
     <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
+
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
             <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
             </button>
-            <div class="flex-grow md:flex-grow-0">
-                <h1 class="text-lg font-semibold text-gray-800 truncate">Booking Management</h1>
-                <p class="text-xs text-gray-500 hidden sm:block">Manage your bookings and rental calendar</p>
-            </div>
+            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">Booking Management</h1> <div class="flex-1"></div>
+
             <div class="flex items-center space-x-4">
-                <button onclick="switchTab('notifications')" class="relative p-2 text-gray-600 hover:text-primary transition-colors" title="Thông báo">
-                    <i class="fas fa-bell text-xl"></i>
-                    <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                          th:text="${pendingBookings?.size() ?: 0}">0</span>
-                </button>
-                <div th:replace="~{fragments/nav :: #userMenu}"></div>
+                <div class="relative">
+                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span th:if="${pendingBookings != null and pendingBookings.size() > 0}"
+                              id="notificationBadge"
+                              class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"
+                              th:text="${pendingBookings.size() > 99 ? '99+' : pendingBookings.size()}">
+                              0
+                        </span>
+                        <span th:unless="${pendingBookings != null and pendingBookings.size() > 0}"
+                              id="notificationBadge"
+                              class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                              0
+                        </span>
+                    </button>
+                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900">Thông báo</h3>
+                            <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
+                        </div>
+                        <div id="notificationList" class="max-h-96 overflow-y-auto">
+                            <div class="p-4 text-center text-gray-500">
+                                <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                <p>Không có thông báo mới</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
+                        <div th:if="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="w-8 h-8 rounded-full overflow-hidden">
+                            <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
+
+                        <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-3 border-b border-gray-200">
+                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Owner User</p>
+                            <p class="text-xs text-gray-500" th:text="${currentUser?.role?.roleName}">Owner</p>
+                        </div>
+                        <div class="py-1">
+                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
+                                Trang chủ
+                            </a>
+                            <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
+                                Hồ sơ
+                            </a>
+                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
+                                Đăng Xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-            <div class="container mx-auto px-0"> <div th:if="${success}" id="success-notification" class="fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
-            </div>
+            <div class="container mx-auto px-0">
+                <div th:if="${success}" id="success-notification" class="fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center"><i class="fas fa-check-circle mr-3"></i><span th:text="${success}">Success!</span></div>
+                        <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
                 <div th:if="${error}" id="error-notification" class="fixed top-20 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center"><i class="fas fa-exclamation-circle mr-3"></i><span th:text="${error}">Error!</span></div>
+                        <button onclick="closeNotification(this)" class="ml-4 text-white hover:text-gray-200 transition-colors"><i class="fas fa-times"></i></button>
+                    </div>
                 </div>
 
                 <div class="flex space-x-4 mb-6 border-b border-gray-200">
@@ -90,8 +158,7 @@
                     </button>
                 </div>
 
-                <div id="bookings-section" class="tab-content">
-                    <!-- Quick Filter Cards -->
+                <div id="bookings-section" class="tab-content active">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                         <div onclick="quickFilterStatus('Pending')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                             <div class="flex items-center justify-between">
@@ -117,8 +184,7 @@
                             <div class="flex items-center justify-between">
                                 <div>
                                     <p class="text-gray-600 text-sm font-medium">Confirmed</p>
-                                    <p class="text-2xl font-bold text-blue-600" th:text="${ongoingCount ?: 0}">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Đã thanh toán</p>
+                                    <p class="text-2xl font-bold text-blue-600" th:text="${ongoingCount ?: 0}">0</p> <p class="text-xs text-gray-500 mt-1">Đã thanh toán</p>
                                 </div>
                                 <i class="fas fa-check-double text-4xl text-blue-500 opacity-60"></i>
                             </div>
@@ -256,7 +322,7 @@
                             <i class="fas fa-bell text-green-500 mr-2"></i>
                             Thông báo mới
                         </h2>
-                        
+
                         <div th:if="${pendingBookings != null && !pendingBookings.isEmpty()}" class="space-y-3">
                             <div th:each="booking : ${pendingBookings}" class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-r-lg hover:bg-yellow-100 transition-colors">
                                 <div class="flex items-start justify-between">
@@ -280,17 +346,17 @@
                                         </p>
                                     </div>
                                     <div class="flex flex-col space-y-2 ml-4">
-                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))" 
+                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))"
                                                 th:data-booking-id="${booking.bookingId}"
                                                 class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">
                                             <i class="fas fa-eye mr-1"></i> Xem
                                         </button>
-                                        <button onclick="approveBooking(this.getAttribute('data-booking-id'))" 
+                                        <button onclick="approveBooking(this.getAttribute('data-booking-id'))"
                                                 th:data-booking-id="${booking.bookingId}"
                                                 class="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors">
                                             <i class="fas fa-check mr-1"></i> Duyệt
                                         </button>
-                                        <button onclick="rejectBooking(this.getAttribute('data-booking-id'))" 
+                                        <button onclick="rejectBooking(this.getAttribute('data-booking-id'))"
                                                 th:data-booking-id="${booking.bookingId}"
                                                 class="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors">
                                             <i class="fas fa-times mr-1"></i> Từ chối
@@ -299,7 +365,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div th:if="${pendingBookings == null || pendingBookings.isEmpty()}" class="text-center py-12">
                             <i class="fas fa-bell-slash text-6xl text-gray-300 mb-4"></i>
                             <p class="text-gray-500 text-lg">Không có thông báo mới</p>
@@ -330,7 +396,6 @@
     </div>
 </div>
 
-<!-- Booking Detail Modal -->
 <div id="booking-detail-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeModal('booking-detail-modal')"></div>
     <div class="modal-content">
@@ -417,10 +482,53 @@
         </div>
     </div>
 </div>
+
 <script th:src="@{/js/sidebar-common.js}"></script>
+<script th:src="@{/js/owner-dashboard.js}"></script>
 <script th:src="@{/js/owner-management.js}"></script>
+
 <script th:inline="javascript">
     /*<![CDATA[*/
+
+    // *** FIX: Ghi đè hàm switchTab từ owner-dashboard.js (nếu file đó có) ***
+    // Hàm này sẽ sử dụng class 'active' và 'hidden' để tương thích với CSS
+    // Hàm switchTab này là BẮT BUỘC cho trang này
+    function switchTab(tabName) {
+        console.log("Using FIXED switchTab function for:", tabName);
+
+        // 1. Ẩn tất cả nội dung tab
+        document.querySelectorAll(".tab-content").forEach((content) => {
+            content.classList.remove("active");
+            content.classList.add("hidden");
+        });
+
+        // 2. Bỏ active tất cả các nút tab
+        document.querySelectorAll(".tab-button").forEach((button) => {
+            button.classList.remove("active", "border-primary", "text-primary");
+            button.classList.add("border-transparent", "text-gray-600");
+        });
+
+        // 3. Hiển thị nội dung tab được chọn
+        const activeContent = document.getElementById(tabName + "-section");
+        if (activeContent) {
+            activeContent.classList.add("active");
+            activeContent.classList.remove("hidden");
+        } else {
+            console.error("Tab content not found:", tabName + "-section");
+        }
+
+        // 4. Kích hoạt nút tab được chọn
+        const activeButton = document.getElementById(tabName + "-tab");
+        if (activeButton) {
+            activeButton.classList.add("active", "border-primary", "text-primary");
+            activeButton.classList.remove("border-transparent", "text-gray-600");
+        } else {
+            console.error("Tab button not found:", tabName + "-tab");
+        }
+    }
+    // *** KẾT THÚC PHẦN FIX ***
+
+
     let currentBookingData = null; // Store the whole booking object
 
     // Lấy CSRF token từ Thymeleaf một cách an toàn
@@ -445,35 +553,33 @@
                 const content = document.getElementById('booking-detail-content');
 
                 let detailsHtml = `
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-receipt mr-3 text-primary"></i>Booking Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <p><strong>ID:</strong> <span>${data.bookingId || 'N/A'}</span></p>
-                            <p><strong>Code:</strong> <span>${data.bookingCode || 'N/A'}</span></p>
-                            <p><strong>Status:</strong> <span class="px-2 py-1 rounded-full text-xs font-medium status-${data.status ? data.status.toLowerCase() : ''}">${data.status || 'N/A'}</span></p>
-                            <p><strong>Total Amount:</strong> <span>${data.totalAmount ? '$' + data.totalAmount : 'N/A'}</span></p>
-                            <p><strong>Pickup:</strong> <span>${data.pickupDateTime ? new Date(data.pickupDateTime).toLocaleString() : 'N/A'}</span></p>
-                            <p><strong>Return:</strong> <span>${data.returnDateTime ? new Date(data.returnDateTime).toLocaleString() : 'N/A'}</span></p>
-                            <p><strong>Rental Type:</strong> <span>${data.rentalType || 'N/A'}</span></p>
-                            <p><strong>Payment Method:</strong> <span>${data.paymentMethod || 'N/A'}</span></p>
+                    <div class="space-y-4"> <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-receipt mr-3 text-primary"></i>Booking Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <p><strong>ID:</strong> <span>${data.bookingId || 'N/A'}</span></p>
+                                <p><strong>Code:</strong> <span>${data.bookingCode || 'N/A'}</span></p>
+                                <p><strong>Status:</strong> <span class="px-2 py-1 rounded-full text-xs font-medium status-${data.status ? data.status.toLowerCase() : ''}">${data.status || 'N/A'}</span></p>
+                                <p><strong>Total Amount:</strong> <span class="font-bold text-green-600">${data.totalAmount ? data.totalAmount.toLocaleString('vi-VN') + ' VND' : 'N/A'}</span></p>
+                                <p><strong>Pickup:</strong> <span>${data.pickupDateTime ? new Date(data.pickupDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
+                                <p><strong>Return:</strong> <span>${data.returnDateTime ? new Date(data.returnDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
+                                <p><strong>Rental Type:</strong> <span>${data.rentalType || 'N/A'}</span></p>
+                                <p><strong>Payment Method:</strong> <span>${data.paymentMethod || 'N/A'}</span></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-user-circle mr-3 text-primary"></i>Customer Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <p><strong>Name:</strong> <span>${data.customerName || 'N/A'}</span></p>
-                            <p><strong>Email:</strong> <span>${data.customerEmail || 'N/A'}</span></p>
-                            <p><strong>Phone:</strong> <span>${data.customerPhone || 'N/A'}</span></p>
-                            <p><strong>Date of Birth:</strong> <span>${data.customerDOB ? new Date(data.customerDOB).toLocaleDateString() : 'N/A'}</span></p>
+                        <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-user-circle mr-3 text-primary"></i>Customer Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <p><strong>Name:</strong> <span>${data.customerName || 'N/A'}</span></p>
+                                <p><strong>Email:</strong> <span>${data.customerEmail || 'N/A'}</span></p>
+                                <p><strong>Phone:</strong> <span>${data.customerPhone || 'N/A'}</span></p>
+                                <p><strong>Date of Birth:</strong> <span>${data.customerDOB ? new Date(data.customerDOB).toLocaleDateString('vi-VN') : 'N/A'}</span></p>
+                            </div>
                         </div>
-                    </div>
-                    <div class="p-4 border rounded-lg">
-                        <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-car-side mr-3 text-primary"></i>Vehicle Information</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <p><strong>Model:</strong> <span>${data.vehicleModel || 'N/A'}</span></p>
-                            <p><strong>License Plate:</strong> <span>${data.licensePlate || 'N/A'}</span></p>
-                            <p><strong>Category:</strong> <span>${data.vehicleCategory || 'N/A'}</span></p>
-                            <p><strong>Transmission:</strong> <span>${data.transmission || 'N/A'}</span></p>
+                        <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-car-side mr-3 text-primary"></i>Vehicle Information</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <p><strong>Model:</strong> <span>${data.vehicleModel || 'N/A'}</span></p>
+                                <p><strong>License Plate:</strong> <span>${data.licensePlate || 'N/A'}</span></p>
+                                <p><strong>Category:</strong> <span>${data.vehicleCategory || 'N/A'}</span></p>
+                                <p><strong>Transmission:</strong> <span>${data.transmission || 'N/A'}</span></p>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -531,38 +637,38 @@
             headers: csrfHeaders,
             body: JSON.stringify(data)
         })
-        .then(response => response.json())
-        .then(result => {
-            if(result.success) {
-                alert('Booking updated successfully!');
-                location.reload();
-            } else {
-                alert('Error updating booking: ' + result.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An unexpected error occurred.');
-        });
+            .then(response => response.json())
+            .then(result => {
+                if(result.success) {
+                    alert('Booking updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error updating booking: ' + result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An unexpected error occurred.');
+            });
     }
 
     function acceptBooking(bookingId) {
         console.log('acceptBooking triggered for ID:', bookingId);
         if (!confirm("Are you sure you want to approve this booking?")) return;
         fetch(`/owner/management/bookings/${bookingId}/approve`, { method: 'POST', headers: csrfHeaders })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'Booking approved successfully!');
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Failed to approve booking.');
-            }
-        })
-        .catch(error => {
-            console.error('Error approving booking:', error);
-            alert(error.message);
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Booking approved successfully!');
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to approve booking.');
+                }
+            })
+            .catch(error => {
+                console.error('Error approving booking:', error);
+                alert(error.message);
+            });
     }
 
     function openDeclineBookingModal(bookingId) {
@@ -590,20 +696,20 @@
             headers: csrfHeaders,
             body: JSON.stringify({ reason: reason })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'Booking rejected successfully!');
-                closeDeclineBookingModal();
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Failed to reject booking.');
-            }
-        })
-        .catch(error => {
-            console.error('Error rejecting booking:', error);
-            alert(error.message);
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Booking rejected successfully!');
+                    closeDeclineBookingModal();
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to reject booking.');
+                }
+            })
+            .catch(error => {
+                console.error('Error rejecting booking:', error);
+                alert(error.message);
+            });
     }
 
     function completeBooking(bookingId) {
@@ -611,19 +717,19 @@
         if (!confirm("Are you sure you want to mark this booking as completed?")) return;
 
         fetch(`/owner/management/bookings/${bookingId}/complete`, { method: 'POST', headers: csrfHeaders })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'Booking marked as completed successfully!');
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Failed to complete booking.');
-            }
-        })
-        .catch(error => {
-            console.error('Error completing booking:', error);
-            alert(error.message);
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Booking marked as completed successfully!');
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to complete booking.');
+                }
+            })
+            .catch(error => {
+                console.error('Error completing booking:', error);
+                alert(error.message);
+            });
     }
 
     function openCancelBookingModal(bookingId) {
@@ -651,20 +757,20 @@
             headers: csrfHeaders,
             body: JSON.stringify({ reason: reason })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message || 'Booking cancelled successfully!');
-                closeCancelBookingModal();
-                location.reload();
-            } else {
-                throw new Error(data.message || 'Failed to cancel booking.');
-            }
-        })
-        .catch(error => {
-            console.error('Error cancelling booking:', error);
-            alert(error.message);
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Booking cancelled successfully!');
+                    closeCancelBookingModal();
+                    location.reload();
+                } else {
+                    throw new Error(data.message || 'Failed to cancel booking.');
+                }
+            })
+            .catch(error => {
+                console.error('Error cancelling booking:', error);
+                alert(error.message);
+            });
     }
 
     // Quick filter khi click vào status cards
@@ -677,24 +783,24 @@
     // Approve booking
     function approveBooking(bookingId) {
         if (!confirm('Bạn có chắc muốn duyệt booking này?')) return;
-        
+
         fetch(`/owner/management/bookings/${bookingId}/approve`, {
             method: 'POST',
             headers: csrfHeaders
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Đã duyệt booking thành công!');
-                location.reload();
-            } else {
-                alert('Lỗi: ' + (data.message || 'Không thể duyệt booking'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi duyệt booking');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã duyệt booking thành công!');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể duyệt booking'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi duyệt booking');
+            });
     }
 
     // Reject booking
@@ -710,26 +816,26 @@
             alert('Vui lòng nhập lý do từ chối');
             return;
         }
-        
+
         fetch(`/owner/management/bookings/${currentRejectBookingId}/reject`, {
             method: 'POST',
             headers: csrfHeaders,
             body: JSON.stringify({ reason: reason })
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Đã từ chối booking thành công!');
-                closeModal('reject-modal');
-                location.reload();
-            } else {
-                alert('Lỗi: ' + (data.message || 'Không thể từ chối booking'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Có lỗi xảy ra khi từ chối booking');
-        });
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Đã từ chối booking thành công!');
+                    closeModal('reject-modal');
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + (data.message || 'Không thể từ chối booking'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra khi từ chối booking');
+            });
     }
 
     function closeModal(modalId) {
@@ -757,13 +863,19 @@
 
     /*<![CDATA[*/
     document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ null;
+        const currentPage = /*[[${currentPage}]]*/ 'bookings'; // Đặt trang hiện tại là 'bookings'
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
         } else if (!currentPage) {
             console.warn("CurrentPage variable not set in model for highlighting Owner sidebar.");
         } else if (typeof highlightOwnerSidebarLink !== 'function') {
             console.error("highlightOwnerSidebarLink function not found in sidebar-common.js.");
+        }
+
+        // Load notification count on page load
+        if (typeof loadNotificationCount === 'function') {
+            loadNotificationCount();
+            // setInterval(loadNotificationCount, 30000); // Tự động cập nhật nếu muốn
         }
     });
     /*]]>*/
