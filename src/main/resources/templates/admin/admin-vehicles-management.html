@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
     <title>Quản Lý Xe - EcoDana Admin</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" th:href="@{/css/admin-vehicles.css}">
@@ -27,19 +29,20 @@
                     <i class="fas fa-car mr-3"></i>
                     Quản Lý Xe
                 </a>
-                <a href="/admin/bookings" class="flex items-center px-6 py-3 hover:bg-green-600 transition">
-                    <i class="fas fa-calendar-check mr-3"></i>
-                    Đặt Xe
-                </a>
-                <a href="/admin/users" class="flex items-center px-6 py-3 hover:bg-green-600 transition">
-                    <i class="fas fa-users mr-3"></i>
-                    Người Dùng
-                </a>
             </nav>
         </aside>
 
         <!-- Main Content -->
         <main class="flex-1 ml-64 p-8">
+            <!-- Breadcrumb -->
+            <nav class="mb-4 text-sm">
+                <ol class="flex items-center space-x-2 text-gray-600">
+                    <li><a href="/admin/dashboard" class="hover:text-green-600"><i class="fas fa-home mr-1"></i>Dashboard</a></li>
+                    <li><i class="fas fa-chevron-right text-xs"></i></li>
+                    <li class="text-green-600 font-semibold">Vehicle Management</li>
+                </ol>
+            </nav>
+            
             <!-- Header -->
             <div class="flex justify-between items-center mb-8">
                 <div>
@@ -55,41 +58,52 @@
             </div>
 
             <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+                <div onclick="filterByStatus('')" class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">Tổng Xe</p>
-                            <p class="text-2xl font-bold text-gray-800" th:text="${totalVehicles}">0</p>
+                            <p class="text-2xl font-bold text-gray-800" th:text="${totalVehicles}">13</p>
                         </div>
                         <div class="bg-blue-100 p-3 rounded-full">
                             <i class="fas fa-car text-blue-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div onclick="filterByStatus('PendingApproval')" class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1 border-l-4 border-orange-500">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-gray-500 text-sm">Đang Sẵn Sàng</p>
-                            <p class="text-2xl font-bold text-green-600" id="availableCount">0</p>
+                            <p class="text-gray-500 text-sm">Chờ Duyệt</p>
+                            <p class="text-2xl font-bold text-orange-600" id="pendingCount">0</p>
+                        </div>
+                        <div class="bg-orange-100 p-3 rounded-full">
+                            <i class="fas fa-clock text-orange-600 text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+                <div onclick="filterByStatus('Available')" class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-500 text-sm">Đã Duyệt</p>
+                            <p class="text-2xl font-bold text-green-600" id="availableCount">7</p>
                         </div>
                         <div class="bg-green-100 p-3 rounded-full">
                             <i class="fas fa-check-circle text-green-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div onclick="filterByStatus('Rented')" class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">Đang Thuê</p>
-                            <p class="text-2xl font-bold text-yellow-600" id="rentedCount">0</p>
+                            <p class="text-2xl font-bold text-yellow-600" id="rentedCount">4</p>
                         </div>
                         <div class="bg-yellow-100 p-3 rounded-full">
                             <i class="fas fa-key text-yellow-600 text-xl"></i>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <div onclick="filterByStatus('Maintenance')" class="bg-white rounded-lg shadow-md p-6 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-gray-500 text-sm">Bảo Trì</p>
@@ -125,7 +139,8 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Trạng Thái</label>
                         <select id="statusFilter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             <option value="">Tất Cả</option>
-                            <option value="Available">Sẵn Sàng</option>
+                            <option value="PendingApproval">Chờ Duyệt</option>
+                            <option value="Available">Đã Duyệt</option>
                             <option value="Rented">Đang Thuê</option>
                             <option value="Maintenance">Bảo Trì</option>
                             <option value="Unavailable">Không Khả Dụng</option>
@@ -136,9 +151,6 @@
                     <button id="clearFilters" class="text-gray-600 hover:text-gray-800 transition">
                         <i class="fas fa-redo mr-2"></i>Xóa Bộ Lọc
                     </button>
-                    <a href="/admin/vehicles/add" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-                        <i class="fas fa-plus mr-2"></i>Thêm Xe Mới
-                    </a>
                 </div>
             </div>
 
@@ -182,6 +194,23 @@
         </div>
     </div>
 
+    <script>
+        // Filter vehicles by status when clicking on statistics cards
+        // This must be defined BEFORE loading admin-vehicles.js
+        window.filterByStatus = function(status) {
+            console.log('Filtering by status:', status);
+            const statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.value = status;
+                // Trigger change event to apply filter
+                const event = new Event('change', { bubbles: true });
+                statusFilter.dispatchEvent(event);
+                console.log('Filter applied');
+            } else {
+                console.error('Status filter element not found');
+            }
+        };
+    </script>
     <script th:src="@{/js/admin-vehicles.js}"></script>
 </body>
 </html>

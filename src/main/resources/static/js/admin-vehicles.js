@@ -56,7 +56,8 @@
     // Utility: Get status badge HTML
     function getStatusBadge(status) {
         var badges = {
-            'Available': '<span class="status-badge available"><i class="fas fa-check-circle"></i> Sẵn Sàng</span>',
+            'PendingApproval': '<span class="status-badge" style="background-color: #fef3c7; color: #92400e;"><i class="fas fa-clock"></i> Chờ Duyệt</span>',
+            'Available': '<span class="status-badge available"><i class="fas fa-check-circle"></i> Đã Duyệt</span>',
             'Rented': '<span class="status-badge rented"><i class="fas fa-key"></i> Đang Thuê</span>',
             'Maintenance': '<span class="status-badge maintenance"><i class="fas fa-wrench"></i> Bảo Trì</span>',
             'Unavailable': '<span class="status-badge unavailable"><i class="fas fa-ban"></i> Không Khả Dụng</span>'
@@ -183,15 +184,18 @@
                 '<span class="vehicle-card-price-label">/ngày</span>' +
                 '</div>' +
                 '<div class="vehicle-card-actions">' +
-                '<a href="/admin/vehicles/detail/' + vehicle.vehicleId + '" class="btn btn-outline btn-sm flex-1">' +
-                '<i class="fas fa-eye"></i>Chi Tiết' +
+                (vehicle.status === 'PendingApproval' ? 
+                    '<button onclick="approveVehicle(\'' + vehicle.vehicleId + '\')" class="btn btn-success btn-sm flex-1">' +
+                    '<i class="fas fa-check"></i> Duyệt' +
+                    '</button>' +
+                    '<button onclick="rejectVehicle(\'' + vehicle.vehicleId + '\')" class="btn btn-danger btn-sm flex-1">' +
+                    '<i class="fas fa-times"></i> Từ chối' +
+                    '</button>' :
+                    ''
+                ) +
+                '<a href="/admin/vehicles/detail/' + vehicle.vehicleId + '" class="btn btn-primary btn-sm ' + (vehicle.status === 'PendingApproval' ? 'w-full mt-2' : 'w-full') + '">' +
+                '<i class="fas fa-eye"></i> Chi Tiết' +
                 '</a>' +
-                '<a href="/admin/vehicles/edit/' + vehicle.vehicleId + '" class="btn btn-secondary btn-sm flex-1">' +
-                '<i class="fas fa-edit"></i>Sửa' +
-                '</a>' +
-                '<button onclick="showDeleteModal(\'' + vehicle.vehicleId + '\')" class="btn btn-danger btn-sm flex-1">' +
-                '<i class="fas fa-trash"></i>Xóa' +
-                '</button>' +
                 '</div>' +
                 '</div>' +
                 '</div>';
@@ -285,6 +289,71 @@
         
         filterVehicles();
     }
+
+    // Approve vehicle
+    window.approveVehicle = function(vehicleId) {
+        if (!confirm('Bạn có chắc muốn duyệt xe này?')) {
+            return;
+        }
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+
+        fetch('/admin/vehicles/api/approve/' + vehicleId, {
+            method: 'POST',
+            headers: csrfToken && csrfHeader ? {
+                [csrfHeader.content]: csrfToken.content
+            } : {}
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+                fetchVehicles(); // Reload vehicles
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error approving vehicle:', error);
+            alert('Có lỗi xảy ra khi duyệt xe');
+        });
+    };
+
+    // Reject vehicle
+    window.rejectVehicle = function(vehicleId) {
+        var reason = prompt('Nhập lý do từ chối:');
+        if (!reason) {
+            return;
+        }
+
+        var csrfToken = document.querySelector('meta[name="_csrf"]');
+        var csrfHeader = document.querySelector('meta[name="_csrf_header"]');
+
+        fetch('/admin/vehicles/api/reject/' + vehicleId + '?reason=' + encodeURIComponent(reason), {
+            method: 'POST',
+            headers: csrfToken && csrfHeader ? {
+                [csrfHeader.content]: csrfToken.content
+            } : {}
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                alert(data.message);
+                fetchVehicles(); // Reload vehicles
+            } else {
+                alert('Lỗi: ' + data.message);
+            }
+        })
+        .catch(function(error) {
+            console.error('Error rejecting vehicle:', error);
+            alert('Có lỗi xảy ra khi từ chối xe');
+        });
+    };
 
     // Event listeners
     function initEventListeners() {

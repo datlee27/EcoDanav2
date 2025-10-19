@@ -4,6 +4,7 @@
     <div th:replace="~{fragments/layout :: head}"></div>
     <link href="/css/sidebar-common.css" rel="stylesheet">
     <style>
+        .status-PendingApproval { background-color: #fef3c7; color: #92400e; }
         .status-Available { background-color: #dcfce7; color: #166534; }
         .status-Rented { background-color: #fef9c3; color: #a16207; }
         .status-Maintenance { background-color: #fee2e2; color: #991b1b; }
@@ -66,13 +67,23 @@
                 </div>
 
                 <!-- Status Filter Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+                    <div onclick="quickFilterStatus('PendingApproval')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-orange-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">Pending</p>
+                                <p class="text-2xl font-bold text-orange-600" th:text="${pendingApprovalCount ?: 0}">0</p>
+                                <p class="text-xs text-gray-500 mt-1">Chờ duyệt</p>
+                            </div>
+                            <i class="fas fa-clock text-4xl text-orange-500 opacity-60"></i>
+                        </div>
+                    </div>
                     <div onclick="quickFilterStatus('Available')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-600 text-sm font-medium">Available</p>
                                 <p class="text-2xl font-bold text-green-600" th:text="${availableCount ?: 0}">0</p>
-                                <p class="text-xs text-gray-500 mt-1">Sẵn sàng</p>
+                                <p class="text-xs text-gray-500 mt-1">Đã duyệt</p>
                             </div>
                             <i class="fas fa-check-circle text-4xl text-green-500 opacity-60"></i>
                         </div>
