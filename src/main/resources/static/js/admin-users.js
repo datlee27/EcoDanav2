@@ -184,28 +184,107 @@
     }
     
     /**
-     * Filter users based on search and filters
+     * Filter users based on search and filters (for Thymeleaf rendered table)
      */
     function filterUsers() {
-        var searchTerm = document.getElementById('searchInput').value.toLowerCase();
-        var statusFilter = document.getElementById('statusFilter').value;
-        var roleFilter = document.getElementById('roleFilter').value;
+        var searchInput = document.getElementById('searchInput') || document.getElementById('userSearchInput');
+        var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+        var statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : '';
+        var roleFilterElement = document.getElementById('roleFilter');
+        var roleFilter = roleFilterElement ? roleFilterElement.value : '';
         
-        var filteredUsers = users.filter(function(user) {
+        console.log('Filtering - Search:', searchTerm, 'Status:', statusFilter, 'Role:', roleFilter);
+        
+        // Try to find rows using multiple strategies
+        var rows = document.querySelectorAll('.user-row');
+        
+        // Strategy 1: Look in users tab
+        if (rows.length === 0) {
+            var usersTab = document.getElementById('users');
+            if (usersTab) {
+                rows = usersTab.querySelectorAll('tr[data-role]');
+                console.log('Strategy 1 - Found rows in users tab:', rows.length);
+            }
+        }
+        
+        // Strategy 2: Look in usersTableBody
+        if (rows.length === 0) {
+            var tableBody = document.getElementById('usersTableBody');
+            if (tableBody) {
+                rows = tableBody.querySelectorAll('tr[data-role]');
+                console.log('Strategy 2 - Found rows in table body:', rows.length);
+            }
+        }
+        
+        // Strategy 3: Look anywhere for tr with data-role
+        if (rows.length === 0) {
+            rows = document.querySelectorAll('tr[data-role]');
+            console.log('Strategy 3 - Found rows globally:', rows.length);
+        }
+        
+        if (rows.length === 0) {
+            console.log('No user rows found - table might be empty or not rendered yet');
+            return;
+        }
+        
+        var visibleCount = 0;
+        
+        rows.forEach(function(row) {
+            var rowRole = row.getAttribute('data-role') || 'Customer';
+            var rowStatus = row.getAttribute('data-status');
+            var rowUsername = (row.getAttribute('data-username') || '').toLowerCase();
+            var rowEmail = (row.getAttribute('data-email') || '').toLowerCase();
+            
             var matchesSearch = !searchTerm || 
-                (user.username && user.username.toLowerCase().indexOf(searchTerm) !== -1) ||
-                (user.email && user.email.toLowerCase().indexOf(searchTerm) !== -1) ||
-                (user.firstName && user.firstName.toLowerCase().indexOf(searchTerm) !== -1) ||
-                (user.lastName && user.lastName.toLowerCase().indexOf(searchTerm) !== -1);
+                rowUsername.indexOf(searchTerm) !== -1 ||
+                rowEmail.indexOf(searchTerm) !== -1;
             
-            var matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-            var matchesRole = roleFilter === 'all' || user.roleName === roleFilter;
+            var matchesStatus = !statusFilter || statusFilter === 'all' || statusFilter === '' || rowStatus === statusFilter;
+            var matchesRole = !roleFilter || roleFilter === 'all' || roleFilter === '' || rowRole === roleFilter;
             
-            return matchesSearch && matchesStatus && matchesRole;
+            console.log('Row:', rowUsername, 'Role:', rowRole, 'Filter:', roleFilter, 'Matches:', matchesRole && matchesSearch && matchesStatus);
+            
+            if (matchesSearch && matchesStatus && matchesRole) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
         });
         
-        renderUsers(filteredUsers);
+        console.log('Visible users count:', visibleCount, 'out of', rows.length);
     }
+    
+    /**
+     * Filter by role when clicking on role cards
+     */
+    window.filterByRole = function(role) {
+        console.log('=== filterByRole called with:', role, '===');
+        
+        // Check if we're in the users tab
+        var usersTab = document.getElementById('users');
+        if (usersTab) {
+            var isActive = usersTab.classList.contains('active');
+            console.log('Users tab active:', isActive);
+        }
+        
+        var roleFilterElement = document.getElementById('roleFilter');
+        if (roleFilterElement) {
+            roleFilterElement.value = role;
+            console.log('Role filter set to:', roleFilterElement.value);
+            
+            // Immediate attempt
+            filterUsers();
+            
+            // Also try after delay in case DOM is still loading
+            setTimeout(function() {
+                console.log('=== Retry filter after delay ===');
+                filterUsers();
+            }, 100);
+        } else {
+            console.error('roleFilter element not found');
+        }
+    };
     
     // =============================================
     // RENDERING FUNCTIONS

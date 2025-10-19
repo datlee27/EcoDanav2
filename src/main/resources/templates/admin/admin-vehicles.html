@@ -1,6 +1,6 @@
 <div th:fragment="vehicles-tab">
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center">
                 <div class="flex-shrink-0 bg-indigo-500 rounded-lg p-3">
@@ -9,7 +9,21 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Total Vehicles</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" th:text="${totalVehicles ?: 0}">0</dd>
+                        <dd class="text-2xl font-semibold text-gray-900" th:text="${totalVehicles ?: 0}">13</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-orange-500">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 bg-orange-500 rounded-lg p-3">
+                    <i class="fas fa-clock text-white text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Chờ Duyệt</dt>
+                        <dd class="text-2xl font-semibold text-orange-600" th:text="${pendingApprovalVehicles ?: 0}">0</dd>
                     </dl>
                 </div>
             </div>
@@ -22,8 +36,8 @@
                 </div>
                 <div class="ml-5 w-0 flex-1">
                     <dl>
-                        <dt class="text-sm font-medium text-gray-500 truncate">Available</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" th:text="${availableVehicles ?: 0}">0</dd>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Đã Duyệt</dt>
+                        <dd class="text-2xl font-semibold text-green-600" th:text="${availableVehicles ?: 0}">7</dd>
                     </dl>
                 </div>
             </div>
@@ -37,7 +51,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Rented</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" th:text="${rentedVehicles ?: 0}">0</dd>
+                        <dd class="text-2xl font-semibold text-blue-600" th:text="${rentedVehicles ?: 0}">4</dd>
                     </dl>
                 </div>
             </div>
@@ -51,7 +65,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Maintenance</dt>
-                        <dd class="text-2xl font-semibold text-gray-900" th:text="${maintenanceVehicles ?: 0}">0</dd>
+                        <dd class="text-2xl font-semibold text-yellow-600" th:text="${maintenanceVehicles ?: 0}">2</dd>
                     </dl>
                 </div>
             </div>

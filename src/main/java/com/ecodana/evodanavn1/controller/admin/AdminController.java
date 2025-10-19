@@ -74,11 +74,21 @@ public class AdminController {
             model.addAttribute("activeUsers", userStats.get("activeUsers"));
             model.addAttribute("inactiveUsers", userStats.get("inactiveUsers"));
             model.addAttribute("bannedUsers", userStats.get("bannedUsers"));
+            
+            // Add role counts
+            long adminCount = allUsers.stream().filter(u -> u.getRole() != null && "Admin".equals(u.getRole().getRoleName())).count();
+            long ownerCount = allUsers.stream().filter(u -> u.getRole() != null && "Owner".equals(u.getRole().getRoleName())).count();
+            long customerCount = allUsers.stream().filter(u -> u.getRole() == null || "Customer".equals(u.getRole().getRoleName())).count();
+            model.addAttribute("adminCount", adminCount);
+            model.addAttribute("ownerCount", ownerCount);
+            model.addAttribute("customerCount", customerCount);
 
             // Add vehicle statistics
+            long pendingApprovalVehicles = allVehicles.stream().filter(v -> "PendingApproval".equals(v.getStatus().name())).count();
             long availableVehicles = allVehicles.stream().filter(v -> "Available".equals(v.getStatus().name())).count();
             long rentedVehicles = allVehicles.stream().filter(v -> "Rented".equals(v.getStatus().name())).count();
             long maintenanceVehicles = allVehicles.stream().filter(v -> "Maintenance".equals(v.getStatus().name())).count();
+            model.addAttribute("pendingApprovalVehicles", pendingApprovalVehicles);
             model.addAttribute("availableVehicles", availableVehicles);
             model.addAttribute("rentedVehicles", rentedVehicles);
             model.addAttribute("maintenanceVehicles", maintenanceVehicles);
@@ -98,6 +108,7 @@ public class AdminController {
             model.addAttribute("activeUsers", 0);
             model.addAttribute("inactiveUsers", 0);
             model.addAttribute("bannedUsers", 0);
+            model.addAttribute("pendingApprovalVehicles", 0);
             model.addAttribute("availableVehicles", 0);
             model.addAttribute("rentedVehicles", 0);
             model.addAttribute("maintenanceVehicles", 0);

@@ -95,7 +95,7 @@
             <div class="flex-1 overflow-y-auto">
                 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
                     <!-- Statistics Cards - Only show on overview tab -->
-                    <div id="dashboard-stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" th:style="${tab != null and tab != 'overview' ? 'display: none;' : ''}" style="display: block;">
+                    <div id="dashboard-stats" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" th:style="${tab == null or tab == 'overview' ? '' : 'display: none;'}">
                         <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
                             <div class="p-5">
                                 <div class="flex items-center">
@@ -167,7 +167,7 @@
                     </div>
                     
                     <!-- Additional Statistics Cards - Only show on overview tab -->
-                    <div id="dashboard-stats-2" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" th:style="${tab != null and tab != 'overview' ? 'display: none;' : ''}" style="display: block;">
+                    <div id="dashboard-stats-2" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" th:style="${tab == null or tab == 'overview' ? '' : 'display: none;'}">
                         <div class="bg-white overflow-hidden shadow rounded-lg card-hover">
                             <div class="p-5">
                                 <div class="flex items-center">
@@ -259,7 +259,7 @@
 
                     <!-- User Management Tab -->
                     <div id="users" class="tab-content" th:class="${tab == 'users' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-users :: users-tab"></div>
+                        <div th:insert="~{admin/admin-users :: users-tab}"></div>
                     </div>
                     
                     <!-- DEPRECATED: Old user form below - keeping for reference only -->
@@ -412,22 +412,22 @@
                     
                     <!-- Vehicle Management Tab -->
                     <div id="vehicles" class="tab-content" th:class="${tab == 'vehicles' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-vehicles :: vehicles-tab"></div>
+                        <div th:insert="~{admin/admin-vehicles :: vehicles-tab}"></div>
                     </div>
                     
                     <!-- Booking Management Tab -->
                     <div id="bookings" class="tab-content" th:class="${tab == 'bookings' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-bookings :: bookings-tab"></div>
+                        <div th:insert="~{admin/admin-bookings :: bookings-tab}"></div>
                     </div>
                     
                     <!-- Contract Management Tab -->
                     <div id="contracts" class="tab-content" th:class="${tab == 'contracts' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-contracts-fragment :: contracts-tab"></div>
+                        <div th:insert="~{admin/admin-contracts-fragment :: contracts-tab}"></div>
                     </div>
                     
                     <!-- Payment Management Tab -->
                     <div id="payments" class="tab-content" th:class="${tab == 'payments' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-payments-fragment :: payments-tab"></div>
+                        <div th:insert="~{admin/admin-payments-fragment :: payments-tab}"></div>
                     </div>
                     
                     <!-- OLD Payment Tab (Deprecated) -->
@@ -474,7 +474,7 @@
                     
                     <!-- Discount Management Tab -->
                     <div id="discounts" class="tab-content" th:class="${tab == 'discounts' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-discounts-fragment :: discounts-tab"></div>
+                        <div th:insert="~{admin/admin-discounts-fragment :: discounts-tab}"></div>
                     </div>
                     
                     <!-- OLD Discount Tab (Deprecated) -->
@@ -586,7 +586,7 @@
                     
                     <!-- Reports Tab -->
                     <div id="reports" class="tab-content" th:class="${tab == 'reports' ? 'tab-content active' : 'tab-content'}">
-                        <div th:include="admin/admin-reports :: reports-tab"></div>
+                        <div th:insert="~{admin/admin-reports :: reports-tab}"></div>
                     </div>
                 </div>
             </div>
@@ -764,6 +764,44 @@
         // Load count initially and every 30 seconds
         loadNotificationCount();
         setInterval(loadNotificationCount, 30000);
+
+        // ========== TAB SWITCHING ==========
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all nav items
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            const selectedTab = document.getElementById(tabName);
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // Add active class to selected nav item
+            const selectedNav = document.querySelector(`[onclick="switchTab('${tabName}')"]`);
+            if (selectedNav) {
+                selectedNav.classList.add('active');
+            }
+            
+            // Show/hide statistics cards - only show on overview tab
+            const stats1 = document.getElementById('dashboard-stats');
+            const stats2 = document.getElementById('dashboard-stats-2');
+            if (tabName === 'overview') {
+                if (stats1) stats1.style.display = 'grid';
+                if (stats2) stats2.style.display = 'grid';
+            } else {
+                if (stats1) stats1.style.display = 'none';
+                if (stats2) stats2.style.display = 'none';
+            }
+        }
 
         // ========== USER MENU DROPDOWN ==========
         const userMenuButton = document.getElementById('userMenuButton');

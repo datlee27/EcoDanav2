@@ -223,7 +223,11 @@ public class Vehicle {
     public void setFeatures(String features) { this.features = features; }
 
     public enum VehicleStatus {
-        Available, Rented, Maintenance, Unavailable
+        PendingApproval,  // Chờ admin duyệt
+        Available,        // Đã duyệt, sẵn sàng cho thuê
+        Rented,          // Đang được thuê
+        Maintenance,     // Đang bảo trì
+        Unavailable      // Không khả dụng
     }
 
     public enum VehicleType {

@@ -53,6 +53,26 @@ public class VehicleAdminController {
     }
 
     /**
+     * Display pending vehicles page (chờ duyệt)
+     */
+    @GetMapping("/pending")
+    public String pendingVehiclesPage(HttpSession session, Model model) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return "redirect:/login";
+        }
+
+        List<VehicleResponse> pendingVehicles = vehicleService.getAllVehicleResponses().stream()
+                .filter(v -> "PendingApproval".equals(v.getStatus()))
+                .toList();
+
+        model.addAttribute("currentUser", user);
+        model.addAttribute("pendingVehicles", pendingVehicles);
+
+        return "admin/pending-vehicles";
+    }
+
+    /**
      * Display add vehicle page
      */
     @GetMapping("/add")
@@ -259,6 +279,48 @@ public class VehicleAdminController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error updating vehicle status: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API: Approve vehicle (change status from PendingApproval to Available)
+     */
+    @PostMapping("/api/approve/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approveVehicle(@PathVariable String id, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            vehicleService.updateVehicleStatus(id, "Available");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Xe đã được duyệt thành công!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi duyệt xe: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API: Reject vehicle (change status from PendingApproval to Unavailable)
+     */
+    @PostMapping("/api/reject/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> rejectVehicle(@PathVariable String id, @RequestParam(required = false) String reason, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            vehicleService.updateVehicleStatus(id, "Unavailable");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Xe đã bị từ chối!"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi khi từ chối xe: " + e.getMessage()));
         }
     }
 
