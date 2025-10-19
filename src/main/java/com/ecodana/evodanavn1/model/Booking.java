@@ -37,6 +37,12 @@ public class Booking {
     @Column(name = "TotalAmount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
+    @Column(name = "DepositAmountRequired", precision = 10, scale = 2, nullable = false)
+    private BigDecimal depositAmountRequired = BigDecimal.ZERO;
+
+    @Column(name = "RemainingAmount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal remainingAmount = BigDecimal.ZERO;
+
     @Column(name = "Status", length = 50, nullable = false)
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.Pending;
@@ -90,6 +96,10 @@ public class Booking {
     public void setReturnDateTime(LocalDateTime returnDateTime) { this.returnDateTime = returnDateTime; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getDepositAmountRequired() { return depositAmountRequired; }
+    public void setDepositAmountRequired(BigDecimal depositAmountRequired) { this.depositAmountRequired = depositAmountRequired; }
+    public BigDecimal getRemainingAmount() { return remainingAmount; }
+    public void setRemainingAmount(BigDecimal remainingAmount) { this.remainingAmount = remainingAmount; }
     public BookingStatus getStatus() { return status; }
     public void setStatus(BookingStatus status) { this.status = status; }
     public Discount getDiscount() { return discount; }
@@ -112,7 +122,14 @@ public class Booking {
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
 
     public enum BookingStatus {
-        Pending, Approved, Rejected, Ongoing, Completed, Cancelled
+        Pending,          // Khách vừa tạo, chờ chủ xe duyệt
+        Approved,         // Chủ xe đã duyệt (trạng thái trung gian)
+        AwaitingDeposit,  // Đã duyệt, chờ khách thanh toán 20% cọc
+        Confirmed,        // Khách đã thanh toán cọc, đơn đã chắc chắn
+        Rejected,         // Chủ xe từ chối
+        Ongoing,          // Đang trong quá trình thuê (đã nhận xe)
+        Completed,        // Đã hoàn tất chuyến đi và thanh toán
+        Cancelled         // Đơn bị hủy
     }
 
     public enum RentalType {

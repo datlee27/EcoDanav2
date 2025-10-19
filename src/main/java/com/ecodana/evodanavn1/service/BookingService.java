@@ -187,14 +187,10 @@ public class BookingService {
     public Booking approveBooking(String bookingId, User approver) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
-                    booking.setStatus(Booking.BookingStatus.Approved);
+                    // Chuyển sang AwaitingDeposit - yêu cầu customer thanh toán
+                    booking.setStatus(Booking.BookingStatus.AwaitingDeposit);
                     booking.setHandledBy(approver);
-                    // Update vehicle status to Rented
-                    if (booking.getVehicle() != null) {
-                        Vehicle vehicle = booking.getVehicle();
-                        vehicle.setStatus(Vehicle.VehicleStatus.Rented);
-                        vehicleService.updateVehicle(vehicle); // Assuming updateVehicle method exists in VehicleService
-                    }
+                    // Không set vehicle status thành Rented ngay - chỉ set khi đã thanh toán
                     return bookingRepository.save(booking);
                 })
                 .orElse(null);
@@ -277,5 +273,21 @@ public class BookingService {
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
         
         return counts;
+    }
+
+    public Booking cancelCar(String bookingId, String reason) {
+        return bookingRepository.findById(bookingId)
+                .map(booking -> {
+                    // Set status back to Cancelled
+                    booking.setStatus(Booking.BookingStatus.Cancelled);
+                    booking.setCancelReason(reason);
+
+                    // Update vehicle status back to Available when car is cancelled after payment
+                    Booking updatedBooking = bookingRepository.save(booking);
+                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+
+                    return updatedBooking;
+                })
+                .orElse(null);
     }
 }

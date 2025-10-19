@@ -47,8 +47,15 @@
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Pending">
                     Chờ duyệt (<span id="count-pending" th:text="${#lists.size(bookings.?[status.name() == 'Pending'])}">0</span>)
                 </button>
-                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Approved">
-                    Đã duyệt (<span id="count-approved" th:text="${#lists.size(bookings.?[status.name() == 'Approved'])}">0</span>)
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500 relative" data-status="AwaitingDeposit,Approved">
+                    Chờ thanh toán (<span id="count-approved" th:text="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved'])}">0</span>)
+                    <span th:if="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved']) > 0}" 
+                          class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse">
+                        NEW
+                    </span>
+                </button>
+                <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Confirmed">
+                    Đã thanh toán (<span id="count-confirmed" th:text="${#lists.size(bookings.?[status.name() == 'Confirmed'])}">0</span>)
                 </button>
                 <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Ongoing">
                     Đang thuê (<span id="count-ongoing" th:text="${#lists.size(bookings.?[status.name() == 'Ongoing'])}">0</span>)
@@ -75,7 +82,7 @@
 
         <div th:if="${!bookings.isEmpty()}" class="space-y-4">
             <div th:each="booking : ${bookings}" 
-                 class="booking-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all"
+                 th:class="${booking.status.name() == 'AwaitingDeposit' || booking.status.name() == 'Approved'} ? 'booking-card bg-blue-50 border-2 border-blue-400 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all' : 'booking-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all'"
                  th:attr="data-status=${booking.status}">
                 
                 <div class="p-6">
@@ -210,7 +217,11 @@
             const bookings = document.querySelectorAll('.booking-card');
             
             bookings.forEach(booking => {
-                if (status === 'all' || booking.getAttribute('data-status') === status) {
+                const bookingStatus = booking.getAttribute('data-status');
+                // Support multiple statuses separated by comma
+                const statuses = status.split(',');
+                
+                if (status === 'all' || statuses.includes(bookingStatus)) {
                     booking.style.display = 'block';
                 } else {
                     booking.style.display = 'none';
@@ -309,6 +320,38 @@
             }, 500);
         }, 3000);
     }
+    
+    // Show notification for approved bookings
+    window.addEventListener('DOMContentLoaded', function() {
+        const approvedBookings = document.querySelectorAll('.booking-card[data-status="AwaitingDeposit"], .booking-card[data-status="Approved"]');
+        
+        if (approvedBookings.length > 0 && !sessionStorage.getItem('approvalNotificationShown')) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-24 right-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 max-w-md';
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mr-4">
+                        <i class="fas fa-check-circle text-blue-500 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="font-bold text-lg">🎉 Xe đã được duyệt!</p>
+                        <p class="text-sm">Bạn có ${approvedBookings.length} đơn đã được chấp nhận. Vui lòng thanh toán!</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            sessionStorage.setItem('approvalNotificationShown', 'true');
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.5s';
+                setTimeout(() => notification.remove(), 500);
+            }, 5000);
+        }
+    });
 </script>
 
 </body>

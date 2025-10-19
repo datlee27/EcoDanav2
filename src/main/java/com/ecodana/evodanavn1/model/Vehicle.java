@@ -59,6 +59,9 @@ public class Vehicle {
     @JoinColumn(name = "LastUpdatedBy")
     private User lastUpdatedBy;
 
+    @Column(name = "OwnerId", length = 36)
+    private String ownerId; // ID của User là chủ sở hữu xe (P2P model)
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CategoryId", referencedColumnName = "CategoryId")
     private VehicleCategories category;
@@ -192,6 +195,9 @@ public class Vehicle {
     public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
     public User getLastUpdatedBy() { return lastUpdatedBy; }
     public void setLastUpdatedBy(User lastUpdatedBy) { this.lastUpdatedBy = lastUpdatedBy; }
+
+    public String getOwnerId() { return ownerId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
 
     public VehicleCategories getCategory() {
         return category;

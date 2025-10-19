@@ -19,10 +19,10 @@ import java.util.regex.Pattern;
 @Service
 public class AIService {
 
-    @Value("${CLOUDFLARE_ACCOUNT_ID}")
+    @Value("${ai.cloudflare.account-id}")
     private String accountId;
 
-    @Value("${CLOUDFLARE_API_TOKEN}")
+    @Value("${ai.cloudflare.api-token}")
     private String apiToken;
 
     @Value("${ai.cloudflare.model:@cf/meta/llama-3-8b-instruct}")

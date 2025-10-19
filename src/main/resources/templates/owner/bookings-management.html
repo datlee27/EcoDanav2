@@ -62,7 +62,7 @@
                 <p class="text-xs text-gray-500 hidden sm:block">Manage your bookings and rental calendar</p>
             </div>
             <div class="flex items-center space-x-4">
-                <button class="relative p-2 text-gray-600 hover:text-primary">
+                <button onclick="switchTab('notifications')" class="relative p-2 text-gray-600 hover:text-primary transition-colors" title="Thông báo">
                     <i class="fas fa-bell text-xl"></i>
                     <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
                           th:text="${pendingBookings?.size() ?: 0}">0</span>
@@ -81,47 +81,56 @@
                     <button onclick="switchTab('bookings')" id="bookings-tab" class="tab-button active px-6 py-3 font-semibold border-b-2 border-primary text-primary transition-colors">
                         <i class="fas fa-list mr-2"></i>Booking Management
                     </button>
+                    <button onclick="switchTab('notifications')" id="notifications-tab" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-600 hover:text-primary transition-colors">
+                        <i class="fas fa-bell mr-2"></i>Thông báo
+                        <span th:if="${pendingBookings?.size() > 0}" class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5" th:text="${pendingBookings?.size()}">0</span>
+                    </button>
                     <button onclick="switchTab('calendar')" id="calendar-tab" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-600 hover:text-primary transition-colors">
                         <i class="fas fa-calendar-alt mr-2"></i>Calendar View
                     </button>
                 </div>
 
                 <div id="bookings-section" class="tab-content">
+                    <!-- Quick Filter Cards -->
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500">
+                        <div onclick="quickFilterStatus('Pending')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-600 text-sm">Pending</p>
-                                    <p class="text-2xl font-bold text-gray-800" th:text="${pendingCount ?: 0}">0</p>
+                                    <p class="text-gray-600 text-sm font-medium">Pending</p>
+                                    <p class="text-2xl font-bold text-yellow-600" th:text="${pendingCount ?: 0}">0</p>
+                                    <p class="text-xs text-gray-500 mt-1">Chờ duyệt</p>
                                 </div>
-                                <i class="fas fa-clock text-3xl text-yellow-500 opacity-70"></i>
+                                <i class="fas fa-clock text-4xl text-yellow-500 opacity-60"></i>
                             </div>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500">
+                        <div onclick="quickFilterStatus('Approved')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-600 text-sm">Approved</p>
-                                    <p class="text-2xl font-bold text-gray-800" th:text="${approvedCount ?: 0}">0</p>
+                                    <p class="text-gray-600 text-sm font-medium">Approved</p>
+                                    <p class="text-2xl font-bold text-green-600" th:text="${approvedCount ?: 0}">0</p>
+                                    <p class="text-xs text-gray-500 mt-1">Đã duyệt</p>
                                 </div>
-                                <i class="fas fa-check-circle text-3xl text-green-500 opacity-70"></i>
+                                <i class="fas fa-check-circle text-4xl text-green-500 opacity-60"></i>
                             </div>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500">
+                        <div onclick="quickFilterStatus('Confirmed')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-600 text-sm">Ongoing</p>
-                                    <p class="text-2xl font-bold text-gray-800" th:text="${ongoingCount ?: 0}">0</p>
+                                    <p class="text-gray-600 text-sm font-medium">Confirmed</p>
+                                    <p class="text-2xl font-bold text-blue-600" th:text="${ongoingCount ?: 0}">0</p>
+                                    <p class="text-xs text-gray-500 mt-1">Đã thanh toán</p>
                                 </div>
-                                <i class="fas fa-car text-3xl text-blue-500 opacity-70"></i>
+                                <i class="fas fa-check-double text-4xl text-blue-500 opacity-60"></i>
                             </div>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500">
+                        <div onclick="quickFilterStatus('Completed')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <p class="text-gray-600 text-sm">Completed</p>
-                                    <p class="text-2xl font-bold text-gray-800" th:text="${completedCount ?: 0}">0</p>
+                                    <p class="text-gray-600 text-sm font-medium">Completed</p>
+                                    <p class="text-2xl font-bold text-gray-700" th:text="${completedCount ?: 0}">0</p>
+                                    <p class="text-xs text-gray-500 mt-1">Hoàn tất</p>
                                 </div>
-                                <i class="fas fa-flag-checkered text-3xl text-gray-500 opacity-70"></i>
+                                <i class="fas fa-flag-checkered text-4xl text-gray-500 opacity-60"></i>
                             </div>
                         </div>
                     </div>
@@ -134,6 +143,8 @@
                                     <option value="">All Statuses</option>
                                     <option value="Pending">Pending</option>
                                     <option value="Approved">Approved</option>
+                                    <option value="AwaitingDeposit">Awaiting Deposit</option>
+                                    <option value="Confirmed">Confirmed</option>
                                     <option value="Rejected">Rejected</option>
                                     <option value="Ongoing">Ongoing</option>
                                     <option value="Completed">Completed</option>
@@ -164,6 +175,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -196,6 +208,15 @@
                                         <p class="text-xs text-gray-500" th:text="${booking.vehicle?.licensePlate}">License Plate</p>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <div class="flex items-center">
+                                            <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
+                                            <div>
+                                                <p class="font-medium" th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy')}">19/10/2025</p>
+                                                <p class="text-xs text-gray-500" th:text="${#temporals.format(booking.createdDate, 'HH:mm:ss')}">12:13:51</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         <div><span class="font-medium">Từ:</span> <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yy HH:mm')}"></span></div>
                                         <div><span class="font-medium">Đến:</span> <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yy HH:mm')}"></span></div>
                                     </td>
@@ -206,13 +227,13 @@
                                         <span class="status-badge" th:classappend="'status-' + ${booking.status.name()}" th:text="${booking.status.name()}">Pending</span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
-                                        <button onclick="viewBookingDetail(this)" th:data-booking-id="${booking.bookingId}" class="text-blue-600 hover:text-blue-800" title="View Details">
+                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-blue-600 hover:text-blue-800" title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </button>
-                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="approveBooking(this)" th:data-booking-id="${booking.bookingId}" class="text-green-600 hover:text-green-800" title="Approve">
+                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="approveBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-green-600 hover:text-green-800" title="Approve">
                                             <i class="fas fa-check"></i>
                                         </button>
-                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="rejectBooking(this)" th:data-booking-id="${booking.bookingId}" class="text-red-600 hover:text-red-800" title="Reject">
+                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="rejectBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-red-600 hover:text-red-800" title="Reject">
                                             <i class="fas fa-times"></i>
                                         </button>
                                     </td>
@@ -225,6 +246,63 @@
                                 </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="notifications-section" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h2 class="text-xl font-semibold mb-4 flex items-center">
+                            <i class="fas fa-bell text-green-500 mr-2"></i>
+                            Thông báo mới
+                        </h2>
+                        
+                        <div th:if="${pendingBookings != null && !pendingBookings.isEmpty()}" class="space-y-3">
+                            <div th:each="booking : ${pendingBookings}" class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-r-lg hover:bg-yellow-100 transition-colors">
+                                <div class="flex items-start justify-between">
+                                    <div class="flex-1">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-clock text-yellow-600 mr-2"></i>
+                                            <h3 class="font-semibold text-gray-800">Booking mới chờ duyệt</h3>
+                                        </div>
+                                        <p class="text-sm text-gray-700 mb-2">
+                                            <strong>Mã:</strong> <span class="text-green-600" th:text="${booking.bookingCode}">BK123</span>
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-2">
+                                            <strong>Khách hàng:</strong> <span th:text="${booking.user?.firstName + ' ' + booking.user?.lastName}">Customer Name</span>
+                                        </p>
+                                        <p class="text-sm text-gray-700 mb-2">
+                                            <strong>Xe:</strong> <span th:text="${booking.vehicle?.vehicleModel}">Vehicle Model</span>
+                                        </p>
+                                        <p class="text-sm text-gray-600">
+                                            <i class="fas fa-calendar mr-1"></i>
+                                            <span th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">19/10/2025 12:13</span>
+                                        </p>
+                                    </div>
+                                    <div class="flex flex-col space-y-2 ml-4">
+                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))" 
+                                                th:data-booking-id="${booking.bookingId}"
+                                                class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">
+                                            <i class="fas fa-eye mr-1"></i> Xem
+                                        </button>
+                                        <button onclick="approveBooking(this.getAttribute('data-booking-id'))" 
+                                                th:data-booking-id="${booking.bookingId}"
+                                                class="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors">
+                                            <i class="fas fa-check mr-1"></i> Duyệt
+                                        </button>
+                                        <button onclick="rejectBooking(this.getAttribute('data-booking-id'))" 
+                                                th:data-booking-id="${booking.bookingId}"
+                                                class="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors">
+                                            <i class="fas fa-times mr-1"></i> Từ chối
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div th:if="${pendingBookings == null || pendingBookings.isEmpty()}" class="text-center py-12">
+                            <i class="fas fa-bell-slash text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500 text-lg">Không có thông báo mới</p>
                         </div>
                     </div>
                 </div>
@@ -247,7 +325,13 @@
                     </div>
                 </div>
 
-            </div> </main> </div> </div> <div id="booking-detail-modal" class="modal hidden">
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Booking Detail Modal -->
+<div id="booking-detail-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeModal('booking-detail-modal')"></div>
     <div class="modal-content">
         <div class="modal-header">
@@ -395,26 +479,13 @@
                 `;
                 content.innerHTML = detailsHtml;
 
-                // Show/hide action buttons in detail modal based on status
-                const completeBtn = document.getElementById('modal-complete-button');
-                const cancelBtn = document.getElementById('modal-cancel-button');
-                const editBtn = document.getElementById('modal-edit-button');
-
-                // Hide all action buttons first
-                completeBtn.classList.add('hidden');
-                cancelBtn.classList.add('hidden');
-                editBtn.classList.remove('hidden'); // Edit is always available from detail view
-
-                switch (data.status) {
-                    case 'Approved':
-                    case 'Ongoing':
-                        completeBtn.classList.remove('hidden');
-                        cancelBtn.classList.remove('hidden');
-                        break;
-                    // For Completed, Rejected, Cancelled, only Edit (if applicable) and Close are shown
+                // Show modal
+                const modal = document.getElementById('booking-detail-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                } else {
+                    console.error('Modal booking-detail-modal not found');
                 }
-
-                document.getElementById('booking-detail-modal').classList.remove('hidden');
             })
             .catch(error => {
                 console.error('Error fetching booking details:', error);
@@ -596,6 +667,78 @@
         });
     }
 
+    // Quick filter khi click vào status cards
+    function quickFilterStatus(status) {
+        const statusFilter = document.getElementById('status-filter');
+        statusFilter.value = status;
+        filterBookings();
+    }
+
+    // Approve booking
+    function approveBooking(bookingId) {
+        if (!confirm('Bạn có chắc muốn duyệt booking này?')) return;
+        
+        fetch(`/owner/management/bookings/${bookingId}/approve`, {
+            method: 'POST',
+            headers: csrfHeaders
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Đã duyệt booking thành công!');
+                location.reload();
+            } else {
+                alert('Lỗi: ' + (data.message || 'Không thể duyệt booking'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi duyệt booking');
+        });
+    }
+
+    // Reject booking
+    let currentRejectBookingId = null;
+    function rejectBooking(bookingId) {
+        currentRejectBookingId = bookingId;
+        document.getElementById('reject-modal').classList.remove('hidden');
+    }
+
+    function confirmReject() {
+        const reason = document.getElementById('reject-reason').value;
+        if (!reason || reason.trim() === '') {
+            alert('Vui lòng nhập lý do từ chối');
+            return;
+        }
+        
+        fetch(`/owner/management/bookings/${currentRejectBookingId}/reject`, {
+            method: 'POST',
+            headers: csrfHeaders,
+            body: JSON.stringify({ reason: reason })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Đã từ chối booking thành công!');
+                closeModal('reject-modal');
+                location.reload();
+            } else {
+                alert('Lỗi: ' + (data.message || 'Không thể từ chối booking'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Có lỗi xảy ra khi từ chối booking');
+        });
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+        if (modalId === 'reject-modal') {
+            document.getElementById('reject-reason').value = '';
+        }
+    }
+
     document.querySelectorAll(".filter-btn").forEach((button) => {
         button.addEventListener("click", () => {
             const status = button.getAttribute("data-status");
@@ -614,7 +757,7 @@
 
     /*<![CDATA[*/
     document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ null; // Lấy giá trị từ model
+        const currentPage = /*[[${currentPage}]]*/ null;
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
         } else if (!currentPage) {
@@ -622,9 +765,6 @@
         } else if (typeof highlightOwnerSidebarLink !== 'function') {
             console.error("highlightOwnerSidebarLink function not found in sidebar-common.js.");
         }
-
-        // Gọi các hàm setup JS khác của trang này nếu có
-        // Ví dụ: setupOwnerDashboardSpecificFunctions();
     });
     /*]]>*/
 </script>

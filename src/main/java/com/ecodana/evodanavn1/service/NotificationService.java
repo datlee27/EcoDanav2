@@ -113,4 +113,88 @@ public class NotificationService {
     public void deleteNotification(String notificationId) {
         notificationRepository.deleteById(notificationId);
     }
+    
+    /**
+     * Gửi thông báo khi có booking mới cho Owner
+     */
+    public void notifyOwnerNewBooking(com.ecodana.evodanavn1.model.Booking booking) {
+        String ownerId = booking.getVehicle().getOwnerId();
+        if (ownerId != null) {
+            String message = String.format(
+                "Bạn có yêu cầu đặt xe mới #%s. Vui lòng phản hồi trong vòng 2 giờ.",
+                booking.getBookingCode()
+            );
+            createNotification(ownerId, message, booking.getBookingId(), "BOOKING_REQUEST");
+        }
+    }
+    
+    /**
+     * Gửi thông báo khi Owner chấp nhận booking
+     */
+    public void notifyCustomerBookingApproved(com.ecodana.evodanavn1.model.Booking booking) {
+        String customerId = booking.getUser().getId();
+        String message = String.format(
+            "Yêu cầu đặt xe #%s đã được chấp nhận. Vui lòng thanh toán để xác nhận đơn hàng.",
+            booking.getBookingCode()
+        );
+        createNotification(customerId, message, booking.getBookingId(), "BOOKING_APPROVED");
+    }
+    
+    /**
+     * Gửi thông báo khi Owner từ chối booking
+     */
+    public void notifyCustomerBookingRejected(com.ecodana.evodanavn1.model.Booking booking, String reason) {
+        String customerId = booking.getUser().getId();
+        String message = String.format(
+            "Yêu cầu đặt xe #%s đã bị từ chối. Lý do: %s",
+            booking.getBookingCode(),
+            reason != null ? reason : "Không có lý do cụ thể"
+        );
+        createNotification(customerId, message, booking.getBookingId(), "BOOKING_REJECTED");
+    }
+    
+    /**
+     * Gửi thông báo khi thanh toán thành công
+     */
+    public void notifyPaymentSuccess(com.ecodana.evodanavn1.model.Booking booking, 
+                                     com.ecodana.evodanavn1.model.Payment payment) {
+        // Thông báo cho Customer
+        String customerMessage = String.format(
+            "Thanh toán thành công %s VNĐ cho đơn hàng #%s. Cảm ơn bạn đã sử dụng dịch vụ!",
+            payment.getAmount(),
+            booking.getBookingCode()
+        );
+        createNotification(booking.getUser().getId(), customerMessage, payment.getPaymentId(), "PAYMENT_SUCCESS");
+        
+        // Thông báo cho Admin
+        String adminMessage = String.format(
+            "Đơn hàng #%s đã được thanh toán thành công. Số tiền: %s VNĐ. Khách hàng: %s",
+            booking.getBookingCode(),
+            payment.getAmount(),
+            booking.getUser().getUsername()
+        );
+        createNotificationForAllAdmins(adminMessage, payment.getPaymentId(), "PAYMENT_SUCCESS");
+        
+        // Thông báo cho Owner
+        String ownerId = booking.getVehicle().getOwnerId();
+        if (ownerId != null) {
+            String ownerMessage = String.format(
+                "Đơn đặt xe #%s đã được thanh toán. Vui lòng chuẩn bị xe cho khách hàng.",
+                booking.getBookingCode()
+            );
+            createNotification(ownerId, ownerMessage, booking.getBookingId(), "BOOKING_PAID");
+        }
+    }
+    
+    /**
+     * Gửi thông báo khi booking bị tự động reject do Owner không phản hồi
+     */
+    public void notifyBookingAutoRejected(com.ecodana.evodanavn1.model.Booking booking) {
+        String customerId = booking.getUser().getId();
+        String message = String.format(
+            "Yêu cầu đặt xe #%s đã bị hủy do chủ xe không phản hồi trong thời gian quy định.",
+            booking.getBookingCode()
+        );
+        createNotification(customerId, message, booking.getBookingId(), "BOOKING_AUTO_REJECTED");
+    }
 }

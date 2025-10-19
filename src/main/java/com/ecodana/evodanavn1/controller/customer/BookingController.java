@@ -27,7 +27,9 @@ import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.service.VehicleService;
+import com.ecodana.evodanavn1.service.VNPayService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
 @Controller
@@ -45,6 +47,9 @@ public class BookingController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private VNPayService vnPayService;
 
     /**
      * Show checkout page
@@ -236,14 +241,13 @@ public class BookingController {
                 // Continue anyway - notification failure shouldn't block booking
             }
             
-            redirectAttributes.addFlashAttribute("success", "Đặt xe thành công!");
-            redirectAttributes.addFlashAttribute("bookingCode", booking.getBookingCode());
-            
+            redirectAttributes.addFlashAttribute("success", "Đặt xe thành công! Vui lòng chờ chủ xe duyệt.");
             System.out.println("=== Booking created successfully ===");
             System.out.println("Booking ID: " + booking.getBookingId());
             System.out.println("Booking Code: " + booking.getBookingCode());
-            System.out.println("Redirecting to: /booking/confirmation/" + booking.getBookingId());
+            System.out.println("Redirecting to confirmation page");
             
+            // Redirect đến trang confirmation - chờ owner duyệt
             return "redirect:/booking/confirmation/" + booking.getBookingId();
             
         } catch (Exception e) {
@@ -252,6 +256,99 @@ public class BookingController {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/vehicles/" + bookingRequest.getVehicleId();
+        }
+    }
+
+    /**
+     * Show payment page
+     */
+    @GetMapping("/payment/{bookingId}")
+    public String showPaymentPage(@PathVariable String bookingId, HttpSession session, Model model, HttpServletRequest request) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Booking booking = bookingService.findById(bookingId).orElse(null);
+        if (booking == null) {
+            return "redirect:/booking/my-bookings";
+        }
+
+        // Verify booking ownership
+        String bookingUserId = booking.getUser() != null ? booking.getUser().getId() : null;
+        if (bookingUserId == null || !bookingUserId.equals(user.getId())) {
+            return "redirect:/booking/my-bookings";
+        }
+
+        Vehicle vehicle = booking.getVehicle();
+        if (vehicle == null) {
+            return "redirect:/booking/my-bookings";
+        }
+
+        // Tính toán số tiền cọc 20% và số tiền còn lại 80%
+        BigDecimal totalAmount = booking.getTotalAmount();
+        BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.2")); // 20%
+        BigDecimal remainingAmount = totalAmount.multiply(new BigDecimal("0.8")); // 80%
+        
+        booking.setDepositAmountRequired(depositAmount);
+        booking.setRemainingAmount(remainingAmount);
+        bookingService.updateBooking(booking);
+
+        model.addAttribute("booking", booking);
+        model.addAttribute("vehicle", vehicle);
+        model.addAttribute("depositAmount", depositAmount);
+        model.addAttribute("remainingAmount", remainingAmount);
+        model.addAttribute("totalAmount", totalAmount);
+        model.addAttribute("currentUser", user);
+        
+        return "customer/booking-payment";
+    }
+
+    /**
+     * Process payment - Create VNPay URL
+     */
+    @PostMapping("/payment/process/{bookingId}")
+    public String processPayment(
+            @PathVariable String bookingId,
+            @RequestParam("paymentType") String paymentType,
+            HttpSession session,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        Booking booking = bookingService.findById(bookingId).orElse(null);
+        if (booking == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+            return "redirect:/booking/my-bookings";
+        }
+
+        try {
+            long amount;
+            String orderInfo;
+            
+            if ("deposit".equals(paymentType)) {
+                // Thanh toán 20% cọc
+                amount = booking.getDepositAmountRequired().longValue();
+                orderInfo = "Thanh toán cọc 20% đơn hàng " + booking.getBookingCode();
+            } else {
+                // Thanh toán 100%
+                amount = booking.getTotalAmount().longValue();
+                orderInfo = "Thanh toán toàn bộ đơn hàng " + booking.getBookingCode();
+            }
+            
+            // Tạo URL thanh toán VNPay
+            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, bookingId, request);
+            
+            return "redirect:" + paymentUrl;
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tạo thanh toán: " + e.getMessage());
+            return "redirect:/booking/payment/" + bookingId;
         }
     }
 
@@ -376,6 +473,76 @@ public class BookingController {
         bookingService.cancelBooking(bookingId, reason);
 
         redirectAttributes.addFlashAttribute("success", "Đã hủy booking thành công!");
+        return "redirect:/booking/my-bookings";
+    }
+
+    /**
+     * Cancel car (for confirmed bookings - đã thanh toán)
+     */
+    @PostMapping("/cancel-car/{bookingId}")
+    public String cancelCar(
+            @PathVariable String bookingId,
+            @RequestParam(required = false) String cancelReason,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        System.out.println("=== Cancel Car Request ===");
+        System.out.println("Booking ID: " + bookingId);
+
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            System.out.println("ERROR: User not logged in");
+            return "redirect:/login";
+        }
+        System.out.println("User ID: " + user.getId());
+
+        Booking booking = bookingService.findById(bookingId).orElse(null);
+        if (booking == null) {
+            System.out.println("ERROR: Booking not found");
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+            return "redirect:/booking/my-bookings";
+        }
+        System.out.println("Booking found. Status: " + booking.getStatus());
+
+        // Check booking ownership
+        String bookingUserId = booking.getUser() != null ? booking.getUser().getId() : null;
+        System.out.println("Booking User ID: " + bookingUserId);
+        
+        if (bookingUserId == null || !bookingUserId.equals(user.getId())) {
+            System.out.println("ERROR: User ID mismatch");
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+            return "redirect:/booking/my-bookings";
+        }
+
+        if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
+            System.out.println("ERROR: Booking status is not Confirmed. Current status: " + booking.getStatus());
+            redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đã thanh toán! Trạng thái hiện tại: " + booking.getStatus());
+            return "redirect:/booking/my-bookings";
+        }
+
+        // Check cancellation policy for confirmed bookings
+        // Sử dụng createdDate làm thời điểm thanh toán (vì không có field riêng)
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime paymentDate = booking.getCreatedDate();
+
+        if (paymentDate == null) {
+            redirectAttributes.addFlashAttribute("error", "Không thể xác định thời gian đặt xe!");
+            return "redirect:/booking/my-bookings";
+        }
+
+        // Calculate hours from payment (using createdDate as reference)
+        long hoursFromPayment = java.time.Duration.between(paymentDate, now).toHours();
+
+        // Check if within 2 hours of payment
+        if (hoursFromPayment > 2) {
+            redirectAttributes.addFlashAttribute("error", "Không thể hủy! Đã quá 2 tiếng kể từ lúc đặt xe (mất 10% phí).");
+            return "redirect:/booking/my-bookings";
+        }
+
+        String reason = cancelReason != null ? cancelReason : "Khách hàng hủy sau thanh toán";
+        bookingService.cancelCar(bookingId, reason);
+
+        redirectAttributes.addFlashAttribute("success", "Đã hủy xe thành công! Sẽ hoàn tiền theo chính sách.");
         return "redirect:/booking/my-bookings";
     }
 }

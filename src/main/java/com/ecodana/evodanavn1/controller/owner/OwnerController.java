@@ -83,7 +83,30 @@ public class OwnerController {
         if (redirect != null) return redirect;
 
         model.addAttribute("currentPage", "cars");
-        model.addAttribute("vehicles", vehicleService.getAllVehicles());
+        
+        // Lấy tất cả vehicles
+        List<Vehicle> allVehicles = vehicleService.getAllVehicles();
+        model.addAttribute("vehicles", allVehicles);
+        
+        // Đếm số lượng theo từng status
+        long availableCount = allVehicles.stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
+                .count();
+        long rentedCount = allVehicles.stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
+                .count();
+        long maintenanceCount = allVehicles.stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Maintenance)
+                .count();
+        long unavailableCount = allVehicles.stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Unavailable)
+                .count();
+        
+        model.addAttribute("availableCount", availableCount);
+        model.addAttribute("rentedCount", rentedCount);
+        model.addAttribute("maintenanceCount", maintenanceCount);
+        model.addAttribute("unavailableCount", unavailableCount);
+        
         model.addAttribute("transmissions", transmissionTypeRepository.findAll());
         model.addAttribute("categories", vehicleCategoriesRepository.findAll());
         Map<String, String> transmissionMap = new HashMap<>();
@@ -102,7 +125,37 @@ public class OwnerController {
         if (redirect != null) return redirect;
 
         model.addAttribute("currentPage", "bookings");
-        model.addAttribute("bookings", bookingService.getAllBookings());
+        
+        // Lấy tất cả bookings
+        List<Booking> allBookings = bookingService.getAllBookings();
+        model.addAttribute("bookings", allBookings);
+        
+        // Đếm số lượng theo từng status
+        long pendingCount = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
+                .count();
+        long approvedCount = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Approved ||
+                             b.getStatus() == Booking.BookingStatus.AwaitingDeposit)
+                .count();
+        long ongoingCount = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed ||
+                             b.getStatus() == Booking.BookingStatus.Ongoing)
+                .count();
+        long completedCount = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed)
+                .count();
+        
+        model.addAttribute("pendingCount", pendingCount);
+        model.addAttribute("approvedCount", approvedCount);
+        model.addAttribute("ongoingCount", ongoingCount);
+        model.addAttribute("completedCount", completedCount);
+        
+        // Lấy danh sách pending bookings cho notification badge
+        List<Booking> pendingBookings = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
+                .collect(Collectors.toList());
+        model.addAttribute("pendingBookings", pendingBookings);
 
         return "owner/bookings-management";
     }
