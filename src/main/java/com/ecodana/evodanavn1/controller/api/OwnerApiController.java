@@ -58,6 +58,7 @@ public class OwnerApiController {
                 car.put("requiresLicense", vehicle.getRequiresLicense());
                 car.put("status", vehicle.getStatus().name());
                 car.put("yearManufactured", vehicle.getYearManufactured());
+                car.put("features", vehicle.getFeatures());
                 return ResponseEntity.ok(car);
             }).orElse(ResponseEntity.status(404).body(Map.of("message", "Vehicle not found")));
         } catch (Exception e) {

@@ -84,19 +84,11 @@ public class OwnerController {
 
         model.addAttribute("currentPage", "cars");
         
-        // Lấy current user
-        User currentUser = (User) session.getAttribute("currentUser");
-        
-        // Lấy chỉ vehicles của owner hiện tại
-        List<Vehicle> allVehicles = vehicleService.getAllVehicles().stream()
-                .filter(v -> currentUser != null && currentUser.getId().equals(v.getOwnerId()))
-                .collect(java.util.stream.Collectors.toList());
+        // Lấy tất cả vehicles
+        List<Vehicle> allVehicles = vehicleService.getAllVehicles();
         model.addAttribute("vehicles", allVehicles);
         
         // Đếm số lượng theo từng status
-        long pendingApprovalCount = allVehicles.stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.PendingApproval)
-                .count();
         long availableCount = allVehicles.stream()
                 .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
                 .count();
@@ -110,7 +102,6 @@ public class OwnerController {
                 .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Unavailable)
                 .count();
         
-        model.addAttribute("pendingApprovalCount", pendingApprovalCount);
         model.addAttribute("availableCount", availableCount);
         model.addAttribute("rentedCount", rentedCount);
         model.addAttribute("maintenanceCount", maintenanceCount);
@@ -228,29 +219,19 @@ public class OwnerController {
             }
             vehicle.setSeats(Integer.parseInt(carData.getOrDefault("seats", "4")));
             vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
-            
-            // Fix JSON format - values should be numbers, not strings
-            String hourlyRate = carData.getOrDefault("hourlyRate", "0");
-            String dailyRate = carData.getOrDefault("dailyRate", "0");
-            String monthlyRate = carData.getOrDefault("monthlyRate", "0");
-            vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", 
-                hourlyRate.isEmpty() ? "0" : hourlyRate, 
-                dailyRate.isEmpty() ? "0" : dailyRate, 
-                monthlyRate.isEmpty() ? "0" : monthlyRate));
+            vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", carData.getOrDefault("hourlyRate", "0"), carData.getOrDefault("dailyRate", "0"), carData.getOrDefault("monthlyRate", "0")));
             if (carData.get("batteryCapacity") != null && !carData.get("batteryCapacity").isEmpty()) {
                 vehicle.setBatteryCapacity(new java.math.BigDecimal(carData.get("batteryCapacity")));
             }
             vehicle.setDescription(carData.get("description"));
             vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
-            
-            // Set status to PendingApproval - chờ admin duyệt
-            vehicle.setStatus(Vehicle.VehicleStatus.PendingApproval);
+            vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.getOrDefault("status", "Available")));
             vehicle.setCreatedDate(java.time.LocalDateTime.now());
             
-            // Set owner ID
-            User currentUser = (User) session.getAttribute("currentUser");
-            if (currentUser != null) {
-                vehicle.setOwnerId(currentUser.getId());
+            // Handle features
+            String features = carData.get("features");
+            if (features != null && !features.isEmpty()) {
+                vehicle.setFeatures(features);
             }
 
             if (images != null && images.length > 0 && !images[0].isEmpty()) {
@@ -268,9 +249,9 @@ public class OwnerController {
             }
 
             vehicleService.saveVehicle(vehicle);
-            redirectAttributes.addFlashAttribute("success", "Xe đã được thêm thành công! Vui lòng chờ admin duyệt để xe có thể cho thuê.");
+            redirectAttributes.addFlashAttribute("success", "Vehicle added successfully!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Thêm xe thất bại: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("error", "Failed to add vehicle: " + e.getMessage());
         }
         return "redirect:/owner/cars";
     }
@@ -327,6 +308,12 @@ public class OwnerController {
 
             if (carData.containsKey("status")) {
                 vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.get("status")));
+            }
+            
+            // Handle features
+            String features = carData.get("features");
+            if (features != null && !features.isEmpty()) {
+                vehicle.setFeatures(features);
             }
 
             if (images != null && images.length > 0 && !images[0].isEmpty()) {
