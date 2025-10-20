@@ -3,17 +3,30 @@
 <head>
     <div th:replace="~{fragments/layout :: head}"></div>
     <link href="/css/sidebar-common.css" rel="stylesheet">
+    <link href="/css/owner-dashboard.css" rel="stylesheet">
     <style>
         .primary { color: #4CAF50; }
         .hover\:text-blue-600:hover { color: #2563eb; } /* Tailwind blue-600 */
         .modal { /* Style cơ bản cho modal */
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             z-index: 100; display: flex; align-items: center; justify-content: center;
+            animation: modalFadeIn 0.3s ease-in-out;
         }
-        .modal-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); }
-        .modal-content { position: relative; background-color: white; border-radius: 0.75rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal.hidden { display: none; }
+        .modal-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-content {
+            position: relative; background-color: white; border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+            display: flex; flex-direction: column; /* Added flex column */
+            max-width: 56rem; /* max-w-2xl */
+            width: 90%;
+            max-height: 90vh; /* Added max height */
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        @keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; flex-shrink: 0;}
-        .modal-body { padding: 1.5rem; overflow-y: auto; }
+        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; /* Allow body to scroll */}
         .modal-footer { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; flex-shrink: 0;}
     </style>
 </head>
@@ -23,19 +36,67 @@
     <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
             <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
             </button>
-            <div class="flex-grow md:flex-grow-0">
-                <h1 class="text-lg font-semibold text-gray-800 truncate">Customer Management</h1>
-                <p class="text-xs text-gray-500 hidden sm:block">Manage your customers</p>
-            </div>
-            <div th:replace="~{fragments/nav :: #userMenu}"></div>
-        </div>
+            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">Customer Management</h1> <div class="flex-1"></div>
 
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span id="notificationBadge" class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">0</span>
+                    </button>
+                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900">Thông báo</h3>
+                            <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
+                        </div>
+                        <div id="notificationList" class="max-h-96 overflow-y-auto">
+                            <div class="p-4 text-center text-gray-500">
+                                <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                <p>Không có thông báo mới</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
+                        <div th:if="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="w-8 h-8 rounded-full overflow-hidden">
+                            <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
+                        <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-3 border-b border-gray-200">
+                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Owner User</p>
+                            <p class="text-xs text-gray-500" th:text="${currentUser?.role?.roleName}">Owner</p>
+                        </div>
+                        <div class="py-1">
+                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
+                                Trang chủ
+                            </a>
+                            <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
+                                Hồ sơ
+                            </a>
+                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
+                                Đăng Xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-            <div class="container mx-auto px-0"> <h2 class="text-2xl font-bold text-gray-800 mb-6">Customer List</h2>
+            <div class="container mx-auto px-0">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Customer List</h2>
 
                 <div class="bg-white rounded-xl shadow-md overflow-hidden">
                     <div class="overflow-x-auto">
@@ -64,20 +125,27 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 truncate max-w-[200px]" th:text="${customerInfo.user != null ? customerInfo.user.email : 'N/A'}"></td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${customerInfo.user != null ? customerInfo.user.phoneNumber : 'N/A'}"></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-center" th:text="${customerInfo.bookingCount}"></td> <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <button th:attr="onclick=|viewCustomer('${customerInfo.user.id}')|" class="text-blue-600 hover:text-blue-800" title="View Details">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-center" th:text="${customerInfo.bookingCount}"></td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                    <button th:if="${customerInfo.user != null}" th:attr="onclick=|viewCustomer('${customerInfo.user.id}')|" class="text-blue-600 hover:text-blue-800" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
                             </tr>
                             <tr th:if="${customers == null or #lists.isEmpty(customers)}">
                                 <td colspan="5" class="text-center py-10 text-gray-500">No customers found.</td>
                             </tr>
                             </tbody>
                         </table>
-                    </div> </div>
+                    </div>
+                </div>
 
-            </div> </main> </div> </div> <div id="customer-detail-modal" class="modal hidden">
+            </div>
+        </main>
+    </div>
+</div>
+
+<div id="customer-detail-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeModal('customer-detail-modal')"></div>
     <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div class="modal-header">
@@ -85,7 +153,7 @@
             <button onclick="closeModal('customer-detail-modal')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
         </div>
         <div class="modal-body overflow-y-auto" id="customer-detail-content">
-            <p class="p-6 text-center text-gray-500">Loading customer details...</p>
+            <p class="p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading customer details...</p>
         </div>
         <div class="modal-footer">
             <button onclick="closeModal('customer-detail-modal')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm">Close</button>
@@ -94,6 +162,7 @@
 </div>
 
 <script th:src="@{/js/sidebar-common.js}"></script>
+<script th:src="@{/js/owner-dashboard.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     // Hàm closeModal chung
@@ -185,6 +254,10 @@
         const currentPage = /*[[${currentPage}]]*/ 'customers';
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
+        }
+        // Load notification count on page load (nếu cần)
+        if (typeof loadNotificationCount === 'function') {
+            loadNotificationCount();
         }
     });
     /*]]>*/

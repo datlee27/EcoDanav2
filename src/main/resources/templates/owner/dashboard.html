@@ -3,29 +3,88 @@
 <head>
     <div th:replace="~{fragments/layout :: head}"></div>
     <link href="/css/sidebar-common.css" rel="stylesheet">
+    <link href="/css/owner-dashboard.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100">
-<div class="flex h-screen bg-gray-100 overflow-hidden"> <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
+<div class="flex h-screen bg-gray-100 overflow-hidden">
+    <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
             <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
             </button>
-            <div>
-                <h1 class="text-lg font-semibold text-gray-800">Owner Dashboard</h1>
-                <p class="text-xs text-gray-500">An overview of your rental business</p>
-            </div>
-            <div th:replace="~{fragments/nav :: #userMenu}"></div>
-        </div>
+            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">EvoDana Owner</h1> <div class="flex-1"></div>
 
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-            <div class="container mx-auto px-0"> <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 mb-2">
-                    Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
-                </h2>
-                <p class="text-gray-600">Here's what's happening with your rental business today.</p>
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                        <i class="fas fa-bell text-xl"></i>
+                        <span th:if="${pendingBookings != null and pendingBookings > 0}"
+                              id="notificationBadge"
+                              class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"
+                              th:text="${pendingBookings > 99 ? '99+' : pendingBookings}">
+                              0
+                        </span>
+                        <span th:unless="${pendingBookings != null and pendingBookings > 0}"
+                              id="notificationBadge"
+                              class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
+                              0
+                        </span>
+                    </button>
+                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                            <h3 class="font-semibold text-gray-900">Thông báo</h3>
+                            <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
+                        </div>
+                        <div id="notificationList" class="max-h-96 overflow-y-auto">
+                            <div class="p-4 text-center text-gray-500">
+                                <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                <p>Không có thông báo mới</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="relative">
+                    <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
+                        <div th:if="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="w-8 h-8 rounded-full overflow-hidden">
+                            <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
+                        </div>
+                        <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
+                        <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
+                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+                    </button>
+                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+                        <div class="p-3 border-b border-gray-200">
+                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Owner User</p>
+                            <p class="text-xs text-gray-500" th:text="${currentUser?.role?.roleName}">Owner</p> </div>
+                        <div class="py-1">
+                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
+                                Trang chủ
+                            </a>
+                            <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
+                                Hồ sơ
+                            </a>
+                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
+                                Đăng Xuất
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+            <div class="container mx-auto px-0">
+                <div class="mb-8">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">
+                        Welcome back, <span th:text="${currentUser?.firstName ?: 'Owner'}">Owner</span>!
+                    </h2>
+                    <p class="text-gray-600">Here's what's happening with your rental business today.</p>
+                </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
@@ -73,18 +132,28 @@
                         </div>
                     </div>
                 </div>
+                <div class="bg-white rounded-xl shadow-md p-6">
+                    <h3 class="text-xl font-semibold mb-4">Quick Overview</h3>
+                    <p>Đây là nơi hiển thị các thông tin tổng quan khác...</p>
+                </div>
             </div>
         </main>
     </div>
 </div>
 
 <script th:src="@{/js/sidebar-common.js}"></script>
+<script th:src="@{/js/owner-dashboard.js}"></script>
 <script th:inline="javascript">
     /*<![CDATA[*/
     document.addEventListener('DOMContentLoaded', function() {
         const currentPage = /*[[${currentPage}]]*/ 'dashboard'; // Trang dashboard
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
+        }
+        // Load notification count on page load (nếu cần)
+        if (typeof loadNotificationCount === 'function') {
+            loadNotificationCount();
+            // setInterval(loadNotificationCount, 30000); // Tự động cập nhật nếu muốn
         }
     });
     /*]]>*/
