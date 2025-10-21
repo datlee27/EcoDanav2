@@ -1,5 +1,7 @@
 package com.ecodana.evodanavn1.controller.owner;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
@@ -8,6 +10,7 @@ import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +36,7 @@ public class OwnerController {
     private final BookingService bookingService;
     private final TransmissionTypeRepository transmissionTypeRepository;
     private final VehicleCategoriesRepository vehicleCategoriesRepository;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -72,7 +78,15 @@ public class OwnerController {
         model.addAttribute("currentPage", "dashboard");
         model.addAttribute("totalVehicles", vehicleService.getAllVehicles().size());
         model.addAttribute("availableVehicles", vehicleService.getAvailableVehicles().size());
-        // Add more stats as needed for the overview page
+
+        long pendingBookingsCount = bookingService.getPendingBookings().size();
+        model.addAttribute("pendingBookings", pendingBookingsCount);
+
+        long rentedVehiclesCount = vehicleService.getAllVehicles().stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
+                .count();
+        model.addAttribute("rentedVehicles", rentedVehiclesCount);
+
 
         return "owner/dashboard";
     }
@@ -83,12 +97,10 @@ public class OwnerController {
         if (redirect != null) return redirect;
 
         model.addAttribute("currentPage", "cars");
-        
-        // Lấy tất cả vehicles
+
         List<Vehicle> allVehicles = vehicleService.getAllVehicles();
         model.addAttribute("vehicles", allVehicles);
-        
-        // Đếm số lượng theo từng status
+
         long availableCount = allVehicles.stream()
                 .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
                 .count();
@@ -101,12 +113,12 @@ public class OwnerController {
         long unavailableCount = allVehicles.stream()
                 .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Unavailable)
                 .count();
-        
+
         model.addAttribute("availableCount", availableCount);
         model.addAttribute("rentedCount", rentedCount);
         model.addAttribute("maintenanceCount", maintenanceCount);
         model.addAttribute("unavailableCount", unavailableCount);
-        
+
         model.addAttribute("transmissions", transmissionTypeRepository.findAll());
         model.addAttribute("categories", vehicleCategoriesRepository.findAll());
         Map<String, String> transmissionMap = new HashMap<>();
@@ -125,33 +137,30 @@ public class OwnerController {
         if (redirect != null) return redirect;
 
         model.addAttribute("currentPage", "bookings");
-        
-        // Lấy tất cả bookings
+
         List<Booking> allBookings = bookingService.getAllBookings();
         model.addAttribute("bookings", allBookings);
-        
-        // Đếm số lượng theo từng status
+
         long pendingCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
                 .count();
         long approvedCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Approved ||
-                             b.getStatus() == Booking.BookingStatus.AwaitingDeposit)
+                        b.getStatus() == Booking.BookingStatus.AwaitingDeposit)
                 .count();
         long ongoingCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed ||
-                             b.getStatus() == Booking.BookingStatus.Ongoing)
+                        b.getStatus() == Booking.BookingStatus.Ongoing)
                 .count();
         long completedCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Completed)
                 .count();
-        
+
         model.addAttribute("pendingCount", pendingCount);
         model.addAttribute("approvedCount", approvedCount);
         model.addAttribute("ongoingCount", ongoingCount);
         model.addAttribute("completedCount", completedCount);
-        
-        // Lấy danh sách pending bookings cho notification badge
+
         List<Booking> pendingBookings = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
                 .collect(Collectors.toList());
@@ -189,19 +198,29 @@ public class OwnerController {
     public String profilePage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
-        
+
         model.addAttribute("currentPage", "profile");
-        // Current user is already added in checkAuthentication
         return "owner/profile-management";
     }
 
-
     @PostMapping("/cars")
     public String addCar(@RequestParam Map<String, String> carData,
-                         @RequestParam(value = "images", required = false) MultipartFile[] images,
+                         @RequestParam(value = "mainImage", required = false) MultipartFile mainImageFile,
+                         @RequestParam(value = "auxiliaryImages", required = false) MultipartFile[] auxiliaryImageFiles,
                          HttpSession session, RedirectAttributes redirectAttributes, Model model) {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
+
+        Cloudinary cloudinary = null;
+        if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
+            cloudinary = new Cloudinary(ObjectUtils.asMap(
+                    "cloud_name", cloudName,
+                    "api_key", cloudApiKey,
+                    "api_secret", cloudApiSecret));
+        } else {
+            redirectAttributes.addFlashAttribute("warning", "Cloudinary credentials not fully configured. Images may not be uploaded.");
+        }
+
         try {
             Vehicle vehicle = new Vehicle();
             vehicle.setVehicleId(java.util.UUID.randomUUID().toString());
@@ -219,40 +238,90 @@ public class OwnerController {
             }
             vehicle.setSeats(Integer.parseInt(carData.getOrDefault("seats", "4")));
             vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
-            vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", carData.getOrDefault("hourlyRate", "0"), carData.getOrDefault("dailyRate", "0"), carData.getOrDefault("monthlyRate", "0")));
+
+            BigDecimal hourlyRate = carData.containsKey("hourlyRate") && !carData.get("hourlyRate").isEmpty() ? new BigDecimal(carData.get("hourlyRate")) : BigDecimal.ZERO;
+            BigDecimal dailyRate = carData.containsKey("dailyRate") && !carData.get("dailyRate").isEmpty() ? new BigDecimal(carData.get("dailyRate")) : BigDecimal.ZERO;
+            BigDecimal monthlyRate = carData.containsKey("monthlyRate") && !carData.get("monthlyRate").isEmpty() ? new BigDecimal(carData.get("monthlyRate")) : BigDecimal.ZERO;
+
+            Map<String, BigDecimal> pricesMap = new HashMap<>();
+            pricesMap.put("hourly", hourlyRate);
+            pricesMap.put("daily", dailyRate);
+            pricesMap.put("monthly", monthlyRate);
+            vehicle.setRentalPrices(objectMapper.writeValueAsString(pricesMap));
+
             if (carData.get("batteryCapacity") != null && !carData.get("batteryCapacity").isEmpty()) {
                 vehicle.setBatteryCapacity(new java.math.BigDecimal(carData.get("batteryCapacity")));
             }
             vehicle.setDescription(carData.get("description"));
             vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
-
-            // Set status to PendingApproval - chờ admin duyệt
             vehicle.setStatus(Vehicle.VehicleStatus.PendingApproval);
             vehicle.setCreatedDate(java.time.LocalDateTime.now());
-            
-            // Handle features
-            String features = carData.get("features");
-            if (features != null && !features.isEmpty()) {
-                vehicle.setFeatures(features);
+
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser != null) {
+                vehicle.setOwnerId(currentUser.getId());
+                vehicle.setLastUpdatedBy(currentUser);
             }
 
-            if (images != null && images.length > 0 && !images[0].isEmpty()) {
-                if (cloudName != null && !cloudName.isBlank()) {
-                    try {
-                        com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(Map.of("cloud_name", cloudName, "api_key", cloudApiKey, "api_secret", cloudApiSecret));
-                        Map<String, Object> uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
-                        vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
-                    } catch (Exception ex) {
-                        redirectAttributes.addFlashAttribute("error", "Image upload failed: " + ex.getMessage());
-                    }
-                } else {
-                    redirectAttributes.addFlashAttribute("error", "Image upload failed: Cloudinary credentials are not configured.");
-                }
+            // ===================================
+            // === BẮT ĐẦU SỬA LỖI FEATURES ===
+            // ===================================
+            // Lấy chuỗi JSON features từ hidden input (do JS tạo ra)
+            if (carData.containsKey("features")) {
+                vehicle.setFeatures(carData.get("features"));
+            } else {
+                vehicle.setFeatures("[]"); // Mặc định là mảng rỗng
             }
+            // ===================================
+            // === KẾT THÚC SỬA LỖI FEATURES ===
+            // ===================================
+
+            // Upload ảnh chính
+            if (cloudinary != null && mainImageFile != null && !mainImageFile.isEmpty()) {
+                try {
+                    Map<String, Object> uploadResult = cloudinary.uploader().upload(mainImageFile.getBytes(), ObjectUtils.asMap("folder", "ecodana/vehicles"));
+                    vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
+                } catch (Exception ex) {
+                    redirectAttributes.addFlashAttribute("error", "Main image upload failed: " + ex.getMessage());
+                }
+            } else if (mainImageFile != null && !mainImageFile.isEmpty()) {
+                redirectAttributes.addFlashAttribute("warning", "Main image provided but Cloudinary not configured.");
+            }
+
+            // Upload ảnh phụ
+            List<String> auxiliaryImageUrls = new ArrayList<>();
+            if (cloudinary != null && auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0) {
+                if (auxiliaryImageFiles.length > 10) {
+                    redirectAttributes.addFlashAttribute("warning", "Maximum 10 auxiliary images allowed. Only the first 10 were uploaded.");
+                }
+                int uploadedCount = 0;
+                for (MultipartFile file : auxiliaryImageFiles) {
+                    if (uploadedCount >= 10) break;
+                    if (!file.isEmpty()) {
+                        try {
+                            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("folder", "ecodana/vehicles/auxiliary"));
+                            auxiliaryImageUrls.add(uploadResult.get("secure_url").toString());
+                            uploadedCount++;
+                        } catch (Exception ex) {
+                            redirectAttributes.addFlashAttribute("error", "Auxiliary image upload failed for file " + file.getOriginalFilename() + ": " + ex.getMessage());
+                        }
+                    }
+                }
+            } else if (auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0) {
+                redirectAttributes.addFlashAttribute("warning", "Auxiliary images provided but Cloudinary not configured.");
+            }
+
+            if (!auxiliaryImageUrls.isEmpty()) {
+                vehicle.setImageUrls(objectMapper.writeValueAsString(auxiliaryImageUrls));
+            } else {
+                vehicle.setImageUrls("[]");
+            }
+
 
             vehicleService.saveVehicle(vehicle);
             redirectAttributes.addFlashAttribute("success", "Vehicle added successfully!");
         } catch (Exception e) {
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Failed to add vehicle: " + e.getMessage());
         }
         return "redirect:/owner/cars";
@@ -260,10 +329,22 @@ public class OwnerController {
 
     @PostMapping("/cars/{id}")
     public String updateCar(@PathVariable String id, @RequestParam Map<String, String> carData,
-                            @RequestParam(value = "images", required = false) MultipartFile[] images,
+                            @RequestParam(value = "mainImage", required = false) MultipartFile mainImageFile,
+                            @RequestParam(value = "auxiliaryImages", required = false) MultipartFile[] auxiliaryImageFiles,
                             HttpSession session, RedirectAttributes redirectAttributes, Model model) {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
+
+        Cloudinary cloudinary = null;
+        if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
+            cloudinary = new Cloudinary(ObjectUtils.asMap(
+                    "cloud_name", cloudName,
+                    "api_key", cloudApiKey,
+                    "api_secret", cloudApiSecret));
+        } else {
+            redirectAttributes.addFlashAttribute("warning", "Cloudinary credentials not fully configured. Images may not be uploaded.");
+        }
+
         try {
             java.util.Optional<Vehicle> vehicleOptional = vehicleService.getVehicleById(id);
             if (vehicleOptional.isEmpty()) {
@@ -272,17 +353,22 @@ public class OwnerController {
             }
 
             Vehicle vehicle = vehicleOptional.get();
+            // ... (Cập nhật các thuộc tính) ...
             vehicle.setVehicleModel(carData.get("model"));
             vehicle.setVehicleType(Vehicle.VehicleType.valueOf(carData.get("type")));
 
             String transmissionTypeId = carData.get("transmissionTypeId");
             if (transmissionTypeId != null && !transmissionTypeId.isBlank()) {
                 transmissionTypeRepository.findById(Integer.parseInt(transmissionTypeId)).ifPresent(vehicle::setTransmissionType);
+            } else {
+                vehicle.setTransmissionType(null);
             }
 
             String categoryId = carData.get("categoryId");
             if (categoryId != null && !categoryId.isBlank()) {
                 vehicleCategoriesRepository.findById(Integer.parseInt(categoryId)).ifPresent(vehicle::setCategory);
+            } else {
+                vehicle.setCategory(null);
             }
 
             vehicle.setLicensePlate(carData.get("licensePlate"));
@@ -295,10 +381,16 @@ public class OwnerController {
             vehicle.setSeats(Integer.parseInt(carData.getOrDefault("seats", "4")));
             vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
 
-            String hourlyRate = carData.getOrDefault("hourlyRate", "0").isBlank() ? "0" : carData.get("hourlyRate");
-            String dailyRate = carData.getOrDefault("dailyRate", "0").isBlank() ? "0" : carData.get("dailyRate");
-            String monthlyRate = carData.getOrDefault("monthlyRate", "0").isBlank() ? "0" : carData.get("monthlyRate");
-            vehicle.setRentalPrices(String.format("{\"hourly\": %s, \"daily\": %s, \"monthly\": %s}", hourlyRate, dailyRate, monthlyRate));
+            BigDecimal hourlyRate = carData.containsKey("hourlyRate") && !carData.get("hourlyRate").isEmpty() ? new BigDecimal(carData.get("hourlyRate")) : BigDecimal.ZERO;
+            BigDecimal dailyRate = carData.containsKey("dailyRate") && !carData.get("dailyRate").isEmpty() ? new BigDecimal(carData.get("dailyRate")) : BigDecimal.ZERO;
+            BigDecimal monthlyRate = carData.containsKey("monthlyRate") && !carData.get("monthlyRate").isEmpty() ? new BigDecimal(carData.get("monthlyRate")) : BigDecimal.ZERO;
+
+            Map<String, BigDecimal> pricesMap = new HashMap<>();
+            pricesMap.put("hourly", hourlyRate);
+            pricesMap.put("daily", dailyRate);
+            pricesMap.put("monthly", monthlyRate);
+            vehicle.setRentalPrices(objectMapper.writeValueAsString(pricesMap));
+
 
             String batteryCapacity = carData.get("batteryCapacity");
             if (batteryCapacity != null && !batteryCapacity.isBlank()) {
@@ -311,25 +403,60 @@ public class OwnerController {
             if (carData.containsKey("status")) {
                 vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.get("status")));
             }
-            
-            // Handle features
-            String features = carData.get("features");
-            if (features != null && !features.isEmpty()) {
-                vehicle.setFeatures(features);
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser != null) {
+                vehicle.setLastUpdatedBy(currentUser);
             }
 
-            if (images != null && images.length > 0 && !images[0].isEmpty()) {
-                if (cloudName != null && !cloudName.isBlank()) {
-                    try {
-                        com.cloudinary.Cloudinary cloudinary = new com.cloudinary.Cloudinary(Map.of("cloud_name", cloudName, "api_key", cloudApiKey, "api_secret", cloudApiSecret));
-                        Map<String, Object> uploadResult = cloudinary.uploader().upload(images[0].getBytes(), Map.of("folder", "ecodana/vehicles"));
-                        vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
-                    } catch (Exception ex) {
-                        redirectAttributes.addFlashAttribute("error", "Image upload failed: " + ex.getMessage());
-                    }
-                } else {
-                     redirectAttributes.addFlashAttribute("warning", "Image could not be uploaded: Cloudinary credentials not configured.");
+            // ===================================
+            // === BẮT ĐẦU SỬA LỖI FEATURES ===
+            // ===================================
+            // Lấy chuỗi JSON features từ hidden input (do JS tạo ra)
+            if (carData.containsKey("features")) {
+                vehicle.setFeatures(carData.get("features"));
+            } else {
+                vehicle.setFeatures("[]"); // Mặc định là mảng rỗng
+            }
+            // ===================================
+            // === KẾT THÚC SỬA LỖI FEATURES ===
+            // ===================================
+
+            // Xử lý ảnh chính MỚI (nếu có)
+            if (cloudinary != null && mainImageFile != null && !mainImageFile.isEmpty()) {
+                try {
+                    Map<String, Object> uploadResult = cloudinary.uploader().upload(mainImageFile.getBytes(), ObjectUtils.asMap("folder", "ecodana/vehicles"));
+                    vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
+                } catch (Exception ex) {
+                    redirectAttributes.addFlashAttribute("error", "Main image upload failed: " + ex.getMessage());
                 }
+            } else if (mainImageFile != null && !mainImageFile.isEmpty()) {
+                redirectAttributes.addFlashAttribute("warning", "Main image provided but Cloudinary not configured.");
+            }
+
+            // Xử lý ảnh phụ MỚI (nếu có) - Sẽ thay thế toàn bộ list cũ
+            if (cloudinary != null && auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0 && !auxiliaryImageFiles[0].isEmpty()) {
+                List<String> auxiliaryImageUrls = new ArrayList<>();
+                if (auxiliaryImageFiles.length > 10) {
+                    redirectAttributes.addFlashAttribute("warning", "Maximum 10 auxiliary images allowed. Only the first 10 were uploaded.");
+                }
+                int uploadedCount = 0;
+                for (MultipartFile file : auxiliaryImageFiles) {
+                    if (uploadedCount >= 10) break;
+                    if (!file.isEmpty()) {
+                        try {
+                            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap("folder", "ecodana/vehicles/auxiliary"));
+                            auxiliaryImageUrls.add(uploadResult.get("secure_url").toString());
+                            uploadedCount++;
+                        } catch (Exception ex) {
+                            redirectAttributes.addFlashAttribute("error", "Auxiliary image upload failed for file " + file.getOriginalFilename() + ": " + ex.getMessage());
+                        }
+                    }
+                }
+                if (!auxiliaryImageUrls.isEmpty()) {
+                    vehicle.setImageUrls(objectMapper.writeValueAsString(auxiliaryImageUrls));
+                }
+            } else if (auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0 && !auxiliaryImageFiles[0].isEmpty()) {
+                redirectAttributes.addFlashAttribute("warning", "Auxiliary images provided but Cloudinary not configured.");
             }
 
             vehicleService.updateVehicle(vehicle);
@@ -338,6 +465,7 @@ public class OwnerController {
         } catch (NumberFormatException e) {
             redirectAttributes.addFlashAttribute("error", "Failed to update vehicle: Invalid number format provided.");
         } catch (Exception e) {
+            e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Failed to update vehicle: " + e.getMessage());
         }
 
@@ -448,9 +576,9 @@ public class OwnerController {
                     bookingData.put("vehicleModel", booking.getVehicle().getVehicleModel());
                     bookingData.put("licensePlate", booking.getVehicle().getLicensePlate());
                     bookingData.put("vehicleCategory", booking.getVehicle().getCategory() != null ?
-                        booking.getVehicle().getCategory().getCategoryName() : "N/A");
+                            booking.getVehicle().getCategory().getCategoryName() : "N/A");
                     bookingData.put("transmission", booking.getVehicle().getTransmissionType() != null ?
-                        booking.getVehicle().getTransmissionType().getTransmissionTypeName() : "N/A");
+                            booking.getVehicle().getTransmissionType().getTransmissionTypeName() : "N/A");
                 }
 
                 if (booking.getDiscount() != null) {
@@ -487,8 +615,8 @@ public class OwnerController {
     @PostMapping("/management/bookings/{id}/reject")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> rejectBookingManagement(@PathVariable String id,
-                                                                        @RequestBody Map<String, String> payload,
-                                                                        HttpSession session) {
+                                                                       @RequestBody Map<String, String> payload,
+                                                                       HttpSession session) {
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser == null) {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
@@ -534,8 +662,8 @@ public class OwnerController {
     @PostMapping("/management/bookings/{id}/cancel")
     @ResponseBody
     public ResponseEntity<Map<String, Object>> cancelBookingManagement(@PathVariable String id,
-                                                                        @RequestBody Map<String, String> payload,
-                                                                        HttpSession session) {
+                                                                       @RequestBody Map<String, String> payload,
+                                                                       HttpSession session) {
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser == null || (!userService.isOwner(currentUser))) {
             return ResponseEntity.status(403).body(Map.of("success", false, "message", "Access denied"));
@@ -584,9 +712,9 @@ public class OwnerController {
             List<Booking> customerBookings = bookingService.getBookingsByUser(customer);
             customerData.put("totalBookings", customerBookings.size());
             customerData.put("completedBookings", customerBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
+                    .filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
             customerData.put("cancelledBookings", customerBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
+                    .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
 
             return ResponseEntity.ok(customerData);
         } catch (Exception e) {

@@ -50,7 +50,7 @@
         @keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; flex-shrink: 0; }
         .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
-        .modal-footer { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
         /* Primary Color Styles (Ensure these are defined) */
         .bg-primary { background-color: #4CAF50; } /* Example primary color */
         .hover\:bg-accent:hover { background-color: #45a049; } /* Example accent color */
@@ -139,6 +139,16 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div onclick="showAllVehicles()" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 text-sm font-medium">All Cars</p>
+                                <p class="text-2xl font-bold text-gray-800" th:text="${#lists.size(vehicles)}">0</p>
+                                <p class="text-xs text-gray-500 mt-1">Tổng số xe</p>
+                            </div>
+                            <i class="fas fa-car-side text-4xl text-gray-400 opacity-60"></i>
+                        </div>
+                    </div>
                     <div onclick="quickFilterStatus('Available')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
                         <div class="flex items-center justify-between">
                             <div>
@@ -156,7 +166,7 @@
                                 <p class="text-2xl font-bold text-yellow-600" th:text="${rentedCount ?: 0}">0</p>
                                 <p class="text-xs text-gray-500 mt-1">Đang cho thuê</p>
                             </div>
-                            <i class="fas fa-car text-4xl text-yellow-500 opacity-60"></i>
+                            <i class="fas fa-key text-4xl text-yellow-500 opacity-60"></i>
                         </div>
                     </div>
                     <div onclick="quickFilterStatus('Maintenance')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-red-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
@@ -167,16 +177,6 @@
                                 <p class="text-xs text-gray-500 mt-1">Bảo trì</p>
                             </div>
                             <i class="fas fa-wrench text-4xl text-red-500 opacity-60"></i>
-                        </div>
-                    </div>
-                    <div onclick="quickFilterStatus('Unavailable')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-600 text-sm font-medium">Unavailable</p>
-                                <p class="text-2xl font-bold text-gray-700" th:text="${unavailableCount ?: 0}">0</p>
-                                <p class="text-xs text-gray-500 mt-1">Không khả dụng</p>
-                            </div>
-                            <i class="fas fa-ban text-4xl text-gray-500 opacity-60"></i>
                         </div>
                     </div>
                 </div>
@@ -198,7 +198,10 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <img th:src="${v.mainImageUrl ?: 'https://via.placeholder.com/80x50?text=No+Image'}" class="w-20 h-12 object-cover rounded" th:alt="${v.vehicleModel ?: 'Vehicle'}"/>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800" th:text="${v.vehicleModel ?: 'N/A'}">Model</td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <p class="text-sm font-medium text-gray-900" th:text="${v.vehicleModel ?: 'N/A'}">Model</p>
+                                    <p class="text-xs text-gray-500" th:text="${v.category?.categoryName ?: 'No Category'}">Category</p>
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${v.licensePlate ?: 'N/A'}">Plate</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span th:class="'status-badge status-' + ${v.status.name()}" th:text="${v.status ?: 'Unknown'}"></span>
@@ -213,7 +216,10 @@
                                 </td>
                             </tr>
                             <tr th:if="${vehicles == null or #lists.isEmpty(vehicles)}">
-                                <td colspan="5" class="text-center py-10 text-gray-500">No vehicles found.</td>
+                                <td colspan="5" class="text-center py-10 text-gray-500">
+                                    <i class="fas fa-car-side text-4xl text-gray-300 mb-2"></i>
+                                    <p>No vehicles found.</p>
+                                </td>
                             </tr>
                             </tbody>
                         </table>
@@ -232,61 +238,61 @@
                         <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                                <input name="model" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Model *</label>
+                                <input name="model" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="e.g., VinFast VF8"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
-                                <select name="transmissionTypeId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                    <option value="" disabled selected>Select transmission</option>
-                                    <option th:each="t : ${transmissions}" th:value="${t.transmissionTypeId}" th:text="${t.transmissionTypeName}"></option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate *</label>
+                                <input name="licensePlate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="e.g., 43A-12345"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                <select name="categoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                    <option value="" disabled selected>Select category</option>
-                                    <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}"></option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                                <select name="type" id="vehicle-type-select" onchange="updateFeatures()" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type *</label>
+                                <select id="vehicle-type-select" name="type" onchange="updateFeatures()" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="ElectricCar">Electric Car</option>
                                     <option value="ElectricMotorcycle">Electric Motorcycle</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
-                                <input type="number" name="yearManufactured" min="2000" th:max="${#dates.year(#dates.createNow())}" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input type="number" name="yearManufactured" min="2000" th:max="${#dates.year(#dates.createNow())}" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="e.g., 2023"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
-                                <input name="licensePlate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats *</label>
+                                <input type="number" name="seats" value="4" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
-                                <input type="number" name="seats" value="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
-                                <input type="number" name="odometer" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer *</label>
+                                <input type="number" name="odometer" value="0" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate (VND)</label>
-                                <input type="number" step="1000" name="hourlyRate" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input type="number" step="1000" name="hourlyRate" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate (VND)</label>
-                                <input type="number" step="1000" name="dailyRate" value="0" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate (VND) *</label>
+                                <input type="number" step="1000" name="dailyRate" value="0" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate (VND)</label>
-                                <input type="number" step="1000" name="monthlyRate" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input type="number" step="1000" name="monthlyRate" value="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                                <select name="transmissionTypeId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                                    <option value="" disabled selected>Select transmission</option>
+                                    <option th:each="t : ${transmissions}" th:value="${t.transmissionTypeId}" th:text="${t.transmissionTypeName}"></option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select name="categoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                                    <option value="" disabled selected>Select category</option>
+                                    <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}"></option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
-                                <input type="number" step="0.01" name="batteryCapacity" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input type="number" step="0.01" name="batteryCapacity" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" placeholder="e.g., 87.7"/>
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Features</label>
@@ -296,29 +302,41 @@
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                <textarea name="description" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" rows="3"></textarea>
+                                <textarea name="description" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" rows="3" placeholder="Describe your vehicle..."></textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
-                                <select name="requiresLicense" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select name="requiresLicense" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="true" selected>Yes</option>
                                     <option value="false">No</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Initial Status</label>
-                                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="Available" selected>Available</option>
                                     <option value="Unavailable">Unavailable</option>
                                     <option value="Maintenance">Maintenance</option>
                                 </select>
                             </div>
                             <div class="md:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Image</label>
-                                <input type="file" name="images" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <label for="add-mainImage" class="block text-sm font-medium text-gray-700 mb-2">Ảnh Chính *</label>
+                                <input type="file" id="add-mainImage" name="mainImage" accept="image/*" required
+                                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <div id="add-mainImagePreview" class="mt-2">
+                                    <img src="" alt="Ảnh chính xem trước" class="hidden max-h-40 rounded border p-1"/>
+                                </div>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label for="add-auxiliaryImages" class="block text-sm font-medium text-gray-700 mb-2">Ảnh Phụ (Tối đa 10 ảnh)</label>
+                                <input type="file" id="add-auxiliaryImages" name="auxiliaryImages" accept="image/*" multiple
+                                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <div id="add-auxiliaryImagesPreview" class="mt-2 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                </div>
+                                <p id="add-auxiliaryImagesError" class="text-red-500 text-xs mt-1 hidden">Chỉ được chọn tối đa 10 ảnh phụ.</p>
                             </div>
                         </div>
-                        <div class="modal-footer">
+                        <div class="modal-footer mt-6">
                             <button type="button" onclick="closeModal('add-car-modal')" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm">Cancel</button>
                             <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent text-sm">Save Vehicle</button>
                         </div>
@@ -338,59 +356,59 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <input type="hidden" id="edit-vehicleId" name="vehicleId"/>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Model</label>
-                                <input id="edit-model" name="model" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Model *</label>
+                                <input id="edit-model" name="model" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
-                                <select id="edit-transmissionTypeId" name="transmissionTypeId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                    <option th:each="t : ${transmissions}" th:value="${t.transmissionTypeId}" th:text="${t.transmissionTypeName}"></option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate *</label>
+                                <input id="edit-licensePlate" name="licensePlate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                                <select id="edit-categoryId" name="categoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                                    <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}"></option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type</label>
-                                <select id="edit-type" name="type" onchange="updateEditFeatures()" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vehicle Type *</label>
+                                <select id="edit-type" name="type" onchange="updateEditFeatures()" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="ElectricCar">Electric Car</option>
                                     <option value="ElectricMotorcycle">Electric Motorcycle</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Year Manufactured</label>
-                                <input id="edit-yearManufactured" type="number" name="yearManufactured" min="2000" th:max="${#dates.year(#dates.createNow())}" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input id="edit-yearManufactured" type="number" name="yearManufactured" min="2000" th:max="${#dates.year(#dates.createNow())}" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">License Plate</label>
-                                <input id="edit-licensePlate" name="licensePlate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats *</label>
+                                <input id="edit-seats" type="number" name="seats" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Seats</label>
-                                <input id="edit-seats" type="number" name="seats" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer</label>
-                                <input id="edit-odometer" type="number" name="odometer" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Odometer *</label>
+                                <input id="edit-odometer" type="number" name="odometer" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Hourly Rate (VND)</label>
-                                <input id="edit-hourlyRate" type="number" step="1000" name="hourlyRate" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input id="edit-hourlyRate" type="number" step="1000" name="hourlyRate" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate (VND)</label>
-                                <input id="edit-dailyRate" type="number" step="1000" name="dailyRate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Daily Rate (VND) *</label>
+                                <input id="edit-dailyRate" type="number" step="1000" name="dailyRate" required class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rate (VND)</label>
-                                <input id="edit-monthlyRate" type="number" step="1000" name="monthlyRate" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input id="edit-monthlyRate" type="number" step="1000" name="monthlyRate" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Transmission</label>
+                                <select id="edit-transmissionTypeId" name="transmissionTypeId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                                    <option value="">None</option> <option th:each="t : ${transmissions}" th:value="${t.transmissionTypeId}" th:text="${t.transmissionTypeName}"></option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select id="edit-categoryId" name="categoryId" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                                    <option value="">None</option> <option th:each="c : ${categories}" th:value="${c.categoryId}" th:text="${c.categoryName}"></option>
+                                </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Battery Capacity (kWh)</label>
-                                <input id="edit-batteryCapacity" type="number" step="0.01" name="batteryCapacity" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" />
+                                <input id="edit-batteryCapacity" type="number" step="0.01" name="batteryCapacity" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Features</label>
@@ -400,18 +418,18 @@
                             </div>
                             <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                                <textarea id="edit-description" name="description" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm" rows="3"></textarea>
+                                <textarea id="edit-description" name="description" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" rows="3"></textarea>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Requires License</label>
-                                <select id="edit-requiresLicense" name="requiresLicense" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select id="edit-requiresLicense" name="requiresLicense" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="true">Yes</option>
                                     <option value="false">No</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                                <select id="edit-status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm">
+                                <select id="edit-status" name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
                                     <option value="Available">Available</option>
                                     <option value="Rented">Rented</option>
                                     <option value="Unavailable">Unavailable</option>
@@ -419,11 +437,29 @@
                                 </select>
                             </div>
                             <div class="md:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">New Image (Optional)</label>
-                                <input type="file" name="images" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <label for="edit-mainImage" class="block text-sm font-medium text-gray-700 mb-2">Ảnh Chính Mới (Để trống nếu không đổi)</label>
+                                <input type="file" id="edit-mainImage" name="mainImage" accept="image/*"
+                                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <div id="edit-mainImagePreview" class="mt-2">
+                                    <img src="" alt="Ảnh chính hiện tại" id="edit-currentMainImage" class="max-h-40 rounded border p-1 mb-2"/>
+                                    <p class="text-xs text-gray-500">Ảnh xem trước (nếu chọn ảnh mới):</p>
+                                    <img src="" alt="Ảnh chính mới xem trước" id="edit-newMainImagePreviewDisplay" class="hidden max-h-40 rounded border p-1"/>
+                                </div>
+                            </div>
+                            <div class="md:col-span-3">
+                                <label for="edit-auxiliaryImages" class="block text-sm font-medium text-gray-700 mb-2">Ảnh Phụ Mới (Sẽ thay thế toàn bộ ảnh phụ cũ - Tối đa 10 ảnh)</label>
+                                <input type="file" id="edit-auxiliaryImages" name="auxiliaryImages" accept="image/*" multiple
+                                       class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                <p class="text-xs text-gray-500 mt-2">Ảnh phụ hiện tại:</p>
+                                <div id="edit-currentAuxiliaryImages" class="mt-1 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">Ảnh phụ mới xem trước:</p>
+                                <div id="edit-auxiliaryImagesPreview" class="mt-1 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                </div>
+                                <p id="edit-auxiliaryImagesError" class="text-red-500 text-xs mt-1 hidden">Chỉ được chọn tối đa 10 ảnh phụ.</p>
                             </div>
                         </div>
-                        <div class="modal-footer">
+                        <div class="modal-footer mt-6">
                             <button type="button" onclick="closeModal('edit-car-modal')" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 text-sm">Cancel</button>
                             <button type="submit" class="bg-primary text-white px-4 py-2 rounded-lg hover:bg-accent text-sm">Save Changes</button>
                         </div>
@@ -447,7 +483,7 @@
         } else {
             console.warn("Could not highlight sidebar for page:", currentPage);
         }
-        // Initialize features for the Add modal (assuming it might be visible initially or toggled)
+        // Initialize features for the Add modal
         updateFeatures();
     });
 
@@ -467,17 +503,119 @@
         const modal = document.getElementById(modalId);
         if (modal) {
             modal.classList.add("hidden");
+            // Reset form when closing modal (optional, but good practice)
+            const form = modal.querySelector('form');
+            if (form) form.reset();
+            // Clear previews when closing
+            if (modalId === 'add-car-modal') {
+                document.getElementById('add-mainImagePreview').innerHTML = '<img src="" alt="Ảnh chính xem trước" class="hidden max-h-40 rounded border p-1"/>';
+                document.getElementById('add-auxiliaryImagesPreview').innerHTML = '';
+                document.getElementById('add-auxiliaryImagesError').classList.add('hidden');
+            } else if (modalId === 'edit-car-modal') {
+                document.getElementById('edit-mainImagePreview').innerHTML = `
+                    <img src="" alt="Ảnh chính hiện tại" id="edit-currentMainImage" class="max-h-40 rounded border p-1 mb-2"/>
+                    <p class="text-xs text-gray-500">Ảnh xem trước (nếu chọn ảnh mới):</p>
+                    <img src="" alt="Ảnh chính mới xem trước" id="edit-newMainImagePreviewDisplay" class="hidden max-h-40 rounded border p-1"/>
+                 `;
+                document.getElementById('edit-currentAuxiliaryImages').innerHTML = '';
+                document.getElementById('edit-auxiliaryImagesPreview').innerHTML = '';
+                document.getElementById('edit-auxiliaryImagesError').classList.add('hidden');
+            }
         }
     }
 
-    // Open Edit Modal and fetch data
+    // --- Hàm xử lý xem trước ảnh ---
+    function handleImagePreview(inputId, previewContainerId, isMultiple = false, maxFiles = 10) {
+        const input = document.getElementById(inputId);
+        const previewContainer = document.getElementById(previewContainerId);
+        const errorElementId = inputId.replace('Images', 'ImagesError').replace('mainImage', 'mainImageError'); // Heuristic ID generation
+        const errorElement = document.getElementById(errorElementId);
+        const newMainImagePreviewDisplayId = inputId.replace('mainImage', 'newMainImagePreviewDisplay'); // Specific for edit main image
+        const newMainImagePreviewDisplay = document.getElementById(newMainImagePreviewDisplayId);
+
+        if (!input || !previewContainer) return;
+
+        input.addEventListener('change', function(event) {
+            // Chỉ xóa preview cho ảnh phụ mới hoặc ảnh chính mới (trong add modal)
+            if(isMultiple || inputId === 'add-mainImage'){
+                previewContainer.innerHTML = '';
+            }
+            if (newMainImagePreviewDisplay) newMainImagePreviewDisplay.classList.add('hidden'); // Ẩn preview ảnh chính mới khi edit
+            if(errorElement) errorElement.classList.add('hidden'); // Ẩn thông báo lỗi cũ
+
+            const files = event.target.files;
+            let fileArray = Array.from(files);
+
+            if (isMultiple && fileArray.length > maxFiles) {
+                if(errorElement) {
+                    errorElement.textContent = `Chỉ được chọn tối đa ${maxFiles} ảnh phụ.`;
+                    errorElement.classList.remove('hidden');
+                }
+                alert(`Bạn đã chọn ${files.length} ảnh. Chỉ được phép chọn tối đa ${maxFiles}. Vui lòng chọn lại.`);
+                input.value = ''; // Reset input file
+                return;
+            }
+
+            if (fileArray.length > 0) {
+                fileArray.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.alt = "Xem trước";
+                            // Tailwind classes cho thumbnail
+                            img.classList.add('max-h-24', 'h-24', 'w-auto', 'object-contain', 'rounded', 'border', 'p-1', 'inline-block');
+
+                            // Xử lý riêng cho ảnh chính khi edit để hiển thị preview đúng chỗ
+                            if (inputId === 'edit-mainImage' && newMainImagePreviewDisplay) {
+                                newMainImagePreviewDisplay.src = e.target.result;
+                                newMainImagePreviewDisplay.classList.remove('hidden');
+                            } else if (!isMultiple && inputId === 'add-mainImage') {
+                                // Ảnh chính (add modal) - tìm thẻ img trong preview container
+                                const mainPreviewImg = previewContainer.querySelector('img');
+                                if(mainPreviewImg){
+                                    mainPreviewImg.src = e.target.result;
+                                    mainPreviewImg.classList.remove('hidden');
+                                } else {
+                                    previewContainer.appendChild(img); // Fallback nếu chưa có img
+                                }
+                            }
+                            else if (isMultiple) {
+                                previewContainer.appendChild(img); // Thêm thumbnail cho ảnh phụ
+                            }
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+            } else if (!isMultiple) {
+                // Nếu không chọn file nào cho ảnh chính, ẩn preview mới
+                const imgPreview = previewContainer.querySelector('img'); // For add modal
+                if(imgPreview && inputId === 'add-mainImage') imgPreview.classList.add('hidden');
+                if (newMainImagePreviewDisplay && inputId === 'edit-mainImage') newMainImagePreviewDisplay.classList.add('hidden');
+            }
+        });
+    }
+
+    // --- Gọi hàm xử lý preview cho cả 4 input ---
+    handleImagePreview('add-mainImage', 'add-mainImagePreview', false);
+    handleImagePreview('add-auxiliaryImages', 'add-auxiliaryImagesPreview', true, 10);
+    handleImagePreview('edit-mainImage', 'edit-mainImagePreview', false); // Preview sẽ hiển thị ở edit-newMainImagePreviewDisplay
+    handleImagePreview('edit-auxiliaryImages', 'edit-auxiliaryImagesPreview', true, 10);
+
+
+    // --- Cập nhật hàm openEditCarModal để load ảnh hiện có ---
     async function openEditCarModal(id) {
         console.log("Editing car with ID:", id);
         try {
             const response = await fetch(`/owner/api/cars/${id}`);
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Failed to fetch vehicle data. Status: ${response.status}`);
+                let errorMsg = `Failed to fetch vehicle data. Status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorMsg;
+                } catch(e) {/* ignore json parse error */}
+                throw new Error(errorMsg);
             }
             const vehicle = await response.json();
 
@@ -499,12 +637,55 @@
             document.getElementById("edit-requiresLicense").value = vehicle.requiresLicense ? "true" : "false";
             document.getElementById("edit-status").value = vehicle.status || "Available";
 
+            // --- LOAD ẢNH HIỆN CÓ ---
+            // Ảnh chính hiện tại
+            const currentMainImage = document.getElementById('edit-currentMainImage');
+            if (vehicle.mainImageUrl && currentMainImage) {
+                currentMainImage.src = vehicle.mainImageUrl;
+                currentMainImage.classList.remove('hidden');
+            } else if (currentMainImage) {
+                currentMainImage.src = 'https://via.placeholder.com/160x100?text=No+Main+Image'; // Placeholder
+                // currentMainImage.classList.add('hidden'); // Hoặc ẩn đi
+            }
+            // Reset preview ảnh chính mới
+            const newMainImagePreview = document.getElementById('edit-newMainImagePreviewDisplay');
+            if(newMainImagePreview){
+                newMainImagePreview.src = '';
+                newMainImagePreview.classList.add('hidden');
+            }
+            // Reset input ảnh chính mới
+            document.getElementById('edit-mainImage').value = '';
+
+
+            // Ảnh phụ hiện tại
+            const currentAuxiliaryContainer = document.getElementById('edit-currentAuxiliaryImages');
+            if (currentAuxiliaryContainer) {
+                currentAuxiliaryContainer.innerHTML = ''; // Xóa ảnh cũ
+                let auxiliaryUrls = vehicle.imageUrls || []; // Lấy array từ response (đã được parse bởi VehicleResponse)
+
+                if (Array.isArray(auxiliaryUrls) && auxiliaryUrls.length > 0) {
+                    auxiliaryUrls.forEach(url => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = "Ảnh phụ hiện tại";
+                        img.classList.add('max-h-20', 'h-20', 'w-auto', 'object-contain', 'rounded', 'border', 'p-1');
+                        currentAuxiliaryContainer.appendChild(img);
+                    });
+                } else {
+                    currentAuxiliaryContainer.innerHTML = '<p class="text-xs text-gray-400 col-span-full">Không có ảnh phụ.</p>';
+                }
+            }
+            // Reset preview ảnh phụ mới
+            document.getElementById('edit-auxiliaryImagesPreview').innerHTML = '';
+            // Reset input ảnh phụ mới
+            document.getElementById('edit-auxiliaryImages').value = '';
+            // Ẩn lỗi ảnh phụ cũ (nếu có)
+            const editAuxError = document.getElementById('edit-auxiliaryImagesError');
+            if (editAuxError) editAuxError.classList.add('hidden');
+
             // --- Feature Selection Integration ---
-            // Initialize hidden input FIRST with existing data
             document.getElementById("edit-selected-features").value = JSON.stringify(vehicle.features || []);
-            // THEN render checkboxes, which will read from the hidden input
-            updateEditFeatures();
-            // --- End Feature Selection Integration ---
+            updateEditFeatures(); // Render checkboxes based on type and existing features
 
             // Set form action URL
             const form = document.getElementById("edit-car-form");
@@ -517,6 +698,7 @@
             alert("Could not load vehicle data: " + error.message);
         }
     }
+
 
     // Delete Car function
     async function deleteCar(id) {
@@ -545,59 +727,41 @@
     // --- Feature Selection Logic ---
     const vehicleFeatures = {
         ElectricCar: [
-            "GPS Navigation",
-            "Bluetooth Audio",
-            "Air Conditioning",
-            "Power Windows",
-            "Central Locking",
-            "USB Charging Ports",
-            "Backup Camera",
-            "Parking Sensors",
-            "Cruise Control",
-            "Keyless Entry",
-            "Sunroof",
-            "Leather Seats",
-            "Heated Seats",
-            "Automatic Transmission",
-            "ABS Brakes",
-            "Airbags",
-            "LED Headlights",
-            "Fog Lights",
-            "Rain Sensing Wipers",
-            "Auto Climate Control",
+            "GPS Navigation", "Bluetooth Audio", "Air Conditioning", "Power Windows",
+            "Central Locking", "USB Charging Ports", "Backup Camera", "Parking Sensors",
+            "Cruise Control", "Keyless Entry", "Sunroof", "Leather Seats",
+            "Heated Seats", "Automatic Transmission", "ABS Brakes", "Airbags",
+            "LED Headlights", "Fog Lights", "Rain Sensing Wipers", "Auto Climate Control",
         ],
         ElectricMotorcycle: [
-            "GPS Navigation",
-            "Bluetooth Audio",
-            "USB Charging Port",
-            "LED Headlights",
-            "Digital Display",
-            "Anti-lock Braking System",
-            "Keyless Start",
-            "Storage Compartment",
-            "Phone Mount",
-            "Helmet Lock",
-            "Side Stand",
-            "Center Stand",
-            "Windshield",
-            "Rear View Mirrors",
-            "Turn Signals",
-            "Horn",
-            "Speedometer",
-            "Battery Indicator",
-            "Range Indicator",
-            "Eco Mode",
+            "GPS Navigation", "Bluetooth Audio", "USB Charging Port", "LED Headlights",
+            "Digital Display", "Anti-lock Braking System", "Keyless Start",
+            "Storage Compartment", "Phone Mount", "Helmet Lock", "Side Stand",
+            "Center Stand", "Windshield", "Rear View Mirrors", "Turn Signals",
+            "Horn", "Speedometer", "Battery Indicator", "Range Indicator", "Eco Mode",
         ],
     };
 
     function renderFeatures(container, hiddenInput, vehicleType) {
         const features = vehicleFeatures[vehicleType] || [];
         container.innerHTML = ""; // Clear existing checkboxes
-        const existingFeatures = hiddenInput.value ? JSON.parse(hiddenInput.value) : []; // Read existing features
+        let existingFeatures = []; // Mặc định là mảng rỗng
+        // Chỉ đọc hiddenInput.value nếu nó tồn tại và không rỗng
+        if (hiddenInput && hiddenInput.value) {
+            try {
+                existingFeatures = JSON.parse(hiddenInput.value);
+                // Đảm bảo existingFeatures luôn là array
+                if (!Array.isArray(existingFeatures)) existingFeatures = [];
+            } catch (e) {
+                console.error("Could not parse existing features JSON:", hiddenInput.value, e);
+                existingFeatures = []; // Reset về rỗng nếu parse lỗi
+            }
+        }
+
 
         features.forEach(feature => {
             const featureId = `feature-${feature.replace(/\s+/g, "-").toLowerCase()}`;
-            // Determine if this feature was already selected (based on hidden input)
+            // Determine if this feature was already selected
             const isChecked = existingFeatures.includes(feature);
 
             const checkboxDiv = document.createElement("div");
@@ -620,9 +784,12 @@
 
     // Update Add Modal features based on type select
     function updateFeatures() {
-        const vehicleType = document.getElementById("vehicle-type-select").value;
+        const vehicleTypeSelect = document.getElementById("vehicle-type-select");
         const container = document.getElementById("features-container");
         const hiddenInput = document.getElementById("selected-features");
+        if(!vehicleTypeSelect || !container || !hiddenInput) return; // Kiểm tra element tồn tại
+
+        const vehicleType = vehicleTypeSelect.value;
         // When type changes in ADD modal, clear existing hidden value before rendering
         hiddenInput.value = "[]";
         renderFeatures(container, hiddenInput, vehicleType);
@@ -630,9 +797,12 @@
 
     // Update Edit Modal features based on type select
     function updateEditFeatures() {
-        const vehicleType = document.getElementById("edit-type").value;
+        const vehicleTypeSelect = document.getElementById("edit-type");
         const container = document.getElementById("edit-features-container");
         const hiddenInput = document.getElementById("edit-selected-features");
+        if(!vehicleTypeSelect || !container || !hiddenInput) return; // Kiểm tra element tồn tại
+
+        const vehicleType = vehicleTypeSelect.value;
         // When type changes in EDIT modal, re-render based on current hidden input value
         renderFeatures(container, hiddenInput, vehicleType);
     }
@@ -641,10 +811,12 @@
     function updateSelectedFeatures(containerId, hiddenInputId) {
         const container = document.getElementById(containerId);
         const hiddenInput = document.getElementById(hiddenInputId);
+        if(!container || !hiddenInput) return; // Kiểm tra element tồn tại
+
         const checkboxes = container.querySelectorAll(".feature-checkbox:checked");
         const selectedFeatures = Array.from(checkboxes).map(cb => cb.value);
         hiddenInput.value = JSON.stringify(selectedFeatures);
-        console.log("Updated hidden input:", hiddenInputId, hiddenInput.value); // Debug log
+        // console.log("Updated hidden input:", hiddenInputId, hiddenInput.value); // Tắt log này
     }
     // --- End Feature Selection Logic ---
 
