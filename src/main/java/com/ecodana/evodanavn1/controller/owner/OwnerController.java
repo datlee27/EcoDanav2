@@ -225,7 +225,9 @@ public class OwnerController {
             }
             vehicle.setDescription(carData.get("description"));
             vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
-            vehicle.setStatus(Vehicle.VehicleStatus.valueOf(carData.getOrDefault("status", "Available")));
+
+            // Set status to PendingApproval - chờ admin duyệt
+            vehicle.setStatus(Vehicle.VehicleStatus.PendingApproval);
             vehicle.setCreatedDate(java.time.LocalDateTime.now());
             
             // Handle features
