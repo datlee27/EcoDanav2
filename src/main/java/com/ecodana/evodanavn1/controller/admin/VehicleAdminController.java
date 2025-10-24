@@ -5,15 +5,20 @@ import com.ecodana.evodanavn1.dto.VehicleResponse;
 import com.ecodana.evodanavn1.model.TransmissionType;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.VehicleCategories;
+import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.service.RoleService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +33,14 @@ public class VehicleAdminController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private RoleService roleService;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    private static final Logger logger = LoggerFactory.getLogger(VehicleAdminController.class);
 
     /**
      * Display vehicle management page
@@ -295,9 +308,34 @@ public class VehicleAdminController {
         }
 
         try {
+            // Lấy thông tin xe TRƯỚC khi cập nhật status
+            Vehicle vehicle = vehicleService.getVehicleById(id)
+                    .orElseThrow(() -> new RuntimeException("Vehicle not found for approval: " + id));
+            String ownerId = vehicle.getOwnerId(); // Lấy ID của chủ xe
+
             vehicleService.updateVehicleStatus(id, "Available");
+            if (ownerId != null) {
+                User owner = userService.findByIdWithRole(ownerId); // Lấy thông tin user kèm role
+                if (owner != null && "Customer".equalsIgnoreCase(owner.getRoleName())) {
+                    String ownerRoleId = roleService.getDefaultOwnerRoleId();
+                    if (ownerRoleId != null) {
+                        boolean roleUpdated = userService.updateUserRole(ownerId, ownerRoleId);
+                        if (roleUpdated) {
+                            logger.info("Upgraded user {} from Customer to Owner after first car approval.", ownerId);
+                            notificationService.createNotification(ownerId, "Chúc mừng! Tài khoản của bạn đã được nâng cấp thành Chủ xe.", null, "ROLE_UPGRADE");
+                        } else {
+                            logger.warn("Failed to upgrade role for user {} after car approval.", ownerId);
+                        }
+                    } else {
+                        logger.error("Owner Role ID not found. Cannot upgrade user {}.", ownerId);
+                    }
+                }
+            } else {
+                logger.warn("Cannot upgrade role because OwnerId is null for vehicle {}.", id);
+            }
             return ResponseEntity.ok(Map.of("success", true, "message", "Xe đã được duyệt thành công!"));
         } catch (Exception e) {
+            logger.error("Error approving vehicle {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Lỗi khi duyệt xe: " + e.getMessage()));
         }

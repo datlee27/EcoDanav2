@@ -324,3 +324,76 @@
     font-size: 1.125rem;
     margin: 0;
 }
+
+/* =============================================
+   MODAL STYLES (ĐỂ FIX LỖI SCROLL)
+   ============================================= */
+
+.modal {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    animation: modalFadeIn 0.3s ease-in-out;
+}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal.hidden { display: none; }
+
+.modal-overlay {
+    position: absolute; inset: 0;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+}
+
+.modal-content {
+    position: relative;
+    background-color: white;
+    border-radius: 0.75rem; /* rounded-lg */
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+
+    /* === CẤU HÌNH QUAN TRỌNG ĐỂ SCROLL === */
+    display: flex;
+    flex-direction: column;
+    max-width: 800px; /* max-w-4xl */
+    width: 90%;
+    max-height: 90vh; /* Giới hạn chiều cao */
+    /* === KẾT THÚC === */
+
+    animation: modalSlideIn 0.3s ease-out;
+}
+@keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); } }
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem; /* p-4 md:p-6 */
+    border-bottom: 1px solid #e5e7eb; /* border-b */
+    background-color: #f9fafb; /* bg-gray-50 */
+    flex-shrink: 0; /* Không co lại */
+}
+
+.modal-body {
+    padding: 1.5rem; /* p-6 */
+
+    /* === CẤU HÌNH QUAN TRỌNG ĐỂ SCROLL === */
+    overflow-y: auto; /* Cho phép cuộn dọc */
+    flex-grow: 1; /* Lấp đầy không gian còn lại */
+    /* === KẾT THÚC === */
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem; /* space-x-3 */
+    padding: 1rem 1.5rem; /* p-4 md:p-6 */
+    background-color: #f9fafb; /* bg-gray-50 */
+    border-top: 1px solid #e5e7eb; /* border-t */
+    flex-shrink: 0; /* Không co lại */
+}
+
+/* Style cho các checkbox (nếu chưa có) */
+.feature-checkbox {
+    width: 1rem;
+    height: 1rem;
+}

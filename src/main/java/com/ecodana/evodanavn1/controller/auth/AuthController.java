@@ -389,4 +389,24 @@ public class AuthController {
             return scheme + "://" + serverName + ":" + serverPort + contextPath;
         }
     }
+
+    @GetMapping("/register-car-info")
+    public String showRegisterCarInfoPage(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập để đăng ký cho thuê xe.");
+            return "redirect:/login"; // Redirect to login if not logged in
+        }
+        // Add currentUser to model so nav bar works correctly
+        model.addAttribute("currentUser", currentUser);
+
+        // Check if user is already an Owner, Admin, or Staff
+        if (userService.isOwner(currentUser) || userService.isAdmin(currentUser) || userService.isStaff(currentUser)) {
+            // If already has owner privileges, redirect to their car management page
+            redirectAttributes.addFlashAttribute("info", "Bạn đã là chủ xe. Bạn có thể thêm xe mới tại đây.");
+            return "redirect:/owner/cars";
+        }
+
+        return "auth/become-owner-info"; // New informational page template
+    }
 }
