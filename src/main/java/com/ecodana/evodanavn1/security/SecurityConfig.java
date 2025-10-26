@@ -81,8 +81,9 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         // CHO PHÉP TRUY CẬP CÔNG KHAI VÀO API CHATBOT
-                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles/**", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/forgot-password", "/reset-password", "/api/discounts/validate", "/api/chatbot/**").permitAll()
+                        .requestMatchers("/", "/register", "/verify-otp", "/login", "/login-success", "/logout", "/vehicles/**", "/css/**", "/js/**", "/images/**", "/oauth2/**", "/forgot-password", "/reset-password", "/api/discounts/validate", "/api/chatbot/**", "/register-car-info").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/owner/cars/add", "/owner/cars").authenticated()
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/booking/**").authenticated()

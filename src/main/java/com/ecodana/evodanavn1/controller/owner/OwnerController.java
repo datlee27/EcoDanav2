@@ -7,11 +7,11 @@ import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
 import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
-import com.ecodana.evodanavn1.service.BookingService;
-import com.ecodana.evodanavn1.service.UserService;
-import com.ecodana.evodanavn1.service.VehicleService;
+import com.ecodana.evodanavn1.service.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -30,13 +30,20 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/owner")
 public class OwnerController {
-
+    private static final Logger logger = LoggerFactory.getLogger(OwnerController.class);
     private final UserService userService;
     private final VehicleService vehicleService;
     private final BookingService bookingService;
     private final TransmissionTypeRepository transmissionTypeRepository;
     private final VehicleCategoriesRepository vehicleCategoriesRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private RoleService roleService;
 
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -48,12 +55,15 @@ public class OwnerController {
     private String cloudApiSecret;
 
     @Autowired
-    public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService, TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository) {
+    public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService, TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository,NotificationService notificationService,
+                           RoleService roleService) {
         this.userService = userService;
         this.vehicleService = vehicleService;
         this.bookingService = bookingService;
         this.transmissionTypeRepository = transmissionTypeRepository;
         this.vehicleCategoriesRepository = vehicleCategoriesRepository;
+        this.notificationService = notificationService;
+        this.roleService = roleService;
     }
 
     private String checkAuthentication(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
@@ -63,10 +73,20 @@ public class OwnerController {
             return "redirect:/login";
         }
         model.addAttribute("currentUser", currentUser);
-        if (!userService.isOwner(currentUser)) {
+        if (!userService.isOwner(currentUser) && !userService.isAdmin(currentUser)) {
             redirectAttributes.addFlashAttribute("error", "Access denied. Owner role required.");
             return "redirect:/login";
         }
+        return null;
+    }
+
+    private String checkAuthenticated(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Please log in to access this page.");
+            return "redirect:/login";
+        }
+        model.addAttribute("currentUser", currentUser);
         return null;
     }
 
@@ -118,7 +138,7 @@ public class OwnerController {
         model.addAttribute("rentedCount", rentedCount);
         model.addAttribute("maintenanceCount", maintenanceCount);
         model.addAttribute("unavailableCount", unavailableCount);
-
+        model.addAttribute("newVehicle", new Vehicle());
         model.addAttribute("transmissions", transmissionTypeRepository.findAll());
         model.addAttribute("categories", vehicleCategoriesRepository.findAll());
         Map<String, String> transmissionMap = new HashMap<>();
@@ -203,36 +223,84 @@ public class OwnerController {
         return "owner/profile-management";
     }
 
-    @PostMapping("/cars")
-    public String addCar(@RequestParam Map<String, String> carData,
-                         @RequestParam(value = "mainImage", required = false) MultipartFile mainImageFile,
-                         @RequestParam(value = "auxiliaryImages", required = false) MultipartFile[] auxiliaryImageFiles,
-                         HttpSession session, RedirectAttributes redirectAttributes, Model model) {
-        String redirect = checkAuthentication(session, redirectAttributes, model);
+    @GetMapping("/cars/add")
+    public String showAddCarForm(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        String redirect = checkAuthenticated(session, redirectAttributes, model);
         if (redirect != null) return redirect;
 
-        Cloudinary cloudinary = null;
-        if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
-            cloudinary = new Cloudinary(ObjectUtils.asMap(
-                    "cloud_name", cloudName,
-                    "api_key", cloudApiKey,
-                    "api_secret", cloudApiSecret));
-        } else {
-            redirectAttributes.addFlashAttribute("warning", "Cloudinary credentials not fully configured. Images may not be uploaded.");
+        model.addAttribute("transmissions", transmissionTypeRepository.findAll());
+        model.addAttribute("categories", vehicleCategoriesRepository.findAll());
+
+        if (!model.containsAttribute("vehicle")) {
+            model.addAttribute("vehicle", new Vehicle());
         }
 
+        return "owner/vehicle-add";
+    }
+
+    @PostMapping("/cars")
+    public String addCar(
+            // Dùng @ModelAttribute để binding và validation
+            @ModelAttribute("vehicle") Vehicle vehicle,
+            // Giữ lại @RequestParam cho các trường không có trong model
+            @RequestParam Map<String, String> carData,
+            @RequestParam(value = "mainImage", required = false) MultipartFile mainImageFile,
+            @RequestParam(value = "auxiliaryImages", required = false) MultipartFile[] auxiliaryImageFiles,
+            // Input ẩn để xác định nguồn gốc
+            @RequestParam("_sourceView") String sourceView,
+            HttpSession session, RedirectAttributes redirectAttributes, Model model) {
+
+        // 1. Kiểm tra đăng nhập
+        String redirect = checkAuthenticated(session, redirectAttributes, model);
+        if (redirect != null) return redirect;
+
+        // 2. Chuẩn bị đường dẫn trả về khi lỗi
+        // Nếu sourceView là "redirect:/owner/cars", chúng ta cần thêm flash attributes
+        // Nếu sourceView là "owner/vehicle-add", chúng ta cần thêm model attributes
+        String errorRedirectPath = sourceView.startsWith("redirect:") ? sourceView : "owner/vehicle-add";
+
+        // 3. Lấy User
+        User currentUser = (User) session.getAttribute("currentUser");
+
         try {
-            Vehicle vehicle = new Vehicle();
+            // --- VALIDATION (Backend) ---
+            if (carData.get("model") == null || carData.get("model").isBlank()) {
+                throw new IllegalArgumentException("Vui lòng nhập Tên xe.");
+            }
+            vehicle.setVehicleModel(carData.get("model")); // Gán lại vào model
+
+            String licensePlate = carData.get("licensePlate");
+            if (licensePlate == null || licensePlate.isBlank()) {
+                throw new IllegalArgumentException("Vui lòng nhập Biển số xe.");
+            }
+            if (vehicleService.vehicleExistsByLicensePlate(licensePlate)) {
+                throw new IllegalArgumentException("Biển số xe này đã tồn tại.");
+            }
+            vehicle.setLicensePlate(licensePlate);
+
+            String dailyRateStr = carData.get("dailyRate");
+            if (dailyRateStr == null || dailyRateStr.isBlank() || new BigDecimal(dailyRateStr).compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Vui lòng nhập Giá theo ngày (phải lớn hơn 0).");
+            }
+
+            if (mainImageFile == null || mainImageFile.isEmpty()) {
+                throw new IllegalArgumentException("Vui lòng tải lên Ảnh chính.");
+            }
+            // --- KẾT THÚC VALIDATION ---
+
+
+            // --- BẮT ĐẦU XỬ LÝ DỮ LIỆU (Tương tự code cũ của bạn) ---
+
             vehicle.setVehicleId(java.util.UUID.randomUUID().toString());
-            vehicle.setVehicleModel(carData.get("model"));
             vehicle.setVehicleType(Vehicle.VehicleType.valueOf(carData.get("type")));
+
             if (carData.get("transmissionTypeId") != null && !carData.get("transmissionTypeId").isEmpty()) {
                 transmissionTypeRepository.findById(Integer.parseInt(carData.get("transmissionTypeId"))).ifPresent(vehicle::setTransmissionType);
             }
             if (carData.get("categoryId") != null && !carData.get("categoryId").isEmpty()) {
                 vehicleCategoriesRepository.findById(Integer.parseInt(carData.get("categoryId"))).ifPresent(vehicle::setCategory);
             }
-            vehicle.setLicensePlate(carData.get("licensePlate"));
+
             if (carData.get("yearManufactured") != null && !carData.get("yearManufactured").isEmpty()) {
                 vehicle.setYearManufactured(Integer.parseInt(carData.get("yearManufactured")));
             }
@@ -240,7 +308,7 @@ public class OwnerController {
             vehicle.setOdometer(Integer.parseInt(carData.getOrDefault("odometer", "0")));
 
             BigDecimal hourlyRate = carData.containsKey("hourlyRate") && !carData.get("hourlyRate").isEmpty() ? new BigDecimal(carData.get("hourlyRate")) : BigDecimal.ZERO;
-            BigDecimal dailyRate = carData.containsKey("dailyRate") && !carData.get("dailyRate").isEmpty() ? new BigDecimal(carData.get("dailyRate")) : BigDecimal.ZERO;
+            BigDecimal dailyRate = new BigDecimal(dailyRateStr);
             BigDecimal monthlyRate = carData.containsKey("monthlyRate") && !carData.get("monthlyRate").isEmpty() ? new BigDecimal(carData.get("monthlyRate")) : BigDecimal.ZERO;
 
             Map<String, BigDecimal> pricesMap = new HashMap<>();
@@ -254,45 +322,46 @@ public class OwnerController {
             }
             vehicle.setDescription(carData.get("description"));
             vehicle.setRequiresLicense(Boolean.parseBoolean(carData.getOrDefault("requiresLicense", "true")));
-            vehicle.setStatus(Vehicle.VehicleStatus.PendingApproval);
+            vehicle.setStatus(Vehicle.VehicleStatus.PendingApproval); // Luôn chờ duyệt
             vehicle.setCreatedDate(java.time.LocalDateTime.now());
 
-            User currentUser = (User) session.getAttribute("currentUser");
-            if (currentUser != null) {
-                vehicle.setOwnerId(currentUser.getId());
-                vehicle.setLastUpdatedBy(currentUser);
-            }
+            vehicle.setOwnerId(currentUser.getId());
+            vehicle.setLastUpdatedBy(currentUser);
 
-            // ===================================
-            // === BẮT ĐẦU SỬA LỖI FEATURES ===
-            // ===================================
-            // Lấy chuỗi JSON features từ hidden input (do JS tạo ra)
             if (carData.containsKey("features")) {
                 vehicle.setFeatures(carData.get("features"));
             } else {
-                vehicle.setFeatures("[]"); // Mặc định là mảng rỗng
+                vehicle.setFeatures("[]");
             }
-            // ===================================
-            // === KẾT THÚC SỬA LỖI FEATURES ===
-            // ===================================
+
+            // --- Xử lý Cloudinary ---
+            Cloudinary cloudinary = null;
+            if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
+                cloudinary = new Cloudinary(ObjectUtils.asMap(
+                        "cloud_name", cloudName,
+                        "api_key", cloudApiKey,
+                        "api_secret", cloudApiSecret));
+            } else {
+                logger.warn("Cloudinary credentials not fully configured. Images will not be uploaded.");
+            }
 
             // Upload ảnh chính
-            if (cloudinary != null && mainImageFile != null && !mainImageFile.isEmpty()) {
+            if (cloudinary != null) {
                 try {
                     Map<String, Object> uploadResult = cloudinary.uploader().upload(mainImageFile.getBytes(), ObjectUtils.asMap("folder", "ecodana/vehicles"));
                     vehicle.setMainImageUrl(uploadResult.get("secure_url").toString());
                 } catch (Exception ex) {
-                    redirectAttributes.addFlashAttribute("error", "Main image upload failed: " + ex.getMessage());
+                    throw new IllegalArgumentException("Lỗi tải lên Ảnh chính: " + ex.getMessage());
                 }
-            } else if (mainImageFile != null && !mainImageFile.isEmpty()) {
-                redirectAttributes.addFlashAttribute("warning", "Main image provided but Cloudinary not configured.");
+            } else if (!mainImageFile.isEmpty()) {
+                redirectAttributes.addFlashAttribute("warning", "Chưa cấu hình Cloudinary, ảnh chính không được tải lên.");
             }
 
             // Upload ảnh phụ
             List<String> auxiliaryImageUrls = new ArrayList<>();
             if (cloudinary != null && auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0) {
                 if (auxiliaryImageFiles.length > 10) {
-                    redirectAttributes.addFlashAttribute("warning", "Maximum 10 auxiliary images allowed. Only the first 10 were uploaded.");
+                    throw new IllegalArgumentException("Chỉ được phép tải lên tối đa 10 ảnh phụ.");
                 }
                 int uploadedCount = 0;
                 for (MultipartFile file : auxiliaryImageFiles) {
@@ -303,28 +372,65 @@ public class OwnerController {
                             auxiliaryImageUrls.add(uploadResult.get("secure_url").toString());
                             uploadedCount++;
                         } catch (Exception ex) {
-                            redirectAttributes.addFlashAttribute("error", "Auxiliary image upload failed for file " + file.getOriginalFilename() + ": " + ex.getMessage());
+                            redirectAttributes.addFlashAttribute("warning", "Lỗi tải lên ảnh phụ " + file.getOriginalFilename() + ": " + ex.getMessage());
                         }
                     }
                 }
-            } else if (auxiliaryImageFiles != null && auxiliaryImageFiles.length > 0) {
-                redirectAttributes.addFlashAttribute("warning", "Auxiliary images provided but Cloudinary not configured.");
             }
+            vehicle.setImageUrls(auxiliaryImageUrls.isEmpty() ? "[]" : objectMapper.writeValueAsString(auxiliaryImageUrls));
 
-            if (!auxiliaryImageUrls.isEmpty()) {
-                vehicle.setImageUrls(objectMapper.writeValueAsString(auxiliaryImageUrls));
-            } else {
-                vehicle.setImageUrls("[]");
-            }
-
-
+            // --- Lưu vào DB ---
             vehicleService.saveVehicle(vehicle);
-            redirectAttributes.addFlashAttribute("success", "Vehicle added successfully!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "Failed to add vehicle: " + e.getMessage());
+
+            // Gửi thông báo cho Admin
+            try {
+                notificationService.createNotificationForAllAdmins(
+                        "Xe mới " + vehicle.getVehicleModel() + " (chủ xe: " + currentUser.getUsername() + ") đang chờ duyệt.",
+                        vehicle.getVehicleId(),
+                        "VEHICLE_APPROVAL"
+                );
+            } catch (Exception e) {
+                logger.error("Failed to create admin notification for new vehicle.", e);
+            }
+
+            // === XỬ LÝ THÀNH CÔNG ===
+            redirectAttributes.addFlashAttribute("success", "Đăng ký xe thành công! Xe của bạn đang chờ Admin duyệt.");
+
+            // Nếu thành công, luôn về trang quản lý xe
+            return "redirect:/";
+
+        } catch (IllegalArgumentException e) { // Lỗi validation
+            logger.warn("Validation failed for addCar: {}", e.getMessage());
+            // Trả lỗi về đúng form
+            if (sourceView.startsWith("redirect:")) {
+                // Gửi lỗi về modal (trang /owner/cars)
+                redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+                // Thêm param để JS tự mở modal
+                redirectAttributes.addAttribute("openModal", "add-car-modal");
+            } else {
+                // Gửi lỗi về trang đầy đủ (owner/vehicle-add)
+                model.addAttribute("error", "Lỗi: " + e.getMessage());
+                // Gửi lại các dropdown
+                model.addAttribute("transmissions", transmissionTypeRepository.findAll());
+                model.addAttribute("categories", vehicleCategoriesRepository.findAll());
+                // Giữ lại các giá trị đã nhập
+                model.addAttribute("vehicle", vehicle);
+            }
+            return errorRedirectPath; // Trả về view "owner/vehicle-add" hoặc "redirect:/owner/cars"
+
+        } catch (Exception e) { // Lỗi hệ thống
+            logger.error("Error saving vehicle", e);
+            // Trả lỗi về đúng form
+            if (sourceView.startsWith("redirect:")) {
+                redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi thêm xe: " + e.getMessage());
+            } else {
+                model.addAttribute("error", "Lỗi hệ thống khi thêm xe: " + e.getMessage());
+                model.addAttribute("transmissions", transmissionTypeRepository.findAll());
+                model.addAttribute("categories", vehicleCategoriesRepository.findAll());
+                model.addAttribute("vehicle", vehicle);
+            }
+            return errorRedirectPath;
         }
-        return "redirect:/owner/cars";
     }
 
     @PostMapping("/cars/{id}")
