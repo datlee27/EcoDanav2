@@ -78,6 +78,16 @@
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script th:src="@{/js/vehicle-form-logic.js}"></script>
+<script th:inline="javascript">
+    // Gọi hàm updateFeatures khi trang đã tải xong để hiển thị các tính năng ban đầu.
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof updateFeatures === 'function') {
+            updateFeatures();
+        } else {
+            console.error("Hàm updateFeatures() không tồn tại. Hãy chắc chắn rằng tệp vehicle-form-logic.js đã được tải.");
+        }
+    });
+</script>
 
 </body>
 </html>
