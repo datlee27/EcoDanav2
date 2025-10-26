@@ -86,10 +86,11 @@ public class SecurityConfig {
                         .requestMatchers("/owner/**").hasAnyRole("ADMIN", "STAFF", "OWNER")
                         .requestMatchers("/staff/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers("/booking/**").authenticated()
+                        .requestMatchers("/documents/**").authenticated()
                         .anyRequest().authenticated()
-                )
+                ) 
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth2/**", "/api/**") // Đã bao gồm /api/chatbot/**
+                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/documents/**") // Đã bao gồm /api/chatbot/**
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
