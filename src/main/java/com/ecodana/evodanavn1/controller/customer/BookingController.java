@@ -26,6 +26,7 @@ import com.ecodana.evodanavn1.model.Vehicle; // Đảm bảo import Vehicle
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.service.NotificationService;
+import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import com.ecodana.evodanavn1.service.VNPayService;
 
@@ -50,6 +51,9 @@ public class BookingController {
 
     @Autowired
     private VNPayService vnPayService;
+
+    @Autowired
+    private UserFeedbackService userFeedbackService;
 
     /**
      * Show checkout page
@@ -442,6 +446,13 @@ public class BookingController {
         }
 
         List<Booking> bookings = bookingService.getBookingsByUser(user);
+        
+        // Add feedback information to each booking
+        for (Booking booking : bookings) {
+            boolean hasFeedback = userFeedbackService.hasFeedbackForBooking(booking);
+            booking.setHasFeedback(hasFeedback);
+        }
+        
         model.addAttribute("bookings", bookings);
         model.addAttribute("currentUser", user);
 
