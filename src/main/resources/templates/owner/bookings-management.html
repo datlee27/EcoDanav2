@@ -3,56 +3,8 @@
 <head>
     <div th:replace="~{fragments/layout :: head}"></div>
     <link href="/css/sidebar-common.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
-
     <link href="/css/owner-dashboard.css" rel="stylesheet">
-
-    <style>
-        .primary { color: #4CAF50; }
-        .bg-primary { background-color: #4CAF50; }
-        .text-primary { color: #4CAF50; }
-        .hover\:bg-accent:hover { background-color: #45a049; }
-        .hidden { display: none; }
-        .modal {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 100; display: flex; align-items: center; justify-content: center;
-            animation: modalFadeIn 0.3s ease-in-out;
-        }
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .modal.hidden { display: none; }
-        .modal-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-        .modal-content {
-            position: relative; background-color: white; border-radius: 0.75rem;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-            display: flex; flex-direction: column;
-            max-width: 800px; width: 90%; max-height: 90vh;
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        @keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-        .modal-content.max-w-md { max-width: 28rem; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; flex-shrink: 0; }
-        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; }
-        .modal-footer { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; flex-shrink: 0; }
-
-        .status-badge {
-            padding: 0.25rem 0.75rem; border-radius: 9999px;
-            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-        }
-        .status-pending { background-color: #fef3c7; color: #92400e; }
-        .status-approved { background-color: #d1fae5; color: #065f46; }
-        .status-rejected { background-color: #fee2e2; color: #991b1b; }
-        .status-ongoing { background-color: #dbeafe; color: #1e40af; }
-        .status-completed { background-color: #e5e7eb; color: #374151; }
-        .status-cancelled { background-color: #f3f4f6; color: #6b7280; }
-
-        .tab-button { transition: all 0.3s ease; }
-        .tab-button.active { color: #4caf50; border-color: #4caf50; }
-        .tab-button:not(.active):hover { color: #4caf50; }
-
-        /* GHI ĐÈ LỖI CSS TỪ ADMIN-DASHBOARD.CSS */
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/owner-management.css}" />
 </head>
 <body class="bg-gray-100">
 <div class="flex h-screen bg-gray-100 overflow-hidden">
@@ -61,13 +13,15 @@
 
     <div class="flex-1 flex flex-col overflow-hidden">
 
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
+        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm border-b flex-shrink-0">
             <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
             </button>
-            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">Booking Management</h1> <div class="flex-1"></div>
-
+            <div class="flex-grow md:flex-grow-0">
+                <h1 class="text-lg font-semibold text-gray-800 truncate">Booking Management</h1>
+            </div>
             <div class="flex items-center space-x-4">
+
                 <div class="relative">
                     <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
                         <i class="fas fa-bell text-xl"></i>
@@ -75,12 +29,10 @@
                               id="notificationBadge"
                               class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"
                               th:text="${pendingBookings.size() > 99 ? '99+' : pendingBookings.size()}">
-                              0
                         </span>
                         <span th:unless="${pendingBookings != null and pendingBookings.size() > 0}"
                               id="notificationBadge"
                               class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
-                              0
                         </span>
                     </button>
                     <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
@@ -103,7 +55,6 @@
                             <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
                         </div>
                         <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
-
                         <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
                         <i class="fas fa-chevron-down text-xs text-gray-500"></i>
                     </button>
@@ -114,22 +65,20 @@
                         </div>
                         <div class="py-1">
                             <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
-                                Trang chủ
+                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i> Trang chủ
                             </a>
                             <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
-                                Hồ sơ
+                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i> Hồ sơ
                             </a>
                             <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-                                Đăng Xuất
+                                <i class="fas fa-sign-out-alt w-5 mr-2"></i> Đăng Xuất
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
             <div class="container mx-auto px-0">
                 <div th:if="${success}" id="success-notification" class="fixed top-20 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transition-transform duration-300 transform translate-x-0">
@@ -145,252 +94,51 @@
                     </div>
                 </div>
 
-                <div class="flex space-x-4 mb-6 border-b border-gray-200">
-                    <button onclick="switchTab('bookings')" id="bookings-tab" class="tab-button active px-6 py-3 font-semibold border-b-2 border-primary text-primary transition-colors">
-                        <i class="fas fa-list mr-2"></i>Booking Management
+                <div class="status-tab-container" id="status-tabs">
+                    <button class="status-tab active" data-status="" onclick="changeStatusTab(this)">
+                        Tất cả <span class="count-badge" th:text="${countAll ?: 0}">0</span>
                     </button>
-                    <button onclick="switchTab('notifications')" id="notifications-tab" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-600 hover:text-primary transition-colors">
-                        <i class="fas fa-bell mr-2"></i>Thông báo
-                        <span th:if="${pendingBookings?.size() > 0}" class="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5" th:text="${pendingBookings?.size()}">0</span>
+                    <button class="status-tab" data-status="Pending" onclick="changeStatusTab(this)">
+                        Chờ duyệt <span class="count-badge" th:text="${countPending ?: 0}">0</span>
                     </button>
-                    <button onclick="switchTab('calendar')" id="calendar-tab" class="tab-button px-6 py-3 font-semibold border-b-2 border-transparent text-gray-600 hover:text-primary transition-colors">
-                        <i class="fas fa-calendar-alt mr-2"></i>Calendar View
+                    <button class="status-tab" data-status="Approved,AwaitingDeposit" onclick="changeStatusTab(this)">
+                        Đã duyệt/Chờ cọc <span class="count-badge" th:text="${countApproved ?: 0}">0</span>
+                    </button>
+                    <button class="status-tab" data-status="Confirmed,Ongoing" onclick="changeStatusTab(this)">
+                        Đang thuê <span class="count-badge" th:text="${countOngoing ?: 0}">0</span>
+                    </button>
+                    <button class="status-tab" data-status="Completed" onclick="changeStatusTab(this)">
+                        Hoàn thành <span class="count-badge" th:text="${countCompleted ?: 0}">0</span>
+                    </button>
+                    <button class="status-tab" data-status="Rejected,Cancelled" onclick="changeStatusTab(this)">
+                        Đã hủy/Từ chối <span class="count-badge" th:text="${countRejected ?: 0}">0</span>
                     </button>
                 </div>
 
-                <div id="bookings-section" class="tab-content active">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                        <div onclick="quickFilterStatus('Pending')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-600 text-sm font-medium">Pending</p>
-                                    <p class="text-2xl font-bold text-yellow-600" th:text="${pendingCount ?: 0}">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Chờ duyệt</p>
-                                </div>
-                                <i class="fas fa-clock text-4xl text-yellow-500 opacity-60"></i>
-                            </div>
+                <div class="bg-white p-4 rounded-lg shadow-md mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                            <input type="text" id="search-input" onkeyup="filterAndSortBookings()" placeholder="Tìm theo mã, khách hàng..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"/>
                         </div>
-                        <div onclick="quickFilterStatus('Approved')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-green-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-600 text-sm font-medium">Approved</p>
-                                    <p class="text-2xl font-bold text-green-600" th:text="${approvedCount ?: 0}">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Đã duyệt</p>
-                                </div>
-                                <i class="fas fa-check-circle text-4xl text-green-500 opacity-60"></i>
-                            </div>
-                        </div>
-                        <div onclick="quickFilterStatus('Confirmed')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-600 text-sm font-medium">Confirmed</p>
-                                    <p class="text-2xl font-bold text-blue-600" th:text="${ongoingCount ?: 0}">0</p> <p class="text-xs text-gray-500 mt-1">Đã thanh toán</p>
-                                </div>
-                                <i class="fas fa-check-double text-4xl text-blue-500 opacity-60"></i>
-                            </div>
-                        </div>
-                        <div onclick="quickFilterStatus('Completed')" class="bg-white p-4 rounded-lg shadow-md border-l-4 border-gray-500 cursor-pointer hover:shadow-lg transition-all transform hover:-translate-y-1">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-gray-600 text-sm font-medium">Completed</p>
-                                    <p class="text-2xl font-bold text-gray-700" th:text="${completedCount ?: 0}">0</p>
-                                    <p class="text-xs text-gray-500 mt-1">Hoàn tất</p>
-                                </div>
-                                <i class="fas fa-flag-checkered text-4xl text-gray-500 opacity-60"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-4 rounded-lg shadow-md mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-1">Status Filter</label>
-                                <select id="status-filter" onchange="filterBookings()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                                    <option value="">All Statuses</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="AwaitingDeposit">Awaiting Deposit</option>
-                                    <option value="Confirmed">Confirmed</option>
-                                    <option value="Rejected">Rejected</option>
-                                    <option value="Ongoing">Ongoing</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                                <input type="text" id="search-input" onkeyup="filterBookings()" placeholder="Search by code or customer..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"/>
-                            </div>
-                            <div>
-                                <label for="sort-select" class="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
-                                <select id="sort-select" onchange="filterBookings()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
-                                    <option value="newest">Newest First</option>
-                                    <option value="oldest">Oldest First</option>
-                                    <option value="amount-high">Amount: High to Low</option>
-                                    <option value="amount-low">Amount: Low to High</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vehicle</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200" id="bookings-table-body">
-                                <tr th:each="booking : ${bookings}" class="booking-row hover:bg-gray-50 transition-colors"
-                                    th:data-status="${#strings.toLowerCase(booking.status.name())}"
-                                    th:data-code="${booking.bookingCode}"
-                                    th:data-customer="${booking.user?.firstName + ' ' + booking.user?.lastName}"
-                                    th:data-created="${booking.createdDate}"
-                                    th:data-amount="${booking.totalAmount}">
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="font-semibold text-primary text-sm" th:text="${booking.bookingCode}">BK001</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center mr-2 flex-shrink-0">
-                                                <i class="fas fa-user text-gray-600 text-xs"></i>
-                                            </div>
-                                            <div>
-                                                <p class="font-medium text-gray-800 text-sm" th:text="${booking.user?.firstName + ' ' + booking.user?.lastName}">Customer Name</p>
-                                                <p class="text-xs text-gray-500 truncate max-w-[150px]" th:text="${booking.user?.email}">email@example.com</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <p class="font-medium text-gray-800 text-sm" th:text="${booking.vehicle?.vehicleModel}">Vehicle Model</p>
-                                        <p class="text-xs text-gray-500" th:text="${booking.vehicle?.licensePlate}">License Plate</p>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        <div class="flex items-center">
-                                            <i class="fas fa-calendar-plus text-gray-400 mr-2"></i>
-                                            <div>
-                                                <p class="font-medium" th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy')}">19/10/2025</p>
-                                                <p class="text-xs text-gray-500" th:text="${#temporals.format(booking.createdDate, 'HH:mm:ss')}">12:13:51</p>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                        <div><span class="font-medium">Từ:</span> <span th:text="${#temporals.format(booking.pickupDateTime, 'dd/MM/yy HH:mm')}"></span></div>
-                                        <div><span class="font-medium">Đến:</span> <span th:text="${#temporals.format(booking.returnDateTime, 'dd/MM/yy HH:mm')}"></span></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="font-semibold text-gray-800 text-sm" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT') + ' VND'}">1,000,000 VND</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge" th:classappend="'status-' + ${booking.status.name()}" th:text="${booking.status.name()}">Pending</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-3">
-                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-blue-600 hover:text-blue-800" title="View Details">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="approveBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-green-600 hover:text-green-800" title="Approve">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button th:if="${booking.status.name() == 'Pending'}" onclick="rejectBooking(this.getAttribute('data-booking-id'))" th:data-booking-id="${booking.bookingId}" class="text-red-600 hover:text-red-800" title="Reject">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr th:if="${#lists.isEmpty(bookings)}">
-                                    <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                                        <i class="fas fa-inbox text-4xl mb-2"></i>
-                                        <p>No bookings found</p>
-                                    </td>
-                                </tr>
-                                </tbody>
-                            </table>
+                        <div>
+                            <label for="sort-select" class="block text-sm font-medium text-gray-700 mb-1">Sắp xếp theo</label>
+                            <select id="sort-select" onchange="filterAndSortBookings()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+                                <option value="newest">Mới nhất trước</option>
+                                <option value="oldest">Cũ nhất trước</option>
+                                <option value="amount-high">Giá: Cao đến thấp</option>
+                                <option value="amount-low">Giá: Thấp đến cao</option>
+                            </select>
                         </div>
                     </div>
                 </div>
 
-                <div id="notifications-section" class="tab-content hidden">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h2 class="text-xl font-semibold mb-4 flex items-center">
-                            <i class="fas fa-bell text-green-500 mr-2"></i>
-                            Thông báo mới
-                        </h2>
-
-                        <div th:if="${pendingBookings != null && !pendingBookings.isEmpty()}" class="space-y-3">
-                            <div th:each="booking : ${pendingBookings}" class="border-l-4 border-yellow-500 bg-yellow-50 p-4 rounded-r-lg hover:bg-yellow-100 transition-colors">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center mb-2">
-                                            <i class="fas fa-clock text-yellow-600 mr-2"></i>
-                                            <h3 class="font-semibold text-gray-800">Booking mới chờ duyệt</h3>
-                                        </div>
-                                        <p class="text-sm text-gray-700 mb-2">
-                                            <strong>Mã:</strong> <span class="text-green-600" th:text="${booking.bookingCode}">BK123</span>
-                                        </p>
-                                        <p class="text-sm text-gray-700 mb-2">
-                                            <strong>Khách hàng:</strong> <span th:text="${booking.user?.firstName + ' ' + booking.user?.lastName}">Customer Name</span>
-                                        </p>
-                                        <p class="text-sm text-gray-700 mb-2">
-                                            <strong>Xe:</strong> <span th:text="${booking.vehicle?.vehicleModel}">Vehicle Model</span>
-                                        </p>
-                                        <p class="text-sm text-gray-600">
-                                            <i class="fas fa-calendar mr-1"></i>
-                                            <span th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">19/10/2025 12:13</span>
-                                        </p>
-                                    </div>
-                                    <div class="flex flex-col space-y-2 ml-4">
-                                        <button onclick="viewBooking(this.getAttribute('data-booking-id'))"
-                                                th:data-booking-id="${booking.bookingId}"
-                                                class="px-4 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">
-                                            <i class="fas fa-eye mr-1"></i> Xem
-                                        </button>
-                                        <button onclick="approveBooking(this.getAttribute('data-booking-id'))"
-                                                th:data-booking-id="${booking.bookingId}"
-                                                class="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors">
-                                            <i class="fas fa-check mr-1"></i> Duyệt
-                                        </button>
-                                        <button onclick="rejectBooking(this.getAttribute('data-booking-id'))"
-                                                th:data-booking-id="${booking.bookingId}"
-                                                class="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors">
-                                            <i class="fas fa-times mr-1"></i> Từ chối
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div th:if="${pendingBookings == null || pendingBookings.isEmpty()}" class="text-center py-12">
-                            <i class="fas fa-bell-slash text-6xl text-gray-300 mb-4"></i>
-                            <p class="text-gray-500 text-lg">Không có thông báo mới</p>
-                        </div>
-                    </div>
+                <div id="booking-list-container" class="bg-white p-6 rounded-lg shadow-md">
+                    <p id="no-bookings-message" class="hidden text-center text-gray-500 text-lg py-12">
+                        <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i><br>
+                        Không có booking nào.
+                    </p>
                 </div>
-
-                <div id="calendar-section" class="tab-content hidden">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex justify-between items-center mb-6 pb-4 border-b">
-                            <h3 class="text-lg font-semibold text-gray-800">Booking Timeline</h3>
-                            <div class="flex items-center space-x-3">
-                                <select id="group-by-select" onchange="changeGrouping(this.value)" class="px-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:border-primary">
-                                    <option value="day">By Day</option>
-                                    <option value="month" selected>By Month</option>
-                                    <option value="year">By Year</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div id="timeline-container">
-                            <p class="text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading timeline...</p>
-                        </div>
-                    </div>
-                </div>
-
             </div>
         </main>
     </div>
@@ -406,28 +154,6 @@
             </button>
         </div>
         <div class="modal-body" id="booking-detail-content">
-            <div class="text-center py-8">
-                <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
-                <p class="mt-2 text-gray-600">Loading...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="customer-profile-modal" class="modal hidden">
-    <div class="modal-overlay" onclick="closeModal('customer-profile-modal')"></div>
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="text-2xl font-bold text-gray-800">Customer Profile</h3>
-            <button onclick="closeModal('customer-profile-modal')" class="text-gray-600 hover:text-gray-800">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-        <div class="modal-body" id="customer-profile-content">
-            <div class="text-center py-8">
-                <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
-                <p class="mt-2 text-gray-600">Loading...</p>
-            </div>
         </div>
     </div>
 </div>
@@ -443,15 +169,14 @@
         </div>
         <div class="modal-body">
             <p class="text-gray-700 mb-4">
-                Are you sure you want to approve this booking? The vehicle will be marked as unavailable for the rental
-                period.
+                Bạn có chắc chắn muốn duyệt đơn đặt xe này?
             </p>
             <div class="flex justify-end space-x-3">
                 <button onclick="closeModal('approve-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    Cancel
+                    Hủy
                 </button>
-                <button onclick="confirmApprove()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-                    <i class="fas fa-check mr-2"></i>Approve
+                <button id="confirmApproveBtn" onclick="confirmApprove()" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                    <i class="fas fa-check mr-2"></i>Duyệt
                 </button>
             </div>
         </div>
@@ -468,15 +193,15 @@
             </button>
         </div>
         <div class="modal-body">
-            <p class="text-gray-700 mb-4">Please provide a reason for rejecting this booking:</p>
+            <p class="text-gray-700 mb-4">Vui lòng nhập lý do từ chối đơn đặt xe này:</p>
             <textarea id="reject-reason" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                      placeholder="Enter rejection reason..."></textarea>
+                      placeholder="Nhập lý do từ chối..."></textarea>
             <div class="flex justify-end space-x-3 mt-4">
                 <button onclick="closeModal('reject-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-                    Cancel
+                    Hủy
                 </button>
-                <button onclick="confirmReject()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
-                    <i class="fas fa-times mr-2"></i>Reject
+                <button id="confirmRejectBtn" onclick="confirmReject()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    <i class="fas fa-times mr-2"></i>Từ chối
                 </button>
             </div>
         </div>
@@ -485,401 +210,22 @@
 
 <script th:src="@{/js/sidebar-common.js}"></script>
 <script th:src="@{/js/owner-dashboard.js}"></script>
-<script th:src="@{/js/owner-management.js}"></script>
 
 <script th:inline="javascript">
     /*<![CDATA[*/
+    // Dữ liệu bookings từ server (DTO an toàn)
+    const allBookingsData = /*[[${bookings}]]*/ [];
 
-    // *** FIX: Ghi đè hàm switchTab từ owner-dashboard.js (nếu file đó có) ***
-    // Hàm này sẽ sử dụng class 'active' và 'hidden' để tương thích với CSS
-    // Hàm switchTab này là BẮT BUỘC cho trang này
-    function switchTab(tabName) {
-        console.log("Using FIXED switchTab function for:", tabName);
+    // Lấy CSRF token
+    const csrfToken = /*[[${_csrf?.token}]]*/ null;
+    const csrfHeaderName = /*[[${_csrf?.headerName}]]*/ null;
 
-        // 1. Ẩn tất cả nội dung tab
-        document.querySelectorAll(".tab-content").forEach((content) => {
-            content.classList.remove("active");
-            content.classList.add("hidden");
-        });
-
-        // 2. Bỏ active tất cả các nút tab
-        document.querySelectorAll(".tab-button").forEach((button) => {
-            button.classList.remove("active", "border-primary", "text-primary");
-            button.classList.add("border-transparent", "text-gray-600");
-        });
-
-        // 3. Hiển thị nội dung tab được chọn
-        const activeContent = document.getElementById(tabName + "-section");
-        if (activeContent) {
-            activeContent.classList.add("active");
-            activeContent.classList.remove("hidden");
-        } else {
-            console.error("Tab content not found:", tabName + "-section");
-        }
-
-        // 4. Kích hoạt nút tab được chọn
-        const activeButton = document.getElementById(tabName + "-tab");
-        if (activeButton) {
-            activeButton.classList.add("active", "border-primary", "text-primary");
-            activeButton.classList.remove("border-transparent", "text-gray-600");
-        } else {
-            console.error("Tab button not found:", tabName + "-tab");
-        }
-    }
-    // *** KẾT THÚC PHẦN FIX ***
-
-
-    let currentBookingData = null; // Store the whole booking object
-
-    // Lấy CSRF token từ Thymeleaf một cách an toàn
-    const csrfToken = /*[[${_csrf.token}]]*/ null;
-    const csrfHeaderName = /*[[${_csrf.headerName}]]*/ null;
-    const csrfHeaders = { 'Content-Type': 'application/json' };
-    if (csrfToken) {
-        csrfHeaders[csrfHeaderName] = csrfToken;
-    }
-
-    function viewBooking(bookingId) {
-        console.log('viewBooking triggered for ID:', bookingId);
-        fetch(`/owner/management/bookings/${bookingId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to fetch booking details. Status: ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                currentBookingData = data;
-                const content = document.getElementById('booking-detail-content');
-
-                let detailsHtml = `
-                    <div class="space-y-4"> <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-receipt mr-3 text-primary"></i>Booking Information</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <p><strong>ID:</strong> <span>${data.bookingId || 'N/A'}</span></p>
-                                <p><strong>Code:</strong> <span>${data.bookingCode || 'N/A'}</span></p>
-                                <p><strong>Status:</strong> <span class="px-2 py-1 rounded-full text-xs font-medium status-${data.status ? data.status.toLowerCase() : ''}">${data.status || 'N/A'}</span></p>
-                                <p><strong>Total Amount:</strong> <span class="font-bold text-green-600">${data.totalAmount ? data.totalAmount.toLocaleString('vi-VN') + ' VND' : 'N/A'}</span></p>
-                                <p><strong>Pickup:</strong> <span>${data.pickupDateTime ? new Date(data.pickupDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
-                                <p><strong>Return:</strong> <span>${data.returnDateTime ? new Date(data.returnDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
-                                <p><strong>Rental Type:</strong> <span>${data.rentalType || 'N/A'}</span></p>
-                                <p><strong>Payment Method:</strong> <span>${data.paymentMethod || 'N/A'}</span></p>
-                            </div>
-                        </div>
-                        <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-user-circle mr-3 text-primary"></i>Customer Information</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <p><strong>Name:</strong> <span>${data.customerName || 'N/A'}</span></p>
-                                <p><strong>Email:</strong> <span>${data.customerEmail || 'N/A'}</span></p>
-                                <p><strong>Phone:</strong> <span>${data.customerPhone || 'N/A'}</span></p>
-                                <p><strong>Date of Birth:</strong> <span>${data.customerDOB ? new Date(data.customerDOB).toLocaleDateString('vi-VN') : 'N/A'}</span></p>
-                            </div>
-                        </div>
-                        <div class="p-4 border rounded-lg bg-gray-50"> <h4 class="text-lg font-semibold text-gray-700 mb-3 border-b pb-2 flex items-center"><i class="fas fa-car-side mr-3 text-primary"></i>Vehicle Information</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                                <p><strong>Model:</strong> <span>${data.vehicleModel || 'N/A'}</span></p>
-                                <p><strong>License Plate:</strong> <span>${data.licensePlate || 'N/A'}</span></p>
-                                <p><strong>Category:</strong> <span>${data.vehicleCategory || 'N/A'}</span></p>
-                                <p><strong>Transmission:</strong> <span>${data.transmission || 'N/A'}</span></p>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                content.innerHTML = detailsHtml;
-
-                // Show modal
-                const modal = document.getElementById('booking-detail-modal');
-                if (modal) {
-                    modal.classList.remove('hidden');
-                } else {
-                    console.error('Modal booking-detail-modal not found');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching booking details:', error);
-                alert('Could not load booking details. Please try again. Error: ' + error.message);
-            });
-    }
-
-    function closeBookingDetailModal() {
-        document.getElementById('booking-detail-modal').classList.add('hidden');
-    }
-
-    function openEditBookingModal() {
-        if (!currentBookingData) return;
-
-        const pickupDate = new Date(currentBookingData.pickupDateTime).toISOString().slice(0, 16);
-        const returnDate = new Date(currentBookingData.returnDateTime).toISOString().slice(0, 16);
-
-        document.getElementById('edit-booking-id').value = currentBookingData.bookingId;
-        document.getElementById('edit-pickup-datetime').value = pickupDate;
-        document.getElementById('edit-return-datetime').value = returnDate;
-        document.getElementById('edit-total-amount').value = currentBookingData.totalAmount;
-        document.getElementById('edit-booking-status').value = currentBookingData.status;
-
-        closeBookingDetailModal();
-        document.getElementById('edit-booking-modal').classList.remove('hidden');
-    }
-
-    function closeEditBookingModal() {
-        document.getElementById('edit-booking-modal').classList.add('hidden');
-    }
-
-    function submitEditBookingForm(event) {
-        event.preventDefault();
-        const form = document.getElementById('edit-booking-form');
-        const formData = new FormData(form);
-        const bookingId = formData.get('bookingId');
-
-        const data = {};
-        formData.forEach((value, key) => data[key] = value);
-
-        fetch(`/owner/bookings/${bookingId}/update`, {
-            method: 'POST',
-            headers: csrfHeaders,
-            body: JSON.stringify(data)
-        })
-            .then(response => response.json())
-            .then(result => {
-                if(result.success) {
-                    alert('Booking updated successfully!');
-                    location.reload();
-                } else {
-                    alert('Error updating booking: ' + result.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An unexpected error occurred.');
-            });
-    }
-
-    function acceptBooking(bookingId) {
-        console.log('acceptBooking triggered for ID:', bookingId);
-        if (!confirm("Are you sure you want to approve this booking?")) return;
-        fetch(`/owner/management/bookings/${bookingId}/approve`, { method: 'POST', headers: csrfHeaders })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Booking approved successfully!');
-                    location.reload();
-                } else {
-                    throw new Error(data.message || 'Failed to approve booking.');
-                }
-            })
-            .catch(error => {
-                console.error('Error approving booking:', error);
-                alert(error.message);
-            });
-    }
-
-    function openDeclineBookingModal(bookingId) {
-        console.log('openDeclineBookingModal triggered for ID:', bookingId);
-        currentBookingId = bookingId;
-        document.getElementById('decline-booking-modal').classList.remove('hidden');
-    }
-
-    function closeDeclineBookingModal() {
-        document.getElementById('decline-booking-modal').classList.add('hidden');
-        document.getElementById('decline-reason').value = '';
-    }
-
-    function submitDeclineBooking() {
-        console.log('submitDeclineBooking triggered for ID:', currentBookingId);
-        if (!currentBookingId) return;
-        const reason = document.getElementById('decline-reason').value;
-        if (!reason || reason.trim() === '') {
-            alert('Please enter a reason for declining.');
-            return;
-        }
-
-        fetch(`/owner/management/bookings/${currentBookingId}/reject`, {
-            method: 'POST',
-            headers: csrfHeaders,
-            body: JSON.stringify({ reason: reason })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Booking rejected successfully!');
-                    closeDeclineBookingModal();
-                    location.reload();
-                } else {
-                    throw new Error(data.message || 'Failed to reject booking.');
-                }
-            })
-            .catch(error => {
-                console.error('Error rejecting booking:', error);
-                alert(error.message);
-            });
-    }
-
-    function completeBooking(bookingId) {
-        console.log('completeBooking triggered for ID:', bookingId);
-        if (!confirm("Are you sure you want to mark this booking as completed?")) return;
-
-        fetch(`/owner/management/bookings/${bookingId}/complete`, { method: 'POST', headers: csrfHeaders })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Booking marked as completed successfully!');
-                    location.reload();
-                } else {
-                    throw new Error(data.message || 'Failed to complete booking.');
-                }
-            })
-            .catch(error => {
-                console.error('Error completing booking:', error);
-                alert(error.message);
-            });
-    }
-
-    function openCancelBookingModal(bookingId) {
-        console.log('openCancelBookingModal triggered for ID:', bookingId);
-        currentBookingId = bookingId;
-        document.getElementById('cancel-booking-modal').classList.remove('hidden');
-    }
-
-    function closeCancelBookingModal() {
-        document.getElementById('cancel-booking-modal').classList.add('hidden');
-        document.getElementById('cancel-reason').value = '';
-    }
-
-    function submitCancelBooking() {
-        console.log('submitCancelBooking triggered for ID:', currentBookingId);
-        if (!currentBookingId) return;
-        const reason = document.getElementById('cancel-reason').value;
-        if (!reason || reason.trim() === '') {
-            alert('Please enter a reason for cancellation.');
-            return;
-        }
-
-        fetch(`/owner/management/bookings/${currentBookingId}/cancel`, {
-            method: 'POST',
-            headers: csrfHeaders,
-            body: JSON.stringify({ reason: reason })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Booking cancelled successfully!');
-                    closeCancelBookingModal();
-                    location.reload();
-                } else {
-                    throw new Error(data.message || 'Failed to cancel booking.');
-                }
-            })
-            .catch(error => {
-                console.error('Error cancelling booking:', error);
-                alert(error.message);
-            });
-    }
-
-    // Quick filter khi click vào status cards
-    function quickFilterStatus(status) {
-        const statusFilter = document.getElementById('status-filter');
-        statusFilter.value = status;
-        filterBookings();
-    }
-
-    // Approve booking
-    function approveBooking(bookingId) {
-        if (!confirm('Bạn có chắc muốn duyệt booking này?')) return;
-
-        fetch(`/owner/management/bookings/${bookingId}/approve`, {
-            method: 'POST',
-            headers: csrfHeaders
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã duyệt booking thành công!');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể duyệt booking'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra khi duyệt booking');
-            });
-    }
-
-    // Reject booking
-    let currentRejectBookingId = null;
-    function rejectBooking(bookingId) {
-        currentRejectBookingId = bookingId;
-        document.getElementById('reject-modal').classList.remove('hidden');
-    }
-
-    function confirmReject() {
-        const reason = document.getElementById('reject-reason').value;
-        if (!reason || reason.trim() === '') {
-            alert('Vui lòng nhập lý do từ chối');
-            return;
-        }
-
-        fetch(`/owner/management/bookings/${currentRejectBookingId}/reject`, {
-            method: 'POST',
-            headers: csrfHeaders,
-            body: JSON.stringify({ reason: reason })
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Đã từ chối booking thành công!');
-                    closeModal('reject-modal');
-                    location.reload();
-                } else {
-                    alert('Lỗi: ' + (data.message || 'Không thể từ chối booking'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Có lỗi xảy ra khi từ chối booking');
-            });
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).classList.add('hidden');
-        if (modalId === 'reject-modal') {
-            document.getElementById('reject-reason').value = '';
-        }
-    }
-
-    document.querySelectorAll(".filter-btn").forEach((button) => {
-        button.addEventListener("click", () => {
-            const status = button.getAttribute("data-status");
-            document.querySelectorAll("tbody tr").forEach((row) => {
-                if (status === "all" || row.getAttribute("data-status") === status) {
-                    row.style.display = "";
-                } else {
-                    row.style.display = "none";
-                }
-            });
-            document.querySelectorAll(".filter-btn").forEach((btn) => btn.classList.replace("bg-primary", "bg-gray-100"));
-            button.classList.replace("bg-gray-100", "bg-primary");
-        });
-    });
-    /*]]>*/
-
-    /*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ 'bookings'; // Đặt trang hiện tại là 'bookings'
-        if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
-            highlightOwnerSidebarLink(currentPage);
-        } else if (!currentPage) {
-            console.warn("CurrentPage variable not set in model for highlighting Owner sidebar.");
-        } else if (typeof highlightOwnerSidebarLink !== 'function') {
-            console.error("highlightOwnerSidebarLink function not found in sidebar-common.js.");
-        }
-
-        // Load notification count on page load
-        if (typeof loadNotificationCount === 'function') {
-            loadNotificationCount();
-            // setInterval(loadNotificationCount, 30000); // Tự động cập nhật nếu muốn
-        }
-    });
+    // Lấy currentPage
+    const currentPage = /*[[${currentPage}]]*/ 'bookings';
     /*]]>*/
 </script>
+
+<script th:src="@{/js/owner-management.js}"></script>
 
 </body>
 </html>

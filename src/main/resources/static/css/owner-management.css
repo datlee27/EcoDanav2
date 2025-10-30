@@ -478,3 +478,77 @@ button[title]:hover::after {
   background-color: #fee2e2;
   color: #991b1b;
 }
+
+.primary { color: #4CAF50; }
+.bg-primary { background-color: #4CAF50; }
+.text-primary { color: #4CAF50; }
+.hover\:bg-accent:hover { background-color: #45a049; }
+
+/* --- Style cho Tab trạng thái --- */
+.status-tab-container {
+    display: flex;
+    overflow-x: auto; /* Cho phép cuộn ngang trên di động */
+    border-bottom: 2px solid #e5e7eb;
+    margin-bottom: 1.5rem; /* mb-6 */
+    background-color: white;
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    width: 100%; /* Đảm bảo container chiếm 100% */
+}
+.status-tab {
+    white-space: nowrap;
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+    color: #4b5563; /* text-gray-600 */
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px; /* Dính vào border-bottom của container */
+
+    /* --- THÊM CÁC THUỘC TÍNH NÀY ĐỂ DÃN TAB --- */
+    flex-grow: 1; /* Cho phép các tab dãn ra */
+    display: flex; /* Bật flexbox */
+    align-items: center; /* Căn giữa */
+    justify-content: center; /* Căn giữa */
+    /* --- KẾT THÚC THÊM MỚI --- */
+}
+.status-tab:hover {
+    background-color: #f9fafb; /* hover:bg-gray-50 */
+    color: #111827; /* hover:text-gray-900 */
+}
+.status-tab.active {
+    color: #4CAF50; /* text-primary */
+    border-bottom-color: #4CAF50; /* border-primary */
+}
+.status-tab .count-badge {
+    margin-left: 0.5rem;
+    background-color: #e5e7eb; /* bg-gray-200 */
+    color: #374151; /* text-gray-700 */
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.status-tab.active .count-badge {
+    background-color: #4CAF50; /* bg-primary */
+    color: white;
+}
+/* --- Hết Style cho Tab --- */
+
+.booking-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 1rem; /* p-4 */
+    margin-bottom: 1rem; /* mb-4 */
+    transition: box-shadow 0.2s ease-in-out;
+}
+.booking-item:hover {
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+.booking-item:last-child {
+    margin-bottom: 0;
+}

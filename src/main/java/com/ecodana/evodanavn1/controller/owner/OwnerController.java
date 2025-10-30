@@ -163,7 +163,39 @@ public class OwnerController {
         model.addAttribute("currentPage", "bookings");
 
         List<Booking> allBookings = bookingService.getBookingsByOwnerId(currentUser.getId());
-        model.addAttribute("bookings", allBookings);
+        List<Map<String, Object>> bookingsDTO = allBookings.stream().map(booking -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("bookingId", booking.getBookingId());
+            map.put("bookingCode", booking.getBookingCode());
+            map.put("status", booking.getStatus().name());
+            map.put("pickupDateTime", booking.getPickupDateTime() != null ? booking.getPickupDateTime().toString() : null);
+            map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
+            map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
+            map.put("totalAmount", booking.getTotalAmount());
+
+            // Lấy thông tin User (nếu có) một cách an toàn
+            if (booking.getUser() != null) {
+                Map<String, Object> userMap = new HashMap<>();
+                userMap.put("firstName", booking.getUser().getFirstName());
+                userMap.put("lastName", booking.getUser().getLastName());
+                userMap.put("username", booking.getUser().getUsername());
+                map.put("user", userMap);
+            } else {
+                map.put("user", null); // Gửi null nếu user không tồn tại
+            }
+
+            // Lấy thông tin Vehicle (nếu có) một cách an toàn
+            if (booking.getVehicle() != null) {
+                Map<String, Object> vehicleMap = new HashMap<>();
+                vehicleMap.put("vehicleModel", booking.getVehicle().getVehicleModel());
+                vehicleMap.put("licensePlate", booking.getVehicle().getLicensePlate());
+                map.put("vehicle", vehicleMap);
+            } else {
+                map.put("vehicle", null); // Gửi null nếu vehicle không tồn tại
+            }
+            return map;
+        }).collect(Collectors.toList());
+        model.addAttribute("bookings", bookingsDTO);
 
         long pendingCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
@@ -179,12 +211,20 @@ public class OwnerController {
         long completedCount = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Completed)
                 .count();
+        long rejectedCount = allBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Rejected ||
+                        b.getStatus() == Booking.BookingStatus.Cancelled)
+                .count();
 
-        model.addAttribute("pendingCount", pendingCount);
-        model.addAttribute("approvedCount", approvedCount);
-        model.addAttribute("ongoingCount", ongoingCount);
-        model.addAttribute("completedCount", completedCount);
+        // Đếm số lượng cho các tab
+        model.addAttribute("countAll", allBookings.size());
+        model.addAttribute("countPending", pendingCount);
+        model.addAttribute("countApproved", approvedCount);
+        model.addAttribute("countOngoing", ongoingCount);
+        model.addAttribute("countCompleted", completedCount);
+        model.addAttribute("countRejected", rejectedCount);
 
+        // Lọc danh sách booking 'Pending' cho chuông thông báo
         List<Booking> pendingBookings = allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
                 .collect(Collectors.toList());
