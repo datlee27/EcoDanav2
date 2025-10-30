@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.model.VehicleConditionLogs;
+import com.ecodana.evodanavn1.repository.VehicleConditionLogsRepository;
+import com.ecodana.evodanavn1.repository.VehicleRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +29,18 @@ public class BookingService {
     private BookingRepository bookingRepository;
 
     @Autowired
-    private VehicleService vehicleService; // Inject VehicleService
+    private VehicleService vehicleService;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private VehicleConditionLogsRepository vehicleConditionLogsRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -287,5 +303,63 @@ public class BookingService {
                     return updatedBooking;
                 })
                 .orElse(null);
+    }
+
+
+    /**
+     * Xử lý nghiệp vụ Giao xe (Handover)
+     * @param bookingId ID của booking
+     * @param owner Người dùng (owner) thực hiện giao xe
+     * @param imageUrls Danh sách URL ảnh đã tải lên Cloudinary
+     * @param odometer Số Odometer lúc giao
+     * @param notes Ghi chú lúc giao
+     * @return Booking đã cập nhật
+     * @throws Exception
+     */
+    @Transactional
+    public Booking handoverVehicle(String bookingId, User owner, List<String> imageUrls, int odometer, String notes) throws Exception {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Booking với ID: " + bookingId));
+
+        // 1. Chỉ cho phép giao xe khi status là Confirmed
+        if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
+            throw new IllegalStateException("Không thể giao xe. Trạng thái booking không phải là 'Confirmed'.");
+        }
+
+        Vehicle vehicle = booking.getVehicle();
+        if (vehicle == null) {
+            throw new RuntimeException("Không tìm thấy Vehicle cho booking này.");
+        }
+
+        // 2. Cập nhật trạng thái Booking và Vehicle
+        booking.setStatus(Booking.BookingStatus.Ongoing);
+        vehicle.setStatus(Vehicle.VehicleStatus.Rented);
+
+        // 3. Tạo Log ghi nhận tình trạng xe lúc giao (Pickup)
+        VehicleConditionLogs log = new VehicleConditionLogs();
+        log.setLogId(UUID.randomUUID().toString());
+        log.setBooking(booking);
+        log.setVehicle(vehicle);
+        log.setStaff(owner); // Ghi nhận owner là người giao xe
+        log.setCheckType("Pickup"); // Đánh dấu đây là log lúc Giao xe
+        log.setCheckTime(LocalDateTime.now());
+        log.setOdometer(odometer);
+        log.setNote(notes);
+
+        // Lưu ảnh dưới dạng JSON
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            log.setDamageImages(objectMapper.writeValueAsString(imageUrls));
+        }
+
+        // 4. Lưu tất cả thay đổi
+        vehicleConditionLogsRepository.save(log);
+        vehicleRepository.save(vehicle);
+        Booking updatedBooking = bookingRepository.save(booking);
+
+        // 5. Gửi thông báo cho khách hàng
+        notificationService.notifyCustomerRentalStarted(updatedBooking);
+
+        return updatedBooking;
     }
 }

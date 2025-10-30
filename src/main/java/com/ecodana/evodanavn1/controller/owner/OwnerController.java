@@ -45,6 +45,7 @@ public class OwnerController {
     @Autowired
     private RoleService roleService;
 
+    // Các biến @Value để đọc cấu hình Cloudinary (Giữ nguyên như file của bạn)
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
 
@@ -869,6 +870,78 @@ public class OwnerController {
             return ResponseEntity.ok(customerData);
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to load customer profile: " + e.getMessage()));
+        }
+    }
+
+    //
+    // === ĐÂY LÀ PHƯƠNG THỨC ĐÃ SỬA LỖI ===
+    //
+    @PostMapping("/management/bookings/{id}/handover")
+    public String handoverBooking(
+            @PathVariable("id") String bookingId,
+            @RequestParam(value = "handoverImages", required = false) MultipartFile[] images,
+            @RequestParam("odometer") int odometer,
+            @RequestParam(value = "notes", required = false) String notes,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            redirectAttributes.addFlashAttribute("error", "Phiên đăng nhập hết hạn.");
+            return "redirect:/login";
+        }
+
+        try {
+            // === BẮT ĐẦU FIX LỖI CLOUDINARY ===
+            // Khởi tạo Cloudinary theo cách bạn đang dùng trong addCar/updateCar
+            Cloudinary cloudinary = null;
+            if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
+                cloudinary = new Cloudinary(ObjectUtils.asMap(
+                        "cloud_name", cloudName,
+                        "api_key", cloudApiKey,
+                        "api_secret", cloudApiSecret));
+            } else {
+                logger.warn("Cloudinary credentials not fully configured. Handover images will not be uploaded.");
+                // Ném lỗi nếu không có Cloudinary vì đây là nghiệp vụ bắt buộc
+                throw new IllegalArgumentException("Chưa cấu hình Cloudinary. Không thể tải ảnh giao xe.");
+            }
+            // === KẾT THÚC FIX LỖI CLOUDINARY ===
+
+
+            // 1. Tải ảnh lên Cloudinary
+            List<String> imageUrls = new ArrayList<>();
+            if (images != null && images.length > 0) {
+                for (MultipartFile image : images) {
+                    if (!image.isEmpty()) {
+                        Map<String, Object> uploadResult = cloudinary.uploader().upload( // <-- Giờ biến này đã được khởi tạo
+                                image.getBytes(),
+                                ObjectUtils.asMap(
+                                        "folder", "ecodana/vehicle_conditions/" + bookingId,
+                                        "resource_type", "image"
+                                )
+                        );
+                        imageUrls.add(uploadResult.get("secure_url").toString());
+                    }
+                }
+            }
+
+            if (imageUrls.isEmpty()) {
+                throw new IllegalArgumentException("Bạn phải đính kèm ít nhất một ảnh lúc giao xe.");
+            }
+
+            // 2. Gọi Service để xử lý nghiệp vụ
+            bookingService.handoverVehicle(bookingId, currentUser, imageUrls, odometer, notes);
+
+            redirectAttributes.addFlashAttribute("success", "Đã giao xe thành công! Chuyến đi đã bắt đầu.");
+            return "redirect:/owner/bookings";
+
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return "redirect:/owner/bookings";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi giao xe: " + e.getMessage());
+            return "redirect:/owner/bookings";
         }
     }
 }

@@ -197,4 +197,16 @@ public class NotificationService {
         );
         createNotification(customerId, message, booking.getBookingId(), "BOOKING_AUTO_REJECTED");
     }
+
+    /**
+     * Gửi thông báo cho khách hàng khi rental bắt đầu (Owner giao xe)
+     */
+    public void notifyCustomerRentalStarted(com.ecodana.evodanavn1.model.Booking booking) {
+        String customerId = booking.getUser().getId();
+        String message = String.format(
+                "Chuyến đi #%s của bạn đã bắt đầu. Chúc bạn lái xe an toàn!",
+                booking.getBookingCode()
+        );
+        createNotification(customerId, message, booking.getBookingId(), "RENTAL_STARTED");
+    }
 }

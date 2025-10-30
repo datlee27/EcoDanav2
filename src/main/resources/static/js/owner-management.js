@@ -48,6 +48,15 @@ function renderBookingItem(booking) {
         `;
     }
 
+    if (statusLower === 'confirmed') {
+        actionsHtml += `
+            <button onclick="handoverBooking('${booking.bookingId}')"
+                    class="text-green-600 hover:text-green-800 transition-colors ml-3" title="Giao xe">
+                <i class="fas fa-key text-lg"></i>
+            </button>
+        `;
+    }
+
     // --- HTML của thẻ booking ---
     return `
         <div class="booking-item grid grid-cols-1 md:grid-cols-12 gap-4 items-center"
@@ -224,7 +233,17 @@ function showNotification(isSuccess, message) {
 }
 
 function closeNotification(button) {
-    button.closest('div[id$="-notification"]').style.transform = 'translateX(100%)';
+    // Tìm thẻ cha gần nhất có ID kết thúc bằng "-notification" và ẩn nó đi
+    const notificationDiv = button.closest('div[id$="-notification"]');
+    if (notificationDiv) {
+        notificationDiv.style.transform = 'translateX(100%)';
+        // Xóa hẳn sau khi animation kết thúc (tùy chọn)
+        setTimeout(() => {
+            if (notificationDiv) {
+                notificationDiv.remove();
+            }
+        }, 500);
+    }
 }
 
 // Xem chi tiết
@@ -379,3 +398,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Render danh sách ban đầu (cho tab "Tất cả")
     filterAndSortBookings();
 });
+// --- MỚI: Hàm mở Modal Giao Xe ---
+function handoverBooking(bookingId) {
+    currentBookingId = bookingId;
+    const modal = document.getElementById('handover-modal');
+    const form = document.getElementById('handover-form');
+
+    if(modal && form) {
+        // Cập nhật action của form
+        form.action = `/owner/management/bookings/${bookingId}/handover`;
+
+        // Reset form (xóa ảnh và text cũ nếu có)
+        form.reset();
+
+        // Mở modal
+        modal.classList.remove('hidden');
+    } else {
+        console.error('Handover modal or form not found!');
+    }
+}
