@@ -47,6 +47,10 @@ public class VehicleService {
         return vehicleRepository.findAvailableVehicles();
     }
 
+    public List<Vehicle> getVehiclesByOwnerId(String ownerId) {
+        return vehicleRepository.findByOwnerId(ownerId);
+    }
+
     public List<Vehicle> getVehiclesByType(Vehicle.VehicleType vehicleType) {
         return vehicleRepository.findByVehicleType(vehicleType);
     }

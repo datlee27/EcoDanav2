@@ -62,8 +62,17 @@ function filterBookings() {
     const code = row.getAttribute("data-code").toLowerCase();
     const customer = row.getAttribute("data-customer").toLowerCase();
 
-    const statusMatch = !statusFilter || status === statusFilter;
-    const searchMatch = !searchInput || code.includes(searchInput) || customer.includes(searchInput);
+      let statusMatch;
+      if (statusFilter === "approved") {
+          // Nếu lọc "Approved", bao gồm cả "Approved" và "AwaitingDeposit"
+          statusMatch = (status === "approved" || status === "awaitingdeposit");
+      } else if (statusFilter === "") {
+          // Nếu là "All Status"
+          statusMatch = true;
+      } else {
+          // Đối với các trạng thái khác, lọc chính xác
+          statusMatch = (status === statusFilter);
+      }    const searchMatch = !searchInput || code.includes(searchInput) || customer.includes(searchInput);
 
     const isVisible = statusMatch && searchMatch;
     row.style.display = isVisible ? "" : "none";

@@ -116,9 +116,11 @@ public class OwnerController {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
 
+        User currentUser = (User) session.getAttribute("currentUser");
+
         model.addAttribute("currentPage", "cars");
 
-        List<Vehicle> allVehicles = vehicleService.getAllVehicles();
+        List<Vehicle> allVehicles = vehicleService.getVehiclesByOwnerId(currentUser.getId());
         model.addAttribute("vehicles", allVehicles);
 
         long availableCount = allVehicles.stream()
@@ -156,9 +158,11 @@ public class OwnerController {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
 
+        User currentUser = (User) session.getAttribute("currentUser");
+
         model.addAttribute("currentPage", "bookings");
 
-        List<Booking> allBookings = bookingService.getAllBookings();
+        List<Booking> allBookings = bookingService.getBookingsByOwnerId(currentUser.getId());
         model.addAttribute("bookings", allBookings);
 
         long pendingCount = allBookings.stream()

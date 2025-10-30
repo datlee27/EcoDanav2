@@ -33,7 +33,6 @@ public class BookingService {
     public List<Booking> getBookingsByUser(User user) {
         return bookingRepository.findByUserId(user.getId());
     }
-
     public List<Booking> getBookingsByUserId(String userId) {
         return bookingRepository.findByUserId(userId);
     }
@@ -179,9 +178,8 @@ public class BookingService {
     }
 
     // Owner Management Methods
-    public List<Booking> getBookingsByOwner(String ownerId) {
-        // For now, return all bookings - can be filtered later if owner field is added to Vehicle
-        return bookingRepository.findAll();
+    public List<Booking> getBookingsByOwnerId(String ownerId) {
+        return bookingRepository.findByVehicleOwnerId(ownerId);
     }
 
     public Booking approveBooking(String bookingId, User approver) {
