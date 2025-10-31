@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="~{fragments/layout :: head}"></head>
+<head th:replace="~{fragments/layout :: head}">
+    <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/ddwt6nl7s/image/upload/v1761906428/favicon_jlbemj.ico">
+</head>
 
 <body>
 <div th:replace="~{fragments/nav :: nav}"></div>
@@ -173,15 +175,9 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div th:each="vehicle : ${vehicles}" class="car-card bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <!-- Thay thế khối div hiển thị icon bằng thẻ img -->
-                <a th:href="@{'/vehicles/' + ${vehicle.vehicleId}}" class="block h-48 overflow-hidden" th:with="
-                    imageFolder = (${vehicle.vehicleType == 'ElectricCar'} ? 'electric-car' : 'electric-motorbike'),
-                    imageName = (${vehicle.vehicleModel != null} ? ${vehicle.vehicleModel.toLowerCase().replace(' ', '-')} : 'default'),
-                    imageUrl = @{|/images/vehicles/${imageFolder}/${imageName}.jpg|},
-                    fallbackUrl = @{|/images/vehicles/${imageFolder}/default.jpg|}">
-                    <!-- Tự động tạo đường dẫn ảnh .jpg từ vehicleModel. Nếu ảnh không tồn tại, sẽ hiển thị ảnh mặc định theo loại xe. -->
-                    <img th:src="${imageUrl}" th:data-fallback-src="${fallbackUrl}"
-                         onerror="this.onerror=null; this.src=this.getAttribute('data-fallback-src');"
+                <a th:href="@{'/vehicles/' + ${vehicle.vehicleId}}" class="block h-48 overflow-hidden">
+                    <!-- Sửa lại: Sử dụng vehicle.mainImageUrl để lấy ảnh từ database -->
+                    <img th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
                          th:alt="${vehicle.vehicleModel}" class="w-full h-full object-cover transition-transform duration-300 hover:scale-110">
                 </a>
                 <div class="car-details p-6">
@@ -248,50 +244,50 @@
     </div>
 </section>
 
-<section class="py-20 bg-gray-50">
-    <div class="container mx-auto px-4">
-        <div class="text-center mb-12">
-            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">NHẬN XÉT</div>
-            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Mọi người nói gì về chúng tôi?</h2>
-        </div>
+<!--<section class="py-20 bg-gray-50">-->
+<!--    <div class="container mx-auto px-4">-->
+<!--        <div class="text-center mb-12">-->
+<!--            <div class="section-badge bg-blue-100 text-blue-600 px-4 py-1 rounded-full text-sm font-semibold inline-block mb-4">NHẬN XÉT</div>-->
+<!--            <h2 class="section-title text-3xl md:text-4xl font-bold text-gray-800">Mọi người nói gì về chúng tôi?</h2>-->
+<!--        </div>-->
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
-                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
-                <div class="testimonial-content">
-                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
-                    <div class="testimonial-stars text-yellow-400 mb-4">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi đã sử dụng dịch vụ của bạn trong 3 năm. Dịch vụ của bạn rất tuyệt, tôi sẽ tiếp tục sử dụng dịch vụ của bạn."</p>
-                    <h4 class="testimonial-author font-semibold text-lg">Jenny Wilson</h4>
-                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>
-                </div>
-            </div>
+<!--        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">-->
+<!--            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">-->
+<!--                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>-->
+<!--                <div class="testimonial-content">-->
+<!--                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>-->
+<!--                    <div class="testimonial-stars text-yellow-400 mb-4">-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                    </div>-->
+<!--                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi đã sử dụng dịch vụ của bạn trong 3 năm. Dịch vụ của bạn rất tuyệt, tôi sẽ tiếp tục sử dụng dịch vụ của bạn."</p>-->
+<!--                    <h4 class="testimonial-author font-semibold text-lg">Jenny Wilson</h4>-->
+<!--                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>-->
+<!--                </div>-->
+<!--            </div>-->
 
-            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">
-                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>
-                <div class="testimonial-content">
-                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>
-                    <div class="testimonial-stars text-yellow-400 mb-4">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                    </div>
-                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi cảm thấy rất an toàn khi sử dụng dịch vụ của bạn. Đội ngũ chăm sóc khách hàng của bạn rất nhiệt tình và tài xế luôn đúng giờ."</p>
-                    <h4 class="testimonial-author font-semibold text-lg">Charlie Johnson</h4>
-                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
+<!--            <div class="testimonial-card bg-white p-8 rounded-xl shadow-md">-->
+<!--                <div class="testimonial-image w-16 h-16 bg-gray-300 rounded-full mb-4"></div>-->
+<!--                <div class="testimonial-content">-->
+<!--                    <div class="testimonial-rating text-2xl font-bold text-gray-800 mb-2">5.0</div>-->
+<!--                    <div class="testimonial-stars text-yellow-400 mb-4">-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                        <i class="fas fa-star"></i>-->
+<!--                    </div>-->
+<!--                    <p class="testimonial-text text-gray-600 italic mb-4">"Tôi cảm thấy rất an toàn khi sử dụng dịch vụ của bạn. Đội ngũ chăm sóc khách hàng của bạn rất nhiệt tình và tài xế luôn đúng giờ."</p>-->
+<!--                    <h4 class="testimonial-author font-semibold text-lg">Charlie Johnson</h4>-->
+<!--                    <p class="testimonial-location text-gray-500">Từ New York, Mỹ</p>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</section>-->
 
 <div id="search-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
     <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-2xl w-full">
@@ -344,59 +340,51 @@
     </div>
 </div>
 
-<div id="location-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-lg w-full">
+<div id="location-popup" class="fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-bold">Địa điểm</h3>
             <button onclick="confirmLocationAndBackToSearch(event, false)" class="text-gray-500 hover:text-gray-800">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-
-        <div class="mb-4 relative">
+        <div class="mb-4">
             <label for="location-search-input" class="sr-only">Tìm kiếm địa điểm</label>
-            <input type="text" id="location-search-input" placeholder="Tìm kiếm địa điểm (ví dụ: FPT City, Hồ Chí Minh...)"
-                   class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary">
-            <div id="search-results" class="absolute w-full max-w-lg bg-white shadow-lg rounded-lg mt-1 z-10 hidden border">
-                <div class="search-result-item location-option p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-100"
-                     data-location-text="Khu đô thị FPT City, Phường Ngũ Hành Sơn, Đà Nẵng">
-                    <i class="fas fa-map-marker-alt text-green-500"></i>
-                    <p class="font-semibold">Khu đô thị FPT City, Phường Ngũ Hành Sơn, Đà Nẵng</p>
-                </div>
-                <div class="search-result-item location-option p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-100"
-                     data-location-text="Sở hữu kỳ nghỉ FPT City, Đà Nẵng">
-                    <i class="fas fa-map-marker-alt text-green-500"></i>
-                    <p class="font-semibold">Sở hữu kỳ nghỉ FPT City, Đà Nẵng</p>
-                </div>
+            <div class="relative">
+                <input type="text" id="location-search-input" placeholder="Nhập địa chỉ hoặc chọn trên bản đồ"
+                       class="w-full p-3 border rounded-lg focus:ring-primary focus:border-primary pl-10">
+                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
             </div>
         </div>
 
-        <div class="space-y-4 location-popup-options">
-            <div class="location-option current-location-option border rounded-lg p-4 flex items-center space-x-4 cursor-pointer"
-                 data-location-text="Vị trí hiện tại"
-                 onclick="getAndSelectCurrentLocation(this)">
+        <div id="map" class="w-full h-64 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
+            Bản đồ sẽ hiển thị ở đây
+        </div>
+
+        <div class="space-y-3 mb-6">
+            <div id="currentLocationBtn" class="border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors">
                 <i class="fas fa-location-arrow text-green-500"></i>
-                <p class="text-gray-700 font-semibold" id="current-location-display">Vị trí hiện tại</p>
+                <p class="text-gray-700 font-semibold" id="currentLocationDisplay">Sử dụng vị trí hiện tại</p>
             </div>
 
-            <h4 class="font-semibold text-gray-800 mt-4">Giao xe sân bay</h4>
-            <div class="flex flex-wrap gap-2 airport-options-container">
-                <button class="airport-btn bg-gray-200 px-4 py-2 rounded-full text-sm hover:bg-gray-300 transition-colors" data-airport-text="Sân bay Đà Nẵng" onclick="selectAirportButton(this)">
-                    Đà Nẵng
-                </button>
+            <div>
+                <p class="text-sm font-medium text-gray-500 mb-2">Địa điểm gợi ý:</p>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" class="suggested-location-btn" data-address="Khu đô thị FPT City, P. Hoà Hải, Q. Ngũ Hành Sơn, TP. Đà Nẵng">
+                        Đại học FPT
+                    </button>
+                    <button type="button" class="suggested-location-btn" data-address="Đường Duy Tân, P. Hòa Thuận Tây, Q. Hải Châu, TP. Đà Nẵng">
+                        Sân bay Đà Nẵng
+                    </button>
+                </div>
             </div>
         </div>
 
-        <div class="recent-searches-container hidden mt-6 border-t pt-4">
-            <h4 class="font-semibold text-gray-800 mb-2 flex justify-between items-center">
-                Tìm kiếm gần đây
-                <button onclick="clearRecentLocations(event)" class="text-xs text-red-500 hover:text-red-700">
-                    Xóa tất cả
-                </button>
-            </h4>
-            <div id="recent-locations-list" class="space-y-2">
-            </div>
+        <div class="bg-green-50 p-3 rounded-lg">
+            <p class="text-xs text-gray-600">Địa điểm đã chọn:</p>
+            <p id="modalSelectedLocation" class="font-semibold text-green-800">Chưa có</p>
         </div>
+
         <button onclick="confirmLocationAndBackToSearch(event, true)" class="w-full mt-6 bg-primary text-white py-3 rounded-lg hover:bg-accent transition-colors font-semibold">
             Xác nhận
         </button>
@@ -404,7 +392,7 @@
 </div>
 
 <div id="date-time-popup" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full">
+    <div class="bg-white rounded-lg shadow-xl p-6 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-w-4xl w-full" style="max-height: 90vh; overflow-y: auto;">
         <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-bold">Thời gian</h3>
             <button onclick="closePopup('date-time-popup')" class="text-gray-500 hover:text-gray-800">
@@ -457,25 +445,33 @@
 
 <div th:replace="~{fragments/chatbot :: chatbot}"></div>
 
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    const googleApiKey = /*[[${googleApiKey}]]*/ null;
+    /*]]>*/
+</script>
+
 <script>
+    // Google Maps variables
+    let map, marker, geocoder, autocomplete;
+
     // Biến toàn cục để lưu trạng thái
     let selectedTagsState = []; // <-- Lưu trữ các Tag được chọn (như "Giao tại nhà", "Tiết kiệm")
     // Giá trị mặc định ban đầu hiển thị
     let selectedLocationText = 'Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng';
-    let selectedAirportTexts = []; // Giá trị mặc định cho multiple airport
 
-    // Khóa localStorage - Đã bỏ sử dụng nhưng giữ lại để tránh lỗi code
-    const RECENT_LOCATIONS_KEY = 'recentLocations';
-
-    // --- Dữ liệu giả lập cho Đà Nẵng ---
-    const DA_NANG_LOCATIONS = [
-        "Sân bay Quốc tế Đà Nẵng (DAD)",
-        "Ga Đà Nẵng",
-        "Khu đô thị FPT City, Ngũ Hành Sơn",
-        "Tòa nhà Đà Nẵng Plaza, Hải Châu",
-        "InterContinental Danang Sun Peninsula Resort",
-        "Cầu Rồng, Sông Hàn",
-    ];
+    // Dynamically load Google Maps API
+    (function() {
+        if (googleApiKey) {
+            var script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${googleApiKey}&libraries=places,geocoding&callback=initMap&language=vi`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+        } else {
+            console.warn("Google API Key is not available. Map functionality will be disabled.");
+        }
+    })();
 
     // --- Hàm chung ---
     function closeNotification(button) {
@@ -492,10 +488,6 @@
 
     function openPopup(id) {
         document.getElementById(id).classList.remove('hidden');
-        // Đặc biệt: Nếu mở Location Popup, khôi phục trạng thái
-        if (id === 'location-popup') {
-            restoreLocationState();
-        }
     }
 
     function closePopup(id) {
@@ -505,16 +497,11 @@
     // --- Logic Flow (Cập nhật để lưu Tag khi mở Location Popup) ---
     function openLocationPopup() {
         // 1. Lưu trạng thái của tất cả các tag đã được chọn TRƯỚC KHI mở Location Popup
-        const tagButtons = document.querySelectorAll('.tag-btn');
-        selectedTagsState = [];
-        tagButtons.forEach(button => {
-            if (button.classList.contains('selected')) {
-                selectedTagsState.push(button.textContent.trim());
-            }
-        });
+        selectedTagsState = Array.from(document.querySelectorAll('#search-popup .tag-btn.selected')).map(btn => btn.textContent.trim());
 
         // 2. Mở Location Popup và đóng Search Popup
         openPopup('location-popup');
+        document.getElementById('modalSelectedLocation').textContent = selectedLocationText || 'Chưa có';
         closePopup('search-popup');
     }
 
@@ -537,270 +524,116 @@
         });
     }
 
-    // --- Logic Geolocation (Vị trí hiện tại) ---
-    function getAddressFromCoords(lat, lon) {
-        return "295 Nguyễn Tất Thành, Phường Hòa Hiệp Bắc, Quận Liên Chiểu, Đà Nẵng";
-    }
+    // --- Google Maps and Location Modal Logic ---
+    function initMap() {
+        geocoder = new google.maps.Geocoder();
+        const daNang = { lat: 16.054407, lng: 108.202164 };
 
-    function getAndSelectCurrentLocation(element) {
-        const displayElement = document.getElementById('current-location-display');
-        const iconElement = element.querySelector('i');
+        const mapElement = document.getElementById("map");
+        if (!mapElement) return;
 
-        const isCurrentlySelected = element.classList.contains('selected');
+        map = new google.maps.Map(mapElement, { center: daNang, zoom: 13 });
+        marker = new google.maps.Marker({ map: map, anchorPoint: new google.maps.Point(0, -29) });
 
-        if (isCurrentlySelected) {
-            selectLocationOption(element);
+        const searchInput = document.getElementById("location-search-input");
+        if (searchInput) {
+            autocomplete = new google.maps.places.Autocomplete(searchInput);
+            autocomplete.setFields(["formatted_address", "geometry", "name"]);
+            autocomplete.bindTo("bounds", map);
 
-            displayElement.textContent = 'Vị trí hiện tại';
-            if (iconElement) {
-                iconElement.className = 'fas fa-location-arrow text-green-500';
-            }
-            element.setAttribute('data-location-text', 'Vị trí hiện tại');
-            return;
-        }
-
-        selectLocationOption(element);
-
-        displayElement.textContent = 'Đang tìm vị trí...';
-        if (iconElement) {
-            iconElement.className = 'fas fa-spinner fa-spin text-white';
-        }
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const readableAddress = getAddressFromCoords(position.coords.latitude, position.coords.longitude);
-                    const locationText = readableAddress;
-
-                    if(!element.classList.contains('selected')) return;
-
-                    displayElement.textContent = locationText;
-                    element.setAttribute('data-location-text', locationText);
-
-                    if (iconElement) {
-                        iconElement.className = 'fas fa-location-arrow text-white';
-                    }
-
-                    document.getElementById('location-search-input').value = '';
-                },
-                (error) => {
-                    let errorText = 'Không thể lấy vị trí hiện tại.';
-                    if (error.code === error.PERMISSION_DENIED) {
-                        errorText = 'Vui lòng cấp quyền truy cập vị trí.';
-                    } else if (error.code === error.TIMEOUT) {
-                        errorText = 'Quá thời gian chờ.';
-                    }
-
-                    if(!element.classList.contains('selected')) return;
-
-                    displayElement.textContent = errorText;
-                    element.setAttribute('data-location-text', errorText);
-
-                    if (iconElement) {
-                        iconElement.className = 'fas fa-location-arrow text-white';
-                    }
+            autocomplete.addListener("place_changed", () => {
+                marker.setVisible(false);
+                const place = autocomplete.getPlace();
+                if (!place.geometry || !place.geometry.location) {
+                    console.warn("Autocomplete place not found or geometry missing.");
+                    return;
                 }
-            );
-        } else {
-            const errorText = 'Trình duyệt không hỗ trợ Geolocation.';
-            displayElement.textContent = errorText;
-            element.setAttribute('data-location-text', errorText);
-            if (iconElement) {
-                iconElement.className = 'fas fa-location-arrow text-white';
-            }
-        }
-    }
-
-
-    // --- Logic Popup Địa điểm: Xử lý chọn Độc Lập ---
-    function selectLocationOption(element) {
-        const locationOptions = document.querySelectorAll('.location-option');
-        const currentIcon = element.querySelector('i');
-        const locationSearchInput = document.getElementById('location-search-input');
-
-        const isCurrentlySelected = element.classList.contains('selected');
-
-        if (isCurrentlySelected && !element.classList.contains('current-location-option')) {
-            element.classList.remove('selected', 'bg-primary', 'text-white');
-
-            if (!element.classList.contains('search-result-item')) {
-                element.classList.add('border');
-            }
-
-            if (currentIcon) {
-                const defaultColor = 'text-green-500';
-                currentIcon.classList.remove('text-white');
-                currentIcon.classList.add(defaultColor);
-            }
-
-            if (locationSearchInput.value === element.getAttribute('data-location-text')) {
-                locationSearchInput.value = '';
-            }
-
-            return;
-        }
-
-        locationOptions.forEach(opt => {
-            if (opt !== element) {
-                opt.classList.remove('selected', 'bg-primary', 'text-white');
-                opt.classList.add('border');
-
-                if (opt.classList.contains('search-result-item')) {
-                    opt.classList.remove('border');
-                }
-
-                const icon = opt.querySelector('i');
-                if (icon) {
-                    const defaultColor = 'text-green-500';
-                    icon.classList.remove('text-white', 'text-green-500', 'fa-spin', 'fa-spinner');
-                    icon.classList.add(defaultColor);
-                }
-
-                if (opt.classList.contains('current-location-option')) {
-                    document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
-                }
-            }
-        });
-
-        element.classList.add('selected', 'bg-primary', 'text-white');
-        element.classList.remove('border');
-
-        if (currentIcon) {
-            currentIcon.classList.remove('text-green-500');
-            currentIcon.classList.add('text-white');
-        }
-
-        if (locationSearchInput && !element.classList.contains('current-location-option')) {
-            locationSearchInput.value = element.getAttribute('data-location-text');
-        } else if (locationSearchInput && element.classList.contains('current-location-option')) {
-            locationSearchInput.value = '';
-        }
-    }
-
-    // Hàm chọn nhiều sân bay (Airport)
-    function selectAirportButton(button) {
-        const isSelected = button.classList.toggle('selected');
-        button.classList.toggle('bg-primary', isSelected);
-        button.classList.toggle('text-white', isSelected);
-        button.classList.toggle('bg-gray-200', !isSelected);
-    }
-
-    // Khôi phục trạng thái khi quay lại Location Popup
-    function restoreLocationState() {
-        const locationSearchInput = document.getElementById('location-search-input');
-
-        // 1. Khôi phục Location Option & Search Result (chọn đơn)
-        document.querySelectorAll('.location-option').forEach(option => {
-            let isSelected = false;
-            let currentText = option.getAttribute('data-location-text');
-
-            if (option.classList.contains('current-location-option')) {
-                let display = document.getElementById('current-location-display').textContent;
-                if (display !== 'Vị trí hiện tại' && display === selectedLocationText) {
-                    isSelected = true;
-                    currentText = selectedLocationText;
-                    document.getElementById('current-location-display').textContent = selectedLocationText;
+                if (place.geometry.viewport) {
+                    map.fitBounds(place.geometry.viewport);
                 } else {
-                    document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(17);
                 }
-            } else {
-                isSelected = currentText === selectedLocationText;
-            }
-
-            option.classList.remove('selected', 'bg-primary', 'text-white', 'border');
-            option.classList.toggle('selected', isSelected);
-            option.classList.toggle('bg-primary', isSelected);
-            option.classList.toggle('text-white', isSelected);
-
-            if (!isSelected) {
-                if (!option.classList.contains('search-result-item')) {
-                    option.classList.add('border');
-                }
-            }
-
-            const icon = option.querySelector('i');
-            if (icon) {
-                const defaultColor = 'text-green-500';
-                icon.classList.remove('text-white', 'text-green-500', 'fa-spin', 'fa-spinner');
-                icon.classList.toggle('text-white', isSelected);
-                icon.classList.toggle(defaultColor, !isSelected);
-            }
-
-            if (isSelected && locationSearchInput) {
-                locationSearchInput.value = '';
-            }
-        });
-
-        // 2. Kiểm tra Search Input
-        if (locationSearchInput && selectedLocationText) {
-            const isCombinedSelection = selectedLocationText.includes('+');
-
-            const isLocationOptionSelected = Array.from(document.querySelectorAll('.location-option.selected'))
-                .some(opt => opt.getAttribute('data-location-text') === selectedLocationText);
-
-            if (!isLocationOptionSelected && !isCombinedSelection) {
-                locationSearchInput.value = selectedLocationText;
-            } else {
-                locationSearchInput.value = '';
-            }
-        } else {
-            if (locationSearchInput) locationSearchInput.value = '';
+                marker.setPosition(place.geometry.location);
+                marker.setVisible(true);
+                updateSelectedLocation(place.formatted_address);
+            });
         }
 
-        // 3. Khôi phục Airport Buttons (chọn nhiều)
-        const airportButtons = document.querySelectorAll('.airport-btn');
-        airportButtons.forEach(button => {
-            const buttonText = button.getAttribute('data-airport-text');
-            const isSelected = selectedAirportTexts.includes(buttonText);
-
-            button.classList.toggle('selected', isSelected);
-            button.classList.toggle('bg-primary', isSelected);
-            button.classList.toggle('text-white', isSelected);
-            button.classList.toggle('bg-gray-200', !isSelected);
+        map.addListener("click", (e) => {
+            geocoder.geocode({ location: e.latLng }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    map.setZoom(17);
+                    marker.setPosition(e.latLng);
+                    marker.setVisible(true);
+                    updateSelectedLocation(results[0].formatted_address);
+                    if (searchInput) searchInput.value = results[0].formatted_address;
+                } else {
+                    window.alert("Geocoder thất bại do: " + status);
+                }
+            });
         });
+    }
+
+    function updateSelectedLocation(address) {
+        const modalSelected = document.getElementById('modalSelectedLocation');
+        if (modalSelected) modalSelected.textContent = address;
+    }
+
+    function getAndSetCurrentLocation() {
+        const currentLocationDisplay = document.getElementById('currentLocationDisplay');
+        if (!currentLocationDisplay) return;
+
+        currentLocationDisplay.textContent = 'Đang tìm vị trí...';
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+                if (map) {
+                    map.setCenter(pos);
+                    map.setZoom(17);
+                }
+                if (marker) {
+                    marker.setPosition(pos);
+                    marker.setVisible(true);
+                }
+                geocoder.geocode({ location: pos }, (results, status) => {
+                    if (status === "OK" && results[0]) {
+                        const address = results[0].formatted_address;
+                        updateSelectedLocation(address);
+                        currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
+                        const searchInput = document.getElementById("location-search-input");
+                        if (searchInput) searchInput.value = address;
+                    } else {
+                        currentLocationDisplay.textContent = 'Không tìm thấy địa chỉ';
+                    }
+                });
+            }, () => {
+                alert('Lỗi: Dịch vụ định vị địa lý không thành công.');
+                currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
+            });
+        } else {
+            alert('Lỗi: Trình duyệt của bạn không hỗ trợ định vị địa lý.');
+            currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
+        }
     }
 
     // --- Hàm Chính: Lưu Địa điểm và quay lại Search Popup (ĐÃ CẬP NHẬT) ---
     function confirmLocationAndBackToSearch(event, isConfirmed = false) {
         if (event) event.stopPropagation();
 
-        const locationSearchInput = document.getElementById('location-search-input');
-
         // 1. Lấy trạng thái Tags MỚI NHẤT (vì Tags được chọn trong Search Popup)
-        selectedTagsState = Array.from(document.querySelectorAll('.tag-btn.selected')).map(btn => btn.textContent.trim());
+        selectedTagsState = Array.from(document.querySelectorAll('#search-popup .tag-btn.selected')).map(btn => btn.textContent.trim());
 
         if (isConfirmed) {
-            let displayLocationText = 'Chọn địa điểm của bạn';
+            const modalSelectedLocation = document.getElementById('modalSelectedLocation');
+            const newLocation = modalSelectedLocation ? modalSelectedLocation.textContent : 'Chưa có';
 
-            // 2. Lấy Location (Search Input, Location Option)
-            let currentLocationText = '';
-
-            const selectedLocationOption = document.querySelector('.location-option.selected');
-
-            // A. Ưu tiên Location Option (Vị trí hiện tại, Search Results)
-            if (selectedLocationOption) {
-                currentLocationText = selectedLocationOption.getAttribute('data-location-text');
-            }
-            // B. Ưu tiên Search Input nếu Location Option trống
-            else if (locationSearchInput && locationSearchInput.value.trim() !== '') {
-                currentLocationText = locationSearchInput.value.trim();
+            if (newLocation && newLocation !== 'Chưa có') {
+                selectedLocationText = newLocation;
             }
 
-            // C. Lấy Airport
-            const selectedAirportButtons = document.querySelectorAll('.airport-btn.selected');
-            selectedAirportTexts = Array.from(selectedAirportButtons).map(btn => btn.getAttribute('data-airport-text'));
-
-            // 3. Cập nhật Text Hiển thị (KẾT HỢP CẢ 3)
+            let displayLocationText = selectedLocationText;
             let parts = [];
-
-            // Location / Airport
-            if (currentLocationText && selectedAirportTexts.length > 0) {
-                parts.push(`${currentLocationText} + ${selectedAirportTexts.join(', ')}`);
-            } else if (currentLocationText) {
-                parts.push(currentLocationText);
-            } else if (selectedAirportTexts.length > 0) {
-                parts.push(selectedAirportTexts.join(', '));
-            }
 
             // Tags
             if (selectedTagsState.length > 0) {
@@ -808,17 +641,9 @@
             }
 
             // Kết hợp tất cả
-            if (parts.length > 0) {
-                displayLocationText = parts.join(' ');
-            } else {
-                // Nếu không chọn gì, giữ nguyên text đang hiển thị trên thanh search chính
-                const mainSearchFieldP = document.querySelector('.search-field:first-child .search-details p');
-                if (mainSearchFieldP) {
-                    displayLocationText = mainSearchFieldP.textContent;
-                }
+            if (parts.length > 0) { // Only add tags if they exist
+                displayLocationText = `${selectedLocationText} ${parts.join(' ')}`;
             }
-
-            selectedLocationText = currentLocationText; // Lưu lại location riêng (dùng cho restore state)
 
             // 4. Cập nhật text hiển thị trên trang chủ và Search Popup
             const mainSearchFieldP = document.querySelector('.search-field:first-child .search-details p');
@@ -838,47 +663,6 @@
             backToSearchPopup();
         }
     }
-
-    // --- Logic Giả lập kết quả tìm kiếm ---
-    function simulateSearchResults(query) {
-        const searchResultsDiv = document.getElementById('search-results-list');
-        if (!searchResultsDiv) return;
-
-        searchResultsDiv.innerHTML = '';
-
-        const filteredResults = DA_NANG_LOCATIONS.filter(location =>
-            location.toLowerCase().includes(query.toLowerCase())
-        );
-
-        if (filteredResults.length === 0 || query.trim() === '') {
-            document.getElementById('search-results').classList.add('hidden');
-            return;
-        }
-
-        document.getElementById('search-results').classList.remove('hidden');
-
-        filteredResults.forEach(locationText => {
-            const item = document.createElement('div');
-            item.className = 'location-option search-result-item p-4 flex items-center space-x-4 cursor-pointer hover:bg-gray-100 transition-colors';
-            item.setAttribute('data-location-text', locationText);
-            item.innerHTML = `
-                <i class="fas fa-map-marker-alt text-green-500"></i>
-                <p class="text-gray-700">${locationText}</p>
-            `;
-
-            item.addEventListener('click', function(e) {
-                e.stopPropagation();
-                selectLocationOption(this);
-                document.getElementById('location-search-input').value = locationText;
-                document.getElementById('search-results').classList.add('hidden');
-            });
-
-            searchResultsDiv.appendChild(item);
-        });
-
-        restoreLocationState();
-    }
-
 
     // --- Logic Popup Lịch (Giữ nguyên) ---
     let selectedDates = [];
@@ -1135,7 +919,7 @@
         const params = new URLSearchParams();
 
         // 1. Lấy địa điểm
-        if (selectedLocationText && selectedLocationText !== 'Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng') {
+        if (selectedLocationText && selectedLocationText.trim() !== '' && selectedLocationText !== 'Khu đô thị FPT City, Phường Ngũ Hành Sơn, Thành phố Đà Nẵng') {
             params.append('location', selectedLocationText);
         }
 
@@ -1237,52 +1021,28 @@
         // ===============================================
         // LOGIC CHO LOCATION POPUP
         // ===============================================
-
-        const locationSearchInput = document.getElementById('location-search-input');
-        const searchResultsDivContainer = document.getElementById('search-results');
-
-        // 1. Xử lý Search Input
-        if (locationSearchInput) {
-            locationSearchInput.addEventListener('input', function() {
-                document.querySelectorAll('.location-option').forEach(opt => {
-                    opt.classList.remove('selected', 'bg-primary', 'text-white');
-
-                    const icon = opt.querySelector('i');
-                    if (icon) {
-                        const defaultColor = 'text-green-500';
-                        icon.classList.remove('text-white', 'fa-spin', 'fa-spinner');
-                        icon.classList.add(defaultColor);
-                    }
-
-                    if (opt.classList.contains('current-location-option')) {
-                        document.getElementById('current-location-display').textContent = 'Vị trí hiện tại';
-                    }
-
-                    if (!opt.classList.contains('search-result-item')) {
-                        opt.classList.add('border');
-                    }
-                });
-
-                simulateSearchResults(this.value.trim());
-            });
-
-            simulateSearchResults('');
+        const currentLocationBtn = document.getElementById('currentLocationBtn');
+        if (currentLocationBtn) {
+            currentLocationBtn.addEventListener('click', getAndSetCurrentLocation);
         }
 
-        // 2. Xử lý click vào Location Option
-        const locationOptions = document.querySelectorAll('.location-option');
-        locationOptions.forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.stopPropagation();
-
-                if (!this.classList.contains('current-location-option')) {
-                    selectLocationOption(this);
+        document.querySelectorAll('.suggested-location-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const address = this.getAttribute('data-address');
+                updateSelectedLocation(address);
+                const searchInput = document.getElementById('location-search-input');
+                if (searchInput) searchInput.value = address;
+                // Simulate map marker placement if map is initialized
+                if (geocoder) {
+                    geocoder.geocode({ 'address': address }, function(results, status) {
+                        if (status == 'OK' && map && marker) {
+                            map.setCenter(results[0].geometry.location);
+                            marker.setPosition(results[0].geometry.location);
+                            marker.setVisible(true);
+                            map.setZoom(15);
+                        }
+                    });
                 }
-
-                this.classList.add('pulse-animation');
-                setTimeout(() => {
-                    this.classList.remove('pulse-animation');
-                }, 300);
             });
         });
 
@@ -1315,14 +1075,6 @@
                 }
             }
 
-            // Xử lý ẩn Search Results khi click ra ngoài input
-            if(searchResultsDivContainer && !searchResultsDivContainer.classList.contains('hidden')) {
-                if(event.target !== locationSearchInput && !searchResultsDivContainer.contains(event.target)) {
-                    searchResultsDivContainer.classList.add('hidden');
-                }
-            }
-
-
             // 2. Xử lý Popup Lịch (#date-time-popup)
             if (dateTimePopup && !dateTimePopup.classList.contains('hidden')) {
                 const popupContent = dateTimePopup.querySelector('.bg-white');
@@ -1344,9 +1096,17 @@
             }
         });
 
-        restoreLocationState();
+        // Initialize main search bar text
+        const mainSearchFieldP = document.querySelector('.search-field:first-child .search-details p');
+        if (mainSearchFieldP) {
+            mainSearchFieldP.textContent = selectedLocationText;
+        }
     });
 </script>
+<style>
+    .suggested-location-btn { background-color: #f3f4f6; border-radius: 9999px; padding: 6px 12px; font-size: 0.875rem; color: #4b5563; transition: all 0.2s; border: 1px solid transparent; }
+    .suggested-location-btn:hover { background-color: #e5e7eb; color: #1f2937; }
+</style>
 
 </body>
 
