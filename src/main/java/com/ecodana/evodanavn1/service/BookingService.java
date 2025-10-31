@@ -98,6 +98,10 @@ public class BookingService {
         return bookingRepository.findById(bookingId);
     }
 
+    public Booking getBookingById(String bookingId) {
+        return bookingRepository.findById(bookingId).orElse(null);
+    }
+
     public Booking updateBooking(Booking booking) {
         return bookingRepository.save(booking);
     }

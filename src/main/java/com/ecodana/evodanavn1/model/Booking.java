@@ -76,6 +76,9 @@ public class Booking {
     @Column(name = "TermsVersion", length = 10)
     private String termsVersion = "v1.0";
 
+    @Transient
+    private boolean hasFeedback = false;
+
     // Constructors
     public Booking() {
         this.createdDate = LocalDateTime.now();
@@ -120,6 +123,8 @@ public class Booking {
     public void setTermsAgreedAt(LocalDateTime termsAgreedAt) { this.termsAgreedAt = termsAgreedAt; }
     public String getTermsVersion() { return termsVersion; }
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
+    public boolean isHasFeedback() { return hasFeedback; }
+    public void setHasFeedback(boolean hasFeedback) { this.hasFeedback = hasFeedback; }
 
     public enum BookingStatus {
         Pending,          // Khách vừa tạo, chờ chủ xe duyệt
