@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.repository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -33,6 +34,14 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
 
     @Query("SELECT b FROM Booking b WHERE b.status = com.ecodana.evodanavn1.model.Booking$BookingStatus.Pending")
     List<Booking> findAllPendingBookings();
+
+    /**
+     * Tìm các booking đang ở trạng thái Pending và được tạo trước mốc thời gian threshold.
+     * @param threshold Mốc thời gian (ví dụ: now - 2 giờ)
+     * @return Danh sách các booking đã quá hạn
+     */
+    @Query("SELECT b FROM Booking b WHERE b.status = com.ecodana.evodanavn1.model.Booking$BookingStatus.Pending AND b.createdDate < :threshold")
+    List<Booking> findPendingBookingsOlderThan(@Param("threshold") LocalDateTime threshold);
 
     @Query("SELECT b FROM Booking b WHERE b.vehicle.ownerId = :ownerId")
     List<Booking> findByVehicleOwnerId(@Param("ownerId") String ownerId);

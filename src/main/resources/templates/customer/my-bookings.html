@@ -86,11 +86,14 @@
                 >0</span
               >)
             </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Cancelled">
-              Đã hủy (<span id="count-cancelled" th:text="${#lists.size(bookings.?[status.name() == 'Cancelled'])}"
-                >0</span
+              <button
+                      class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500"
+                      data-status="Cancelled,Rejected" >
+                  Đã hủy/Từ chối (<span
+                      id="count-cancelled"
+                      th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' || status.name() == 'Rejected'])}" >0</span
               >)
-            </button>
+              </button>
           </div>
         </div>
 

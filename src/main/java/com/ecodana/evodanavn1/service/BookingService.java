@@ -16,7 +16,11 @@ import com.ecodana.evodanavn1.repository.VehicleConditionLogsRepository;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.ecodana.evodanavn1.model.Booking;
@@ -39,6 +43,14 @@ public class BookingService {
 
     @Autowired
     private NotificationService notificationService;
+
+    private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
+
+//    @Value("${booking.owner-approval-timeout-hours}")
+//    private int ownerApprovalTimeoutHours;
+
+    @Value("${booking.owner-approval-timeout-minutes}")
+    private int ownerApprovalTimeoutMinutes;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -271,6 +283,58 @@ public class BookingService {
             vehicle.setStatus(Vehicle.VehicleStatus.Available);
             vehicleService.updateVehicle(vehicle);
         }
+    }
+
+    /**
+     * Tác vụ định kỳ: Tự động từ chối các booking 'Pending' đã quá hạn.
+     * Chạy mỗi 15 phút.
+     */
+    @Scheduled(fixedRate = 15000) // 15000ms = 15 giây
+    @Transactional
+    public void autoRejectExpiredBookings() {
+        logger.info("Chạy tác vụ tự động hủy booking quá hạn (Test)...");
+
+        // 1. Xác định mốc thời gian timeout (theo phút)
+        LocalDateTime timeoutThreshold = LocalDateTime.now().minusMinutes(ownerApprovalTimeoutMinutes);
+
+        // 2. Tìm tất cả booking 'Pending' đã quá hạn
+        List<Booking> expiredBookings = bookingRepository.findPendingBookingsOlderThan(timeoutThreshold);
+
+        if (expiredBookings.isEmpty()) {
+            logger.info("Không có booking nào quá hạn (Timeout = {} phút).", ownerApprovalTimeoutMinutes);
+            return;
+        }
+
+        logger.warn("Tìm thấy {} booking quá hạn. Bắt đầu xử lý...", expiredBookings.size());
+
+        // 3. Xử lý từng booking
+        for (Booking booking : expiredBookings) {
+            try {
+                // Lấy thông tin xe trước khi thay đổi
+                Vehicle vehicle = booking.getVehicle();
+                String customerId = booking.getUser().getId();
+                String bookingCode = booking.getBookingCode();
+
+                // 4. Cập nhật trạng thái Booking
+                booking.setStatus(Booking.BookingStatus.Rejected);
+                booking.setCancelReason("Chủ xe không phản hồi yêu cầu (tự động hủy).");
+                bookingRepository.save(booking);
+
+                // 5. Mở lại xe cho người khác đặt
+                // (Logic này đã bao gồm việc kiểm tra các booking khác của xe)
+                updateVehicleStatusOnBookingCompletionOrCancellation(vehicle);
+
+                // 6. Gửi thông báo cho khách hàng
+                // (Phương thức này đã tồn tại trong NotificationService)
+                notificationService.notifyBookingAutoRejected(booking);
+
+                logger.info("Đã tự động hủy booking: {} (Khách: {}, Xe: {})", bookingCode, customerId, vehicle.getLicensePlate());
+
+            } catch (Exception e) {
+                logger.error("Lỗi khi tự động hủy booking {}: {}", booking.getBookingId(), e.getMessage(), e);
+            }
+        }
+        logger.info("Hoàn tất tác vụ tự động hủy booking.");
     }
 
     public Map<String, Long> getBookingCountsByStatus() {
