@@ -66,23 +66,8 @@
                     </label>
                     <a th:href="@{/forgot-password}" class="text-sm text-primary hover:text-accent transition-colors">Forgot password?</a>
                 </div>
-                
-                <!-- Admin Secret Key (Hidden by default) -->
-                <div class="mb-6 hidden" id="secret-key-field">
-                    <label class="block text-gray-700 text-sm font-medium mb-2">
-                        <i class="fas fa-key mr-1"></i>Secret Key (Admin Access)
-                    </label>
-                    <input type="password" name="secretKey" id="secret-key" 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" 
-                           placeholder="Enter secret key for admin access">
-                </div>
-                
-                <!-- Admin Toggle -->
-                <div class="mb-4 text-center">
-                    <button type="button" id="adminToggle" class="text-sm text-gray-500 hover:text-primary transition-colors">
-                        <i class="fas fa-cog mr-1"></i>Admin Access
-                    </button>
-                </div>
+
+
                 
                 <button type="submit" id="loginBtn" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-accent transition-colors mb-4 flex items-center justify-center">
                     <i class="fas fa-sign-in-alt mr-2"></i>
@@ -143,7 +128,7 @@
             const togglePassword = document.getElementById('togglePassword');
             const passwordField = document.getElementById('password');
             const eyeIcon = document.getElementById('eyeIcon');
-            const adminToggle = document.getElementById('adminToggle');
+
             const secretKeyField = document.getElementById('secret-key-field');
             const secretKeyInput = document.getElementById('secret-key');
 
@@ -155,16 +140,7 @@
                 eyeIcon.classList.toggle('fa-eye-slash');
             });
 
-            // Admin toggle
-            adminToggle.addEventListener('click', function() {
-                secretKeyField.classList.toggle('hidden');
-                if (secretKeyField.classList.contains('hidden')) {
-                    secretKeyInput.value = '';
-                    adminToggle.innerHTML = '<i class="fas fa-cog mr-1"></i>Admin Access';
-                } else {
-                    adminToggle.innerHTML = '<i class="fas fa-times mr-1"></i>Hide Admin';
-                }
-            });
+
 
             // Form submission with loading state
             form.addEventListener('submit', function() {
