@@ -44,6 +44,7 @@ public class FeedbackOwnerController {
         model.addAttribute("feedbackWithReplies", feedbackWithReplies);
         model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
         model.addAttribute("currentUser", user);
+        model.addAttribute("currentPage", "feedback");
 
         return "owner/owner-feedback";
     }

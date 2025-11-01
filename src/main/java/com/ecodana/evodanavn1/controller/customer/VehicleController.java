@@ -1,6 +1,8 @@
 package com.ecodana.evodanavn1.controller.customer;
 
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.UserFeedback;
+import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
@@ -18,6 +20,9 @@ import java.util.List;
 public class VehicleController {
 
     private final VehicleService vehicleService;
+
+    @Autowired
+    private UserFeedbackService userFeedbackService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -48,6 +53,24 @@ public class VehicleController {
         List<Vehicle> vehicles = vehicleService.filterVehicles(location, pickupDate, returnDate, pickupTime, returnTime, category, vehicleType, budget, seats, requiresLicense);
         model.addAttribute("vehicles", vehicles);
 
+        // Calculate average rating and feedback count for each vehicle
+        java.util.Map<String, java.util.Map<String, Object>> vehicleRatings = new java.util.HashMap<>();
+        for (Vehicle vehicle : vehicles) {
+            java.util.List<UserFeedback> feedbacks = userFeedbackService.getFeedbackByVehicle(vehicle);
+            double averageRating = 0.0;
+            int roundedRating = 0;
+            if (!feedbacks.isEmpty()) {
+                averageRating = feedbacks.stream().mapToInt(UserFeedback::getRating).average().orElse(0.0);
+                roundedRating = (int) Math.round(averageRating);
+            }
+            java.util.Map<String, Object> ratingInfo = new java.util.HashMap<>();
+            ratingInfo.put("averageRating", averageRating);
+            ratingInfo.put("roundedRating", roundedRating);
+            ratingInfo.put("feedbackCount", feedbacks.size());
+            vehicleRatings.put(vehicle.getVehicleId(), ratingInfo);
+        }
+        model.addAttribute("vehicleRatings", vehicleRatings);
+
         // Add all filter parameters to the model to be used in the view
         model.addAttribute("selectedLocation", location);
         model.addAttribute("selectedPickupDate", pickupDate);
@@ -77,6 +100,16 @@ public class VehicleController {
 
         // Add the API key to the model to pass it to the view
         model.addAttribute("googleApiKey", googleApiKey);
+
+        // Load feedbacks for this vehicle and compute average rating
+        java.util.List<UserFeedback> feedbacks = userFeedbackService.getFeedbackByVehicle(vehicle);
+        model.addAttribute("vehicleFeedbacks", feedbacks);
+        double averageRating = 0.0;
+        if (!feedbacks.isEmpty()) {
+            averageRating = feedbacks.stream().mapToInt(UserFeedback::getRating).average().orElse(0.0);
+        }
+        model.addAttribute("averageRating", averageRating);
+        model.addAttribute("feedbackCount", feedbacks.size());
 
         // Get related vehicles (same type, different model)
         List<Vehicle> relatedVehicles = vehicleService.getVehiclesByType(vehicle.getVehicleType())

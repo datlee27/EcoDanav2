@@ -1,9 +1,11 @@
 package com.ecodana.evodanavn1.controller.admin;
 
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.FeedbackReport;
 import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.UserService;
+import com.ecodana.evodanavn1.service.FeedbackReportService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +27,9 @@ public class FeedbackAdminController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private FeedbackReportService feedbackReportService;
+
     @GetMapping
     public String feedbackManagement(HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
@@ -43,9 +48,39 @@ public class FeedbackAdminController {
         model.addAttribute("allFeedback", allFeedback);
         model.addAttribute("feedbackWithReplies", feedbackWithReplies);
         model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
+        model.addAttribute("reports", feedbackReportService.getAllReports());
         model.addAttribute("currentUser", user);
 
         return "admin/admin-feedback";
+    }
+
+    @PostMapping("/reports/resolve/{reportId}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> resolveReport(@PathVariable String reportId, HttpSession session) {
+        Map<String, Object> response = new HashMap<>();
+
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            response.put("success", false);
+            response.put("message", "Không có quyền thực hiện thao tác này");
+            return ResponseEntity.status(403).body(response);
+        }
+
+        try {
+            FeedbackReport updated = feedbackReportService.resolveReport(reportId);
+            if (updated != null) {
+                response.put("success", true);
+                response.put("message", "Đã đánh dấu báo cáo là đã xử lý");
+            } else {
+                response.put("success", false);
+                response.put("message", "Không tìm thấy báo cáo");
+            }
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "Có lỗi: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/delete/{feedbackId}")

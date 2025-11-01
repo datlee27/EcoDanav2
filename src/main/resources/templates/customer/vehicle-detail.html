@@ -1,906 +1,1215 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="${vehicle.vehicleModel} + ' - EcoDana'">Chi tiết xe - EcoDana</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}" />
     <script th:inline="javascript">
-        /*<![CDATA[*/
-        const apiKey = /*[[${googleApiKey}]]*/ "YOUR_FALLBACK_API_KEY";
-        // --- Lấy danh sách URL ảnh từ model ---
-        const mainImageUrl = /*[[${vehicle.mainImageUrl}]]*/ null;
-        const auxiliaryImageUrls = /*[[${vehicle.getImageUrlsFromJson()}]]*/ [];
-        // Tạo một mảng đầy đủ, đảm bảo ảnh chính luôn ở đầu và không bị lặp lại (nếu có trong auxiliary)
-        const uniqueAuxUrls = auxiliaryImageUrls.filter(url => url !== mainImageUrl);
-        const allImageUrls = [mainImageUrl, ...uniqueAuxUrls].filter(url => url); // Lọc bỏ null/undefined
-        /*]]>*/
+      /*<![CDATA[*/
+      const apiKey = /*[[${googleApiKey}]]*/ "YOUR_FALLBACK_API_KEY";
+      // --- Lấy danh sách URL ảnh từ model ---
+      const mainImageUrl = /*[[${vehicle.mainImageUrl}]]*/ null;
+      const auxiliaryImageUrls = /*[[${vehicle.getImageUrlsFromJson()}]]*/ [];
+      // Tạo một mảng đầy đủ, đảm bảo ảnh chính luôn ở đầu và không bị lặp lại (nếu có trong auxiliary)
+      const uniqueAuxUrls = auxiliaryImageUrls.filter((url) => url !== mainImageUrl);
+      const allImageUrls = [mainImageUrl, ...uniqueAuxUrls].filter((url) => url); // Lọc bỏ null/undefined
+      /*]]>*/
     </script>
     <style>
-        * { font-family: 'Poppins', sans-serif; }
+      * {
+        font-family: "Poppins", sans-serif;
+      }
 
-        .tab-button {
-            position: relative;
-            padding: 1rem 1.5rem;
-            color: #6b7280;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-bottom: 3px solid transparent;
+      .tab-button {
+        position: relative;
+        padding: 1rem 1.5rem;
+        color: #6b7280;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-bottom: 3px solid transparent;
+      }
+      .tab-button:hover {
+        color: #10b981;
+      }
+      .tab-button.active {
+        color: #10b981;
+        border-bottom-color: #10b981;
+      }
+      .tab-content {
+        display: none;
+        animation: fadeIn 0.4s ease;
+      }
+      .tab-content.active {
+        display: block;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
-        .tab-button:hover {
-            color: #10b981;
+        to {
+          opacity: 1;
+          transform: translateY(0);
         }
-        .tab-button.active {
-            color: #10b981;
-            border-bottom-color: #10b981;
-        }
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .thumbnail-item.active {
-            border-color: #10b981 !important;
-        }
-        /* Style cho thumbnail trong gallery modal */
-        #galleryThumbnails img.active-thumbnail {
-            border-color: #10b981; /* Màu viền xanh khi active */
-            opacity: 1;
-        }
-        #galleryThumbnails img:not(.active-thumbnail) {
-            opacity: 0.6;
-        }
-        #galleryThumbnails img:not(.active-thumbnail):hover {
-            opacity: 1;
-        }
-        .rotate-180 {
-            transform: rotate(180deg);
-        }
-        .bg-primary {
-            background-color: #10b981;
-        }
-        .text-primary {
-            color: #10b981;
-        }
-        .hover\:bg-accent:hover {
-            background-color: #059669;
-        }
-        .hover\:text-accent:hover {
-            color: #059669;
-        }
-        /* Style for Google Maps Autocomplete dropdown */
-        .pac-container {
-            z-index: 9999 !important;
-        }
-        /* Style cho gallery modal */
-        #imageGalleryModal {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        #imageGalleryModal:not(.hidden) {
-            opacity: 1;
-            pointer-events: auto;
-        }
+      }
+      .thumbnail-item.active {
+        border-color: #10b981 !important;
+      }
+      /* Style cho thumbnail trong gallery modal */
+      #galleryThumbnails img.active-thumbnail {
+        border-color: #10b981; /* Màu viền xanh khi active */
+        opacity: 1;
+      }
+      #galleryThumbnails img:not(.active-thumbnail) {
+        opacity: 0.6;
+      }
+      #galleryThumbnails img:not(.active-thumbnail):hover {
+        opacity: 1;
+      }
+      .rotate-180 {
+        transform: rotate(180deg);
+      }
+      .bg-primary {
+        background-color: #10b981;
+      }
+      .text-primary {
+        color: #10b981;
+      }
+      .hover\:bg-accent:hover {
+        background-color: #059669;
+      }
+      .hover\:text-accent:hover {
+        color: #059669;
+      }
+      /* Style for Google Maps Autocomplete dropdown */
+      .pac-container {
+        z-index: 9999 !important;
+      }
+      /* Style cho gallery modal */
+      #imageGalleryModal {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+      #imageGalleryModal:not(.hidden) {
+        opacity: 1;
+        pointer-events: auto;
+      }
     </style>
-</head>
-<body class="bg-gray-50">
+  </head>
+  <body class="bg-gray-50">
+    <div th:replace="~{fragments/nav :: nav}"></div>
 
-<div th:replace="~{fragments/nav :: nav}"></div>
-
-<main class="pt-20 pb-16">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <main class="pt-20 pb-16">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900 mb-3" th:text="${vehicle.vehicleModel}"></h1>
-            <div class="flex items-center gap-4 text-sm text-gray-600">
-                <div class="flex items-center">
-                    <i class="fas fa-star text-yellow-400 mr-1"></i>
-                    <span class="font-semibold"></span> <span class="mx-1">•</span>
-                    <span></span> </div>
-                <div class="flex items-center">
-                    <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
-                    <span></span> </div>
+          <h1 class="text-3xl font-bold text-gray-900 mb-3" th:text="${vehicle.vehicleModel}"></h1>
+          <div class="flex items-center gap-4 text-sm text-gray-600">
+            <div class="flex items-center">
+              <i class="fas fa-star text-yellow-400 mr-1"></i>
+              <span
+                class="font-semibold"
+                th:text="${#numbers.formatDecimal(averageRating, 1, 'COMMA', 1, 'POINT')} + '/5'"
+              ></span>
+              <span class="mx-1">•</span>
+              <span th:text="${feedbackCount} + ' đánh giá'"></span>
             </div>
+            <div class="flex items-center">
+              <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
+              <span></span>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div class="lg:col-span-2">
-
-                <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-                    <div class="relative group cursor-pointer" onclick="openImageGallery(0)">
-                        <img id="mainDetailImage"
-                             th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/800x450?text=No+Image'}"
-                             th:alt="${vehicle.vehicleModel}"
-                             class="w-full h-auto object-cover rounded-t-lg transition-opacity duration-300"
-                             style="min-height: 300px; max-height: 500px;">
-                        <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center rounded-t-lg">
-                            <i class="fas fa-search-plus text-white text-4xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>
-                        </div>
-                    </div>
-
-                    <div class="p-2 grid grid-cols-4 gap-2">
-                        <div class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-green-500 active"
-                             th:data-img-src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
-                             onclick="switchMainImage(this, 0)">
-                            <img th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
-                                 th:alt="${vehicle.vehicleModel}"
-                                 class="w-full h-24 object-cover">
-                        </div>
-
-                        <div th:if="${!vehicle.getImageUrlsFromJson().isEmpty()}"
-                             class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-green-500"
-                             th:data-img-src="${vehicle.getImageUrlsFromJson()[0]}"
-                             th:onclick="'switchMainImage(this, 1)'">
-                            <img th:src="${vehicle.getImageUrlsFromJson()[0]}"
-                                 th:alt="${vehicle.vehicleModel}"
-                                 class="w-full h-24 object-cover">
-                        </div>
-
-                        <div th:if="${vehicle.getImageUrlsFromJson().size() > 1}"
-                             class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-green-500"
-                             th:data-img-src="${vehicle.getImageUrlsFromJson()[1]}"
-                             th:onclick="'switchMainImage(this, 2)'">
-                            <img th:src="${vehicle.getImageUrlsFromJson()[1]}"
-                                 th:alt="${vehicle.vehicleModel}"
-                                 class="w-full h-24 object-cover">
-                        </div>
-
-                        <button type="button" onclick="openImageGallery(0)"
-                                class="relative col-span-1 flex items-center justify-center bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-all h-24">
-
-                            <img th:if="${vehicle.getImageUrlsFromJson().size() > 2}"
-                                 th:src="${vehicle.getImageUrlsFromJson()[2]}"
-                                 th:alt="${vehicle.vehicleModel}"
-                                 class="w-full h-24 object-cover rounded-lg">
-
-                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                                <div class="text-center text-white">
-                                    <i class="fas fa-images text-2xl mb-1"></i>
-                                    <p class="text-xs font-semibold" th:text="${(vehicle.mainImageUrl != null ? 1 : 0) + #lists.size(vehicle.getImageUrlsFromJson()) > 0 ? 'Xem ' + ((vehicle.mainImageUrl != null ? 1 : 0) + #lists.size(vehicle.getImageUrlsFromJson())) + ' ảnh' : 'Xem ảnh'}">Xem tất cả</p>
-                                </div>
-                            </div>
-                        </button>
-                    </div>
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="relative group cursor-pointer" onclick="openImageGallery(0)">
+                <img
+                  id="mainDetailImage"
+                  th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/800x450?text=No+Image'}"
+                  th:alt="${vehicle.vehicleModel}"
+                  class="w-full h-auto object-cover rounded-t-lg transition-opacity duration-300"
+                  style="min-height: 300px; max-height: 500px"
+                />
+                <div
+                  class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center rounded-t-lg"
+                >
+                  <i
+                    class="fas fa-search-plus text-white text-4xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  ></i>
                 </div>
-                <div class="bg-white rounded-lg shadow-md mb-6">
-                    <div class="flex border-b border-gray-200 overflow-x-auto">
-                        <button class="tab-button active" data-tab="features">Đặc điểm</button>
-                        <button class="tab-button" data-tab="documents">Giấy tờ thuê xe</button>
-                        <button class="tab-button" data-tab="location">Vị trí xe</button>
-                        <button class="tab-button" data-tab="owner">Chủ xe</button>
-                    </div>
+              </div>
 
-                    <div class="p-6">
-                        <div id="features" class="tab-content active">
-                            <h2 class="text-xl font-semibold mb-4">Đặc điểm</h2>
-
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <i class="fas fa-cog text-2xl text-green-500"></i>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Truyền động</p>
-                                        <p class="font-semibold" th:text="${vehicle.transmissionType != null ? vehicle.transmissionType.transmissionTypeName : 'Số tự động'}">Số tự động</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <i class="fas fa-chair text-2xl text-green-500"></i>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Số ghế</p>
-                                        <p class="font-semibold" th:text="${vehicle.seats} + ' chỗ'">7 chỗ</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <i class="fas fa-bolt text-2xl text-green-500"></i>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Nhiên liệu</p>
-                                        <p class="font-semibold">Điện</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                    <i class="fas fa-battery-full text-2xl text-green-500"></i>
-                                    <div>
-                                        <p class="text-xs text-gray-600">Tiêu hao</p>
-                                        <p class="font-semibold" th:text="${vehicle.batteryCapacity != null ? vehicle.batteryCapacity + ' kWh/100km' : 'N/A'}">N/A</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-6">
-                                <h3 class="font-semibold mb-3">Mô tả</h3>
-                                <p class="text-gray-700 leading-relaxed" th:text="${vehicle.description ?: 'Xe điện hiện đại, thân thiện với môi trường, phù hợp cho mọi nhu cầu di chuyển.'}">
-                                    Mô tả xe...
-                                </p>
-                            </div>
-
-                            <div th:if="${!vehicle.getFeaturesFromJson().isEmpty()}">
-                                <h3 class="font-semibold mb-3">Các tiện nghi khác</h3>
-                                <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                    <div th:each="feature : ${vehicle.getFeaturesFromJson()}"
-                                         class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
-                                        <i class="fas fa-check-circle text-green-500"></i>
-                                        <span class="text-sm" th:text="${feature}">Tiện nghi</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="documents" class="tab-content">
-                            <h2 class="text-xl font-semibold mb-4">Giấy tờ thuê xe</h2>
-
-                            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6">
-                                <p class="text-sm text-orange-800">
-                                    <i class="fas fa-exclamation-circle mr-2"></i>
-                                    Chọn 1 trong 2 hình thức
-                                </p>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer">
-                                    <div class="flex items-start gap-3">
-                                        <i class="fas fa-id-card text-2xl text-green-500 mt-1"></i>
-                                        <div class="flex-1">
-                                            <h4 class="font-semibold mb-2">GPLX (đối chiếu) & Passport (giữ lại)</h4>
-                                            <p class="text-sm text-gray-600">Đối chiếu Giấy phép lái xe & giữ lại Passport (hộ chiếu)</p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer">
-                                    <div class="flex items-start gap-3">
-                                        <i class="fas fa-credit-card text-2xl text-green-500 mt-1"></i>
-                                        <div class="flex-1">
-                                            <h4 class="font-semibold mb-2">GPLX (đối chiếu) & CCCD (đối chiếu VNeID)</h4>
-                                            <p class="text-sm text-gray-600">Đối chiếu Giấy phép lái xe & đối chiếu CCCD gắn chip (VNeID)</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-8">
-                                <h3 class="font-semibold mb-4">Tài sản thế chấp</h3>
-                                <p class="text-sm text-gray-700 mb-4">
-                                    15 triệu (Tiền mặt/Chuyển khoản cho chủ xe khi nhận xe) hoặc Xe máy (kèm cà vẹt gốc) giá trị 15 triệu
-                                </p>
-
-                                <h3 class="font-semibold mb-4">Điều khoản</h3>
-                                <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
-                                    <li>Sử dụng xe đúng mục đích</li>
-                                    <li>Không sử dụng xe thuê vào mục đích phi pháp, trái pháp luật</li>
-                                    <li>Không sử dụng xe thuê để cầm cố, thế chấp</li>
-                                    <li>Không hút thuốc, nhả kẹo cao su, xả rác trong xe</li>
-                                    <li>Không chở hàng quốc cấm dễ cháy nổ</li>
-                                    <li>Không chở hoa quả, thực phẩm nặng mùi trong xe</li>
-                                    <li>Khi trả xe, nếu xe bẩn hoặc có mùi trong xe, khách hàng vui lòng vệ sinh xe sạch sẽ hoặc gửi phụ phí vệ sinh xe</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <div id="location" class="tab-content">
-                            <h2 class="text-xl font-semibold mb-4">Vị trí xe</h2>
-
-                            <div class="mb-4">
-                                <div class="flex items-start gap-3">
-                                    <i class="fas fa-map-marker-alt text-green-500 text-xl mt-1"></i>
-                                    <div>
-                                        <p class="font-semibold">Quận Ngũ Hành Sơn, TP. Đà Nẵng</p> <p class="text-sm text-gray-600">Đây chỉ là khu vực gần đúng, địa chỉ cụ thể sẽ được hiển thị sau khi đặt cọc</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div id="vehicleMap" class="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
-                                <div class="text-center text-gray-500">
-                                    <i class="fas fa-map text-4xl mb-2"></i>
-                                    <p>Đang tải bản đồ...</p>
-                                </div>
-                            </div>
-
-                            <div class="mt-4 text-right">
-                                <a href="#" class="text-green-500 hover:text-green-600 font-semibold">
-                                    Xem bản đồ <i class="fas fa-arrow-right ml-1"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <div id="owner" class="tab-content">
-                            <h2 class="text-xl font-semibold mb-4">Chủ xe</h2>
-                            <p>Thông tin về chủ xe...</p> </div>
-                    </div>
-                </div>
-            </div> <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
-                <div class="mb-6">
-                    <div class="flex items-baseline gap-2 mb-4">
-                        <span class="text-3xl font-bold text-green-500" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson() / 1000, 0, 'COMMA', 0, 'POINT')} + 'K'">1.002K</span>
-                        <span class="text-gray-600">/ngày</span>
-                    </div>
-
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-shield-alt text-green-500"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold text-green-700">Bảo hiểm thuê xe</p>
-                                <p class="text-xs text-gray-600">Chuyến đi có mua bảo hiểm. Khách hàng chỉ bồi thường tối đa 2,000,000 VNĐ trong trường hợp có sự cố ngoài ý muốn.</p>
-                            </div>
-                        </div>
-                        <a href="#" class="text-xs text-green-600 hover:underline mt-2 inline-block">Xem thêm ›</a>
-                    </div>
-
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">HOT</span>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold">Bảo hiểm người trên xe</p>
-                                <p class="text-lg font-bold text-green-500">50.000đ/ngày</p>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-2">Trường hợp xảy ra tai nạn, khách hàng sẽ được bồi thường tối đa 200,000,000đ/người/vụ</p>
-                    </div>
+              <div class="p-2 grid grid-cols-4 gap-2">
+                <div
+                  class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-green-500 active"
+                  th:data-img-src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
+                  onclick="switchMainImage(this, 0)"
+                >
+                  <img
+                    th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
+                    th:alt="${vehicle.vehicleModel}"
+                    class="w-full h-24 object-cover"
+                  />
                 </div>
 
-                <form id="bookingForm" th:action="@{/booking/checkout}" method="post" class="space-y-4">
-                    <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}">
-                    <input type="hidden" name="dailyPrice" id="dailyPriceInput" th:value="${vehicle.getDailyPriceFromJson()}">
-                    <input type="hidden" name="totalAmount" id="totalAmountInput" value="0">
-                    <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0">
-                    <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false">
-                    <input type="hidden" name="discountId" id="discountIdInput" value="">
-                    <input type="hidden" name="discountAmount" id="discountAmountInput" value="0">
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
-                            Địa điểm giao xe
-                        </label>
-                        <div id="locationDisplay" onclick="openLocationModal()" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer flex justify-between items-center">
-                            <span id="selectedLocationText" class="text-gray-800">Chọn địa điểm giao xe</span>
-                            <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
-                        </div>
-                        <input type="hidden" name="pickupLocation" id="pickupLocationInput" value="Chọn địa điểm giao xe">
-                    </div>
-
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nhận xe</label>
-                            <input type="date" id="pickupDate" name="pickupDate" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
-                        </div>
-                        <div>
-                            <input type="time" id="pickupTime" name="pickupTime" value="09:00" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Trả xe</label>
-                            <input type="date" id="returnDate" name="returnDate" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm">
-                        </div>
-                        <div>
-                            <input type="time" id="returnTime" name="returnTime" value="11:00" required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7">
-                        </div>
-                    </div>
-
-                    <div id="rentalDuration" class="bg-blue-50 border border-blue-200 rounded-lg p-3 hidden">
-                        <div class="flex items-center gap-2 text-sm">
-                            <i class="fas fa-calendar-alt text-blue-500"></i>
-                            <span class="text-gray-700">Thời gian thuê: <span id="durationText" class="font-semibold text-blue-600">0 ngày</span></span>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-tag text-green-500 mr-1"></i>
-                            Mã giảm giá
-                        </label>
-                        <div class="flex gap-2">
-                            <input type="text" id="discountCodeInput" name="discountCode" placeholder="Nhập mã giảm giá"
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm">
-                            <button type="button" id="applyDiscountBtn"
-                                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-sm font-semibold">
-                                Áp dụng
-                            </button>
-                        </div>
-                        <div id="discountMessage" class="mt-2 text-sm hidden"></div>
-                    </div>
-
-                    <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Đơn giá thuê (<span id="daysCount">0</span> ngày)</span>
-                            <span class="font-semibold" id="rentalPrice">0 ₫</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
-                            <span class="font-semibold" id="basicInsurance">110.401 ₫</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
-                                <input type="checkbox" id="additionalInsuranceCheckbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
-                                <span>Bảo hiểm người trên xe (<span id="insuranceDays">0</span> ngày)</span>
-                            </label>
-                            <span class="font-semibold" id="additionalInsurancePrice">0 ₫</span>
-                        </div>
-                        <div id="discountRow" class="flex justify-between text-green-600 hidden">
-                                <span class="font-medium">
-                                    <i class="fas fa-tag mr-1"></i>
-                                    Giảm giá (<span id="discountName"></span>)
-                                </span>
-                            <span class="font-semibold" id="discountAmount">0 ₫</span>
-                        </div>
-                    </div>
-
-                    <div class="border-t-2 border-gray-300 pt-4 mt-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-lg font-semibold">Tổng cộng</span>
-                            <span class="text-2xl font-bold text-green-500" id="totalAmount">0đ</span>
-                        </div>
-                    </div>
-
-                    <div class="pt-4">
-                        <button type="submit"
-                                id="submitBookingBtn"
-                                th:disabled="${vehicle.status.name() != 'Available'}"
-                                class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <span th:text="${vehicle.status.name() == 'Available' ? 'CHỌN THUÊ' : 'Xe không khả dụng'}">CHỌN THUÊ</span>
-                        </button>
-                    </div>
-                </form>
-
-                <div class="mt-4">
-                    <button type="button" id="toggleFeesBtn" class="w-full text-left text-sm text-gray-600 hover:text-gray-800 flex items-center justify-between">
-                        <span>Phí phụ có thể phát sinh</span>
-                        <i class="fas fa-chevron-down" id="feesIcon"></i>
-                    </button>
-                    <div id="feesContent" class="hidden mt-3 text-xs text-gray-600 space-y-2">
-                        <div class="flex justify-between">
-                            <span>• Phí vượt giờ</span>
-                            <span>50.000đ/giờ</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>• Phí quá km</span>
-                            <span>5.000đ/km</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>• Phí vệ sinh</span>
-                            <span>100.000đ</span>
-                        </div>
-                    </div>
+                <div
+                  th:if="${!vehicle.getImageUrlsFromJson().isEmpty()}"
+                  class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-green-500"
+                  th:data-img-src="${vehicle.getImageUrlsFromJson()[0]}"
+                  th:onclick="'switchMainImage(this, 1)'"
+                >
+                  <img
+                    th:src="${vehicle.getImageUrlsFromJson()[0]}"
+                    th:alt="${vehicle.vehicleModel}"
+                    class="w-full h-24 object-cover"
+                  />
                 </div>
 
-                <div class="mt-6 pt-6 border-t border-gray-200">
-                    <p class="text-sm text-gray-600 text-center mb-3">Cần hỗ trợ?</p>
-                    <a href="tel:0236123456" class="flex items-center justify-center text-green-500 hover:text-green-600">
-                        <i class="fas fa-phone-alt mr-2"></i>
-                        <span class="font-semibold">0236 123 456</span>
+                <div
+                  th:if="${vehicle.getImageUrlsFromJson().size() > 1}"
+                  class="thumbnail-item cursor-pointer rounded-lg overflow-hidden border-2 border-transparent hover:border-green-500"
+                  th:data-img-src="${vehicle.getImageUrlsFromJson()[1]}"
+                  th:onclick="'switchMainImage(this, 2)'"
+                >
+                  <img
+                    th:src="${vehicle.getImageUrlsFromJson()[1]}"
+                    th:alt="${vehicle.vehicleModel}"
+                    class="w-full h-24 object-cover"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onclick="openImageGallery(0)"
+                  class="relative col-span-1 flex items-center justify-center bg-gray-100 rounded-lg cursor-pointer hover:bg-gray-200 transition-all h-24"
+                >
+                  <img
+                    th:if="${vehicle.getImageUrlsFromJson().size() > 2}"
+                    th:src="${vehicle.getImageUrlsFromJson()[2]}"
+                    th:alt="${vehicle.vehicleModel}"
+                    class="w-full h-24 object-cover rounded-lg"
+                  />
+
+                  <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                    <div class="text-center text-white">
+                      <i class="fas fa-images text-2xl mb-1"></i>
+                      <p
+                        class="text-xs font-semibold"
+                        th:text="${(vehicle.mainImageUrl != null ? 1 : 0) + #lists.size(vehicle.getImageUrlsFromJson()) > 0 ? 'Xem ' + ((vehicle.mainImageUrl != null ? 1 : 0) + #lists.size(vehicle.getImageUrlsFromJson())) + ' ảnh' : 'Xem ảnh'}"
+                      >
+                        Xem tất cả
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-md mb-6">
+              <div class="flex border-b border-gray-200 overflow-x-auto">
+                <button class="tab-button active" data-tab="features">Đặc điểm</button>
+                <button class="tab-button" data-tab="documents">Giấy tờ thuê xe</button>
+                <button class="tab-button" data-tab="location">Vị trí xe</button>
+                <button class="tab-button" data-tab="owner">Chủ xe</button>
+                <button class="tab-button" data-tab="reviews">Đánh giá</button>
+              </div>
+
+              <div class="p-6">
+                <div id="features" class="tab-content active">
+                  <h2 class="text-xl font-semibold mb-4">Đặc điểm</h2>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <i class="fas fa-cog text-2xl text-green-500"></i>
+                      <div>
+                        <p class="text-xs text-gray-600">Truyền động</p>
+                        <p
+                          class="font-semibold"
+                          th:text="${vehicle.transmissionType != null ? vehicle.transmissionType.transmissionTypeName : 'Số tự động'}"
+                        >
+                          Số tự động
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <i class="fas fa-chair text-2xl text-green-500"></i>
+                      <div>
+                        <p class="text-xs text-gray-600">Số ghế</p>
+                        <p class="font-semibold" th:text="${vehicle.seats} + ' chỗ'">7 chỗ</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <i class="fas fa-bolt text-2xl text-green-500"></i>
+                      <div>
+                        <p class="text-xs text-gray-600">Nhiên liệu</p>
+                        <p class="font-semibold">Điện</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                      <i class="fas fa-battery-full text-2xl text-green-500"></i>
+                      <div>
+                        <p class="text-xs text-gray-600">Tiêu hao</p>
+                        <p
+                          class="font-semibold"
+                          th:text="${vehicle.batteryCapacity != null ? vehicle.batteryCapacity + ' kWh/100km' : 'N/A'}"
+                        >
+                          N/A
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mb-6">
+                    <h3 class="font-semibold mb-3">Mô tả</h3>
+                    <p
+                      class="text-gray-700 leading-relaxed"
+                      th:text="${vehicle.description ?: 'Xe điện hiện đại, thân thiện với môi trường, phù hợp cho mọi nhu cầu di chuyển.'}"
+                    >
+                      Mô tả xe...
+                    </p>
+                  </div>
+
+                  <div th:if="${!vehicle.getFeaturesFromJson().isEmpty()}">
+                    <h3 class="font-semibold mb-3">Các tiện nghi khác</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      <div
+                        th:each="feature : ${vehicle.getFeaturesFromJson()}"
+                        class="flex items-center gap-2 p-2 bg-gray-50 rounded-lg"
+                      >
+                        <i class="fas fa-check-circle text-green-500"></i>
+                        <span class="text-sm" th:text="${feature}">Tiện nghi</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div id="documents" class="tab-content">
+                  <h2 class="text-xl font-semibold mb-4">Giấy tờ thuê xe</h2>
+
+                  <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-6">
+                    <p class="text-sm text-orange-800">
+                      <i class="fas fa-exclamation-circle mr-2"></i>
+                      Chọn 1 trong 2 hình thức
+                    </p>
+                  </div>
+
+                  <div class="space-y-4">
+                    <div
+                      class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer"
+                    >
+                      <div class="flex items-start gap-3">
+                        <i class="fas fa-id-card text-2xl text-green-500 mt-1"></i>
+                        <div class="flex-1">
+                          <h4 class="font-semibold mb-2">GPLX (đối chiếu) & Passport (giữ lại)</h4>
+                          <p class="text-sm text-gray-600">Đối chiếu Giấy phép lái xe & giữ lại Passport (hộ chiếu)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="border-2 border-gray-200 rounded-lg p-4 hover:border-green-500 transition-all cursor-pointer"
+                    >
+                      <div class="flex items-start gap-3">
+                        <i class="fas fa-credit-card text-2xl text-green-500 mt-1"></i>
+                        <div class="flex-1">
+                          <h4 class="font-semibold mb-2">GPLX (đối chiếu) & CCCD (đối chiếu VNeID)</h4>
+                          <p class="text-sm text-gray-600">
+                            Đối chiếu Giấy phép lái xe & đối chiếu CCCD gắn chip (VNeID)
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="mt-8">
+                    <h3 class="font-semibold mb-4">Tài sản thế chấp</h3>
+                    <p class="text-sm text-gray-700 mb-4">
+                      15 triệu (Tiền mặt/Chuyển khoản cho chủ xe khi nhận xe) hoặc Xe máy (kèm cà vẹt gốc) giá trị 15
+                      triệu
+                    </p>
+
+                    <h3 class="font-semibold mb-4">Điều khoản</h3>
+                    <ul class="space-y-2 text-sm text-gray-700 list-disc list-inside">
+                      <li>Sử dụng xe đúng mục đích</li>
+                      <li>Không sử dụng xe thuê vào mục đích phi pháp, trái pháp luật</li>
+                      <li>Không sử dụng xe thuê để cầm cố, thế chấp</li>
+                      <li>Không hút thuốc, nhả kẹo cao su, xả rác trong xe</li>
+                      <li>Không chở hàng quốc cấm dễ cháy nổ</li>
+                      <li>Không chở hoa quả, thực phẩm nặng mùi trong xe</li>
+                      <li>
+                        Khi trả xe, nếu xe bẩn hoặc có mùi trong xe, khách hàng vui lòng vệ sinh xe sạch sẽ hoặc gửi phụ
+                        phí vệ sinh xe
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div id="location" class="tab-content">
+                  <h2 class="text-xl font-semibold mb-4">Vị trí xe</h2>
+
+                  <div class="mb-4">
+                    <div class="flex items-start gap-3">
+                      <i class="fas fa-map-marker-alt text-green-500 text-xl mt-1"></i>
+                      <div>
+                        <p class="font-semibold">Quận Ngũ Hành Sơn, TP. Đà Nẵng</p>
+                        <p class="text-sm text-gray-600">
+                          Đây chỉ là khu vực gần đúng, địa chỉ cụ thể sẽ được hiển thị sau khi đặt cọc
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="vehicleMap" class="bg-gray-200 rounded-lg h-64 flex items-center justify-center">
+                    <div class="text-center text-gray-500">
+                      <i class="fas fa-map text-4xl mb-2"></i>
+                      <p>Đang tải bản đồ...</p>
+                    </div>
+                  </div>
+
+                  <div class="mt-4 text-right">
+                    <a href="#" class="text-green-500 hover:text-green-600 font-semibold">
+                      Xem bản đồ <i class="fas fa-arrow-right ml-1"></i>
                     </a>
+                  </div>
                 </div>
+
+                <div id="owner" class="tab-content">
+                  <h2 class="text-xl font-semibold mb-4">Chủ xe</h2>
+                  <p>Thông tin về chủ xe...</p>
+                </div>
+
+                <div id="reviews" class="tab-content">
+                  <h2 class="text-xl font-semibold mb-4">Đánh giá từ khách hàng</h2>
+                  <div th:if="${feedbackCount == 0}" class="text-gray-600">Chưa có đánh giá nào cho xe này.</div>
+                  <div th:if="${feedbackCount > 0}" class="space-y-4">
+                    <div th:each="fb : ${vehicleFeedbacks}" class="bg-white border rounded-lg p-4">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3">
+                          <div
+                            class="font-semibold"
+                            th:text="${fb.user != null ? (fb.user.firstName + ' ' + fb.user.lastName) : 'Khách hàng'}"
+                          >
+                            Khách hàng
+                          </div>
+                          <div class="flex text-yellow-400">
+                            <span
+                              th:each="i : ${#numbers.sequence(1,5)}"
+                              th:class="${i <= fb.rating} ? 'text-yellow-400' : 'text-gray-300'"
+                              >★</span
+                            >
+                          </div>
+                          <span class="text-sm text-gray-600" th:text="${fb.rating} + '/5'"></span>
+                        </div>
+                        <div
+                          class="text-xs text-gray-500"
+                          th:text="${#temporals.format(fb.createdDate, 'dd/MM/yyyy HH:mm')}"
+                        >
+                          01/01/2025
+                        </div>
+                      </div>
+                      <div class="text-gray-800 mb-3" th:text="${fb.content}">Nội dung đánh giá...</div>
+                      <div
+                        th:if="${fb.staffReply != null && !#strings.isEmpty(fb.staffReply)}"
+                        class="bg-green-50 rounded p-3"
+                      >
+                        <div class="text-sm font-semibold text-green-700 mb-1">Phản hồi từ chủ xe</div>
+                        <div class="text-sm text-green-800" th:text="${fb.staffReply}"></div>
+                        <div
+                          class="text-xs text-green-600 mt-1"
+                          th:text="'Lúc ' + ${#temporals.format(fb.replyDate, 'dd/MM/yyyy HH:mm')}"
+                        ></div>
+                      </div>
+                      <div class="mt-3 text-right">
+                        <button
+                          type="button"
+                          class="text-xs text-red-600 hover:underline"
+                          th:attr="data-feedback-id=${fb.feedbackId}"
+                          onclick="openReportModal(this)"
+                        >
+                          Báo xấu
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-        </div> </div> <div th:if="${!relatedVehicles.isEmpty()}" class="mt-16">
-        <h2 class="text-2xl font-bold mb-6">Xe tương tự</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div th:each="relatedVehicle : ${relatedVehicles}" class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-                <a th:href="@{'/vehicles/' + ${relatedVehicle.vehicleId}}" class="block">
-                    <div class="relative">
-                        <img th:src="${relatedVehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
-                             th:alt="${relatedVehicle.vehicleModel}"
-                             class="w-full h-48 object-cover">
-                        <div class="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium">
-                            Sẵn sàng
-                        </div>
+          </div>
+          <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
+              <div class="mb-6">
+                <div class="flex items-baseline gap-2 mb-4">
+                  <span
+                    class="text-3xl font-bold text-green-500"
+                    th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson() / 1000, 0, 'COMMA', 0, 'POINT')} + 'K'"
+                    >1.002K</span
+                  >
+                  <span class="text-gray-600">/ngày</span>
+                </div>
+
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-shield-alt text-green-500"></i>
+                    <div class="flex-1">
+                      <p class="text-sm font-semibold text-green-700">Bảo hiểm thuê xe</p>
+                      <p class="text-xs text-gray-600">
+                        Chuyến đi có mua bảo hiểm. Khách hàng chỉ bồi thường tối đa 2,000,000 VNĐ trong trường hợp có sự
+                        cố ngoài ý muốn.
+                      </p>
                     </div>
-                    <div class="p-4">
-                        <h3 class="text-lg font-semibold mb-2 truncate" th:text="${relatedVehicle.vehicleModel}">Xe tương tự</h3>
-                        <div class="flex items-center text-sm text-gray-600 mb-3">
-                            <i class="fas fa-chair mr-1"></i>
-                            <span th:text="${relatedVehicle.seats}">4</span> chỗ
-                            <span class="mx-2">|</span>
-                            <i class="fas fa-cog mr-1"></i>
-                            <span th:text="${relatedVehicle.transmissionType != null ? relatedVehicle.transmissionType.transmissionTypeName : 'Tự động'}">Tự động</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="text-xl font-bold text-primary" th:text="${#numbers.formatDecimal(relatedVehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')}">600,000</span>
-                                <span class="text-sm text-gray-600">₫/ngày</span>
-                            </div>
-                            <span class="text-primary hover:text-accent font-semibold">
-                                    Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
-                                </span>
-                        </div>
+                  </div>
+                  <a href="#" class="text-xs text-green-600 hover:underline mt-2 inline-block">Xem thêm ›</a>
+                </div>
+
+                <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">HOT</span>
+                    <div class="flex-1">
+                      <p class="text-sm font-semibold">Bảo hiểm người trên xe</p>
+                      <p class="text-lg font-bold text-green-500">50.000đ/ngày</p>
                     </div>
+                  </div>
+                  <p class="text-xs text-gray-600 mt-2">
+                    Trường hợp xảy ra tai nạn, khách hàng sẽ được bồi thường tối đa 200,000,000đ/người/vụ
+                  </p>
+                </div>
+              </div>
+
+              <form id="bookingForm" th:action="@{/booking/checkout}" method="post" class="space-y-4">
+                <input type="hidden" name="vehicleId" th:value="${vehicle.vehicleId}" />
+                <input
+                  type="hidden"
+                  name="dailyPrice"
+                  id="dailyPriceInput"
+                  th:value="${vehicle.getDailyPriceFromJson()}"
+                />
+                <input type="hidden" name="totalAmount" id="totalAmountInput" value="0" />
+                <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0" />
+                <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false" />
+                <input type="hidden" name="discountId" id="discountIdInput" value="" />
+                <input type="hidden" name="discountAmount" id="discountAmountInput" value="0" />
+
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-map-marker-alt text-green-500 mr-1"></i>
+                    Địa điểm giao xe
+                  </label>
+                  <div
+                    id="locationDisplay"
+                    onclick="openLocationModal()"
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer flex justify-between items-center"
+                  >
+                    <span id="selectedLocationText" class="text-gray-800">Chọn địa điểm giao xe</span>
+                    <i class="fas fa-chevron-down text-gray-500 text-xs"></i>
+                  </div>
+                  <input type="hidden" name="pickupLocation" id="pickupLocationInput" value="Chọn địa điểm giao xe" />
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nhận xe</label>
+                    <input
+                      type="date"
+                      id="pickupDate"
+                      name="pickupDate"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="time"
+                      id="pickupTime"
+                      name="pickupTime"
+                      value="09:00"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Trả xe</label>
+                    <input
+                      type="date"
+                      id="returnDate"
+                      name="returnDate"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="time"
+                      id="returnTime"
+                      name="returnTime"
+                      value="11:00"
+                      required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 text-sm mt-7"
+                    />
+                  </div>
+                </div>
+
+                <div id="rentalDuration" class="bg-blue-50 border border-blue-200 rounded-lg p-3 hidden">
+                  <div class="flex items-center gap-2 text-sm">
+                    <i class="fas fa-calendar-alt text-blue-500"></i>
+                    <span class="text-gray-700"
+                      >Thời gian thuê: <span id="durationText" class="font-semibold text-blue-600">0 ngày</span></span
+                    >
+                  </div>
+                </div>
+
+                <div class="mb-4">
+                  <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tag text-green-500 mr-1"></i>
+                    Mã giảm giá
+                  </label>
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      id="discountCodeInput"
+                      name="discountCode"
+                      placeholder="Nhập mã giảm giá"
+                      class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                    />
+                    <button
+                      type="button"
+                      id="applyDiscountBtn"
+                      class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all text-sm font-semibold"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                  <div id="discountMessage" class="mt-2 text-sm hidden"></div>
+                </div>
+
+                <div class="border-t border-gray-200 pt-4 space-y-2 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Đơn giá thuê (<span id="daysCount">0</span> ngày)</span>
+                    <span class="font-semibold" id="rentalPrice">0 ₫</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
+                    <span class="font-semibold" id="basicInsurance">110.401 ₫</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        id="additionalInsuranceCheckbox"
+                        class="rounded border-gray-300 text-green-500 focus:ring-green-500"
+                      />
+                      <span>Bảo hiểm người trên xe (<span id="insuranceDays">0</span> ngày)</span>
+                    </label>
+                    <span class="font-semibold" id="additionalInsurancePrice">0 ₫</span>
+                  </div>
+                  <div id="discountRow" class="flex justify-between text-green-600 hidden">
+                    <span class="font-medium">
+                      <i class="fas fa-tag mr-1"></i>
+                      Giảm giá (<span id="discountName"></span>)
+                    </span>
+                    <span class="font-semibold" id="discountAmount">0 ₫</span>
+                  </div>
+                </div>
+
+                <div class="border-t-2 border-gray-300 pt-4 mt-4">
+                  <div class="flex justify-between items-center">
+                    <span class="text-lg font-semibold">Tổng cộng</span>
+                    <span class="text-2xl font-bold text-green-500" id="totalAmount">0đ</span>
+                  </div>
+                </div>
+
+                <div class="pt-4">
+                  <button
+                    type="submit"
+                    id="submitBookingBtn"
+                    th:disabled="${vehicle.status.name() != 'Available'}"
+                    class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <i class="fas fa-check-circle mr-2"></i>
+                    <span th:text="${vehicle.status.name() == 'Available' ? 'CHỌN THUÊ' : 'Xe không khả dụng'}"
+                      >CHỌN THUÊ</span
+                    >
+                  </button>
+                </div>
+              </form>
+
+              <div class="mt-4">
+                <button
+                  type="button"
+                  id="toggleFeesBtn"
+                  class="w-full text-left text-sm text-gray-600 hover:text-gray-800 flex items-center justify-between"
+                >
+                  <span>Phí phụ có thể phát sinh</span>
+                  <i class="fas fa-chevron-down" id="feesIcon"></i>
+                </button>
+                <div id="feesContent" class="hidden mt-3 text-xs text-gray-600 space-y-2">
+                  <div class="flex justify-between">
+                    <span>• Phí vượt giờ</span>
+                    <span>50.000đ/giờ</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>• Phí quá km</span>
+                    <span>5.000đ/km</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span>• Phí vệ sinh</span>
+                    <span>100.000đ</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-6 pt-6 border-t border-gray-200">
+                <p class="text-sm text-gray-600 text-center mb-3">Cần hỗ trợ?</p>
+                <a href="tel:0236123456" class="flex items-center justify-center text-green-500 hover:text-green-600">
+                  <i class="fas fa-phone-alt mr-2"></i>
+                  <span class="font-semibold">0236 123 456</span>
                 </a>
+              </div>
             </div>
+          </div>
         </div>
-    </div>
-    </div> <div id="locationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
-        <div class="flex items-center justify-between mb-4">
+        <div th:if="${!relatedVehicles.isEmpty()}" class="mt-16">
+          <h2 class="text-2xl font-bold mb-6">Xe tương tự</h2>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div
+              th:each="relatedVehicle : ${relatedVehicles}"
+              class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+            >
+              <a th:href="@{'/vehicles/' + ${relatedVehicle.vehicleId}}" class="block">
+                <div class="relative">
+                  <img
+                    th:src="${relatedVehicle.mainImageUrl ?: 'https://via.placeholder.com/400x224?text=No+Image'}"
+                    th:alt="${relatedVehicle.vehicleModel}"
+                    class="w-full h-48 object-cover"
+                  />
+                  <div class="absolute top-2 right-2 bg-green-500 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    Sẵn sàng
+                  </div>
+                </div>
+                <div class="p-4">
+                  <h3 class="text-lg font-semibold mb-2 truncate" th:text="${relatedVehicle.vehicleModel}">
+                    Xe tương tự
+                  </h3>
+                  <div class="flex items-center text-sm text-gray-600 mb-3">
+                    <i class="fas fa-chair mr-1"></i>
+                    <span th:text="${relatedVehicle.seats}">4</span> chỗ
+                    <span class="mx-2">|</span>
+                    <i class="fas fa-cog mr-1"></i>
+                    <span
+                      th:text="${relatedVehicle.transmissionType != null ? relatedVehicle.transmissionType.transmissionTypeName : 'Tự động'}"
+                      >Tự động</span
+                    >
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span
+                        class="text-xl font-bold text-primary"
+                        th:text="${#numbers.formatDecimal(relatedVehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')}"
+                        >600,000</span
+                      >
+                      <span class="text-sm text-gray-600">₫/ngày</span>
+                    </div>
+                    <span class="text-primary hover:text-accent font-semibold">
+                      Xem chi tiết <i class="fas fa-arrow-right ml-1"></i>
+                    </span>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        id="locationModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center p-4"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-lg w-full">
+          <div class="flex items-center justify-between mb-4">
             <h3 class="text-xl font-bold">Chọn địa điểm giao xe</h3>
             <button type="button" id="closeLocationModalBtn" class="text-gray-500 hover:text-gray-800">
-                <i class="fas fa-times"></i>
+              <i class="fas fa-times"></i>
             </button>
-        </div>
+          </div>
 
-        <div class="mb-4">
+          <div class="mb-4">
             <label for="locationSearchInput" class="sr-only">Tìm kiếm địa điểm</label>
             <div class="relative">
-                <input type="text" id="locationSearchInput" placeholder="Nhập địa chỉ hoặc chọn trên bản đồ"
-                       class="w-full p-3 border rounded-lg focus:ring-green-500 focus:border-green-500 pl-10">
-                <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+              <input
+                type="text"
+                id="locationSearchInput"
+                placeholder="Nhập địa chỉ hoặc chọn trên bản đồ"
+                class="w-full p-3 border rounded-lg focus:ring-green-500 focus:border-green-500 pl-10"
+              />
+              <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
             </div>
-        </div>
+          </div>
 
-        <div id="map" class="w-full h-64 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
+          <div id="map" class="w-full h-64 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
             Bản đồ sẽ hiển thị ở đây
-        </div>
+          </div>
 
-        <div class="space-y-3 mb-6">
-            <div id="currentLocationBtn" class="border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors">
-                <i class="fas fa-location-arrow text-green-500"></i>
-                <p class="text-gray-700 font-semibold" id="currentLocationDisplay">Sử dụng vị trí hiện tại</p>
+          <div class="space-y-3 mb-6">
+            <div
+              id="currentLocationBtn"
+              class="border rounded-lg p-3 flex items-center space-x-3 cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              <i class="fas fa-location-arrow text-green-500"></i>
+              <p class="text-gray-700 font-semibold" id="currentLocationDisplay">Sử dụng vị trí hiện tại</p>
             </div>
 
             <div>
-                <p class="text-sm font-medium text-gray-500 mb-2">Địa điểm gợi ý:</p>
-                <div class="flex flex-wrap gap-2">
-                    <button type="button" class="suggested-location-btn" data-address="Khu đô thị FPT City, P. Hoà Hải, Q. Ngũ Hành Sơn, TP. Đà Nẵng">
-                        Đại học FPT
-                    </button>
-                    <button type="button" class="suggested-location-btn" data-address="Đường Duy Tân, P. Hòa Thuận Tây, Q. Hải Châu, TP. Đà Nẵng">
-                        Sân bay Đà Nẵng
-                    </button>
-                </div>
+              <p class="text-sm font-medium text-gray-500 mb-2">Địa điểm gợi ý:</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="suggested-location-btn"
+                  data-address="Khu đô thị FPT City, P. Hoà Hải, Q. Ngũ Hành Sơn, TP. Đà Nẵng"
+                >
+                  Đại học FPT
+                </button>
+                <button
+                  type="button"
+                  class="suggested-location-btn"
+                  data-address="Đường Duy Tân, P. Hòa Thuận Tây, Q. Hải Châu, TP. Đà Nẵng"
+                >
+                  Sân bay Đà Nẵng
+                </button>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <div class="bg-green-50 p-3 rounded-lg">
+          <div class="bg-green-50 p-3 rounded-lg">
             <p class="text-xs text-gray-600">Địa điểm đã chọn:</p>
             <p id="modalSelectedLocation" class="font-semibold text-green-800">Chưa có</p>
-        </div>
+          </div>
 
-        <button type="button" id="confirmLocationBtn" class="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-semibold">
+          <button
+            type="button"
+            id="confirmLocationBtn"
+            class="w-full mt-4 bg-green-500 text-white py-3 rounded-lg hover:bg-green-600 font-semibold"
+          >
             Xác nhận
+          </button>
+        </div>
+      </div>
+
+      <div
+        id="imageGalleryModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-90 z-[9999] flex flex-col items-center justify-center p-4 transition-opacity duration-300"
+      >
+        <button onclick="closeImageGallery()" class="absolute top-4 right-4 text-white text-3xl z-[10001]">
+          &times;
         </button>
-    </div>
-</div>
-
-    <div id="imageGalleryModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-[9999] flex flex-col items-center justify-center p-4 transition-opacity duration-300">
-        <button onclick="closeImageGallery()" class="absolute top-4 right-4 text-white text-3xl z-[10001]">&times;</button>
-        <div class="relative w-full max-w-4xl max-h-[80vh] flex items-center justify-center"> <img id="galleryMainImage" src="" alt="Gallery Image" class="w-auto h-auto max-w-full max-h-full object-contain rounded-lg">
-            <button id="galleryPrevBtn" class="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all text-2xl z-[10000]">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button id="galleryNextBtn" class="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all text-2xl z-[10000]">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+        <div class="relative w-full max-w-4xl max-h-[80vh] flex items-center justify-center">
+          <img
+            id="galleryMainImage"
+            src=""
+            alt="Gallery Image"
+            class="w-auto h-auto max-w-full max-h-full object-contain rounded-lg"
+          />
+          <button
+            id="galleryPrevBtn"
+            class="absolute top-1/2 left-2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all text-2xl z-[10000]"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button
+            id="galleryNextBtn"
+            class="absolute top-1/2 right-2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-3 rounded-full hover:bg-opacity-75 transition-all text-2xl z-[10000]"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
-        <div id="galleryThumbnails" class="mt-4 flex justify-center space-x-2 overflow-x-auto pb-2 w-full max-w-4xl flex-shrink-0">
+        <div
+          id="galleryThumbnails"
+          class="mt-4 flex justify-center space-x-2 overflow-x-auto pb-2 w-full max-w-4xl flex-shrink-0"
+        ></div>
+      </div>
+
+      <!-- Report Feedback Modal -->
+      <div
+        id="reportModal"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9998] flex items-center justify-center p-4"
+      >
+        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xl font-bold">Báo cáo đánh giá</h3>
+            <button type="button" onclick="closeReportModal()" class="text-gray-500 hover:text-gray-800">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <input type="hidden" id="reportFeedbackId" />
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Lý do</label>
+            <textarea
+              id="reportReason"
+              rows="4"
+              class="w-full p-3 border rounded-lg focus:ring-green-500 focus:border-green-500"
+              placeholder="Mô tả ngắn gọn lý do báo cáo..."
+            ></textarea>
+          </div>
+          <div class="flex gap-3">
+            <button
+              type="button"
+              onclick="closeReportModal()"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              onclick="submitReport()"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Gửi báo cáo
+            </button>
+          </div>
         </div>
-    </div>
-</main>
+      </div>
+    </main>
 
-<style>
-    .suggested-location-btn {
-        background-color: #f3f4f6; border-radius: 9999px; padding: 6px 12px; font-size: 0.875rem; color: #4b5563; transition: all 0.2s;
-    }
-    .suggested-location-btn:hover { background-color: #e5e7eb; color: #1f2937; }
-</style>
+    <style>
+      .suggested-location-btn {
+        background-color: #f3f4f6;
+        border-radius: 9999px;
+        padding: 6px 12px;
+        font-size: 0.875rem;
+        color: #4b5563;
+        transition: all 0.2s;
+      }
+      .suggested-location-btn:hover {
+        background-color: #e5e7eb;
+        color: #1f2937;
+      }
+    </style>
 
-<div th:replace="~{fragments/footer :: footer}"></div>
-<div th:replace="~{fragments/chatbot :: chatbot}"></div>
+    <div th:replace="~{fragments/footer :: footer}"></div>
+    <div th:replace="~{fragments/chatbot :: chatbot}"></div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    let map, marker, geocoder, autocomplete;
-    let currentImageIndex = 0; // Index cho gallery modal
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      let map, marker, geocoder, autocomplete;
+      let currentImageIndex = 0; // Index cho gallery modal
 
-    // Dynamically load Google Maps API
-    (function() {
-        var script = document.createElement('script');
+      // Dynamically load Google Maps API
+      (function () {
+        var script = document.createElement("script");
         script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&callback=initMap&language=vi`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
-    })();
+      })();
 
-    // Google Maps Initialization
-    function initMap() {
+      // Google Maps Initialization
+      function initMap() {
         geocoder = new google.maps.Geocoder();
         const daNang = { lat: 16.054407, lng: 108.202164 };
 
         // Map trong modal
         const mapElement = document.getElementById("map");
-        if(mapElement){
-            map = new google.maps.Map(mapElement, {
-                center: daNang,
-                zoom: 13,
+        if (mapElement) {
+          map = new google.maps.Map(mapElement, {
+            center: daNang,
+            zoom: 13,
+          });
+
+          marker = new google.maps.Marker({
+            map: map,
+            anchorPoint: new google.maps.Point(0, -29),
+          });
+
+          // Autocomplete trong modal
+          const searchInput = document.getElementById("locationSearchInput");
+          if (searchInput) {
+            autocomplete = new google.maps.places.Autocomplete(searchInput);
+            autocomplete.setFields(["formatted_address", "geometry", "name"]);
+            autocomplete.bindTo("bounds", map);
+
+            autocomplete.addListener("place_changed", () => {
+              marker.setVisible(false);
+              const place = autocomplete.getPlace();
+              if (!place.geometry || !place.geometry.location) {
+                console.warn("Autocomplete place not found or geometry missing.");
+                return;
+              }
+              if (place.geometry.viewport) {
+                map.fitBounds(place.geometry.viewport);
+              } else {
+                map.setCenter(place.geometry.location);
+                map.setZoom(17);
+              }
+              marker.setPosition(place.geometry.location);
+              marker.setVisible(true);
+              updateSelectedLocation(place.formatted_address);
             });
+          } else {
+            console.warn("Location search input not found.");
+          }
 
-            marker = new google.maps.Marker({
-                map: map,
-                anchorPoint: new google.maps.Point(0, -29),
+          // Map click trong modal
+          map.addListener("click", (e) => {
+            geocoder.geocode({ location: e.latLng }, (results, status) => {
+              if (status === "OK") {
+                if (results[0]) {
+                  map.setZoom(17);
+                  marker.setPosition(e.latLng);
+                  marker.setVisible(true);
+                  updateSelectedLocation(results[0].formatted_address);
+                  if (searchInput) searchInput.value = results[0].formatted_address;
+                } else {
+                  window.alert("Không tìm thấy kết quả");
+                }
+              } else {
+                window.alert("Geocoder thất bại do: " + status);
+              }
             });
-
-            // Autocomplete trong modal
-            const searchInput = document.getElementById("locationSearchInput");
-            if (searchInput) {
-                autocomplete = new google.maps.places.Autocomplete(searchInput);
-                autocomplete.setFields(["formatted_address", "geometry", "name"]);
-                autocomplete.bindTo("bounds", map);
-
-                autocomplete.addListener("place_changed", () => {
-                    marker.setVisible(false);
-                    const place = autocomplete.getPlace();
-                    if (!place.geometry || !place.geometry.location) {
-                        console.warn("Autocomplete place not found or geometry missing.");
-                        return;
-                    }
-                    if (place.geometry.viewport) {
-                        map.fitBounds(place.geometry.viewport);
-                    } else {
-                        map.setCenter(place.geometry.location);
-                        map.setZoom(17);
-                    }
-                    marker.setPosition(place.geometry.location);
-                    marker.setVisible(true);
-                    updateSelectedLocation(place.formatted_address);
-                });
-            } else {
-                console.warn("Location search input not found.");
-            }
-
-
-            // Map click trong modal
-            map.addListener("click", (e) => {
-                geocoder.geocode({ location: e.latLng }, (results, status) => {
-                    if (status === "OK") {
-                        if (results[0]) {
-                            map.setZoom(17);
-                            marker.setPosition(e.latLng);
-                            marker.setVisible(true);
-                            updateSelectedLocation(results[0].formatted_address);
-                            if (searchInput) searchInput.value = results[0].formatted_address;
-                        } else {
-                            window.alert("Không tìm thấy kết quả");
-                        }
-                    } else {
-                        window.alert("Geocoder thất bại do: " + status);
-                    }
-                });
-            });
+          });
         } else {
-            console.warn("Map element not found.");
+          console.warn("Map element not found.");
         }
-
 
         // Map trong tab 'Vị trí xe' (nếu có)
         const vehicleMapElement = document.getElementById("vehicleMap");
         if (vehicleMapElement) {
-            const vehicleLocation = { lat: 16.0479, lng: 108.2209 }; // TODO: Replace with actual vehicle location
-            const vehicleMap = new google.maps.Map(vehicleMapElement, {
-                center: vehicleLocation,
-                zoom: 15,
-            });
-            new google.maps.Marker({
-                position: vehicleLocation,
-                map: vehicleMap,
-                title: /*[[${vehicle.vehicleModel}]]*/ '',
-            });
+          const vehicleLocation = { lat: 16.0479, lng: 108.2209 }; // TODO: Replace with actual vehicle location
+          const vehicleMap = new google.maps.Map(vehicleMapElement, {
+            center: vehicleLocation,
+            zoom: 15,
+          });
+          new google.maps.Marker({
+            position: vehicleLocation,
+            map: vehicleMap,
+            title: /*[[${vehicle.vehicleModel}]]*/ "",
+          });
         } else {
-            console.warn("Vehicle map element not found.");
+          console.warn("Vehicle map element not found.");
         }
-    }
+      }
 
-    // Location Modal Functions
-    function openLocationModal() {
-        const modal = document.getElementById('locationModal');
-        if(modal) modal.classList.remove('hidden');
-        const currentDisplay = document.getElementById('selectedLocationText').textContent;
-        document.getElementById('modalSelectedLocation').textContent = (currentDisplay && currentDisplay !== 'Chọn địa điểm giao xe') ? currentDisplay : 'Chưa có';
-    }
+      // Location Modal Functions
+      function openLocationModal() {
+        const modal = document.getElementById("locationModal");
+        if (modal) modal.classList.remove("hidden");
+        const currentDisplay = document.getElementById("selectedLocationText").textContent;
+        document.getElementById("modalSelectedLocation").textContent =
+          currentDisplay && currentDisplay !== "Chọn địa điểm giao xe" ? currentDisplay : "Chưa có";
+      }
 
-    function closeLocationModal() {
-        const modal = document.getElementById('locationModal');
-        if(modal) modal.classList.add('hidden');
-    }
+      function closeLocationModal() {
+        const modal = document.getElementById("locationModal");
+        if (modal) modal.classList.add("hidden");
+      }
 
-    function updateSelectedLocation(address) {
-        const modalSelected = document.getElementById('modalSelectedLocation');
-        if(modalSelected) modalSelected.textContent = address;
-    }
+      function updateSelectedLocation(address) {
+        const modalSelected = document.getElementById("modalSelectedLocation");
+        if (modalSelected) modalSelected.textContent = address;
+      }
 
-    function confirmLocation() {
-        const modalSelectedLocation = document.getElementById('modalSelectedLocation');
-        const selectedAddress = modalSelectedLocation ? modalSelectedLocation.textContent : 'Chưa có';
-        const selectedLocationText = document.getElementById('selectedLocationText');
-        const pickupLocationInput = document.getElementById('pickupLocationInput');
+      function confirmLocation() {
+        const modalSelectedLocation = document.getElementById("modalSelectedLocation");
+        const selectedAddress = modalSelectedLocation ? modalSelectedLocation.textContent : "Chưa có";
+        const selectedLocationText = document.getElementById("selectedLocationText");
+        const pickupLocationInput = document.getElementById("pickupLocationInput");
 
-        if (selectedAddress && selectedAddress !== 'Chưa có') {
-            if(selectedLocationText) selectedLocationText.textContent = selectedAddress;
-            if(pickupLocationInput) pickupLocationInput.value = selectedAddress;
-            closeLocationModal();
+        if (selectedAddress && selectedAddress !== "Chưa có") {
+          if (selectedLocationText) selectedLocationText.textContent = selectedAddress;
+          if (pickupLocationInput) pickupLocationInput.value = selectedAddress;
+          closeLocationModal();
         } else {
-            alert('Vui lòng chọn một địa điểm.');
+          alert("Vui lòng chọn một địa điểm.");
         }
-    }
+      }
 
-    function getAndSetCurrentLocation() {
-        const currentLocationDisplay = document.getElementById('currentLocationDisplay');
+      function getAndSetCurrentLocation() {
+        const currentLocationDisplay = document.getElementById("currentLocationDisplay");
         if (!currentLocationDisplay) return;
 
-        currentLocationDisplay.textContent = 'Đang tìm vị trí...';
+        currentLocationDisplay.textContent = "Đang tìm vị trí...";
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(position => {
-                const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                if(map) {
-                    map.setCenter(pos);
-                    map.setZoom(17);
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const pos = { lat: position.coords.latitude, lng: position.coords.longitude };
+              if (map) {
+                map.setCenter(pos);
+                map.setZoom(17);
+              }
+              if (marker) {
+                marker.setPosition(pos);
+                marker.setVisible(true);
+              }
+              geocoder.geocode({ location: pos }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                  const address = results[0].formatted_address;
+                  updateSelectedLocation(address);
+                  currentLocationDisplay.textContent = "Sử dụng vị trí hiện tại";
+                  const searchInput = document.getElementById("locationSearchInput");
+                  if (searchInput) searchInput.value = address;
+                } else {
+                  currentLocationDisplay.textContent = "Không tìm thấy địa chỉ";
                 }
-                if(marker){
-                    marker.setPosition(pos);
-                    marker.setVisible(true);
-                }
-                geocoder.geocode({ location: pos }, (results, status) => {
-                    if (status === "OK" && results[0]) {
-                        const address = results[0].formatted_address;
-                        updateSelectedLocation(address);
-                        currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
-                        const searchInput = document.getElementById("locationSearchInput");
-                        if(searchInput) searchInput.value = address;
-                    } else {
-                        currentLocationDisplay.textContent = 'Không tìm thấy địa chỉ';
-                    }
-                });
-            }, () => {
-                alert('Lỗi: Dịch vụ định vị địa lý không thành công.');
-                currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
-            });
+              });
+            },
+            () => {
+              alert("Lỗi: Dịch vụ định vị địa lý không thành công.");
+              currentLocationDisplay.textContent = "Sử dụng vị trí hiện tại";
+            }
+          );
         } else {
-            alert('Lỗi: Trình duyệt của bạn không hỗ trợ định vị địa lý.');
-            currentLocationDisplay.textContent = 'Sử dụng vị trí hiện tại';
+          alert("Lỗi: Trình duyệt của bạn không hỗ trợ định vị địa lý.");
+          currentLocationDisplay.textContent = "Sử dụng vị trí hiện tại";
         }
-    }
+      }
 
-    // --- Image Gallery Modal Functions ---
-    function openImageGallery(startIndex = 0) {
+      // --- Image Gallery Modal Functions ---
+      function openImageGallery(startIndex = 0) {
         if (!allImageUrls || allImageUrls.length === 0) return;
-        const modal = document.getElementById('imageGalleryModal');
-        const thumbnailsContainer = document.getElementById('galleryThumbnails');
-        if(!modal || !thumbnailsContainer) return;
+        const modal = document.getElementById("imageGalleryModal");
+        const thumbnailsContainer = document.getElementById("galleryThumbnails");
+        if (!modal || !thumbnailsContainer) return;
         currentImageIndex = Math.max(0, Math.min(startIndex, allImageUrls.length - 1));
-        thumbnailsContainer.innerHTML = '';
+        thumbnailsContainer.innerHTML = "";
         allImageUrls.forEach((url, index) => {
-            const thumb = document.createElement('img');
-            thumb.src = url;
-            thumb.alt = `Thumbnail ${index + 1}`;
-            thumb.classList.add('w-16', 'h-16', 'lg:w-20', 'lg:h-20', 'object-cover', 'rounded', 'cursor-pointer', 'border-2', 'transition-all', 'border-transparent', 'opacity-60', 'hover:opacity-100');
-            thumb.onclick = () => showImageInGallery(index);
-            thumbnailsContainer.appendChild(thumb);
+          const thumb = document.createElement("img");
+          thumb.src = url;
+          thumb.alt = `Thumbnail ${index + 1}`;
+          thumb.classList.add(
+            "w-16",
+            "h-16",
+            "lg:w-20",
+            "lg:h-20",
+            "object-cover",
+            "rounded",
+            "cursor-pointer",
+            "border-2",
+            "transition-all",
+            "border-transparent",
+            "opacity-60",
+            "hover:opacity-100"
+          );
+          thumb.onclick = () => showImageInGallery(index);
+          thumbnailsContainer.appendChild(thumb);
         });
         showImageInGallery(currentImageIndex);
-        modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-    }
+        modal.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      }
 
-    function closeImageGallery() {
-        const modal = document.getElementById('imageGalleryModal');
-        if(modal) modal.classList.add('hidden');
-        document.body.style.overflow = '';
-    }
+      function closeImageGallery() {
+        const modal = document.getElementById("imageGalleryModal");
+        if (modal) modal.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
 
-    function showImageInGallery(index) {
+      function showImageInGallery(index) {
         if (index < 0 || index >= allImageUrls.length) return;
         currentImageIndex = index;
-        const mainImg = document.getElementById('galleryMainImage');
-        if(mainImg) mainImg.src = allImageUrls[currentImageIndex];
-        const thumbnails = document.querySelectorAll('#galleryThumbnails img');
+        const mainImg = document.getElementById("galleryMainImage");
+        if (mainImg) mainImg.src = allImageUrls[currentImageIndex];
+        const thumbnails = document.querySelectorAll("#galleryThumbnails img");
         thumbnails.forEach((thumb, i) => {
-            thumb.classList.toggle('active-thumbnail', i === currentImageIndex);
-            thumb.classList.toggle('border-green-500', i === currentImageIndex);
-            thumb.classList.toggle('border-transparent', i !== currentImageIndex);
-            thumb.classList.toggle('opacity-60', i !== currentImageIndex);
+          thumb.classList.toggle("active-thumbnail", i === currentImageIndex);
+          thumb.classList.toggle("border-green-500", i === currentImageIndex);
+          thumb.classList.toggle("border-transparent", i !== currentImageIndex);
+          thumb.classList.toggle("opacity-60", i !== currentImageIndex);
         });
         updateGalleryButtons();
-    }
+      }
 
-    function updateGalleryButtons() {
-        const prevBtn = document.getElementById('galleryPrevBtn');
-        const nextBtn = document.getElementById('galleryNextBtn');
+      function updateGalleryButtons() {
+        const prevBtn = document.getElementById("galleryPrevBtn");
+        const nextBtn = document.getElementById("galleryNextBtn");
         if (!prevBtn || !nextBtn) return;
         prevBtn.disabled = currentImageIndex === 0;
         nextBtn.disabled = currentImageIndex === allImageUrls.length - 1;
-        prevBtn.classList.toggle('opacity-30', prevBtn.disabled);
-        prevBtn.classList.toggle('cursor-not-allowed', prevBtn.disabled);
-        nextBtn.classList.toggle('opacity-30', nextBtn.disabled);
-        nextBtn.classList.toggle('cursor-not-allowed', nextBtn.disabled);
-    }
+        prevBtn.classList.toggle("opacity-30", prevBtn.disabled);
+        prevBtn.classList.toggle("cursor-not-allowed", prevBtn.disabled);
+        nextBtn.classList.toggle("opacity-30", nextBtn.disabled);
+        nextBtn.classList.toggle("cursor-not-allowed", nextBtn.disabled);
+      }
 
-    function switchMainImage(thumbnailElement, galleryIndex) {
-        const mainDetailImage = document.getElementById('mainDetailImage');
-        const newSrc = thumbnailElement.getAttribute('data-img-src') || thumbnailElement.querySelector('img')?.src;
+      function switchMainImage(thumbnailElement, galleryIndex) {
+        const mainDetailImage = document.getElementById("mainDetailImage");
+        const newSrc = thumbnailElement.getAttribute("data-img-src") || thumbnailElement.querySelector("img")?.src;
         if (!mainDetailImage || !newSrc) return;
         mainDetailImage.style.opacity = 0;
         setTimeout(() => {
-            mainDetailImage.src = newSrc;
-            mainDetailImage.style.opacity = 1;
+          mainDetailImage.src = newSrc;
+          mainDetailImage.style.opacity = 1;
         }, 150);
-        const allThumbnails = document.querySelectorAll('.thumbnail-item');
-        allThumbnails.forEach(thumb => {
-            thumb.classList.remove('active', 'border-green-500');
-            thumb.classList.add('border-transparent');
+        const allThumbnails = document.querySelectorAll(".thumbnail-item");
+        allThumbnails.forEach((thumb) => {
+          thumb.classList.remove("active", "border-green-500");
+          thumb.classList.add("border-transparent");
         });
-        thumbnailElement.classList.add('active', 'border-green-500');
-        thumbnailElement.classList.remove('border-transparent');
+        thumbnailElement.classList.add("active", "border-green-500");
+        thumbnailElement.classList.remove("border-transparent");
         mainDetailImage.parentElement.onclick = () => openImageGallery(galleryIndex);
-    }
+      }
 
-
-    document.addEventListener('DOMContentLoaded', function() {
+      document.addEventListener("DOMContentLoaded", function () {
         // --- Gắn sự kiện cho nút Next/Prev Gallery ---
-        const prevBtn = document.getElementById('galleryPrevBtn');
-        const nextBtn = document.getElementById('galleryNextBtn');
+        const prevBtn = document.getElementById("galleryPrevBtn");
+        const nextBtn = document.getElementById("galleryNextBtn");
         if (prevBtn) {
-            prevBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (currentImageIndex > 0) {
-                    showImageInGallery(currentImageIndex - 1);
-                }
-            });
+          prevBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (currentImageIndex > 0) {
+              showImageInGallery(currentImageIndex - 1);
+            }
+          });
         }
         if (nextBtn) {
-            nextBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (currentImageIndex < allImageUrls.length - 1) {
-                    showImageInGallery(currentImageIndex + 1);
-                }
-            });
+          nextBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            if (currentImageIndex < allImageUrls.length - 1) {
+              showImageInGallery(currentImageIndex + 1);
+            }
+          });
         }
 
         // Đóng modal gallery khi nhấn ESC
-        document.addEventListener('keydown', (e) => {
-            const galleryModal = document.getElementById('imageGalleryModal');
-            if (e.key === 'Escape' && galleryModal && !galleryModal.classList.contains('hidden')) {
-                closeImageGallery();
-            }
+        document.addEventListener("keydown", (e) => {
+          const galleryModal = document.getElementById("imageGalleryModal");
+          if (e.key === "Escape" && galleryModal && !galleryModal.classList.contains("hidden")) {
+            closeImageGallery();
+          }
         });
 
         // Đóng modal gallery khi click vào overlay
-        const galleryModal = document.getElementById('imageGalleryModal');
-        if(galleryModal) {
-            galleryModal.addEventListener('click', (e) => {
-                if(e.target === galleryModal) {
-                    closeImageGallery();
-                }
-            });
+        const galleryModal = document.getElementById("imageGalleryModal");
+        if (galleryModal) {
+          galleryModal.addEventListener("click", (e) => {
+            if (e.target === galleryModal) {
+              closeImageGallery();
+            }
+          });
         }
 
-
         // Tab Switching
-        const tabButtons = document.querySelectorAll('.tab-button');
-        const tabContents = document.querySelectorAll('.tab-content');
+        const tabButtons = document.querySelectorAll(".tab-button");
+        const tabContents = document.querySelectorAll(".tab-content");
 
-        tabButtons.forEach(button => {
-            button.addEventListener('click', (event) => {
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
+        tabButtons.forEach((button) => {
+          button.addEventListener("click", (event) => {
+            tabButtons.forEach((btn) => btn.classList.remove("active"));
+            tabContents.forEach((content) => content.classList.remove("active"));
 
-                button.classList.add('active');
-                const tabId = button.getAttribute('data-tab');
-                const targetContent = document.getElementById(tabId);
-                if(targetContent) targetContent.classList.add('active');
-            });
+            button.classList.add("active");
+            const tabId = button.getAttribute("data-tab");
+            const targetContent = document.getElementById(tabId);
+            if (targetContent) targetContent.classList.add("active");
+          });
         });
 
         // Global variables for discount
@@ -917,11 +1226,11 @@
 
         // Thêm định nghĩa hàm formatCurrency
         const formatCurrency = (amount) => {
-            if (isNaN(amount) || amount === null) return '0 ₫';
-            // Làm tròn đến đơn vị gần nhất trước khi format
-            const roundedAmount = Math.round(amount);
-            return new Intl.NumberFormat('vi-VN').format(roundedAmount) + ' ₫';
-        }
+          if (isNaN(amount) || amount === null) return "0 ₫";
+          // Làm tròn đến đơn vị gần nhất trước khi format
+          const roundedAmount = Math.round(amount);
+          return new Intl.NumberFormat("vi-VN").format(roundedAmount) + " ₫";
+        };
 
         // ===================================
         // === KẾT THÚC SỬA LỖI ===
@@ -929,345 +1238,417 @@
 
         // Global function to calculate price
         const calculatePrice = () => {
-            const pickupDateInput = document.getElementById('pickupDate');
-            const returnDateInput = document.getElementById('returnDate');
-            const pickupTimeInput = document.getElementById('pickupTime');
-            const returnTimeInput = document.getElementById('returnTime');
-            const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
-            const dailyPriceInput = document.getElementById('dailyPriceInput');
-            const rentalDuration = document.getElementById('rentalDuration');
-            const durationText = document.getElementById('durationText');
-            const daysCount = document.getElementById('daysCount');
-            const insuranceDays = document.getElementById('insuranceDays');
-            const rentalPriceEl = document.getElementById('rentalPrice');
-            const additionalInsurancePriceEl = document.getElementById('additionalInsurancePrice');
-            const discountRow = document.getElementById('discountRow');
-            const discountNameEl = document.getElementById('discountName');
-            const discountAmountEl = document.getElementById('discountAmount');
-            const totalAmountEl = document.getElementById('totalAmount');
-            const totalAmountInput = document.getElementById('totalAmountInput');
-            const rentalDaysInput = document.getElementById('rentalDaysInput');
-            const additionalInsuranceInput = document.getElementById('additionalInsuranceInput');
-            const discountAmountInput = document.getElementById('discountAmountInput');
-            const discountIdInput = document.getElementById('discountIdInput');
+          const pickupDateInput = document.getElementById("pickupDate");
+          const returnDateInput = document.getElementById("returnDate");
+          const pickupTimeInput = document.getElementById("pickupTime");
+          const returnTimeInput = document.getElementById("returnTime");
+          const additionalInsuranceCheckbox = document.getElementById("additionalInsuranceCheckbox");
+          const dailyPriceInput = document.getElementById("dailyPriceInput");
+          const rentalDuration = document.getElementById("rentalDuration");
+          const durationText = document.getElementById("durationText");
+          const daysCount = document.getElementById("daysCount");
+          const insuranceDays = document.getElementById("insuranceDays");
+          const rentalPriceEl = document.getElementById("rentalPrice");
+          const additionalInsurancePriceEl = document.getElementById("additionalInsurancePrice");
+          const discountRow = document.getElementById("discountRow");
+          const discountNameEl = document.getElementById("discountName");
+          const discountAmountEl = document.getElementById("discountAmount");
+          const totalAmountEl = document.getElementById("totalAmount");
+          const totalAmountInput = document.getElementById("totalAmountInput");
+          const rentalDaysInput = document.getElementById("rentalDaysInput");
+          const additionalInsuranceInput = document.getElementById("additionalInsuranceInput");
+          const discountAmountInput = document.getElementById("discountAmountInput");
+          const discountIdInput = document.getElementById("discountIdInput");
 
+          if (
+            !pickupDateInput ||
+            !returnDateInput ||
+            !pickupTimeInput ||
+            !returnTimeInput ||
+            !dailyPriceInput ||
+            !rentalDuration ||
+            !durationText ||
+            !daysCount ||
+            !insuranceDays ||
+            !rentalPriceEl ||
+            !additionalInsurancePriceEl ||
+            !discountRow ||
+            !discountNameEl ||
+            !discountAmountEl ||
+            !totalAmountEl ||
+            !totalAmountInput ||
+            !rentalDaysInput ||
+            !additionalInsuranceInput ||
+            !discountAmountInput ||
+            !discountIdInput
+          ) {
+            console.error("One or more elements not found for price calculation.");
+            return;
+          }
 
-            if (!pickupDateInput || !returnDateInput || !pickupTimeInput || !returnTimeInput || !dailyPriceInput || !rentalDuration || !durationText || !daysCount || !insuranceDays || !rentalPriceEl || !additionalInsurancePriceEl || !discountRow || !discountNameEl || !discountAmountEl || !totalAmountEl || !totalAmountInput || !rentalDaysInput || !additionalInsuranceInput || !discountAmountInput || !discountIdInput) {
-                console.error("One or more elements not found for price calculation.");
-                return;
+          if (!pickupDateInput.value || !returnDateInput.value || !pickupTimeInput.value || !returnTimeInput.value) {
+            rentalDuration.classList.add("hidden");
+            totalAmountEl.textContent = "0 ₫";
+            totalAmountInput.value = 0;
+            rentalDaysInput.value = 0;
+            rentalPriceEl.textContent = "0 ₫";
+            additionalInsurancePriceEl.textContent = "0 ₫";
+            discountRow.classList.add("hidden");
+            return;
+          }
+
+          const pickupDateTime = new Date(`${pickupDateInput.value}T${pickupTimeInput.value}`);
+          const returnDateTime = new Date(`${returnDateInput.value}T${returnTimeInput.value}`);
+
+          if (returnDateTime <= pickupDateTime) {
+            rentalDuration.classList.add("hidden");
+            totalAmountEl.textContent = "0 ₫";
+            totalAmountInput.value = 0;
+            rentalDaysInput.value = 0;
+            rentalPriceEl.textContent = "0 ₫";
+            additionalInsurancePriceEl.textContent = "0 ₫";
+            discountRow.classList.add("hidden");
+            return;
+          }
+
+          const diffMilliseconds = returnDateTime - pickupDateTime;
+          const totalHours = diffMilliseconds / (1000 * 60 * 60);
+
+          let diffDays = 0;
+          if (totalHours > 0) {
+            diffDays = Math.ceil(totalHours / 24);
+            if (diffDays === 0 && diffMilliseconds > 0) {
+              diffDays = 1;
             }
+          } else {
+            diffDays = 1;
+          }
 
-            if (!pickupDateInput.value || !returnDateInput.value || !pickupTimeInput.value || !returnTimeInput.value) {
-                rentalDuration.classList.add('hidden');
-                totalAmountEl.textContent = '0 ₫';
-                totalAmountInput.value = 0;
-                rentalDaysInput.value = 0;
-                rentalPriceEl.textContent = '0 ₫';
-                additionalInsurancePriceEl.textContent = '0 ₫';
-                discountRow.classList.add('hidden');
-                return;
-            }
-
-            const pickupDateTime = new Date(`${pickupDateInput.value}T${pickupTimeInput.value}`);
-            const returnDateTime = new Date(`${returnDateInput.value}T${returnTimeInput.value}`);
-
-            if (returnDateTime <= pickupDateTime) {
-                rentalDuration.classList.add('hidden');
-                totalAmountEl.textContent = '0 ₫';
-                totalAmountInput.value = 0;
-                rentalDaysInput.value = 0;
-                rentalPriceEl.textContent = '0 ₫';
-                additionalInsurancePriceEl.textContent = '0 ₫';
-                discountRow.classList.add('hidden');
-                return;
-            }
-
-            const diffMilliseconds = returnDateTime - pickupDateTime;
-            const totalHours = diffMilliseconds / (1000 * 60 * 60);
-
-            let diffDays = 0;
-            if (totalHours > 0) {
-                diffDays = Math.ceil(totalHours / 24);
-                if (diffDays === 0 && diffMilliseconds > 0) {
-                    diffDays = 1;
-                }
+          let durationString = "";
+          if (totalHours <= 0) {
+            durationString = `(Tính giá ${diffDays} ngày)`;
+          } else if (totalHours < 24) {
+            durationString = `${Math.ceil(totalHours)} giờ (Tính giá ${diffDays} ngày)`;
+          } else {
+            const fullDays = Math.floor(totalHours / 24);
+            const remainingHours = Math.ceil(totalHours % 24);
+            durationString = `${fullDays} ngày`;
+            if (remainingHours > 0) {
+              durationString += ` ${remainingHours} giờ (Tính giá ${diffDays} ngày)`;
             } else {
-                diffDays = 1;
+              durationString += ` (Tính giá ${diffDays} ngày)`;
             }
+          }
 
-            let durationString = '';
-            if (totalHours <= 0) {
-                durationString = `(Tính giá ${diffDays} ngày)`;
-            } else if (totalHours < 24) {
-                durationString = `${Math.ceil(totalHours)} giờ (Tính giá ${diffDays} ngày)`;
+          rentalDuration.classList.remove("hidden");
+          durationText.textContent = durationString;
+          daysCount.textContent = diffDays;
+          insuranceDays.textContent = diffDays;
+
+          const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
+          const rentalPrice = dailyPrice * diffDays;
+          rentalPriceEl.textContent = formatCurrency(rentalPrice);
+
+          const additionalInsurance = additionalInsuranceCheckbox.checked ? ADDITIONAL_INSURANCE_PER_DAY * diffDays : 0;
+          additionalInsurancePriceEl.textContent = formatCurrency(additionalInsurance);
+
+          let finalDiscount = 0;
+          if (appliedDiscount) {
+            const subtotal = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+            let minOrder = appliedDiscount.minOrderAmount || 0;
+            if (subtotal >= minOrder) {
+              if (appliedDiscount.discountType === "Percentage") {
+                finalDiscount = subtotal * (appliedDiscount.discountValue / 100);
+              } else {
+                finalDiscount = appliedDiscount.discountValue;
+              }
+
+              const maxDiscount = appliedDiscount.maxDiscountAmount;
+              if (maxDiscount !== null && finalDiscount > maxDiscount) {
+                finalDiscount = maxDiscount;
+              }
+              discountAmount = finalDiscount;
+              discountRow.classList.remove("hidden");
+              discountNameEl.textContent = appliedDiscount.voucherCode;
+              discountAmountEl.textContent = "-" + formatCurrency(finalDiscount);
+              discountAmountInput.value = discountAmount;
+              discountIdInput.value = appliedDiscount.discountId || appliedDiscount.voucherCode;
             } else {
-                const fullDays = Math.floor(totalHours / 24);
-                const remainingHours = Math.ceil(totalHours % 24);
-                durationString = `${fullDays} ngày`;
-                if (remainingHours > 0) {
-                    durationString += ` ${remainingHours} giờ (Tính giá ${diffDays} ngày)`;
-                } else {
-                    durationString += ` (Tính giá ${diffDays} ngày)`;
-                }
+              appliedDiscount = null;
+              discountAmount = 0;
+              discountRow.classList.add("hidden");
+              discountAmountInput.value = 0;
+              discountIdInput.value = "";
+              showDiscountMessage(`Đơn hàng chưa đủ ${formatCurrency(minOrder)} để áp dụng mã này`, "error");
             }
+          } else {
+            discountAmount = 0;
+            discountRow.classList.add("hidden");
+            discountAmountInput.value = 0;
+            discountIdInput.value = "";
+          }
 
-            rentalDuration.classList.remove('hidden');
-            durationText.textContent = durationString;
-            daysCount.textContent = diffDays;
-            insuranceDays.textContent = diffDays;
-
-            const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
-            const rentalPrice = dailyPrice * diffDays;
-            rentalPriceEl.textContent = formatCurrency(rentalPrice);
-
-            const additionalInsurance = additionalInsuranceCheckbox.checked ? (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
-            additionalInsurancePriceEl.textContent = formatCurrency(additionalInsurance);
-
-            let finalDiscount = 0;
-            if (appliedDiscount) {
-                const subtotal = rentalPrice + BASIC_INSURANCE + additionalInsurance;
-                let minOrder = appliedDiscount.minOrderAmount || 0;
-                if (subtotal >= minOrder) {
-                    if (appliedDiscount.discountType === 'Percentage') {
-                        finalDiscount = subtotal * (appliedDiscount.discountValue / 100);
-                    } else {
-                        finalDiscount = appliedDiscount.discountValue;
-                    }
-
-                    const maxDiscount = appliedDiscount.maxDiscountAmount;
-                    if (maxDiscount !== null && finalDiscount > maxDiscount) {
-                        finalDiscount = maxDiscount;
-                    }
-                    discountAmount = finalDiscount;
-                    discountRow.classList.remove('hidden');
-                    discountNameEl.textContent = appliedDiscount.voucherCode;
-                    discountAmountEl.textContent = '-' + formatCurrency(finalDiscount);
-                    discountAmountInput.value = discountAmount;
-                    discountIdInput.value = appliedDiscount.discountId || appliedDiscount.voucherCode;
-                } else {
-                    appliedDiscount = null;
-                    discountAmount = 0;
-                    discountRow.classList.add('hidden');
-                    discountAmountInput.value = 0;
-                    discountIdInput.value = '';
-                    showDiscountMessage(`Đơn hàng chưa đủ ${formatCurrency(minOrder)} để áp dụng mã này`, 'error');
-                }
-            } else {
-                discountAmount = 0;
-                discountRow.classList.add('hidden');
-                discountAmountInput.value = 0;
-                discountIdInput.value = '';
-            }
-
-            const total = rentalPrice + BASIC_INSURANCE + additionalInsurance - discountAmount;
-            totalAmountEl.textContent = formatCurrency(total);
-            totalAmountInput.value = Math.round(total);
-            rentalDaysInput.value = diffDays;
-            additionalInsuranceInput.value = additionalInsuranceCheckbox.checked;
+          const total = rentalPrice + BASIC_INSURANCE + additionalInsurance - discountAmount;
+          totalAmountEl.textContent = formatCurrency(total);
+          totalAmountInput.value = Math.round(total);
+          rentalDaysInput.value = diffDays;
+          additionalInsuranceInput.value = additionalInsuranceCheckbox.checked;
         };
 
         // Apply discount function
         const applyDiscount = async () => {
-            const discountCodeInput = document.getElementById('discountCodeInput');
-            const discountCode = discountCodeInput.value.trim();
-            const rentalDays = parseFloat(document.getElementById('rentalDaysInput').value || '0');
-            const dailyPrice = parseFloat(document.getElementById('dailyPriceInput').value) || 0;
-            const additionalInsuranceChecked = document.getElementById('additionalInsuranceCheckbox').checked;
-            const additionalInsurance = additionalInsuranceChecked ? (ADDITIONAL_INSURANCE_PER_DAY * rentalDays) : 0;
-            const rentalPrice = dailyPrice * rentalDays;
-            const amountForValidation = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+          const discountCodeInput = document.getElementById("discountCodeInput");
+          const discountCode = discountCodeInput.value.trim();
+          const rentalDays = parseFloat(document.getElementById("rentalDaysInput").value || "0");
+          const dailyPrice = parseFloat(document.getElementById("dailyPriceInput").value) || 0;
+          const additionalInsuranceChecked = document.getElementById("additionalInsuranceCheckbox").checked;
+          const additionalInsurance = additionalInsuranceChecked ? ADDITIONAL_INSURANCE_PER_DAY * rentalDays : 0;
+          const rentalPrice = dailyPrice * rentalDays;
+          const amountForValidation = rentalPrice + BASIC_INSURANCE + additionalInsurance;
 
-            if (!discountCode) { return showDiscountMessage('Vui lòng nhập mã giảm giá!', 'error'); }
-            if (isNaN(rentalDays) || rentalDays <= 0) { return showDiscountMessage('Vui lòng chọn ngày thuê hợp lệ trước!', 'error'); }
+          if (!discountCode) {
+            return showDiscountMessage("Vui lòng nhập mã giảm giá!", "error");
+          }
+          if (isNaN(rentalDays) || rentalDays <= 0) {
+            return showDiscountMessage("Vui lòng chọn ngày thuê hợp lệ trước!", "error");
+          }
 
-            try {
-                const response = await fetch(`/api/discounts/validate?code=${encodeURIComponent(discountCode)}&amount=${amountForValidation}`);
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) { /* Ignore parsing error */ }
-                    throw new Error(errorMessage);
-                }
-                const data = await response.json();
-                if (data.valid) {
-                    appliedDiscount = data.discount;
-                    appliedDiscount.calculatedAmount = data.calculatedAmount;
-                    appliedDiscount.discountId = data.discount.discountId;
-                    showDiscountMessage(`Áp dụng mã giảm giá thành công! Giảm ${formatCurrency(data.calculatedAmount)}`, 'success');
-                    calculatePrice();
-                } else {
-                    appliedDiscount = null;
-                    showDiscountMessage(data.message || 'Mã giảm giá không hợp lệ hoặc không đủ điều kiện!', 'error');
-                    calculatePrice();
-                }
-            } catch (error) {
-                console.error('Error applying discount:', error);
-                appliedDiscount = null;
-                showDiscountMessage('Có lỗi xảy ra khi áp dụng mã giảm giá! Chi tiết: ' + error.message, 'error');
-                calculatePrice();
+          try {
+            const response = await fetch(
+              `/api/discounts/validate?code=${encodeURIComponent(discountCode)}&amount=${amountForValidation}`
+            );
+            if (!response.ok) {
+              let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+              try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+              } catch (e) {
+                /* Ignore parsing error */
+              }
+              throw new Error(errorMessage);
             }
-        }
+            const data = await response.json();
+            if (data.valid) {
+              appliedDiscount = data.discount;
+              appliedDiscount.calculatedAmount = data.calculatedAmount;
+              appliedDiscount.discountId = data.discount.discountId;
+              showDiscountMessage(
+                `Áp dụng mã giảm giá thành công! Giảm ${formatCurrency(data.calculatedAmount)}`,
+                "success"
+              );
+              calculatePrice();
+            } else {
+              appliedDiscount = null;
+              showDiscountMessage(data.message || "Mã giảm giá không hợp lệ hoặc không đủ điều kiện!", "error");
+              calculatePrice();
+            }
+          } catch (error) {
+            console.error("Error applying discount:", error);
+            appliedDiscount = null;
+            showDiscountMessage("Có lỗi xảy ra khi áp dụng mã giảm giá! Chi tiết: " + error.message, "error");
+            calculatePrice();
+          }
+        };
 
         const showDiscountMessage = (message, type) => {
-            const messageEl = document.getElementById('discountMessage');
-            if(!messageEl) return;
-            messageEl.textContent = message;
-            messageEl.className = 'mt-2 text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
-            messageEl.classList.remove('hidden');
+          const messageEl = document.getElementById("discountMessage");
+          if (!messageEl) return;
+          messageEl.textContent = message;
+          messageEl.className = "mt-2 text-sm " + (type === "success" ? "text-green-600" : "text-red-600");
+          messageEl.classList.remove("hidden");
         };
 
         // Toggle Fees Function
         const toggleFees = () => {
-            const feesContent = document.getElementById('feesContent');
-            const feesIcon = document.getElementById('feesIcon');
-            if(feesContent) feesContent.classList.toggle('hidden');
-            if(feesIcon) feesIcon.classList.toggle('rotate-180');
+          const feesContent = document.getElementById("feesContent");
+          const feesIcon = document.getElementById("feesIcon");
+          if (feesContent) feesContent.classList.toggle("hidden");
+          if (feesIcon) feesIcon.classList.toggle("rotate-180");
         };
 
         // --- Gắn các event listener ---
-        const pickupDateInputDetail = document.getElementById('pickupDate');
-        const returnDateInputDetail = document.getElementById('returnDate');
-        const pickupTimeInputDetail = document.getElementById('pickupTime');
-        const returnTimeInputDetail = document.getElementById('returnTime');
-        const additionalInsuranceCheckboxDetail = document.getElementById('additionalInsuranceCheckbox');
+        const pickupDateInputDetail = document.getElementById("pickupDate");
+        const returnDateInputDetail = document.getElementById("returnDate");
+        const pickupTimeInputDetail = document.getElementById("pickupTime");
+        const returnTimeInputDetail = document.getElementById("returnTime");
+        const additionalInsuranceCheckboxDetail = document.getElementById("additionalInsuranceCheckbox");
 
         if (pickupDateInputDetail && returnDateInputDetail) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const todayString = today.toISOString().split('T')[0];
-            pickupDateInputDetail.min = todayString;
-            returnDateInputDetail.min = todayString;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayString = today.toISOString().split("T")[0];
+          pickupDateInputDetail.min = todayString;
+          returnDateInputDetail.min = todayString;
 
-            pickupDateInputDetail.addEventListener('change', function() {
-                const selectedPickup = new Date(this.value);
-                selectedPickup.setHours(0, 0, 0, 0);
-                if (selectedPickup < today) {
-                    this.value = todayString;
-                    alert("Ngày nhận xe không được là quá khứ.");
-                }
-                returnDateInputDetail.min = this.value;
-                if (returnDateInputDetail.value && returnDateInputDetail.value < this.value) {
-                    returnDateInputDetail.value = this.value;
-                }
-                calculatePrice();
-            });
+          pickupDateInputDetail.addEventListener("change", function () {
+            const selectedPickup = new Date(this.value);
+            selectedPickup.setHours(0, 0, 0, 0);
+            if (selectedPickup < today) {
+              this.value = todayString;
+              alert("Ngày nhận xe không được là quá khứ.");
+            }
+            returnDateInputDetail.min = this.value;
+            if (returnDateInputDetail.value && returnDateInputDetail.value < this.value) {
+              returnDateInputDetail.value = this.value;
+            }
+            calculatePrice();
+          });
 
-            returnDateInputDetail.addEventListener('change', function() {
-                const selectedReturn = new Date(this.value);
-                selectedReturn.setHours(0, 0, 0, 0);
-                const selectedPickup = new Date(pickupDateInputDetail.value);
-                selectedPickup.setHours(0,0,0,0);
-                if(selectedReturn < selectedPickup) {
-                    this.value = pickupDateInputDetail.value;
-                    alert("Ngày trả xe không được trước ngày nhận xe.");
-                }
-                calculatePrice();
-            });
+          returnDateInputDetail.addEventListener("change", function () {
+            const selectedReturn = new Date(this.value);
+            selectedReturn.setHours(0, 0, 0, 0);
+            const selectedPickup = new Date(pickupDateInputDetail.value);
+            selectedPickup.setHours(0, 0, 0, 0);
+            if (selectedReturn < selectedPickup) {
+              this.value = pickupDateInputDetail.value;
+              alert("Ngày trả xe không được trước ngày nhận xe.");
+            }
+            calculatePrice();
+          });
 
-            [pickupTimeInputDetail, returnTimeInputDetail, additionalInsuranceCheckboxDetail].forEach(el => {
-                if(el) el.addEventListener('change', calculatePrice);
-            });
+          [pickupTimeInputDetail, returnTimeInputDetail, additionalInsuranceCheckboxDetail].forEach((el) => {
+            if (el) el.addEventListener("change", calculatePrice);
+          });
         } else {
-            console.warn("Date/time inputs for price calculation not found.");
+          console.warn("Date/time inputs for price calculation not found.");
         }
 
-        const applyDiscountBtn = document.getElementById('applyDiscountBtn');
-        if(applyDiscountBtn) applyDiscountBtn.addEventListener('click', applyDiscount);
+        const applyDiscountBtn = document.getElementById("applyDiscountBtn");
+        if (applyDiscountBtn) applyDiscountBtn.addEventListener("click", applyDiscount);
 
-        const toggleFeesBtn = document.getElementById('toggleFeesBtn');
-        if(toggleFeesBtn) toggleFeesBtn.addEventListener('click', toggleFees);
+        const toggleFeesBtn = document.getElementById("toggleFeesBtn");
+        if (toggleFeesBtn) toggleFeesBtn.addEventListener("click", toggleFees);
 
-        const locationDisplay = document.getElementById('locationDisplay');
-        const closeLocationModalBtn = document.getElementById('closeLocationModalBtn');
-        const confirmLocationBtn = document.getElementById('confirmLocationBtn');
-        const currentLocationBtn = document.getElementById('currentLocationBtn');
-        if(locationDisplay) locationDisplay.addEventListener('click', openLocationModal);
-        if(closeLocationModalBtn) closeLocationModalBtn.addEventListener('click', closeLocationModal);
-        if(confirmLocationBtn) confirmLocationBtn.addEventListener('click', confirmLocation);
-        if(currentLocationBtn) currentLocationBtn.addEventListener('click', getAndSetCurrentLocation);
+        const locationDisplay = document.getElementById("locationDisplay");
+        const closeLocationModalBtn = document.getElementById("closeLocationModalBtn");
+        const confirmLocationBtn = document.getElementById("confirmLocationBtn");
+        const currentLocationBtn = document.getElementById("currentLocationBtn");
+        if (locationDisplay) locationDisplay.addEventListener("click", openLocationModal);
+        if (closeLocationModalBtn) closeLocationModalBtn.addEventListener("click", closeLocationModal);
+        if (confirmLocationBtn) confirmLocationBtn.addEventListener("click", confirmLocation);
+        if (currentLocationBtn) currentLocationBtn.addEventListener("click", getAndSetCurrentLocation);
 
-        document.querySelectorAll('.suggested-location-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const address = this.getAttribute('data-address');
-                updateSelectedLocation(address);
-                const searchInput = document.getElementById('locationSearchInput');
-                if(searchInput) searchInput.value = address;
-            });
+        document.querySelectorAll(".suggested-location-btn").forEach((button) => {
+          button.addEventListener("click", function () {
+            const address = this.getAttribute("data-address");
+            updateSelectedLocation(address);
+            const searchInput = document.getElementById("locationSearchInput");
+            if (searchInput) searchInput.value = address;
+          });
         });
 
-        const bookingForm = document.getElementById('bookingForm');
-        if(bookingForm) {
-            bookingForm.addEventListener('submit', function(event) {
-                const totalAmountInput = document.getElementById('totalAmountInput');
-                const pickupLocationInput = document.getElementById('pickupLocationInput');
-                const rentalDaysInput = document.getElementById('rentalDaysInput');
-                const pickupDateInput = document.getElementById('pickupDate');
-                const returnDateInput = document.getElementById('returnDate');
-                const pickupTimeInput = document.getElementById('pickupTime');
-                const returnTimeInput = document.getElementById('returnTime');
+        const bookingForm = document.getElementById("bookingForm");
+        if (bookingForm) {
+          bookingForm.addEventListener("submit", function (event) {
+            const totalAmountInput = document.getElementById("totalAmountInput");
+            const pickupLocationInput = document.getElementById("pickupLocationInput");
+            const rentalDaysInput = document.getElementById("rentalDaysInput");
+            const pickupDateInput = document.getElementById("pickupDate");
+            const returnDateInput = document.getElementById("returnDate");
+            const pickupTimeInput = document.getElementById("pickupTime");
+            const returnTimeInput = document.getElementById("returnTime");
 
-                if(!pickupDateInput || !returnDateInput || !pickupTimeInput || !returnTimeInput || !pickupDateInput.value || !returnDateInput.value || !pickupTimeInput.value || !returnTimeInput.value) {
-                    alert('Vui lòng chọn ngày giờ nhận và trả xe.');
-                    event.preventDefault();
-                    return;
-                }
-                const pickupDateTime = new Date(`${pickupDateInput.value}T${pickupTimeInput.value}`);
-                const returnDateTime = new Date(`${returnDateInput.value}T${returnTimeInput.value}`);
-                if (returnDateTime <= pickupDateTime) {
-                    alert('Ngày trả xe phải sau ngày nhận xe!');
-                    event.preventDefault();
-                    return;
-                }
+            if (
+              !pickupDateInput ||
+              !returnDateInput ||
+              !pickupTimeInput ||
+              !returnTimeInput ||
+              !pickupDateInput.value ||
+              !returnDateInput.value ||
+              !pickupTimeInput.value ||
+              !returnTimeInput.value
+            ) {
+              alert("Vui lòng chọn ngày giờ nhận và trả xe.");
+              event.preventDefault();
+              return;
+            }
+            const pickupDateTime = new Date(`${pickupDateInput.value}T${pickupTimeInput.value}`);
+            const returnDateTime = new Date(`${returnDateInput.value}T${returnTimeInput.value}`);
+            if (returnDateTime <= pickupDateTime) {
+              alert("Ngày trả xe phải sau ngày nhận xe!");
+              event.preventDefault();
+              return;
+            }
 
-                const totalAmount = parseFloat(totalAmountInput ? totalAmountInput.value : '0');
-                const pickupLocation = pickupLocationInput ? pickupLocationInput.value : '';
-                const rentalDays = parseInt(rentalDaysInput ? rentalDaysInput.value : '0', 10);
+            const totalAmount = parseFloat(totalAmountInput ? totalAmountInput.value : "0");
+            const pickupLocation = pickupLocationInput ? pickupLocationInput.value : "";
+            const rentalDays = parseInt(rentalDaysInput ? rentalDaysInput.value : "0", 10);
 
-                if (isNaN(rentalDays) || rentalDays <= 0) {
-                    alert('Thời gian thuê không hợp lệ. Vui lòng kiểm tra lại ngày giờ.');
-                    event.preventDefault();
-                } else if (!pickupLocation || pickupLocation === 'Chọn địa điểm giao xe') {
-                    alert('Vui lòng chọn địa điểm giao xe!');
-                    event.preventDefault();
-                } else if (isNaN(totalAmount) || totalAmount <= 0) {
-                    alert('Tổng tiền không hợp lệ. Vui lòng kiểm tra lại ngày thuê.');
-                    event.preventDefault();
-                }
-            });
+            if (isNaN(rentalDays) || rentalDays <= 0) {
+              alert("Thời gian thuê không hợp lệ. Vui lòng kiểm tra lại ngày giờ.");
+              event.preventDefault();
+            } else if (!pickupLocation || pickupLocation === "Chọn địa điểm giao xe") {
+              alert("Vui lòng chọn địa điểm giao xe!");
+              event.preventDefault();
+            } else if (isNaN(totalAmount) || totalAmount <= 0) {
+              alert("Tổng tiền không hợp lệ. Vui lòng kiểm tra lại ngày thuê.");
+              event.preventDefault();
+            }
+          });
         }
 
         // --- TÍNH TOÁN GIÁ BAN ĐẦU (NẾU CÓ THAM SỐ URL) ---
         const urlParams = new URLSearchParams(window.location.search);
-        const urlPickupDate = urlParams.get('pickupDate');
-        const urlReturnDate = urlParams.get('returnDate');
-        const urlPickupTime = urlParams.get('pickupTime');
-        const urlReturnTime = urlParams.get('returnTime');
+        const urlPickupDate = urlParams.get("pickupDate");
+        const urlReturnDate = urlParams.get("returnDate");
+        const urlPickupTime = urlParams.get("pickupTime");
+        const urlReturnTime = urlParams.get("returnTime");
 
         if (urlPickupDate && urlReturnDate && pickupDateInputDetail && returnDateInputDetail) {
-            const todayForCheck = new Date();
-            todayForCheck.setHours(0,0,0,0);
-            const pickupFromUrl = new Date(urlPickupDate);
-            pickupFromUrl.setHours(0,0,0,0);
-            if (pickupFromUrl >= todayForCheck) {
-                pickupDateInputDetail.value = urlPickupDate;
-                returnDateInputDetail.value = urlReturnDate;
-                returnDateInputDetail.min = urlPickupDate;
-                if(urlPickupTime && pickupTimeInputDetail) pickupTimeInputDetail.value = urlPickupTime;
-                if(urlReturnTime && returnTimeInputDetail) returnTimeInputDetail.value = urlReturnTime;
-                calculatePrice();
-            } else {
-                console.warn("Pickup date from URL is in the past. Ignoring URL parameters.");
-                calculatePrice();
-            }
-        } else {
+          const todayForCheck = new Date();
+          todayForCheck.setHours(0, 0, 0, 0);
+          const pickupFromUrl = new Date(urlPickupDate);
+          pickupFromUrl.setHours(0, 0, 0, 0);
+          if (pickupFromUrl >= todayForCheck) {
+            pickupDateInputDetail.value = urlPickupDate;
+            returnDateInputDetail.value = urlReturnDate;
+            returnDateInputDetail.min = urlPickupDate;
+            if (urlPickupTime && pickupTimeInputDetail) pickupTimeInputDetail.value = urlPickupTime;
+            if (urlReturnTime && returnTimeInputDetail) returnTimeInputDetail.value = urlReturnTime;
             calculatePrice();
+          } else {
+            console.warn("Pickup date from URL is in the past. Ignoring URL parameters.");
+            calculatePrice();
+          }
+        } else {
+          calculatePrice();
         }
+      });
 
-    });
-    /*]]>*/
-</script>
-
-</body>
+      // === Report feedback functions ===
+      function openReportModal(btn) {
+        const id = btn.getAttribute("data-feedback-id");
+        const modal = document.getElementById("reportModal");
+        const input = document.getElementById("reportFeedbackId");
+        if (input) input.value = id;
+        if (modal) modal.classList.remove("hidden");
+      }
+      function closeReportModal() {
+        const modal = document.getElementById("reportModal");
+        if (modal) modal.classList.add("hidden");
+        const reason = document.getElementById("reportReason");
+        if (reason) reason.value = "";
+      }
+      function submitReport() {
+        const id = document.getElementById("reportFeedbackId")?.value;
+        const reason = document.getElementById("reportReason")?.value || "";
+        if (!id) {
+          alert("Không tìm thấy đánh giá để báo cáo");
+          return;
+        }
+        fetch(`/feedback/report/${id}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ reason }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            alert(data.message || (data.success ? "Đã gửi báo cáo" : "Gửi báo cáo thất bại"));
+            if (data.success) closeReportModal();
+          })
+          .catch(() => alert("Có lỗi xảy ra. Vui lòng thử lại."));
+      }
+      /*]]>*/
+    </script>
+  </body>
 </html>

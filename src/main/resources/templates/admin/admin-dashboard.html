@@ -590,6 +590,11 @@
                     <div id="reports" class="tab-content" th:class="${tab == 'reports' ? 'tab-content active' : 'tab-content'}">
                         <div th:insert="~{admin/admin-reports :: reports-tab}"></div>
                     </div>
+
+                    <!-- Feedback Management Tab -->
+                    <div id="feedback" class="tab-content" th:class="${tab == 'feedback' ? 'tab-content active' : 'tab-content'}">
+                        <div th:insert="~{admin/admin-feedback-fragment :: feedback-tab}"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -707,6 +712,8 @@
                     switchTab('payments');
                 } else if (notificationType === 'CONTRACT' && relatedId) {
                     switchTab('contracts');
+                } else if (notificationType === 'FEEDBACK_REPORT' && relatedId) {
+                    switchTab('feedback');
                 }
                 
                 // Reload notifications to update count
