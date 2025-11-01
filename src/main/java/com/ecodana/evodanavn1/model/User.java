@@ -6,8 +6,8 @@ import java.time.LocalDateTime;
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType; // Thêm import này
-import jakarta.persistence.Enumerated; // Thêm import này
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -39,9 +39,14 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    // =============================================
+    // === THAY ĐỔI 1: Thêm @NotBlank cho Họ/Tên ===
+    // =============================================
+    @NotBlank(message = "Họ không được để trống")
     @Column(name = "FirstName", length = 256)
     private String firstName;
 
+    @NotBlank(message = "Tên không được để trống")
     @Column(name = "LastName", length = 256)
     private String lastName;
 
@@ -62,8 +67,8 @@ public class User {
     @Column(name = "NormalizedUserName", length = 256)
     private String normalizedUserName;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Please provide a valid email address")
+    @NotBlank(message = "Email là bắt buộc")
+    @Email(message = "Vui lòng cung cấp địa chỉ email hợp lệ")
     @Column(name = "Email", unique = true, nullable = false, length = 100)
     private String email;
 
@@ -73,14 +78,18 @@ public class User {
     @Column(name = "EmailVerifed", nullable = false)
     private boolean emailVerifed = false;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
+    @NotBlank(message = "Mật khẩu là bắt buộc")
+    @Pattern(
+            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
+            message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt (@$!%*?&)"
+    )
     @Column(name = "PasswordHash", nullable = false, length = 255)
     private String password;
 
-    @Column(name = "PhoneNumber", length = 15)
-    @Size(max = 15, message = "Phone number must not exceed 15 characters")
-    @Pattern(regexp = "^[0-9]*$", message = "Phone number must contain only digits")
+    @NotBlank(message = "Số điện thoại là bắt buộc")
+    @Size(max = 10, message = "Số điện thoại không được vượt quá 10 ký tự")
+    @Pattern(regexp = "^(03|05|07|08|09)\\d{8}$", message = "Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 03, 05, 07, 08, 09)")
+    @Column(name = "PhoneNumber", length = 10)
     private String phoneNumber;
 
     @Column(name = "SecurityStamp", columnDefinition = "TEXT")

@@ -13,25 +13,28 @@
             <h2 class="text-2xl font-semibold text-gray-800">Create Account</h2>
         </div>
 
-        <!-- Error Messages -->
         <div th:if="${error}" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg" th:text="${error}">Error message</div>
 
         <form th:action="@{/register}" th:object="${user}" method="post" id="registerForm">
-            <!-- First Name -->
+
+            <div th:if="${#fields.hasGlobalErrors()}" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                <p th:each="err : ${#fields.globalErrors()}" th:text="${err}"></p>
+            </div>
+
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">First Name *</label>
                 <input type="text" th:field="*{firstName}" id="firstName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter your first name" required>
                 <div th:if="${#fields.hasErrors('firstName')}" class="text-red-500 text-sm mt-1" th:errors="*{firstName}">First Name error</div>
+                <div id="firstName-error" class="text-red-500 text-sm mt-1 hidden"></div>
             </div>
 
-            <!-- Last Name -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Last Name *</label>
                 <input type="text" th:field="*{lastName}" id="lastName" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter your last name" required>
                 <div th:if="${#fields.hasErrors('lastName')}" class="text-red-500 text-sm mt-1" th:errors="*{lastName}">Last Name error</div>
+                <div id="lastName-error" class="text-red-500 text-sm mt-1 hidden"></div>
             </div>
 
-            <!-- Email -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Email *</label>
                 <input type="email" th:field="*{email}" id="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter your email" required>
@@ -39,29 +42,33 @@
                 <div id="email-error" class="text-red-500 text-sm mt-1 hidden"></div>
             </div>
 
-            <!-- Phone Number -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Phone Number *</label>
-                <input type="tel" name="phoneNumber" id="phoneNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter phone number" required>
+                <input type="tel" th:field="*{phoneNumber}" id="phoneNumber" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter phone number" required>
+                <div th:if="${#fields.hasErrors('phoneNumber')}" class="text-red-500 text-sm mt-1" th:errors="*{phoneNumber}">Phone error</div>
                 <div id="phone-error" class="text-red-500 text-sm mt-1 hidden"></div>
             </div>
 
-            <!-- Password -->
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Password *</label>
                 <input type="password" th:field="*{password}" id="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Create password" required>
-                <div th:if="${#fields.hasErrors('password')}" class="text-red-500 text-sm mt-1" th:errors="*{password}">Password error</div>
-                <div id="password-error" class="text-red-500 text-sm mt-1 hidden"></div>
-            </div>
 
-            <!-- Confirm Password -->
+                <div th:if="${#fields.hasErrors('password')}" class="text-red-500 text-sm mt-1" th:errors="*{password}"></div>
+
+                <div id="password-criteria" class="text-sm mt-2 space-y-1">
+                    <div id="pass-length" class="text-gray-500 transition-colors duration-200"><i class="fas fa-times-circle mr-2 text-red-400"></i>Ít nhất 8 ký tự</div>
+                    <div id="pass-lower" class="text-gray-500 transition-colors duration-200"><i class="fas fa-times-circle mr-2 text-red-400"></i>Ít nhất 1 chữ thường (a-z)</div>
+                    <div id="pass-upper" class="text-gray-500 transition-colors duration-200"><i class="fas fa-times-circle mr-2 text-red-400"></i>Ít nhất 1 chữ hoa (A-Z)</div>
+                    <div id="pass-number" class="text-gray-500 transition-colors duration-200"><i class="fas fa-times-circle mr-2 text-red-400"></i>Ít nhất 1 số (0-9)</div>
+                    <div id="pass-special" class="text-gray-500 transition-colors duration-200"><i class="fas fa-times-circle mr-2 text-red-400"></i>Ít nhất 1 ký tự đặc biệt (@$!%*?&)</div>
+                </div>
+            </div>
             <div class="mb-4">
                 <label class="block text-gray-700 text-sm font-medium mb-2">Confirm Password *</label>
                 <input type="password" name="confirmPassword" id="confirmPassword" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Confirm password" required>
                 <div id="confirm-password-error" class="text-red-500 text-sm mt-1 hidden"></div>
             </div>
 
-            <!-- Terms -->
             <div class="mb-6">
                 <label class="flex items-center">
                     <input type="checkbox" name="terms" class="mr-2" required>
@@ -72,7 +79,6 @@
             <button type="submit" id="registerBtn" class="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-accent transition-colors mb-4">Sign Up</button>
         </form>
 
-        <!-- Google Register Button -->
         <div class="mt-6">
             <div class="relative">
                 <div class="absolute inset-0 flex items-center">
@@ -108,7 +114,6 @@
 
 <div th:replace="~{fragments/footer :: footer}"></div>
 
-<!-- JavaScript for enhanced UX -->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('registerForm');
@@ -121,12 +126,69 @@
         const confirmPasswordInput = document.getElementById('confirmPassword');
         const termsCheckbox = document.querySelector('input[name="terms"]');
 
+        const vnPhoneRegex = /^(03|05|07|08|09)\d{8}$/;
+
+        // =============================================
+        // === BẮT ĐẦU CẬP NHẬT JS ===
+        // =============================================
+
+        // Các tiêu chí mật khẩu
+        const passLength = document.getElementById('pass-length');
+        const passLower = document.getElementById('pass-lower');
+        const passUpper = document.getElementById('pass-upper');
+        const passNumber = document.getElementById('pass-number');
+        const passSpecial = document.getElementById('pass-special');
+
+        // Regex cho từng tiêu chí
+        const regexLower = /[a-z]/;
+        const regexUpper = /[A-Z]/;
+        const regexNumber = /\d/;
+        const regexSpecial = /[@$!%*?&]/;
+
+        // Hàm helper cập nhật UI cho từng tiêu chí
+        function updatePasswordCriteria(element, isMet) {
+            if (!element) return;
+            const text = element.innerText.substring(element.innerText.indexOf('Í')); // Lấy text (VD: "Ít nhất 8 ký tự")
+
+            if (isMet) {
+                element.className = 'text-green-600 transition-colors duration-200'; // Đổi màu
+                element.innerHTML = '<i class="fas fa-check-circle mr-2 text-green-500"></i>' + text; // Đổi icon
+            } else {
+                element.className = 'text-gray-500 transition-colors duration-200'; // Đổi màu
+                element.innerHTML = '<i class="fas fa-times-circle mr-2 text-red-400"></i>' + text; // Đổi icon
+            }
+        }
+
+        // Hàm helper kiểm tra tất cả tiêu chí
+        function validatePassword(password) {
+            const criteria = {
+                length: password.length >= 8,
+                lower: regexLower.test(password),
+                upper: regexUpper.test(password),
+                number: regexNumber.test(password),
+                special: regexSpecial.test(password)
+            };
+
+            updatePasswordCriteria(passLength, criteria.length);
+            updatePasswordCriteria(passLower, criteria.lower);
+            updatePasswordCriteria(passUpper, criteria.upper);
+            updatePasswordCriteria(passNumber, criteria.number);
+            updatePasswordCriteria(passSpecial, criteria.special);
+
+            // Trả về true nếu TẤT CẢ tiêu chí đều đạt
+            return Object.values(criteria).every(Boolean);
+        }
+
         // First Name validation
         firstNameInput.addEventListener('blur', function() {
             const firstName = this.value.trim();
+            const firstNameError = document.getElementById('firstName-error');
             if (firstName === '') {
+                showError(firstNameError, 'Họ không được để trống');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else {
+                hideError(firstNameError);
                 this.classList.remove('border-red-500');
                 this.classList.add('border-green-500');
             }
@@ -135,9 +197,13 @@
         // Last Name validation
         lastNameInput.addEventListener('blur', function() {
             const lastName = this.value.trim();
+            const lastNameError = document.getElementById('lastName-error');
             if (lastName === '') {
+                showError(lastNameError, 'Tên không được để trống');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else {
+                hideError(lastNameError);
                 this.classList.remove('border-red-500');
                 this.classList.add('border-green-500');
             }
@@ -149,11 +215,13 @@
             const emailError = document.getElementById('email-error');
 
             if (email === '') {
-                showError(emailError, 'Email is required');
+                showError(emailError, 'Email là bắt buộc');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else if (!isValidEmail(email)) {
-                showError(emailError, 'Please enter a valid email address');
+                showError(emailError, 'Vui lòng nhập địa chỉ email hợp lệ');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else {
                 hideError(emailError);
                 this.classList.remove('border-red-500');
@@ -161,20 +229,19 @@
             }
         });
 
-        // Phone validation
+        // Phone validation (sự kiện blur)
         phoneInput.addEventListener('blur', function() {
             const phone = this.value.trim();
             const phoneError = document.getElementById('phone-error');
 
             if (phone === '') {
-                showError(phoneError, 'Phone number is required');
+                showError(phoneError, 'Số điện thoại là bắt buộc');
                 this.classList.add('border-red-500');
-            } else if (!/^[0-9]*$/.test(phone)) {
-                showError(phoneError, 'Phone number must contain only digits');
+                this.classList.remove('border-green-500');
+            } else if (!vnPhoneRegex.test(phone)) {
+                showError(phoneError, 'Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 03, 05, 07, 08, 09)');
                 this.classList.add('border-red-500');
-            } else if (phone.length > 11) {
-                showError(phoneError, 'Phone number must not exceed 11 digits');
-                this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else {
                 hideError(phoneError);
                 this.classList.remove('border-red-500');
@@ -182,23 +249,27 @@
             }
         });
 
-        // Password validation
-        passwordInput.addEventListener('blur', function() {
+        // Password validation (thay 'blur' bằng 'input')
+        passwordInput.addEventListener('input', function() {
             const password = this.value;
-            const passwordError = document.getElementById('password-error');
+            const isValid = validatePassword(password); // Gọi hàm kiểm tra
 
-            if (password === '') {
-                showError(passwordError, 'Password is required');
-                this.classList.add('border-red-500');
-            } else if (password.length < 6) {
-                showError(passwordError, 'Password must be at least 6 characters');
-                this.classList.add('border-red-500');
-            } else {
-                hideError(passwordError);
+            if (password.length === 0) {
+                // Reset lại UI nếu xóa hết
+                validatePassword("");
+                this.classList.remove('border-red-500', 'border-green-500');
+            } else if (isValid) {
                 this.classList.remove('border-red-500');
                 this.classList.add('border-green-500');
+            } else {
+                this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             }
         });
+
+        // =============================================
+        // === KẾT THÚC CẬP NHẬT JS MẬT KHẨU ===
+        // =============================================
 
         // Confirm password validation
         confirmPasswordInput.addEventListener('blur', function() {
@@ -207,11 +278,13 @@
             const confirmPasswordError = document.getElementById('confirm-password-error');
 
             if (confirmPassword === '') {
-                showError(confirmPasswordError, 'Please confirm your password');
+                showError(confirmPasswordError, 'Vui lòng xác nhận mật khẩu');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else if (password !== confirmPassword) {
-                showError(confirmPasswordError, 'Passwords do not match');
+                showError(confirmPasswordError, 'Mật khẩu không khớp');
                 this.classList.add('border-red-500');
+                this.classList.remove('border-green-500');
             } else {
                 hideError(confirmPasswordError);
                 this.classList.remove('border-red-500');
@@ -226,7 +299,7 @@
             const confirmPasswordError = document.getElementById('confirm-password-error');
 
             if (confirmPassword !== '' && password !== confirmPassword) {
-                showError(confirmPasswordError, 'Passwords do not match');
+                showError(confirmPasswordError, 'Mật khẩu không khớp');
                 this.classList.add('border-red-500');
             } else if (confirmPassword !== '' && password === confirmPassword) {
                 hideError(confirmPasswordError);
@@ -239,14 +312,24 @@
         form.addEventListener('submit', function(e) {
             let isValid = true;
 
+            // Xóa các lỗi JS cũ
+            hideError(document.getElementById('firstName-error'));
+            hideError(document.getElementById('lastName-error'));
+            hideError(document.getElementById('email-error'));
+            hideError(document.getElementById('phone-error'));
+            // (Không cần hideError cho password-criteria)
+            hideError(document.getElementById('confirm-password-error'));
+
             // Validate first name
             if (firstNameInput.value.trim() === '') {
+                showError(document.getElementById('firstName-error'), 'Họ không được để trống');
                 firstNameInput.classList.add('border-red-500');
                 isValid = false;
             }
 
             // Validate last name
             if (lastNameInput.value.trim() === '') {
+                showError(document.getElementById('lastName-error'), 'Tên không được để trống');
                 lastNameInput.classList.add('border-red-500');
                 isValid = false;
             }
@@ -254,38 +337,44 @@
             // Validate email
             const email = emailInput.value.trim();
             if (email === '' || !isValidEmail(email)) {
-                showError(document.getElementById('email-error'), 'Please enter a valid email address');
+                showError(document.getElementById('email-error'), 'Vui lòng nhập địa chỉ email hợp lệ');
                 emailInput.classList.add('border-red-500');
                 isValid = false;
             }
 
-            // Validate phone
+            // Validate phone (dùng regex chuẩn)
             const phone = phoneInput.value.trim();
-            if (phone === '' || !/^[0-9]*$/.test(phone) || phone.length > 11) {
-                showError(document.getElementById('phone-error'), 'Please enter a valid phone number');
+            if (!vnPhoneRegex.test(phone)) {
+                showError(document.getElementById('phone-error'), 'Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 03, 05, 07, 08, 09)');
                 phoneInput.classList.add('border-red-500');
                 isValid = false;
             }
 
-            // Validate password
+            // =============================================
+            // === CẬP NHẬT VALIDATE SUBMIT MẬT KHẨU ===
+            // =============================================
             const password = passwordInput.value;
-            if (password === '' || password.length < 6) {
-                showError(document.getElementById('password-error'), 'Password must be at least 6 characters');
+            const isPasswordValid = validatePassword(password); // Gọi lại hàm helper
+            if (!isPasswordValid) {
                 passwordInput.classList.add('border-red-500');
                 isValid = false;
+                // Hiển thị lỗi server nếu JS bị bỏ qua (đã có th:if)
             }
+            // =============================================
+            // === KẾT THÚC CẬP NHẬT SUBMIT MẬT KHẨU ===
+            // =============================================
 
             // Validate confirm password
             const confirmPassword = confirmPasswordInput.value;
             if (confirmPassword === '' || password !== confirmPassword) {
-                showError(document.getElementById('confirm-password-error'), 'Passwords do not match');
+                showError(document.getElementById('confirm-password-error'), 'Mật khẩu không khớp');
                 confirmPasswordInput.classList.add('border-red-500');
                 isValid = false;
             }
 
             // Validate terms
             if (!termsCheckbox.checked) {
-                alert('Please accept the terms and conditions');
+                alert('Vui lòng đồng ý với Điều khoản & Điều kiện');
                 isValid = false;
             }
 
@@ -304,16 +393,20 @@
         }
 
         function showError(errorElement, message) {
-            errorElement.textContent = message;
-            errorElement.classList.remove('hidden');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.classList.remove('hidden');
+            }
         }
 
         function hideError(errorElement) {
-            errorElement.textContent = '';
-            errorElement.classList.add('hidden');
+            if (errorElement) {
+                errorElement.textContent = '';
+                errorElement.classList.add('hidden');
+            }
         }
 
-        // Auto-hide error messages after 5 seconds
+        // Auto-hide server error messages after 5 seconds
         const errorMessages = document.querySelectorAll('.bg-red-100, .bg-green-100');
         errorMessages.forEach(function(msg) {
             setTimeout(function() {

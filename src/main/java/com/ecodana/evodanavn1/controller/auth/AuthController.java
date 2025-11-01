@@ -88,12 +88,24 @@ public class AuthController {
 
         if (user.getEmail() != null) user.setEmail(user.getEmail().trim().toLowerCase());
         phoneNumber = phoneNumber.trim();
+        user.setPhoneNumber(phoneNumber);
 
         if (user.getPassword() != null && !user.getPassword().equals(confirmPassword)) {
             bindingResult.rejectValue("password", "error.user", "Mật khẩu xác nhận không khớp.");
         }
-        if (userService.findByEmail(user.getEmail()) != null) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("user", user); // Trả lại user đã nhập
+            return "auth/register";
+        }
+
+        if (userService.existsByEmail(user.getEmail())) {
             bindingResult.rejectValue("email", "error.user", "Email này đã được sử dụng.");
+        }
+
+        if (userService.existsByPhoneNumber(phoneNumber)) {
+            model.addAttribute("error", "Số điện thoại này đã được sử dụng.");
+            model.addAttribute("user", user);
+            return "auth/register";
         }
 
         if (bindingResult.hasErrors()) {

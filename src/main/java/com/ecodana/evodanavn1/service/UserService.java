@@ -414,6 +414,8 @@ public class UserService {
         }
     }
 
+    public boolean existsByPhoneNumber(String phoneNumber) {return userRepository.existsByPhoneNumber(phoneNumber); }
+
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
