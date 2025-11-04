@@ -18,22 +18,17 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tab) {
         switchTab(tab);
     } else {
-        // If no tab parameter, ensure dashboard stats are visible
-        const dashboardStats = document.getElementById('dashboard-stats');
-        const dashboardStats2 = document.getElementById('dashboard-stats-2');
-        if (dashboardStats && dashboardStats2) {
-            dashboardStats.style.display = 'grid';
-            dashboardStats2.style.display = 'grid';
-        }
+        // If no tab parameter, default to overview and highlight it
+        switchTab('overview');
     }
     
     // User management is now handled server-side
     
-    // Simple user rows protection - Run once after page load
-    setTimeout(() => {
-        console.log('Running user rows protection...');
-        forceShowAllRows();
-    }, 1000);
+    // DISABLED: Simple user rows protection - now using CSS-only filtering
+    // setTimeout(() => {
+    //     console.log('Running user rows protection...');
+    //     forceShowAllRows();
+    // }, 1000);
 });
 
 // Sidebar functionality
@@ -200,14 +195,14 @@ function setupEventListeners() {
         refreshButton.addEventListener('click', refreshData);
     }
     
-    // Reset all rows to visible on page load
-    setTimeout(() => {
-        resetAllRows();
-        forceShowAllRows(); // Additional force show
-    }, 1000);
+    // DISABLED: Reset all rows - now using CSS-only filtering
+    // setTimeout(() => {
+    //     resetAllRows();
+    //     forceShowAllRows();
+    // }, 1000);
     
-    // Force show all rows immediately
-    forceShowAllRows();
+    // DISABLED: Force show all rows - now using CSS-only filtering
+    // forceShowAllRows();
 
     // Action buttons with data attributes
     document.addEventListener('click', function(event) {

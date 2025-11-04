@@ -57,7 +57,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     user.setEmail(email);
                     user.setPassword("OAUTH_USER_" + UUID.randomUUID().toString());
                     user.setPhoneNumber("");
-                    user.setActive(true);
+                    user.setStatus(User.UserStatus.Active);
 
                     if (name != null && !name.isEmpty()) {
                         String[] nameParts = name.split(" ", 2);
@@ -73,7 +73,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                     user.setNormalizedEmail(user.getEmail().toUpperCase());
                     user.setSecurityStamp(UUID.randomUUID().toString());
                     user.setConcurrencyStamp(UUID.randomUUID().toString());
-                    user.setStatus(User.UserStatus.valueOf("Active"));
                     user.setEmailVerifed(true);
                     user.setCreatedDate(java.time.LocalDateTime.now());
 
@@ -87,14 +86,15 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 return;
             }
 
-            if (!user.isActive()) {
-                response.sendRedirect("/login?error=account_inactive");
+            // Check if user is banned or inactive
+            if (user.getStatus() == User.UserStatus.Banned) {
+                response.sendRedirect("/login?error=account_banned");
                 return;
             }
-
-            User fullUser = userService.findByEmailWithRole(user.getEmail());
-            if (fullUser != null) {
-                user = fullUser;
+            
+            if (user.getStatus() == User.UserStatus.Inactive) {
+                response.sendRedirect("/login?error=account_inactive");
+                return;
             }
 
             HttpSession session = request.getSession(true);

@@ -54,6 +54,18 @@ public class UserService {
 
         if (userOpt.isPresent()) {
             User user = userOpt.get();
+            
+            // Check if user is banned
+            if (user.getStatus() == UserStatus.Banned) {
+                logger.warn("Login attempt by banned user: {}", username);
+                return null;
+            }
+            
+            // Check if user is inactive
+            if (user.getStatus() == UserStatus.Inactive) {
+                logger.warn("Login attempt by inactive user: {}", username);
+                return null;
+            }
 
             boolean passwordMatches = passwordEncoder.matches(password, user.getPassword());
 
@@ -394,6 +406,21 @@ public class UserService {
     @Transactional
     public User save(User user) {
         return userRepository.save(user);
+    }
+    
+    @Transactional
+    public boolean updateUserStatus(String userId, User.UserStatus status) {
+        try {
+            // Convert enum to string: 'Inactive', 'Active', 'Banned'
+            String statusValue = status.name();
+            logger.info("Updating user {} status to {} (value: {})", userId, status, statusValue);
+            int rowsUpdated = userRepository.updateUserStatus(userId, statusValue);
+            logger.info("Rows updated: {}", rowsUpdated);
+            return rowsUpdated > 0;
+        } catch (Exception e) {
+            logger.error("Error updating user status: {}", e.getMessage(), e);
+            throw new RuntimeException("Failed to update user status: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

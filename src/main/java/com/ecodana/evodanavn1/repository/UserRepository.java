@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import com.ecodana.evodanavn1.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -57,4 +58,14 @@ public interface UserRepository extends JpaRepository<User, String> {
      */
     @Query("SELECT u FROM User u LEFT JOIN FETCH u.role ORDER BY u.createdDate DESC")
     List<User> findAllWithRoles();
+    
+    /**
+     * Update user status directly in database
+     * @param userId the user ID
+     * @param status the new status value ('Inactive', 'Active', 'Banned')
+     * @return number of rows updated
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE Users SET Status = :status WHERE UserId = :userId", nativeQuery = true)
+    int updateUserStatus(@Param("userId") String userId, @Param("status") String status);
 }

@@ -54,6 +54,17 @@ public class SecurityConfig {
             if (user == null) {
                 throw new org.springframework.security.core.userdetails.UsernameNotFoundException("User not found: " + username);
             }
+            
+            // Check if user is banned
+            if (user.getStatus() == User.UserStatus.Banned) {
+                throw new org.springframework.security.authentication.DisabledException("Tài khoản của bạn đã bị cấm. Vui lòng liên hệ quản trị viên.");
+            }
+            
+            // Check if user is inactive
+            if (user.getStatus() == User.UserStatus.Inactive) {
+                throw new org.springframework.security.authentication.DisabledException("Tài khoản của bạn chưa được kích hoạt.");
+            }
+            
             return org.springframework.security.core.userdetails.User.builder()
                     .username(user.getUsername())
                     .password(user.getPassword())

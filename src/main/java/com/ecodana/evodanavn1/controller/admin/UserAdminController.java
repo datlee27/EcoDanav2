@@ -68,6 +68,11 @@ public class UserAdminController {
             model.addAttribute("inactiveUsers", users.stream().filter(u -> u.getStatus() == User.UserStatus.Inactive).count());
             model.addAttribute("bannedUsers", users.stream().filter(u -> u.getStatus() == User.UserStatus.Banned).count());
             
+            // Count by role
+            model.addAttribute("adminCount", users.stream().filter(u -> u.getRole() != null && "Admin".equals(u.getRole().getRoleName())).count());
+            model.addAttribute("ownerCount", users.stream().filter(u -> u.getRole() != null && "Owner".equals(u.getRole().getRoleName())).count());
+            model.addAttribute("customerCount", users.stream().filter(u -> u.getRole() != null && "Customer".equals(u.getRole().getRoleName())).count());
+            
             return "admin/user-management";
         } catch (Exception e) {
             logger.error("Error loading user management page", e);
@@ -76,6 +81,9 @@ public class UserAdminController {
             model.addAttribute("activeUsers", 0);
             model.addAttribute("inactiveUsers", 0);
             model.addAttribute("bannedUsers", 0);
+            model.addAttribute("adminCount", 0);
+            model.addAttribute("ownerCount", 0);
+            model.addAttribute("customerCount", 0);
             model.addAttribute("users", List.of());
             model.addAttribute("roles", List.of());
             return "admin/user-management";
@@ -553,6 +561,140 @@ public class UserAdminController {
             logger.error("Error searching users", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("success", false, "message", "Error searching users: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Ban user (Form endpoint)
+     */
+    @PostMapping("/ban")
+    public String banUser(@RequestParam String userId, HttpSession session, Model model) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null || !userService.isAdmin(currentUser)) {
+            return "redirect:/login";
+        }
+        
+        try {
+            // Prevent banning self
+            if (currentUser.getId().equals(userId)) {
+                model.addAttribute("error", "Cannot ban your own account");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            User user = userService.findById(userId);
+            if (user == null) {
+                model.addAttribute("error", "User not found");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            user.setStatus(User.UserStatus.Banned);
+            userService.save(user);
+            
+            logger.info("User {} banned by admin {}", userId, currentUser.getUsername());
+            model.addAttribute("success", "User banned successfully");
+        } catch (Exception e) {
+            logger.error("Error banning user", e);
+            model.addAttribute("error", "Error banning user: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/dashboard?tab=users";
+    }
+    
+    /**
+     * Ban user (API endpoint for AJAX)
+     */
+    @PostMapping("/api/ban")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> banUserApi(@RequestParam String userId, HttpSession session) {
+        try {
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null || !userService.isAdmin(currentUser)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Unauthorized access"));
+            }
+            
+            // Prevent banning self
+            if (currentUser.getId().equals(userId)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("success", false, "message", "Cannot ban your own account"));
+            }
+            
+            // Update status directly - the method will return false if user not found
+            boolean success = userService.updateUserStatus(userId, User.UserStatus.Banned);
+            
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("success", false, "message", "Failed to update user status"));
+            }
+            
+            logger.info("User {} banned by admin {}", userId, currentUser.getUsername());
+            return ResponseEntity.ok()
+                    .body(Map.of("success", true, "message", "User banned successfully", "userId", userId));
+        } catch (Exception e) {
+            logger.error("Error banning user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error: " + e.getMessage()));
+        }
+    }
+    
+    /**
+     * Unban user (Form endpoint)
+     */
+    @PostMapping("/unban")
+    public String unbanUser(@RequestParam String userId, HttpSession session, Model model) {
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null || !userService.isAdmin(currentUser)) {
+            return "redirect:/login";
+        }
+        
+        try {
+            User user = userService.findById(userId);
+            if (user == null) {
+                model.addAttribute("error", "User not found");
+                return "redirect:/admin/dashboard?tab=users";
+            }
+            
+            user.setStatus(User.UserStatus.Active);
+            userService.save(user);
+            
+            logger.info("User {} unbanned by admin {}", userId, currentUser.getUsername());
+            model.addAttribute("success", "User unbanned successfully");
+        } catch (Exception e) {
+            logger.error("Error unbanning user", e);
+            model.addAttribute("error", "Error unbanning user: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/dashboard?tab=users";
+    }
+    
+    /**
+     * Unban user (API endpoint for AJAX)
+     */
+    @PostMapping("/api/unban")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> unbanUserApi(@RequestParam String userId, HttpSession session) {
+        try {
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null || !userService.isAdmin(currentUser)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("success", false, "message", "Unauthorized access"));
+            }
+            
+            // Update status directly
+            boolean success = userService.updateUserStatus(userId, User.UserStatus.Active);
+            
+            if (!success) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("success", false, "message", "Failed to update user status"));
+            }
+            
+            logger.info("User {} unbanned by admin {}", userId, currentUser.getUsername());
+            return ResponseEntity.ok()
+                    .body(Map.of("success", true, "message", "User unbanned successfully", "userId", userId));
+        } catch (Exception e) {
+            logger.error("Error unbanning user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Error: " + e.getMessage()));
         }
     }
 }

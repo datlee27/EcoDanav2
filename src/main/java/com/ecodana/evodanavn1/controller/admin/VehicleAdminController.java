@@ -43,26 +43,16 @@ public class VehicleAdminController {
     private static final Logger logger = LoggerFactory.getLogger(VehicleAdminController.class);
 
     /**
-     * Display vehicle management page
+     * Redirect to admin dashboard with vehicles tab
      */
     @GetMapping
-    public String vehicleManagementPage(HttpSession session, Model model) {
+    public String vehicleManagementPage(HttpSession session) {
         User user = (User) session.getAttribute("currentUser");
         if (user == null || !userService.isAdmin(user)) {
             return "redirect:/login";
         }
 
-        List<VehicleResponse> vehicles = vehicleService.getAllVehicleResponses();
-        List<VehicleCategories> categories = vehicleService.getAllCategories();
-        List<TransmissionType> transmissionTypes = vehicleService.getAllTransmissionTypes();
-
-        model.addAttribute("currentUser", user);
-        model.addAttribute("vehicles", vehicles);
-        model.addAttribute("categories", categories);
-        model.addAttribute("transmissionTypes", transmissionTypes);
-        model.addAttribute("totalVehicles", vehicles.size());
-
-        return "admin/admin-vehicles-management";
+        return "redirect:/admin?tab=vehicles";
     }
 
     /**

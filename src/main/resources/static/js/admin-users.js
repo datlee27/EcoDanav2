@@ -28,7 +28,7 @@
         initializeCSRF();
         initializeEventListeners();
         loadRoles();
-        loadUsers();
+        // loadUsers(); // COMMENTED OUT - Using server-side rendering with Thymeleaf instead
     });
     
     /**
@@ -48,27 +48,7 @@
      * Initialize all event listeners
      */
     function initializeEventListeners() {
-        // Search input with debounce
-        var searchInput = document.getElementById('searchInput');
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                clearTimeout(searchDebounceTimer);
-                searchDebounceTimer = setTimeout(function() {
-                    filterUsers();
-                }, DEBOUNCE_DELAY);
-            });
-        }
-        
-        // Filter dropdowns
-        var statusFilter = document.getElementById('statusFilter');
-        if (statusFilter) {
-            statusFilter.addEventListener('change', filterUsers);
-        }
-        
-        var roleFilter = document.getElementById('roleFilter');
-        if (roleFilter) {
-            roleFilter.addEventListener('change', filterUsers);
-        }
+        // Search and filter removed - using server-side filtering
         
         // Action buttons
         var addUserBtn = document.getElementById('addUserBtn');
@@ -79,7 +59,7 @@
         var refreshBtn = document.getElementById('refreshBtn');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', function() {
-                loadUsers();
+                window.location.reload();
                 showToast('User list refreshed', 'success');
             });
         }
@@ -105,6 +85,8 @@
             // ESC to close modal
             if (e.key === 'Escape') {
                 closeUserModal();
+                closeUserDetailModal();
+                closeBanModal();
                 hideToast();
             }
             // Ctrl/Cmd + K to focus search
@@ -116,6 +98,25 @@
                 }
             }
         });
+        
+        // Close modals when clicking outside
+        var userDetailModal = document.getElementById('userDetailModal');
+        if (userDetailModal) {
+            userDetailModal.addEventListener('click', function(e) {
+                if (e.target === userDetailModal) {
+                    closeUserDetailModal();
+                }
+            });
+        }
+        
+        var banConfirmModal = document.getElementById('banConfirmModal');
+        if (banConfirmModal) {
+            banConfirmModal.addEventListener('click', function(e) {
+                if (e.target === banConfirmModal) {
+                    closeBanModal();
+                }
+            });
+        }
     }
     
     // =============================================
@@ -183,108 +184,7 @@
         });
     }
     
-    /**
-     * Filter users based on search and filters (for Thymeleaf rendered table)
-     */
-    function filterUsers() {
-        var searchInput = document.getElementById('searchInput') || document.getElementById('userSearchInput');
-        var searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
-        var statusFilter = document.getElementById('statusFilter') ? document.getElementById('statusFilter').value : '';
-        var roleFilterElement = document.getElementById('roleFilter');
-        var roleFilter = roleFilterElement ? roleFilterElement.value : '';
-        
-        console.log('Filtering - Search:', searchTerm, 'Status:', statusFilter, 'Role:', roleFilter);
-        
-        // Try to find rows using multiple strategies
-        var rows = document.querySelectorAll('.user-row');
-        
-        // Strategy 1: Look in users tab
-        if (rows.length === 0) {
-            var usersTab = document.getElementById('users');
-            if (usersTab) {
-                rows = usersTab.querySelectorAll('tr[data-role]');
-                console.log('Strategy 1 - Found rows in users tab:', rows.length);
-            }
-        }
-        
-        // Strategy 2: Look in usersTableBody
-        if (rows.length === 0) {
-            var tableBody = document.getElementById('usersTableBody');
-            if (tableBody) {
-                rows = tableBody.querySelectorAll('tr[data-role]');
-                console.log('Strategy 2 - Found rows in table body:', rows.length);
-            }
-        }
-        
-        // Strategy 3: Look anywhere for tr with data-role
-        if (rows.length === 0) {
-            rows = document.querySelectorAll('tr[data-role]');
-            console.log('Strategy 3 - Found rows globally:', rows.length);
-        }
-        
-        if (rows.length === 0) {
-            console.log('No user rows found - table might be empty or not rendered yet');
-            return;
-        }
-        
-        var visibleCount = 0;
-        
-        rows.forEach(function(row) {
-            var rowRole = row.getAttribute('data-role') || 'Customer';
-            var rowStatus = row.getAttribute('data-status');
-            var rowUsername = (row.getAttribute('data-username') || '').toLowerCase();
-            var rowEmail = (row.getAttribute('data-email') || '').toLowerCase();
-            
-            var matchesSearch = !searchTerm || 
-                rowUsername.indexOf(searchTerm) !== -1 ||
-                rowEmail.indexOf(searchTerm) !== -1;
-            
-            var matchesStatus = !statusFilter || statusFilter === 'all' || statusFilter === '' || rowStatus === statusFilter;
-            var matchesRole = !roleFilter || roleFilter === 'all' || roleFilter === '' || rowRole === roleFilter;
-            
-            console.log('Row:', rowUsername, 'Role:', rowRole, 'Filter:', roleFilter, 'Matches:', matchesRole && matchesSearch && matchesStatus);
-            
-            if (matchesSearch && matchesStatus && matchesRole) {
-                row.style.display = '';
-                visibleCount++;
-            } else {
-                row.style.display = 'none';
-            }
-        });
-        
-        console.log('Visible users count:', visibleCount, 'out of', rows.length);
-    }
-    
-    /**
-     * Filter by role when clicking on role cards
-     */
-    window.filterByRole = function(role) {
-        console.log('=== filterByRole called with:', role, '===');
-        
-        // Check if we're in the users tab
-        var usersTab = document.getElementById('users');
-        if (usersTab) {
-            var isActive = usersTab.classList.contains('active');
-            console.log('Users tab active:', isActive);
-        }
-        
-        var roleFilterElement = document.getElementById('roleFilter');
-        if (roleFilterElement) {
-            roleFilterElement.value = role;
-            console.log('Role filter set to:', roleFilterElement.value);
-            
-            // Immediate attempt
-            filterUsers();
-            
-            // Also try after delay in case DOM is still loading
-            setTimeout(function() {
-                console.log('=== Retry filter after delay ===');
-                filterUsers();
-            }, 100);
-        } else {
-            console.error('roleFilter element not found');
-        }
-    };
+    // Filter functions removed - using server-side filtering with page reload
     
     // =============================================
     // RENDERING FUNCTIONS
@@ -415,6 +315,441 @@
         showModal();
     }
     window.openAddUserModal = openAddUserModal;
+    
+    /**
+     * View user detail in modal
+     */
+    function viewUserDetail(userId) {
+        var modal = document.getElementById('userDetailModal');
+        var content = document.getElementById('userDetailContent');
+        
+        if (!modal || !content) return;
+        
+        // Show modal
+        modal.style.display = 'block';
+        modal.classList.remove('hidden');
+        
+        // Show loading state
+        content.innerHTML = '<div class="flex items-center justify-center py-8">' +
+            '<i class="fas fa-spinner fa-spin text-3xl text-gray-400"></i>' +
+            '</div>';
+        
+        // Fetch user details
+        fetch('/admin/users/api/' + userId, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error('Failed to load user details');
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success && data.user) {
+                renderUserDetail(data.user);
+            } else {
+                throw new Error(data.message || 'Failed to load user details');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error loading user details:', error);
+            content.innerHTML = '<div class="text-center text-red-500 py-8">' +
+                '<i class="fas fa-exclamation-triangle text-3xl mb-3"></i>' +
+                '<p>Error loading user details: ' + escapeHtml(error.message) + '</p>' +
+                '</div>';
+        });
+    }
+    window.viewUserDetail = viewUserDetail;
+    
+    /**
+     * Render user detail in modal
+     */
+    function renderUserDetail(user) {
+        var content = document.getElementById('userDetailContent');
+        if (!content) return;
+        
+        var avatar = user.avatarUrl ? 
+            '<img src="' + escapeHtml(user.avatarUrl) + '" alt="' + escapeHtml(user.username) + '" class="w-24 h-24 rounded-full object-cover">' :
+            '<div class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-2xl text-gray-500">' +
+            '<i class="fas fa-user"></i></div>';
+        
+        var statusClass = user.status === 'Active' ? 'bg-green-100 text-green-800' : 
+                         (user.status === 'Banned' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800');
+        
+        var roleClass = user.roleName === 'Admin' ? 'bg-purple-100 text-purple-800' : 
+                       (user.roleName === 'Owner' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800');
+        
+        content.innerHTML = 
+            '<div class="space-y-6">' +
+                '<!-- User Avatar and Basic Info -->' +
+                '<div class="flex items-center space-x-4 pb-4 border-b">' +
+                    '<div class="flex-shrink-0">' + avatar + '</div>' +
+                    '<div class="flex-1">' +
+                        '<h4 class="text-xl font-semibold text-gray-900">' + escapeHtml(user.username || '-') + '</h4>' +
+                        '<p class="text-gray-600">' + escapeHtml((user.firstName || '') + ' ' + (user.lastName || '')) + '</p>' +
+                        '<div class="flex items-center space-x-2 mt-2">' +
+                            '<span class="px-2 py-1 text-xs font-semibold rounded-full ' + roleClass + '">' + 
+                                escapeHtml(user.roleName || 'Customer') + 
+                            '</span>' +
+                            '<span class="px-2 py-1 text-xs font-semibold rounded-full ' + statusClass + '">' + 
+                                escapeHtml(user.status || 'Unknown') + 
+                            '</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<!-- Contact Information -->' +
+                '<div>' +
+                    '<h5 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">' +
+                        '<i class="fas fa-address-card mr-2"></i> Contact Information' +
+                    '</h5>' +
+                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Email</p>' +
+                            '<p class="text-sm font-medium text-gray-900">' + escapeHtml(user.email || '-') + '</p>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Phone Number</p>' +
+                            '<p class="text-sm font-medium text-gray-900">' + escapeHtml(user.phoneNumber || 'N/A') + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<!-- Personal Information -->' +
+                '<div>' +
+                    '<h5 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">' +
+                        '<i class="fas fa-user-circle mr-2"></i> Personal Information' +
+                    '</h5>' +
+                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Date of Birth</p>' +
+                            '<p class="text-sm font-medium text-gray-900">' + 
+                                (user.userDOB ? formatDate(user.userDOB) : 'N/A') + 
+                            '</p>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Gender</p>' +
+                            '<p class="text-sm font-medium text-gray-900">' + escapeHtml(user.gender || 'N/A') + '</p>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+                
+                '<!-- Account Information -->' +
+                '<div>' +
+                    '<h5 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">' +
+                        '<i class="fas fa-shield-alt mr-2"></i> Account Information' +
+                    '</h5>' +
+                    '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Email Verified</p>' +
+                            '<p class="text-sm font-medium">' + 
+                                (user.emailVerified ? 
+                                    '<span class="text-green-600"><i class="fas fa-check-circle"></i> Yes</span>' : 
+                                    '<span class="text-red-600"><i class="fas fa-times-circle"></i> No</span>') +
+                            '</p>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Two Factor Enabled</p>' +
+                            '<p class="text-sm font-medium">' + 
+                                (user.twoFactorEnabled ? 
+                                    '<span class="text-green-600"><i class="fas fa-check-circle"></i> Yes</span>' : 
+                                    '<span class="text-gray-600"><i class="fas fa-times-circle"></i> No</span>') +
+                            '</p>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Lockout Enabled</p>' +
+                            '<p class="text-sm font-medium">' + 
+                                (user.lockoutEnabled ? 
+                                    '<span class="text-yellow-600"><i class="fas fa-lock"></i> Yes</span>' : 
+                                    '<span class="text-gray-600"><i class="fas fa-lock-open"></i> No</span>') +
+                            '</p>' +
+                        '</div>' +
+                        '<div>' +
+                            '<p class="text-xs text-gray-500">Created Date</p>' +
+                            '<p class="text-sm font-medium text-gray-900">' + 
+                                (user.createdDate ? formatDate(user.createdDate) : 'N/A') + 
+                            '</p>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+    }
+    
+    /**
+     * Close user detail modal
+     */
+    function closeUserDetailModal() {
+        var modal = document.getElementById('userDetailModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+    }
+    window.closeUserDetailModal = closeUserDetailModal;
+    
+    // =============================================
+    // BAN/UNBAN FUNCTIONS
+    // =============================================
+    
+    var currentBanAction = null; // { action: 'ban'|'unban', userId: string, username: string }
+    
+    /**
+     * Show ban confirmation modal
+     */
+    function banUser(userId, username) {
+        currentBanAction = {
+            action: 'ban',
+            userId: userId,
+            username: username
+        };
+        
+        var modal = document.getElementById('banConfirmModal');
+        var title = document.getElementById('banModalTitle');
+        var message = document.getElementById('banModalMessage');
+        var icon = document.getElementById('banModalIcon');
+        var confirmBtn = document.getElementById('banConfirmBtn');
+        
+        if (!modal || !title || !message || !icon || !confirmBtn) return;
+        
+        title.textContent = 'Ban User';
+        message.innerHTML = 'Bạn có chắc chắn muốn ban user <strong>' + escapeHtml(username) + '</strong>?<br>' +
+            '<span class="text-sm text-gray-500">User sẽ không thể đăng nhập vào hệ thống.</span>';
+        icon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-red-100';
+        icon.innerHTML = '<i class="fas fa-ban text-2xl text-red-600"></i>';
+        confirmBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors';
+        confirmBtn.textContent = 'Ban User';
+        
+        modal.style.display = 'block';
+        modal.classList.remove('hidden');
+    }
+    window.banUser = banUser;
+    
+    /**
+     * Show unban confirmation modal
+     */
+    function unbanUser(userId, username) {
+        currentBanAction = {
+            action: 'unban',
+            userId: userId,
+            username: username
+        };
+        
+        var modal = document.getElementById('banConfirmModal');
+        var title = document.getElementById('banModalTitle');
+        var message = document.getElementById('banModalMessage');
+        var icon = document.getElementById('banModalIcon');
+        var confirmBtn = document.getElementById('banConfirmBtn');
+        
+        if (!modal || !title || !message || !icon || !confirmBtn) return;
+        
+        title.textContent = 'Unban User';
+        message.innerHTML = 'Bạn có chắc chắn muốn unban user <strong>' + escapeHtml(username) + '</strong>?<br>' +
+            '<span class="text-sm text-gray-500">User sẽ có thể đăng nhập lại vào hệ thống.</span>';
+        icon.className = 'flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-green-100';
+        icon.innerHTML = '<i class="fas fa-user-check text-2xl text-green-600"></i>';
+        confirmBtn.className = 'px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors';
+        confirmBtn.textContent = 'Unban User';
+        
+        modal.style.display = 'block';
+        modal.classList.remove('hidden');
+    }
+    window.unbanUser = unbanUser;
+    
+    /**
+     * Close ban confirmation modal
+     */
+    function closeBanModal() {
+        var modal = document.getElementById('banConfirmModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
+        currentBanAction = null;
+    }
+    window.closeBanModal = closeBanModal;
+    
+    /**
+     * Confirm ban/unban action
+     */
+    function confirmBanAction() {
+        if (!currentBanAction) return;
+        
+        var action = currentBanAction.action;
+        var userId = currentBanAction.userId;
+        var endpoint = action === 'ban' ? '/admin/users/api/ban' : '/admin/users/api/unban';
+        
+        console.log('Attempting to ' + action + ' user:', userId);
+        console.log('Endpoint:', endpoint);
+        
+        // Get CSRF token
+        var tokenMeta = document.querySelector('meta[name="_csrf"]');
+        var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+        var csrfToken = tokenMeta ? tokenMeta.getAttribute('content') : '';
+        var csrfHeader = headerMeta ? headerMeta.getAttribute('content') : '';
+        
+        console.log('CSRF Token:', csrfToken);
+        console.log('CSRF Header:', csrfHeader);
+        
+        // Create form data
+        var formData = new URLSearchParams();
+        formData.append('userId', userId);
+        
+        // Send request
+        var headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        };
+        if (csrfHeader && csrfToken) {
+            headers[csrfHeader] = csrfToken;
+        }
+        
+        console.log('Sending request with headers:', headers);
+        console.log('Request body:', formData.toString());
+        
+        fetch(endpoint, {
+            method: 'POST',
+            headers: headers,
+            body: formData,
+            credentials: 'same-origin'
+        })
+        .then(function(response) {
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            
+            if (!response.ok) {
+                return response.text().then(function(text) {
+                    console.error('Error response:', text);
+                    throw new Error('Failed to ' + action + ' user: ' + response.status);
+                });
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            console.log('Response data:', data);
+            
+            if (data.success) {
+                closeBanModal();
+                showToast('User ' + action + 'ned successfully', 'success');
+                
+                // Update UI immediately without reload
+                updateUserRowStatus(userId, action);
+            } else {
+                throw new Error(data.message || 'Failed to ' + action + ' user');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error ' + action + 'ning user:', error);
+            closeBanModal();
+            showToast('Error: ' + error.message, 'error');
+        });
+    }
+    window.confirmBanAction = confirmBanAction;
+    
+    /**
+     * Update user row status after ban/unban
+     */
+    function updateUserRowStatus(userId, action) {
+        console.log('Updating UI for user:', userId, 'action:', action);
+        
+        // Find the user row
+        var rows = document.querySelectorAll('#usersTableBody tr');
+        var userRow = null;
+        
+        console.log('Total rows found:', rows.length);
+        
+        for (var i = 0; i < rows.length; i++) {
+            var actionButtons = rows[i].querySelectorAll('button[onclick*="' + userId + '"]');
+            console.log('Row', i, 'has', actionButtons.length, 'matching buttons');
+            if (actionButtons.length > 0) {
+                userRow = rows[i];
+                console.log('Found user row at index:', i);
+                break;
+            }
+        }
+        
+        if (!userRow) {
+            console.error('Could not find user row for userId:', userId);
+            return;
+        }
+        
+        console.log('User row found, applying', action, 'styling');
+        
+        if (action === 'ban') {
+            // Add banned styling
+            userRow.classList.add('banned-user');
+            userRow.style.opacity = '0.5';
+            userRow.style.backgroundColor = '#fee2e2';
+            
+            // Update status badge
+            var statusBadge = userRow.querySelector('td:nth-child(4) span');
+            if (statusBadge) {
+                statusBadge.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800';
+                statusBadge.textContent = 'Banned';
+            }
+            
+            // Add BANNED overlay badge
+            var userCell = userRow.querySelector('td:first-child');
+            if (userCell) {
+                var existingBadge = userCell.querySelector('.banned-badge');
+                if (!existingBadge) {
+                    var bannedBadge = document.createElement('div');
+                    bannedBadge.className = 'banned-badge';
+                    bannedBadge.innerHTML = '<span class="inline-flex items-center px-2 py-1 text-xs font-bold text-white bg-red-600 rounded-full">' +
+                        '<i class="fas fa-ban mr-1"></i> BANNED</span>';
+                    userCell.querySelector('.flex').appendChild(bannedBadge);
+                }
+            }
+            
+            // Replace ban button with unban button
+            var actionsCell = userRow.querySelector('td:last-child .flex');
+            if (actionsCell) {
+                var banBtn = actionsCell.querySelector('button[onclick*="banUser"]');
+                if (banBtn) {
+                    var username = currentBanAction ? currentBanAction.username : 'User';
+                    banBtn.outerHTML = '<button type="button" onclick="unbanUser(\'' + userId + '\', \'' + username + '\')" ' +
+                        'class="action-btn action-btn-edit p-2 rounded-md transition-colors text-green-600 hover:bg-green-50" title="Unban User">' +
+                        '<i class="fas fa-user-check text-lg"></i></button>';
+                }
+            }
+            
+        } else if (action === 'unban') {
+            // Remove banned styling
+            userRow.classList.remove('banned-user');
+            userRow.style.opacity = '1';
+            userRow.style.backgroundColor = '';
+            
+            // Update status badge
+            var statusBadge = userRow.querySelector('td:nth-child(4) span');
+            if (statusBadge) {
+                statusBadge.className = 'px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800';
+                statusBadge.textContent = 'Active';
+            }
+            
+            // Remove BANNED badge
+            var bannedBadge = userRow.querySelector('.banned-badge');
+            if (bannedBadge) {
+                bannedBadge.remove();
+            }
+            
+            // Replace unban button with ban button
+            var actionsCell = userRow.querySelector('td:last-child .flex');
+            if (actionsCell) {
+                var unbanBtn = actionsCell.querySelector('button[onclick*="unbanUser"]');
+                if (unbanBtn) {
+                    var username = currentBanAction ? currentBanAction.username : 'User';
+                    unbanBtn.outerHTML = '<button type="button" onclick="banUser(\'' + userId + '\', \'' + username + '\')" ' +
+                        'class="action-btn action-btn-delete p-2 rounded-md transition-colors" title="Ban User">' +
+                        '<i class="fas fa-ban text-lg"></i></button>';
+                }
+            }
+        }
+        
+        // Add animation
+        userRow.style.transition = 'all 0.3s ease-in-out';
+    }
     
     /**
      * Navigate to edit page
