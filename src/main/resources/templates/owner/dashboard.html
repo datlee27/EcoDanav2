@@ -5,13 +5,35 @@
     <link href="/css/sidebar-common.css" rel="stylesheet">
     <link href="/css/owner-dashboard.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/ddwt6nl7s/image/upload/v1761906428/favicon_jlbemj.ico">
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Tùy chỉnh cho các tab của biểu đồ */
+        .chart-tab {
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4B5563; /* text-gray-600 */
+            background-color: #F3F4F6; /* bg-gray-200 */
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .chart-tab:hover {
+            background-color: #E5E7EB; /* bg-gray-300 */
+        }
+        .chart-tab.active {
+            background-color: #4CAF50; /* bg-primary */
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+    </style>
 </head>
 <body class="bg-gray-100">
 <div class="flex h-screen bg-gray-100 overflow-hidden">
     <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
 
     <div class="flex-1 flex flex-col overflow-hidden">
+
         <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
             <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
                 <i class="fas fa-bars text-xl"></i>
@@ -22,12 +44,6 @@
                 <div class="relative">
                     <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
                         <i class="fas fa-bell text-xl"></i>
-                        <span th:if="${pendingBookings != null and pendingBookings > 0}"
-                              id="notificationBadge"
-                              class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full"
-                              th:text="${pendingBookings > 99 ? '99+' : pendingBookings}">
-                              0
-                        </span>
                         <span th:unless="${pendingBookings != null and pendingBookings > 0}"
                               id="notificationBadge"
                               class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">
@@ -79,6 +95,7 @@
                 </div>
             </div>
         </div>
+
         <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
             <div class="container mx-auto px-0">
                 <div class="mb-8">
@@ -134,10 +151,40 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="bg-white rounded-xl shadow-md p-6">
-                    <h3 class="text-xl font-semibold mb-4">Quick Overview</h3>
-                    <p>Đây là nơi hiển thị các thông tin tổng quan khác...</p>
+
+                    <div class="flex flex-col md:flex-row justify-between md:items-start mb-6 gap-4">
+
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold">Tổng quan doanh thu</h3>
+                            <p class="text-sm text-gray-500">Biểu đồ doanh thu theo thời gian</p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl shadow-md border-l-4 border-pink-500 w-full md:w-auto md:min-w-[250px]">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-600 text-sm font-medium">Tổng doanh thu</p>
+                                    <p class="text-2xl font-bold text-gray-800" th:text="${#numbers.formatDecimal(totalRevenueAllTime, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</p>
+                                </div>
+                                <div class="bg-pink-100 p-3 rounded-full ml-4">
+                                    <i class="fas fa-dollar-sign text-xl text-pink-600"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="flex space-x-2 mb-4" id="chart-tabs">
+                        <button class="chart-tab" data-period="day">Ngày</button>
+                        <button class="chart-tab active" data-period="month">Tháng</button>
+                        <button class="chart-tab" data-period="year">Năm</button>
+                    </div>
+
+                    <div class="relative h-96 md:h-[500px]">
+                        <canvas id="revenueOverviewChart"></canvas>
+                    </div>
                 </div>
+
             </div>
         </main>
     </div>
@@ -145,20 +192,151 @@
 
 <script th:src="@{/js/sidebar-common.js}"></script>
 <script th:src="@{/js/owner-dashboard.js}"></script>
+
 <script th:inline="javascript">
     /*<![CDATA[*/
+
+    // Lấy dữ liệu doanh thu CHUỖI THỜI GIAN từ Thymeleaf Model
+    const revenueChartData = /*[[${revenueChartData}]]*/ {
+        dailyLabels: [], dailyData: [],
+        monthlyLabels: [], monthlyData: [],
+        yearlyLabels: [], yearlyData: []
+    };
+
+    // Hàm định dạng tiền tệ
+    const formatCurrency = (value) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            maximumFractionDigits: 0
+        }).format(value);
+    };
+
+    // --- Cấu hình CHUNG cho biểu đồ ---
+    const chartConfigTemplate = {
+        type: 'bar',
+        data: {
+            labels: [], // Sẽ được cập nhật
+            datasets: [{
+                label: 'Doanh thu (VND)',
+                data: [], // Sẽ được cập nhật
+                backgroundColor: 'rgba(76, 175, 80, 0.6)', // Màu xanh lá
+                borderColor: 'rgb(76, 175, 80)',
+                borderWidth: 1,
+                // === THAY ĐỔI: LÀM HẸP CỘT BIỂU ĐỒ ===
+                barPercentage: 0.5, // Cột sẽ chiếm 50% không gian cho phép
+                categoryPercentage: 0.7 // Không gian cho nhóm cột chiếm 70%
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: (value) => formatCurrency(value) }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (context) => formatCurrency(context.parsed.y)
+                    }
+                }
+            }
+        }
+    };
+
+    let currentChart = null; // Biến toàn cục để giữ đối tượng Chart
+
+    /**
+     * Hàm vẽ/cập nhật biểu đồ
+     * @param {string} period 'day', 'month', hoặc 'year'
+     */
+    function updateRevenueChart(period) {
+        const ctx = document.getElementById('revenueOverviewChart');
+        if (!ctx) return;
+
+        let labels, data, bgColor, bdColor;
+
+        // Lấy dữ liệu tương ứng với 'period'
+        switch (period) {
+            case 'day':
+                labels = revenueChartData.dailyLabels;
+                data = revenueChartData.dailyData;
+                bgColor = 'rgba(245, 158, 11, 0.6)'; // Vàng (7 ngày)
+                bdColor = 'rgb(245, 158, 11)';
+                break;
+            case 'year':
+                labels = revenueChartData.yearlyLabels;
+                data = revenueChartData.yearlyData;
+                bgColor = 'rgba(16, 185, 129, 0.6)'; // Xanh lá (5 năm)
+                bdColor = 'rgb(16, 185, 129)';
+                break;
+            case 'month':
+            default:
+                labels = revenueChartData.monthlyLabels;
+                data = revenueChartData.monthlyData;
+                bgColor = 'rgba(59, 130, 246, 0.6)'; // Xanh dương (12 tháng)
+                bdColor = 'rgb(59, 130, 246)';
+                break;
+        }
+
+        // Nếu là biểu đồ đầu tiên, tạo mới
+        if (!currentChart) {
+            // Sao chép cấu hình mẫu
+            let initialConfig = JSON.parse(JSON.stringify(chartConfigTemplate));
+
+            // Cập nhật dữ liệu
+            initialConfig.data.labels = labels;
+            initialConfig.data.datasets[0].data = data;
+            initialConfig.data.datasets[0].backgroundColor = bgColor;
+            initialConfig.data.datasets[0].borderColor = bdColor;
+
+            currentChart = new Chart(ctx, initialConfig);
+        } else {
+            // Nếu biểu đồ đã tồn tại, chỉ cập nhật data
+            currentChart.data.labels = labels;
+            currentChart.data.datasets[0].data = data;
+            currentChart.data.datasets[0].backgroundColor = bgColor;
+            currentChart.data.datasets[0].borderColor = bdColor;
+            currentChart.update();
+        }
+
+        // Cập nhật trạng thái 'active' cho tab
+        document.querySelectorAll('#chart-tabs .chart-tab').forEach(tab => {
+            if (tab.getAttribute('data-period') === period) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ 'dashboard'; // Trang dashboard
+        const currentPage = /*[[${currentPage}]]*/ 'dashboard';
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
         }
-        // Load notification count on page load (nếu cần)
+
         if (typeof loadNotificationCount === 'function') {
             loadNotificationCount();
-            // setInterval(loadNotificationCount, 30000); // Tự động cập nhật nếu muốn
         }
+
+        // Gắn sự kiện click cho các tab
+        document.querySelectorAll('#chart-tabs .chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const period = this.getAttribute('data-period');
+                updateRevenueChart(period);
+            });
+        });
+
+        // Vẽ biểu đồ mặc định (Tháng)
+        updateRevenueChart('month');
     });
     /*]]>*/
 </script>
+
 </body>
 </html>

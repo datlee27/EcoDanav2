@@ -96,18 +96,41 @@ public class OwnerController {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
 
+        // Lấy đúng User ID của owner đang đăng nhập
+        User currentUser = (User) session.getAttribute("currentUser");
+        String ownerId = currentUser.getId();
+
         model.addAttribute("currentPage", "dashboard");
-        model.addAttribute("totalVehicles", vehicleService.getAllVehicles().size());
-        model.addAttribute("availableVehicles", vehicleService.getAvailableVehicles().size());
 
-        long pendingBookingsCount = bookingService.getPendingBookings().size();
-        model.addAttribute("pendingBookings", pendingBookingsCount);
+        // === Dữ liệu thẻ thống kê (Đã fix) ===
+        List<Vehicle> ownerVehicles = vehicleService.getVehiclesByOwnerId(ownerId);
+        model.addAttribute("totalVehicles", ownerVehicles.size());
 
-        long rentedVehiclesCount = vehicleService.getAllVehicles().stream()
+        long availableVehiclesCount = ownerVehicles.stream()
+                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
+                .count();
+        model.addAttribute("availableVehicles", availableVehiclesCount);
+
+        long rentedVehiclesCount = ownerVehicles.stream()
                 .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
                 .count();
         model.addAttribute("rentedVehicles", rentedVehiclesCount);
 
+        List<Booking> ownerBookings = bookingService.getBookingsByOwnerId(ownerId);
+
+        long pendingBookingsCount = ownerBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
+                .count();
+        model.addAttribute("pendingBookings", pendingBookingsCount);
+
+        // === Dữ liệu doanh thu (Thẻ + Biểu đồ) ===
+        // Lấy dữ liệu cho thẻ "Tổng doanh thu" (Dùng chung hàm)
+        Map<String, Object> revenueAnalytics = bookingService.getOwnerRevenueAnalytics(ownerId);
+        model.addAttribute("totalRevenueAllTime", revenueAnalytics.get("totalRevenueAllTime"));
+
+        // Lấy dữ liệu cho biểu đồ (Hàm mới)
+        Map<String, Object> chartData = bookingService.getOwnerRevenueChartData(ownerId);
+        model.addAttribute("revenueChartData", chartData);
 
         return "owner/dashboard";
     }

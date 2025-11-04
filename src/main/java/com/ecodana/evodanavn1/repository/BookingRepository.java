@@ -75,4 +75,31 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
             "WHERE b.Status IN ('Approved', 'Completed') " +
             "GROUP BY v.VehicleModel ORDER BY bookingCount DESC", nativeQuery = true)
     List<Map<String, Object>> findVehiclePopularity();
+
+    /**
+     * Lấy tổng doanh thu mỗi ngày (trong 7 ngày qua) cho một owner
+     */
+    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m-%d') as period, SUM(b.TotalAmount) as revenue " +
+            "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "GROUP BY DATE_FORMAT(b.CreatedDate, '%Y-%m-%d') ORDER BY period ASC", nativeQuery = true)
+    List<Map<String, Object>> findDailyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
+
+    /**
+     * Lấy tổng doanh thu mỗi tháng (trong 12 tháng qua) cho một owner
+     */
+    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m') as period, SUM(b.TotalAmount) as revenue " +
+            "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "GROUP BY DATE_FORMAT(b.CreatedDate, '%Y-%m') ORDER BY period ASC", nativeQuery = true)
+    List<Map<String, Object>> findMonthlyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
+
+    /**
+     * Lấy tổng doanh thu mỗi năm (trong 5 năm qua) cho một owner
+     */
+    @Query(value = "SELECT YEAR(b.CreatedDate) as period, SUM(b.TotalAmount) as revenue " +
+            "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "GROUP BY YEAR(b.CreatedDate) ORDER BY period ASC", nativeQuery = true)
+    List<Map<String, Object>> findYearlyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
 }
