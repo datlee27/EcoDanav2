@@ -78,17 +78,12 @@ public class User {
     @Column(name = "EmailVerifed", nullable = false)
     private boolean emailVerifed = false;
 
-    @NotBlank(message = "Mật khẩu là bắt buộc")
-    @Pattern(
-            regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
-            message = "Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt (@$!%*?&)"
-    )
     @Column(name = "PasswordHash", nullable = false, length = 255)
     private String password;
 
     @NotBlank(message = "Số điện thoại là bắt buộc")
     @Size(max = 10, message = "Số điện thoại không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^(03|05|07|08|09)\\d{8}$", message = "Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 03, 05, 07, 08, 09)")
+    @Pattern(regexp = "^(03|05|07|08|09)\\d{8}$", message = "Số điện thoại không hợp lệ")
     @Column(name = "PhoneNumber", length = 10)
     private String phoneNumber;
 

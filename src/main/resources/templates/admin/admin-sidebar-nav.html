@@ -60,14 +60,6 @@
           <span>Discount Management</span>
         </a>
         <a
-          th:href="@{/admin(tab='insurance')}"
-          th:classappend="${tab == 'insurance'} ? 'active' : ''"
-          class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
-        >
-          <i class="fas fa-shield-alt mr-3 text-lg"></i>
-          <span>Insurance Management</span>
-        </a>
-        <a
           th:href="@{/admin(tab='notifications')}"
           th:classappend="${tab == 'notifications'} ? 'active' : ''"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
