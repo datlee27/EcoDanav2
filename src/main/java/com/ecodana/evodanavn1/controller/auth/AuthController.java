@@ -93,6 +93,18 @@ public class AuthController {
         if (user.getPassword() != null && !user.getPassword().equals(confirmPassword)) {
             bindingResult.rejectValue("password", "error.user", "Mật khẩu xác nhận không khớp.");
         }
+
+        String password = user.getPassword();
+        if (password == null || password.isEmpty()) {
+            bindingResult.rejectValue("password", "error.user", "Mật khẩu là bắt buộc.");
+        } else {
+            // Đây là biểu thức chính quy (regex) đã bị xóa khỏi User.java
+            String passwordPattern = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$";
+            if (!password.matches(passwordPattern)) {
+                bindingResult.rejectValue("password", "error.user", "Mật khẩu phải có ít nhất 8 ký tự, bao gồm ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt (@$!%*?&)");
+            }
+        }
+
         if (bindingResult.hasErrors()) {
             model.addAttribute("user", user); // Trả lại user đã nhập
             return "auth/register";
@@ -213,35 +225,79 @@ public class AuthController {
 
     @GetMapping("/profile")
     public String userProfile(Model model, HttpSession session) {
-        // Get the User object saved in the session during login
+        // Get current user from session
         User currentUser = (User) session.getAttribute("currentUser");
 
-        // If the user is not logged in (not in session), redirect to the login page
         if (currentUser == null) {
             return "redirect:/login";
         }
 
         // --- STEP 1: Provide information for the NAV bar ---
-        // Add the currentUser object to the model so the nav bar can use it
         model.addAttribute("currentUser", currentUser);
 
         // --- STEP 2: Provide information for the PROFILE page content ---
-        // Get the latest user information from the database based on the email or username in the session
-        User userForProfile = userService.findByEmail(currentUser.getEmail());
-        // Add to the model with the name "user" for profile-management.html to use
-        model.addAttribute("user", userForProfile);
+        // Check if there is a "user" object from a failed validation redirect
+        if (!model.containsAttribute("user")) {
+            // If not, get the latest user information from the database
+            User userForProfile = userService.findByEmail(currentUser.getEmail());
+            model.addAttribute("user", userForProfile);
+        }
+        // If "user" (from redirect) *is* present, it will be used automatically by Thymeleaf.
 
-        // Return the view of the profile page
         return "auth/profile";
     }
 
     @PostMapping("/profile/update")
-    public String updateUserProfile(User user, RedirectAttributes redirectAttributes, HttpSession session) {
+    public String updateUserProfile(User user, // This 'user' object from form is incomplete
+                                    RedirectAttributes redirectAttributes,
+                                    HttpSession session) { // Removed Model, not needed for redirect
+
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser == null) {
             return "redirect:/login";
         }
 
+        // === START MANUAL VALIDATION ===
+        boolean hasErrors = false;
+
+        // 1. Validate First Name
+        if (user.getFirstName() == null || user.getFirstName().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("firstName_error", "Họ không được để trống");
+            hasErrors = true;
+        }
+
+        // 2. Validate Last Name
+        if (user.getLastName() == null || user.getLastName().trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("lastName_error", "Tên không được để trống");
+            hasErrors = true;
+        }
+
+        // 3. Validate Phone Number
+        String phone = user.getPhoneNumber();
+        if (phone == null || phone.trim().isEmpty()) {
+            redirectAttributes.addFlashAttribute("phoneNumber_error", "Số điện thoại là bắt buộc");
+            hasErrors = true;
+        } else if (!phone.matches("^(03|05|07|08|09)\\d{8}$")) {
+            redirectAttributes.addFlashAttribute("phoneNumber_error", "Số điện thoại không hợp lệ");
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            // Add the invalid user object back to repopulate the form
+            // We must merge it with currentUser to keep email, id etc.
+            currentUser.setFirstName(user.getFirstName());
+            currentUser.setLastName(user.getLastName());
+            currentUser.setPhoneNumber(user.getPhoneNumber());
+            currentUser.setUserDOB(user.getUserDOB());
+            currentUser.setGender(user.getGender());
+
+            redirectAttributes.addFlashAttribute("user", currentUser); // <-- This will be th:object="${user}" on reload
+            redirectAttributes.addFlashAttribute("profile_error", "Cập nhật thất bại. Vui lòng kiểm tra lại thông tin."); // <-- Đã đổi tên
+            return "redirect:/profile";
+        }
+        // === END MANUAL VALIDATION ===
+
+        // If validation passes, call the service method
         userService.updateUser(currentUser.getId(), user.getFirstName(), user.getLastName(), user.getUserDOB(), user.getGender() != null ? user.getGender().name() : null, user.getPhoneNumber());
 
         // Update the user's name in the session as well

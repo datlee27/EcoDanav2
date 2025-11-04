@@ -378,7 +378,7 @@
             // Validate phone (dùng regex chuẩn)
             const phone = phoneInput.value.trim();
             if (!vnPhoneRegex.test(phone)) {
-                showError(document.getElementById('phone-error'), 'Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 03, 05, 07, 08, 09)');
+                showError(document.getElementById('phone-error'), 'Số điện thoại không hợp lệ');
                 phoneInput.classList.add('border-red-500');
                 isValid = false;
             }
