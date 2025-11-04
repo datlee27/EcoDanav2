@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <head th:replace="~{fragments/layout :: head}"></head>
+
     <title th:text="${vehicle.vehicleModel} + ' - EcoDana'">Chi tiết xe - EcoDana</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <link rel="stylesheet" th:href="@{/css/vehicle-detail.css}">
+
     <script th:inline="javascript">
         /*<![CDATA[*/
         const apiKey = /*[[${googleApiKey}]]*/ "YOUR_FALLBACK_API_KEY";
-        // --- Lấy danh sách URL ảnh từ model ---
         const mainImageUrl = /*[[${vehicle.mainImageUrl}]]*/ null;
         const auxiliaryImageUrls = /*[[${vehicle.getImageUrlsFromJson()}]]*/ [];
-        // Tạo một mảng đầy đủ, đảm bảo ảnh chính luôn ở đầu và không bị lặp lại (nếu có trong auxiliary)
         const uniqueAuxUrls = auxiliaryImageUrls.filter(url => url !== mainImageUrl);
-        const allImageUrls = [mainImageUrl, ...uniqueAuxUrls].filter(url => url); // Lọc bỏ null/undefined
+        const allImageUrls = [mainImageUrl, ...uniqueAuxUrls].filter(url => url);
         /*]]>*/
     </script>
+
     <style>
-        * { font-family: 'Poppins', sans-serif; }
+        /* CSS của layout.html đã định nghĩa font-family,
+           vì vậy chúng ta không cần ghi đè * { font-family ... } nữa */
 
         .tab-button {
             position: relative;
@@ -745,6 +744,17 @@
         if (!allImageUrls || allImageUrls.length === 0) return;
         const modal = document.getElementById('imageGalleryModal');
         const thumbnailsContainer = document.getElementById('galleryThumbnails');
+
+        // --- SỬA LỖI: Chọn nav bằng ID và tính toán thanh cuộn ---
+        const nav = document.getElementById('main-nav');
+        const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+        // Thêm padding vào nav
+        if (nav && scrollbarWidth > 0) {
+            nav.style.paddingRight = scrollbarWidth + 'px';
+        }
+        // --- KẾT THÚC SỬA LỖI ---
+
         if(!modal || !thumbnailsContainer) return;
         currentImageIndex = Math.max(0, Math.min(startIndex, allImageUrls.length - 1));
         thumbnailsContainer.innerHTML = '';
@@ -758,13 +768,27 @@
         });
         showImageInGallery(currentImageIndex);
         modal.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
+
+        // --- SỬA LỖI: Ẩn thanh cuộn của <html> ---
+        document.documentElement.style.overflow = 'hidden';
     }
 
     function closeImageGallery() {
         const modal = document.getElementById('imageGalleryModal');
+
+        // --- SỬA LỖI: Chọn nav bằng ID ---
+        const nav = document.getElementById('main-nav');
+
+        // Xóa padding khỏi nav
+        if (nav) {
+            nav.style.paddingRight = '';
+        }
+        // --- KẾT THÚC SỬA LỖI ---
+
         if(modal) modal.classList.add('hidden');
-        document.body.style.overflow = '';
+
+        // --- SỬA LỖI: Hiện lại thanh cuộn của <html> ---
+        document.documentElement.style.overflow = '';
     }
 
     function showImageInGallery(index) {

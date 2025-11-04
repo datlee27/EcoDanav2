@@ -8,9 +8,7 @@
     --border-color: #e5e7eb;
 }
 
-* {
-    font-family: 'Poppins', sans-serif;
-}
+
 
 body {
     color: var(--text-dark);
@@ -187,23 +185,6 @@ html {
     scroll-behavior: smooth;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-    width: 10px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-light);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-    border-radius: 5px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-color);
-}
 
 /* Print Styles */
 @media print {
