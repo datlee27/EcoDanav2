@@ -1,167 +1,58 @@
-<!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <div th:replace="~{fragments/layout :: head}"></div>
-    <link href="/css/sidebar-common.css" rel="stylesheet">
-    <link href="/css/owner-dashboard.css" rel="stylesheet">
-    <style>
-        .primary { color: #4CAF50; }
-        .bg-primary { background-color: #4CAF50; }
-        .hover\:bg-accent:hover { background-color: #45a049; }
-        .hidden { display: none; }
-        input:read-only, input[readonly] { background-color: #f3f4f6; cursor: not-allowed; border-color: #e5e7eb; }
-        form { max-width: 700px; /* Tăng chiều rộng form */ }
-    </style>
-</head>
-<body class="bg-gray-100">
-<div class="flex h-screen bg-gray-100 overflow-hidden">
+<div th:fragment="profile-content" xmlns:th="http://www.thymeleaf.org">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
 
-    <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
-
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
-            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">My Profile</h1> <div class="flex-1"></div>
-
-            <div class="flex items-center space-x-4">
-                <div class="relative">
-                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span id="notificationBadge" class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">0</span>
-                    </button>
-                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-                            <h3 class="font-semibold text-gray-900">Thông báo</h3>
-                            <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
-                        </div>
-                        <div id="notificationList" class="max-h-96 overflow-y-auto">
-                            <div class="p-4 text-center text-gray-500">
-                                <i class="fas fa-bell-slash text-3xl mb-2"></i>
-                                <p>Không có thông báo mới</p>
-                            </div>
-                        </div>
-                    </div>
+    <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
+        <form th:action="@{/owner/profile}" method="post" class="mx-auto max-w-3xl">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                    <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input id="firstName" type="text" name="firstName" th:value="${currentUser?.firstName}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                 </div>
-
-                <div class="relative">
-                    <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
-                        <div th:if="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="w-8 h-8 rounded-full overflow-hidden">
-                            <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
-                        </div>
-                        <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
-                        <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
-                    </button>
-                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                        <div class="p-3 border-b border-gray-200">
-                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Owner User</p>
-                            <p class="text-xs text-gray-500" th:text="${currentUser?.role?.roleName}">Owner</p>
-                        </div>
-                        <div class="py-1">
-                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
-                                Trang chủ
-                            </a>
-                            <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
-                                Hồ sơ
-                            </a>
-                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-                                Đăng Xuất
-                            </a>
-                        </div>
-                    </div>
+                <div>
+                    <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input id="lastName" type="text" name="lastName" th:value="${currentUser?.lastName}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
+                </div>
+                <div class="md:col-span-2">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input id="email" type="email" name="email" th:value="${currentUser?.email}" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm" readonly />
+                </div>
+                <div class="md:col-span-2">
+                    <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input id="phoneNumber" type="text" name="phoneNumber" th:value="${currentUser?.phoneNumber}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
                 </div>
             </div>
-        </div>
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-            <div class="container mx-auto px-0">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
-
-                <div class="bg-white rounded-xl shadow-md p-6 md:p-8">
-                    <div th:if="${success}" class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-lg text-sm">
-                        <i class="fas fa-check-circle mr-2"></i><span th:text="${success}"></span>
-                    </div>
-                    <div th:if="${error}" class="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-                        <i class="fas fa-exclamation-circle mr-2"></i><span th:text="${error}"></span>
-                    </div>
-
-                    <form th:action="@{/owner/profile}" method="post" class="mx-auto">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div>
-                                <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                <input id="firstName" type="text" name="firstName" th:value="${currentUser?.firstName}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
-                            </div>
-                            <div>
-                                <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                <input id="lastName" type="text" name="lastName" th:value="${currentUser?.lastName}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                                <input id="email" type="email" name="email" th:value="${currentUser?.email}" class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-sm" readonly />
-                            </div>
-                            <div class="md:col-span-2">
-                                <label for="phoneNumber" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                <input id="phoneNumber" type="text" name="phoneNumber" th:value="${currentUser?.phoneNumber}" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary" />
-                            </div>
-                        </div>
-                        <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
-                            <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-accent transition-colors text-sm font-medium">
-                                <i class="fas fa-save mr-2"></i>Update Profile
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                <div class="bg-white rounded-xl shadow-md p-6 md:p-8 mt-6">
-                    <h3 class="text-xl font-semibold mb-4 text-center">Đổi Mật Khẩu</h3>
-                    <form th:action="@{/change-password}" method="post" class="mx-auto">
-                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
-                                <input type="password" name="currentPassword" id="currentPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
-                            </div>
-                            <div>
-                                <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
-                                <input type="password" name="newPassword" id="newPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
-                            </div>
-                            <div>
-                                <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
-                                <input type="password" name="confirmPassword" id="confirmPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
-                            </div>
-                        </div>
-                        <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
-                            <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-accent transition-colors text-sm font-medium">
-                                <i class="fas fa-key mr-2"></i>Đổi Mật Khẩu
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
+            <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
+                <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-accent transition-colors text-sm font-medium">
+                    <i class="fas fa-save mr-2"></i>Update Profile
+                </button>
             </div>
-        </main>
+        </form>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-md p-6 md:p-8 mt-6">
+        <h3 class="text-xl font-semibold mb-4 text-center">Đổi Mật Khẩu</h3>
+        <form th:action="@{/change-password}" method="post" class="mx-auto max-w-lg">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="space-y-4">
+                <div>
+                    <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu hiện tại</label>
+                    <input type="password" name="currentPassword" id="currentPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">Mật khẩu mới</label>
+                    <input type="password" name="newPassword" id="newPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Xác nhận mật khẩu mới</label>
+                    <input type="password" name="confirmPassword" id="confirmPassword" required class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-primary focus:border-primary">
+                </div>
+            </div>
+            <div class="flex justify-end mt-6 pt-4 border-t border-gray-200">
+                <button type="submit" class="bg-primary text-white px-5 py-2 rounded-lg hover:bg-accent transition-colors text-sm font-medium">
+                    <i class="fas fa-key mr-2"></i>Đổi Mật Khẩu
+                </button>
+            </div>
+        </form>
     </div>
 </div>
-<script th:src="@{/js/sidebar-common.js}"></script>
-<script th:src="@{/js/owner-dashboard.js}"></script>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ 'profile';
-        if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
-            highlightOwnerSidebarLink(currentPage);
-        }
-        // Load notification count on page load (nếu cần)
-        if (typeof loadNotificationCount === 'function') {
-            loadNotificationCount();
-        }
-    });
-    /*]]>*/
-</script>
-
-</body>
-</html>
