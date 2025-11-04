@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import com.ecodana.evodanavn1.service.AnalyticsService;
 import com.ecodana.evodanavn1.service.BookingService;
+import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -30,8 +31,12 @@ public class AdminController {
     private UserService userService;
     @Autowired
     private AnalyticsService analyticsService;
+    @Autowired
+    private NotificationService notificationService;
     @GetMapping({"/admin", "/admin/dashboard"})
-    public String adminDashboard(@RequestParam(required = false) String tab, HttpSession session, Model model, HttpServletResponse response) {
+    public String adminDashboard(@RequestParam(required = false) String tab, 
+                                  @RequestParam(required = false) String roleFilter,
+                                  HttpSession session, Model model, HttpServletResponse response) {
         response.setHeader("Connection", "close");
         response.setHeader("Content-Encoding", "identity");
         User user = (User) session.getAttribute("currentUser");
@@ -53,7 +58,33 @@ public class AdminController {
             model.addAttribute("performanceMetrics", analyticsService.getPerformanceMetrics());
             model.addAttribute("systemHealth", analyticsService.getSystemHealth());
             List<User> allUsers = userService.getAllUsersWithRole();
-            model.addAttribute("users", allUsers.size() > 100 ? allUsers.subList(0, 100) : allUsers);
+            
+            // Log all users and their roles for debugging
+            logger.info("Total users loaded: {}", allUsers.size());
+            logger.info("roleFilter parameter: '{}'", roleFilter);
+            
+            // Filter users by role if roleFilter parameter is provided
+            List<User> filteredUsers;
+            if (roleFilter != null && !roleFilter.trim().isEmpty()) {
+                logger.info("Filtering users by role: '{}'", roleFilter);
+                filteredUsers = allUsers.stream()
+                    .filter(u -> {
+                        String userRole = u.getRole() != null ? u.getRole().getRoleName() : "Customer";
+                        boolean matches = userRole.equalsIgnoreCase(roleFilter.trim());
+                        if (matches) {
+                            logger.info("User '{}' has role '{}' - MATCH", u.getUsername(), userRole);
+                        }
+                        return matches;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+                logger.info("Filtered {} users out of {} total users", filteredUsers.size(), allUsers.size());
+            } else {
+                logger.info("No filter applied - showing all users");
+                filteredUsers = allUsers;
+            }
+            
+            model.addAttribute("users", filteredUsers.size() > 100 ? filteredUsers.subList(0, 100) : filteredUsers);
+            model.addAttribute("roleFilter", roleFilter);
             List<Vehicle> allVehicles = vehicleService.getAllVehicles();
             model.addAttribute("vehicles", allVehicles.size() > 100 ? allVehicles.subList(0, 100) : allVehicles);
             List<?> allBookings = bookingService.getAllBookings();
@@ -62,12 +93,19 @@ public class AdminController {
             model.addAttribute("insuranceList", List.of());
             model.addAttribute("contracts", List.of());
             model.addAttribute("payments", List.of());
-            model.addAttribute("notifications", List.of());
+            
+            // Load all notifications for notifications tab
+            model.addAttribute("notifications", notificationService.getNotificationsByUserId(userWithRole.getId()));
+            
+            // Add recent notifications for dashboard widget (same data, can be reused)
+            model.addAttribute("recentNotifications", notificationService.getNotificationsByUserId(userWithRole.getId()));
+            
             model.addAttribute("user", userWithRole);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("totalVehicles", allVehicles.size());
             model.addAttribute("totalBookings", allBookings.size());
             model.addAttribute("totalUsers", allUsers.size());
+            model.addAttribute("filteredUserCount", filteredUsers.size());
 
             // Add user statistics
             Map<String, Object> userStats = userService.getUserStatistics();
