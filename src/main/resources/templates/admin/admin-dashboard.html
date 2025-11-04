@@ -69,26 +69,26 @@
                     <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
                         <i class="fas fa-user-circle text-2xl text-gray-500"></i>
                         <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Admin</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
+<!--                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>-->
                     </button>
 
-                    <!-- User Dropdown -->
-                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                        <div class="p-3 border-b border-gray-200">
-                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Admin User</p>
-                            <p class="text-xs text-gray-500">Administrator</p>
-                        </div>
-                        <div class="py-1">
-                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
-                                Trang chủ
-                            </a>
-                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-                                Đăng Xuất
-                            </a>
-                        </div>
-                    </div>
+<!--                    &lt;!&ndash; User Dropdown &ndash;&gt;-->
+<!--                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">-->
+<!--                        <div class="p-3 border-b border-gray-200">-->
+<!--                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Admin User</p>-->
+<!--                            <p class="text-xs text-gray-500">Administrator</p>-->
+<!--                        </div>-->
+<!--&lt;!&ndash;                        <div class="py-1">&ndash;&gt;-->
+<!--&lt;!&ndash;                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">&ndash;&gt;-->
+<!--&lt;!&ndash;                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                                Trang chủ&ndash;&gt;-->
+<!--&lt;!&ndash;                            </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">&ndash;&gt;-->
+<!--&lt;!&ndash;                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                                Đăng Xuất&ndash;&gt;-->
+<!--&lt;!&ndash;                            </a>&ndash;&gt;-->
+<!--&lt;!&ndash;                        </div>&ndash;&gt;-->
+<!--                    </div>-->
                 </div>
             </div>
         </div>
@@ -260,77 +260,77 @@
                         </div>
                         
                         <!-- Notifications Widget -->
-                        <div class="bg-white shadow rounded-lg overflow-hidden">
-                            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-blue-500">
-                                <div class="flex justify-between items-center">
-                                    <h3 class="text-lg font-semibold text-white flex items-center">
-                                        <i class="fas fa-bell mr-2"></i>
-                                        Recent Notifications
-                                    </h3>
-                                    <a href="/admin/notifications" class="text-white hover:text-purple-100 text-sm font-medium transition">
-                                        View All <i class="fas fa-arrow-right ml-1"></i>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="divide-y divide-gray-200">
-                                <div th:each="notification, iterStat : ${recentNotifications}" 
-                                     th:if="${recentNotifications != null and !recentNotifications.empty and iterStat.index < 5}"
-                                     class="p-4 hover:bg-gray-50 transition"
-                                     th:classappend="${!notification.isRead} ? 'bg-blue-50' : ''">
-                                    <div class="flex items-start space-x-3">
-                                        <div class="flex-shrink-0">
-                                            <div th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100' : 
-                                                               ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100' :
-                                                               ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100' :
-                                                               ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100' :
-                                                               ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100' :
-                                                               'bg-gray-100'"
-                                                 class="w-10 h-10 rounded-full flex items-center justify-center">
-                                                <i th:classappend="${notification.notificationType == 'SYSTEM'} ? 'text-purple-600 fa-cog' : 
-                                                                  ${notification.notificationType == 'BOOKING'} ? 'text-orange-600 fa-calendar' :
-                                                                  ${notification.notificationType == 'PAYMENT'} ? 'text-green-600 fa-dollar-sign' :
-                                                                  ${notification.notificationType == 'VEHICLE'} ? 'text-indigo-600 fa-car' :
-                                                                  ${notification.notificationType == 'PROMOTION'} ? 'text-pink-600 fa-gift' :
-                                                                  'text-gray-600 fa-bell'"
-                                                   class="fas"></i>
-                                            </div>
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-center justify-between mb-1">
-                                                <span th:if="${notification.notificationType}" 
-                                                      th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100 text-purple-800' : 
-                                                                     ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100 text-orange-800' :
-                                                                     ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100 text-green-800' :
-                                                                     ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100 text-indigo-800' :
-                                                                     ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100 text-pink-800' :
-                                                                     'bg-gray-100 text-gray-800'"
-                                                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium">
-                                                    <span th:text="${notification.notificationType}">Type</span>
-                                                </span>
-                                                <span class="text-xs text-gray-500" th:text="${#temporals.format(notification.createdDate, 'HH:mm dd/MM')}">Time</span>
-                                            </div>
-                                            <p class="text-sm text-gray-800 leading-relaxed" th:text="${notification.message}">
-                                                Notification message
-                                            </p>
-                                            <div th:if="${!notification.isRead}" class="mt-1">
-                                                <span class="inline-flex items-center text-xs text-blue-600 font-medium">
-                                                    <i class="fas fa-circle text-xs mr-1"></i>New
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div th:if="${recentNotifications == null or recentNotifications.empty}" class="p-8 text-center">
-                                    <div class="inline-block bg-gray-100 rounded-full p-4 mb-3">
-                                        <i class="fas fa-bell-slash text-3xl text-gray-400"></i>
-                                    </div>
-                                    <p class="text-gray-500 mb-2">No notifications yet</p>
-                                    <a href="/admin/notifications/create" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                                        Send your first notification
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+<!--                        <div class="bg-white shadow rounded-lg overflow-hidden">-->
+<!--                            <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-blue-500">-->
+<!--                                <div class="flex justify-between items-center">-->
+<!--                                    <h3 class="text-lg font-semibold text-white flex items-center">-->
+<!--                                        <i class="fas fa-bell mr-2"></i>-->
+<!--                                        Recent Notifications-->
+<!--                                    </h3>-->
+<!--                                    <a href="/admin/notifications" class="text-white hover:text-purple-100 text-sm font-medium transition">-->
+<!--                                        View All <i class="fas fa-arrow-right ml-1"></i>-->
+<!--                                    </a>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="divide-y divide-gray-200">-->
+<!--&lt;!&ndash;                                <div th:each="notification, iterStat : ${recentNotifications}" &ndash;&gt;-->
+<!--&lt;!&ndash;                                     th:if="${recentNotifications != null and !recentNotifications.empty and iterStat.index < 5}"&ndash;&gt;-->
+<!--&lt;!&ndash;                                     class="p-4 hover:bg-gray-50 transition"&ndash;&gt;-->
+<!--&lt;!&ndash;                                     th:classappend="${!notification.isRead} ? 'bg-blue-50' : ''">&ndash;&gt;-->
+<!--&lt;!&ndash;                                    <div class="flex items-start space-x-3">&ndash;&gt;-->
+<!--&lt;!&ndash;                                        <div class="flex-shrink-0">&ndash;&gt;-->
+<!--&lt;!&ndash;                                            <div th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100' : &ndash;&gt;-->
+<!--&lt;!&ndash;                                                               ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                               ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                               ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                               ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                               'bg-gray-100'"&ndash;&gt;-->
+<!--&lt;!&ndash;                                                 class="w-10 h-10 rounded-full flex items-center justify-center">&ndash;&gt;-->
+<!--&lt;!&ndash;                                                <i th:classappend="${notification.notificationType == 'SYSTEM'} ? 'text-purple-600 fa-cog' : &ndash;&gt;-->
+<!--&lt;!&ndash;                                                                  ${notification.notificationType == 'BOOKING'} ? 'text-orange-600 fa-calendar' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                                  ${notification.notificationType == 'PAYMENT'} ? 'text-green-600 fa-dollar-sign' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                                  ${notification.notificationType == 'VEHICLE'} ? 'text-indigo-600 fa-car' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                                  ${notification.notificationType == 'PROMOTION'} ? 'text-pink-600 fa-gift' :&ndash;&gt;-->
+<!--&lt;!&ndash;                                                                  'text-gray-600 fa-bell'"&ndash;&gt;-->
+<!--&lt;!&ndash;                                                   class="fas"></i>&ndash;&gt;-->
+<!--&lt;!&ndash;                                            </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                                        </div>&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                        <div class="flex-1 min-w-0">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            <div class="flex items-center justify-between mb-1">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                <span th:if="${notification.notificationType}" &ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                      th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100 text-purple-800' : &ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                                     ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100 text-orange-800' :&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                                     ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100 text-green-800' :&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                                     ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100 text-indigo-800' :&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                                     ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100 text-pink-800' :&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                                     'bg-gray-100 text-gray-800'"&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                      class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                    <span th:text="${notification.notificationType}">Type</span>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                </span>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                <span class="text-xs text-gray-500" th:text="${#temporals.format(notification.createdDate, 'HH:mm dd/MM')}">Time</span>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            </div>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            <p class="text-sm text-gray-800 leading-relaxed" th:text="${notification.message}">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                Notification message&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            </p>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            <div th:if="${!notification.isRead}" class="mt-1">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                <span class="inline-flex items-center text-xs text-blue-600 font-medium">&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                    <i class="fas fa-circle text-xs mr-1"></i>New&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                                </span>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                            </div>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;&lt;!&ndash;                                        </div>&ndash;&gt;&ndash;&gt;-->
+<!--&lt;!&ndash;                                    </div>&ndash;&gt;-->
+<!--&lt;!&ndash;                                </div>&ndash;&gt;-->
+<!--                                <div th:if="${recentNotifications == null or recentNotifications.empty}" class="p-8 text-center">-->
+<!--                                    <div class="inline-block bg-gray-100 rounded-full p-4 mb-3">-->
+<!--                                        <i class="fas fa-bell-slash text-3xl text-gray-400"></i>-->
+<!--                                    </div>-->
+<!--                                    <p class="text-gray-500 mb-2">No notifications yet</p>-->
+<!--                                    <a href="/admin/notifications/create" class="text-blue-600 hover:text-blue-700 text-sm font-medium">-->
+<!--                                        Send your first notification-->
+<!--                                    </a>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
                     </div>
 
                     <!-- User Management Tab -->
