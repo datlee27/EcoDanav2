@@ -324,27 +324,6 @@
                         <span class="text-gray-600">/ngày</span>
                     </div>
 
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-                        <div class="flex items-center gap-2">
-                            <i class="fas fa-shield-alt text-green-500"></i>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold text-green-700">Bảo hiểm thuê xe</p>
-                                <p class="text-xs text-gray-600">Chuyến đi có mua bảo hiểm. Khách hàng chỉ bồi thường tối đa 2,000,000 VNĐ trong trường hợp có sự cố ngoài ý muốn.</p>
-                            </div>
-                        </div>
-                        <a href="#" class="text-xs text-green-600 hover:underline mt-2 inline-block">Xem thêm ›</a>
-                    </div>
-
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                        <div class="flex items-center gap-2">
-                            <span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">HOT</span>
-                            <div class="flex-1">
-                                <p class="text-sm font-semibold">Bảo hiểm người trên xe</p>
-                                <p class="text-lg font-bold text-green-500">50.000đ/ngày</p>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-2">Trường hợp xảy ra tai nạn, khách hàng sẽ được bồi thường tối đa 200,000,000đ/người/vụ</p>
-                    </div>
                 </div>
 
                 <form id="bookingForm" th:action="@{/booking/checkout}" method="post" class="space-y-4">
@@ -352,7 +331,6 @@
                     <input type="hidden" name="dailyPrice" id="dailyPriceInput" th:value="${vehicle.getDailyPriceFromJson()}">
                     <input type="hidden" name="totalAmount" id="totalAmountInput" value="0">
                     <input type="hidden" name="rentalDays" id="rentalDaysInput" value="0">
-                    <input type="hidden" name="additionalInsurance" id="additionalInsuranceInput" value="false">
                     <input type="hidden" name="discountId" id="discountIdInput" value="">
                     <input type="hidden" name="discountAmount" id="discountAmountInput" value="0">
 
@@ -420,17 +398,6 @@
                         <div class="flex justify-between">
                             <span class="text-gray-600">Đơn giá thuê (<span id="daysCount">0</span> ngày)</span>
                             <span class="font-semibold" id="rentalPrice">0 ₫</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Bảo hiểm thuê xe <i class="fas fa-info-circle text-gray-400"></i></span>
-                            <span class="font-semibold" id="basicInsurance">110.401 ₫</span>
-                        </div>
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center gap-2 text-gray-600 cursor-pointer">
-                                <input type="checkbox" id="additionalInsuranceCheckbox" class="rounded border-gray-300 text-green-500 focus:ring-green-500">
-                                <span>Bảo hiểm người trên xe (<span id="insuranceDays">0</span> ngày)</span>
-                            </label>
-                            <span class="font-semibold" id="additionalInsurancePrice">0 ₫</span>
                         </div>
                         <div id="discountRow" class="flex justify-between text-green-600 hidden">
                                 <span class="font-medium">
@@ -907,63 +874,60 @@
         let appliedDiscount = null;
         let discountAmount = 0;
 
+        // === START SỬA LỖI ===
         // Global constants
-        const BASIC_INSURANCE = 110401;
-        const ADDITIONAL_INSURANCE_PER_DAY = 50000;
-
-        // ===================================
-        // === BẮT ĐẦU SỬA LỖI ===
-        // ===================================
+        // const BASIC_INSURANCE = 110401; // ĐÃ XÓA
+        // const ADDITIONAL_INSURANCE_PER_DAY = 50000; // ĐÃ XÓA
 
         // Thêm định nghĩa hàm formatCurrency
         const formatCurrency = (amount) => {
             if (isNaN(amount) || amount === null) return '0 ₫';
-            // Làm tròn đến đơn vị gần nhất trước khi format
             const roundedAmount = Math.round(amount);
             return new Intl.NumberFormat('vi-VN').format(roundedAmount) + ' ₫';
         }
 
-        // ===================================
-        // === KẾT THÚC SỬA LỖI ===
-        // ===================================
-
         // Global function to calculate price
         const calculatePrice = () => {
+            // Lấy các phần tử DOM
             const pickupDateInput = document.getElementById('pickupDate');
             const returnDateInput = document.getElementById('returnDate');
             const pickupTimeInput = document.getElementById('pickupTime');
             const returnTimeInput = document.getElementById('returnTime');
-            const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
             const dailyPriceInput = document.getElementById('dailyPriceInput');
             const rentalDuration = document.getElementById('rentalDuration');
             const durationText = document.getElementById('durationText');
             const daysCount = document.getElementById('daysCount');
-            const insuranceDays = document.getElementById('insuranceDays');
             const rentalPriceEl = document.getElementById('rentalPrice');
-            const additionalInsurancePriceEl = document.getElementById('additionalInsurancePrice');
             const discountRow = document.getElementById('discountRow');
             const discountNameEl = document.getElementById('discountName');
             const discountAmountEl = document.getElementById('discountAmount');
             const totalAmountEl = document.getElementById('totalAmount');
             const totalAmountInput = document.getElementById('totalAmountInput');
             const rentalDaysInput = document.getElementById('rentalDaysInput');
-            const additionalInsuranceInput = document.getElementById('additionalInsuranceInput');
             const discountAmountInput = document.getElementById('discountAmountInput');
             const discountIdInput = document.getElementById('discountIdInput');
 
+            // Các biến đã bị xóa khỏi DOM
+            // const additionalInsuranceCheckbox = document.getElementById('additionalInsuranceCheckbox');
+            // const insuranceDays = document.getElementById('insuranceDays');
+            // const additionalInsurancePriceEl = document.getElementById('additionalInsurancePrice');
+            // const additionalInsuranceInput = document.getElementById('additionalInsuranceInput');
+            // const basicInsuranceEl = document.getElementById('basicInsurance'); // Thêm cái này
 
-            if (!pickupDateInput || !returnDateInput || !pickupTimeInput || !returnTimeInput || !dailyPriceInput || !rentalDuration || !durationText || !daysCount || !insuranceDays || !rentalPriceEl || !additionalInsurancePriceEl || !discountRow || !discountNameEl || !discountAmountEl || !totalAmountEl || !totalAmountInput || !rentalDaysInput || !additionalInsuranceInput || !discountAmountInput || !discountIdInput) {
-                console.error("One or more elements not found for price calculation.");
+            // Kiểm tra các phần tử DOM CẦN THIẾT
+            if (!pickupDateInput || !returnDateInput || !pickupTimeInput || !returnTimeInput || !dailyPriceInput || !rentalDuration || !durationText || !daysCount || !rentalPriceEl || !discountRow || !discountNameEl || !discountAmountEl || !totalAmountEl || !totalAmountInput || !rentalDaysInput || !discountAmountInput || !discountIdInput) {
+                console.error("Một hoặc nhiều phần tử DOM để tính giá không tồn tại.");
                 return;
             }
 
+            // Kiểm tra ngày/giờ
             if (!pickupDateInput.value || !returnDateInput.value || !pickupTimeInput.value || !returnTimeInput.value) {
                 rentalDuration.classList.add('hidden');
                 totalAmountEl.textContent = '0 ₫';
                 totalAmountInput.value = 0;
                 rentalDaysInput.value = 0;
                 rentalPriceEl.textContent = '0 ₫';
-                additionalInsurancePriceEl.textContent = '0 ₫';
+                // if(additionalInsurancePriceEl) additionalInsurancePriceEl.textContent = '0 ₫'; // Đã xóa
                 discountRow.classList.add('hidden');
                 return;
             }
@@ -977,11 +941,12 @@
                 totalAmountInput.value = 0;
                 rentalDaysInput.value = 0;
                 rentalPriceEl.textContent = '0 ₫';
-                additionalInsurancePriceEl.textContent = '0 ₫';
+                // if(additionalInsurancePriceEl) additionalInsurancePriceEl.textContent = '0 ₫'; // Đã xóa
                 discountRow.classList.add('hidden');
                 return;
             }
 
+            // Tính toán ngày
             const diffMilliseconds = returnDateTime - pickupDateTime;
             const totalHours = diffMilliseconds / (1000 * 60 * 60);
 
@@ -992,7 +957,7 @@
                     diffDays = 1;
                 }
             } else {
-                diffDays = 1;
+                diffDays = 1; // Trường hợp không hợp lệ nhưng vẫn tính 1 ngày
             }
 
             let durationString = '';
@@ -1014,19 +979,24 @@
             rentalDuration.classList.remove('hidden');
             durationText.textContent = durationString;
             daysCount.textContent = diffDays;
-            insuranceDays.textContent = diffDays;
+            // if(insuranceDays) insuranceDays.textContent = diffDays; // Đã xóa
 
+            // Tính giá thuê
             const dailyPrice = parseFloat(dailyPriceInput.value) || 0;
             const rentalPrice = dailyPrice * diffDays;
             rentalPriceEl.textContent = formatCurrency(rentalPrice);
 
-            const additionalInsurance = additionalInsuranceCheckbox.checked ? (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
-            additionalInsurancePriceEl.textContent = formatCurrency(additionalInsurance);
+            // Tính bảo hiểm (đã xóa)
+            // const additionalInsurance = additionalInsuranceCheckbox && additionalInsuranceCheckbox.checked ? (ADDITIONAL_INSURANCE_PER_DAY * diffDays) : 0;
+            // if(additionalInsurancePriceEl) additionalInsurancePriceEl.textContent = formatCurrency(additionalInsurance);
 
+            // Tính giảm giá
             let finalDiscount = 0;
             if (appliedDiscount) {
-                const subtotal = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+                // const subtotal = rentalPrice + BASIC_INSURANCE + additionalInsurance; // Cũ
+                const subtotal = rentalPrice; // Mới (chỉ tính tiền thuê)
                 let minOrder = appliedDiscount.minOrderAmount || 0;
+
                 if (subtotal >= minOrder) {
                     if (appliedDiscount.discountType === 'Percentage') {
                         finalDiscount = subtotal * (appliedDiscount.discountValue / 100);
@@ -1059,11 +1029,13 @@
                 discountIdInput.value = '';
             }
 
-            const total = rentalPrice + BASIC_INSURANCE + additionalInsurance - discountAmount;
+            // Tính tổng
+            // const total = rentalPrice + BASIC_INSURANCE + additionalInsurance - discountAmount; // Cũ
+            const total = rentalPrice - discountAmount; // Mới
             totalAmountEl.textContent = formatCurrency(total);
             totalAmountInput.value = Math.round(total);
             rentalDaysInput.value = diffDays;
-            additionalInsuranceInput.value = additionalInsuranceCheckbox.checked;
+            // if(additionalInsuranceInput) additionalInsuranceInput.value = additionalInsuranceCheckbox ? additionalInsuranceCheckbox.checked : false; // Đã xóa
         };
 
         // Apply discount function
@@ -1072,10 +1044,13 @@
             const discountCode = discountCodeInput.value.trim();
             const rentalDays = parseFloat(document.getElementById('rentalDaysInput').value || '0');
             const dailyPrice = parseFloat(document.getElementById('dailyPriceInput').value) || 0;
-            const additionalInsuranceChecked = document.getElementById('additionalInsuranceCheckbox').checked;
-            const additionalInsurance = additionalInsuranceChecked ? (ADDITIONAL_INSURANCE_PER_DAY * rentalDays) : 0;
+
+            // const additionalInsuranceChecked = document.getElementById('additionalInsuranceCheckbox') ? document.getElementById('additionalInsuranceCheckbox').checked : false; // Sửa lỗi null
+            // const additionalInsurance = additionalInsuranceChecked ? (ADDITIONAL_INSURANCE_PER_DAY * rentalDays) : 0; // Sửa lỗi null
+
             const rentalPrice = dailyPrice * rentalDays;
-            const amountForValidation = rentalPrice + BASIC_INSURANCE + additionalInsurance;
+            // const amountForValidation = rentalPrice + BASIC_INSURANCE + additionalInsurance; // Cũ
+            const amountForValidation = rentalPrice; // Mới
 
             if (!discountCode) { return showDiscountMessage('Vui lòng nhập mã giảm giá!', 'error'); }
             if (isNaN(rentalDays) || rentalDays <= 0) { return showDiscountMessage('Vui lòng chọn ngày thuê hợp lệ trước!', 'error'); }
@@ -1109,6 +1084,7 @@
                 calculatePrice();
             }
         }
+        // === KẾT THÚC SỬA LỖI ===
 
         const showDiscountMessage = (message, type) => {
             const messageEl = document.getElementById('discountMessage');
@@ -1131,7 +1107,7 @@
         const returnDateInputDetail = document.getElementById('returnDate');
         const pickupTimeInputDetail = document.getElementById('pickupTime');
         const returnTimeInputDetail = document.getElementById('returnTime');
-        const additionalInsuranceCheckboxDetail = document.getElementById('additionalInsuranceCheckbox');
+        // const additionalInsuranceCheckboxDetail = document.getElementById('additionalInsuranceCheckbox'); // Đã xóa
 
         if (pickupDateInputDetail && returnDateInputDetail) {
             const today = new Date();
@@ -1166,9 +1142,14 @@
                 calculatePrice();
             });
 
-            [pickupTimeInputDetail, returnTimeInputDetail, additionalInsuranceCheckboxDetail].forEach(el => {
+            // Sửa lỗi: Loại bỏ 'additionalInsuranceCheckboxDetail'
+            [pickupTimeInputDetail, returnTimeInputDetail].forEach(el => {
                 if(el) el.addEventListener('change', calculatePrice);
             });
+            // Gắn riêng cho checkbox nếu nó tồn tại
+            // const checkbox = document.getElementById('additionalInsuranceCheckbox');
+            // if (checkbox) checkbox.addEventListener('change', calculatePrice); // Đã xóa
+
         } else {
             console.warn("Date/time inputs for price calculation not found.");
         }
