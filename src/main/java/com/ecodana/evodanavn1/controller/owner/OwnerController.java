@@ -307,7 +307,7 @@ public class OwnerController {
         // 2. Chuẩn bị đường dẫn trả về khi lỗi
         // Nếu sourceView là "redirect:/owner/cars", chúng ta cần thêm flash attributes
         // Nếu sourceView là "owner/vehicle-add", chúng ta cần thêm model attributes
-        String errorRedirectPath = sourceView.startsWith("redirect:") ? "redirect:/owner/dashboard?tab=cars" : "owner/vehicle-add"; // Sửa thành dashboard?tab=cars
+        String errorRedirectPath = sourceView.startsWith("redirect:") ? sourceView : "owner/vehicle-add";
 
         // 3. Lấy User
         User currentUser = (User) session.getAttribute("currentUser");
@@ -446,14 +446,33 @@ public class OwnerController {
             // === XỬ LÝ THÀNH CÔNG ===
             redirectAttributes.addFlashAttribute("success", "Đăng ký xe thành công! Xe của bạn đang chờ Admin duyệt.");
 
-            // Nếu thành công, luôn về trang quản lý xe
-            return "redirect:/owner/dashboard?tab=cars"; // Sửa thành dashboard?tab=cars
+            // ===================================
+            // === BẮT ĐẦU SỬA LỖI ĐIỀU HƯỚNG ===
+            // ===================================
+            // Kiểm tra nguồn gốc submit để điều hướng
+
+            // Nếu nguồn là trang "owner/vehicle-add" (Customer "Become Owner"), quay về trang chủ
+            if ("owner/vehicle-add".equals(sourceView)) {
+                return "redirect:/";
+            }
+
+            // Nếu nguồn là modal (bắt đầu bằng "redirect:"), quay lại chính nguồn đó
+            // (e.g., "redirect:/owner/dashboard?tab=cars" hoặc "redirect:/owner/cars")
+            if (sourceView.startsWith("redirect:")) {
+                return sourceView;
+            }
+
+            // Mặc định (fallback)
+            return "redirect:/owner/cars";
+            // ===================================
+            // === KẾT THÚC SỬA LỖI ĐIỀU HƯỚNG ===
+            // ===================================
 
         } catch (IllegalArgumentException e) { // Lỗi validation
             logger.warn("Validation failed for addCar: {}", e.getMessage());
             // Trả lỗi về đúng form
             if (sourceView.startsWith("redirect:")) {
-                // Gửi lỗi về modal (trang /owner/cars)
+                // Gửi lỗi về modal (trang /owner/cars hoặc /owner/dashboard)
                 redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
                 // Thêm param để JS tự mở modal
                 redirectAttributes.addAttribute("openModal", "add-car-modal");
@@ -466,7 +485,7 @@ public class OwnerController {
                 // Giữ lại các giá trị đã nhập
                 model.addAttribute("vehicle", vehicle);
             }
-            return errorRedirectPath; // Trả về view "owner/vehicle-add" hoặc "redirect:/owner/dashboard?tab=cars"
+            return errorRedirectPath; // Trả về view "owner/vehicle-add" hoặc "redirect:/owner/..."
 
         } catch (Exception e) { // Lỗi hệ thống
             logger.error("Error saving vehicle", e);
