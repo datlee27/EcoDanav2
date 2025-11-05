@@ -11,6 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import com.ecodana.evodanavn1.service.AnalyticsService;
@@ -167,9 +171,8 @@ public class AdminController {
         model.addAttribute("cancelledBookings", 0);
         return "admin/bookings-management";
     }
-    // Vehicle listing moved to VehicleAdminController at /admin/vehicles
     // User management moved to UserAdminController at /admin/users
-    // All /admin/users/* and /admin/vehicles/* endpoints are now handled by dedicated controllers
+    // All /admin/users/* endpoints are now handled by dedicated controllers
     @GetMapping("/admin/reports")
     public String adminReports(HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
@@ -188,9 +191,119 @@ public class AdminController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
+    
+    // Vehicle Management APIs
+    @PostMapping("/admin/api/vehicles/{id}/approve")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> approveVehicle(@PathVariable String id, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        
+        try {
+            vehicleService.updateVehicleStatus(id, "Available");
+            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle approved successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+    
+    @PostMapping("/admin/api/vehicles/{id}/reject")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> rejectVehicle(@PathVariable String id, @RequestBody Map<String, String> payload, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        
+        try {
+            vehicleService.updateVehicleStatus(id, "Unavailable");
+            // You can save the reason in a log table if needed
+            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle rejected"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+    
+    @DeleteMapping("/admin/api/vehicles/{id}/delete")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteVehicle(@PathVariable String id, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        
+        try {
+            vehicleService.deleteVehicle(id);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+    
+    @GetMapping("/admin/api/vehicles/{id}/detail")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getVehicleDetail(@PathVariable String id, HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null || !userService.isAdmin(user)) {
+            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+        
+        try {
+            var vehicle = vehicleService.getVehicleById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
+            Map<String, Object> vehicleData = new HashMap<>();
+            
+            // Basic vehicle info
+            vehicleData.put("vehicleModel", vehicle.getVehicleModel());
+            vehicleData.put("licensePlate", vehicle.getLicensePlate());
+            vehicleData.put("vehicleType", vehicle.getVehicleType());
+            vehicleData.put("seats", vehicle.getSeats());
+            vehicleData.put("status", vehicle.getStatus().name());
+            vehicleData.put("dailyPrice", vehicle.getDailyPriceFromJson());
+            vehicleData.put("description", vehicle.getDescription());
+            
+            // Additional vehicle details
+            vehicleData.put("yearManufactured", vehicle.getYearManufactured());
+            vehicleData.put("odometer", vehicle.getOdometer());
+            vehicleData.put("transmission", vehicle.getTransmissionType() != null ? vehicle.getTransmissionType().getTransmissionTypeName() : null);
+            vehicleData.put("batteryCapacity", vehicle.getBatteryCapacity());
+            
+            // Images
+            vehicleData.put("mainImageUrl", vehicle.getMainImageUrl());
+            vehicleData.put("imageUrls", vehicle.getImageUrlsFromJson());
+            
+            // Features
+            vehicleData.put("features", vehicle.getFeaturesFromJson());
+            
+            // Owner information
+            if (vehicle.getOwnerId() != null) {
+                User owner = userService.findById(vehicle.getOwnerId());
+                if (owner != null) {
+                    vehicleData.put("ownerName", owner.getFirstName() + " " + owner.getLastName());
+                    vehicleData.put("ownerEmail", owner.getEmail());
+                    vehicleData.put("ownerPhone", owner.getPhoneNumber());
+                    vehicleData.put("ownerAddress", "Chưa cập nhật");
+                } else {
+                    vehicleData.put("ownerName", "N/A");
+                    vehicleData.put("ownerEmail", "N/A");
+                    vehicleData.put("ownerPhone", "N/A");
+                    vehicleData.put("ownerAddress", "N/A");
+                }
+            } else {
+                vehicleData.put("ownerName", "N/A");
+                vehicleData.put("ownerEmail", "N/A");
+                vehicleData.put("ownerPhone", "N/A");
+                vehicleData.put("ownerAddress", "N/A");
+            }
+            
+            return ResponseEntity.ok(Map.of("success", true, "vehicle", vehicleData));
+        } catch (Exception e) {
+            logger.error("Error getting vehicle detail: ", e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+    
     // User CRUD Operations moved to UserAdminController
     // All /admin/users/* endpoints are now handled by UserAdminController
-
-    // Vehicle CRUD Operations moved to VehicleAdminController
-    // All /admin/vehicles/* endpoints (except /admin/vehicles listing) are now handled by VehicleAdminController
 }
