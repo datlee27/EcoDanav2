@@ -22,7 +22,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Unread</dt>
-                        <dd class="text-2xl font-semibold text-yellow-600" th:text="${#lists.size(notifications.?[getIsRead() == false])}">0</dd>
+                        <dd class="text-2xl font-semibold text-yellow-600" th:text="${notifications != null ? #lists.size(notifications.?[isRead == false]) : 0}">0</dd>
                     </dl>
                 </div>
             </div>
@@ -36,7 +36,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Read</dt>
-                        <dd class="text-2xl font-semibold text-green-600" th:text="${#lists.size(notifications.?[getIsRead() == true])}">0</dd>
+                        <dd class="text-2xl font-semibold text-green-600" th:text="${notifications != null ? #lists.size(notifications.?[isRead == true]) : 0}">0</dd>
                     </dl>
                 </div>
             </div>
@@ -50,7 +50,7 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Today</dt>
-                        <dd class="text-2xl font-semibold text-purple-600" th:text="${#lists.size(notifications.?[#temporals.format(getCreatedDate(), 'yyyy-MM-dd') == #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')])}">0</dd>
+                        <dd class="text-2xl font-semibold text-purple-600" th:text="${notificationsTodayCount ?: 0}">0</dd>
                     </dl>
                 </div>
             </div>
@@ -75,7 +75,7 @@
 
     <div class="grid grid-cols-1 gap-4">
         <div th:each="notification : ${notifications}"
-             th:if="${notifications != null and !notifications.isEmpty()}"
+             th:if="${notifications != null and !notifications.empty}"
              class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all"
              th:classappend="${!notification.isRead} ? 'border-l-4 border-blue-500' : ''">
             <div class="p-6">
@@ -93,11 +93,11 @@
 
                             <span th:if="${notification.notificationType}"
                                   th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100 text-purple-800' :
-                                                 ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100 text-orange-800' :
-                                                 ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100 text-green-800' :
-                                                 ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100 text-indigo-800' :
-                                                 ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100 text-pink-800' :
-                                                 'bg-gray-100 text-gray-800'"
+                                                 (notification.notificationType == 'BOOKING' ? 'bg-orange-100 text-orange-800' :
+                                                 (notification.notificationType == 'PAYMENT' ? 'bg-green-100 text-green-800' :
+                                                 (notification.notificationType == 'VEHICLE' ? 'bg-indigo-100 text-indigo-800' :
+                                                 (notification.notificationType == 'PROMOTION' ? 'bg-pink-100 text-pink-800' :
+                                                 'bg-gray-100 text-gray-800'))))"
                                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
                                 <i class="fas fa-tag mr-1"></i>
                                 <span th:text="${notification.notificationType}">Type</span>
