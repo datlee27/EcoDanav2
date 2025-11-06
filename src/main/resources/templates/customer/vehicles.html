@@ -143,6 +143,28 @@
                         <span class="mx-2">|</span>
                         <i class="fas fa-cog mr-1"></i> Số tự động
                     </div>
+                    
+                    <!-- Rating and Reviews -->
+                    <div class="mt-3 flex items-center gap-2" th:if="${vehicleRatings != null and vehicleRatings.containsKey(vehicle.vehicleId) and vehicleRatings.get(vehicle.vehicleId).feedbackCount > 0}">
+                        <div class="flex items-center">
+                            <div class="flex">
+                                <i class="fas fa-star text-sm" th:each="i : ${#numbers.sequence(1, 5)}"
+                                   th:class="${i <= vehicleRatings.get(vehicle.vehicleId).roundedRating} ? 'text-yellow-400' : 'text-gray-300'"></i>
+                            </div>
+                            <span class="ml-1 text-sm font-semibold text-gray-700" 
+                                  th:text="${#numbers.formatDecimal(vehicleRatings.get(vehicle.vehicleId).averageRating, 1, 'POINT', 1, 'POINT')}">
+                                4.5
+                            </span>
+                        </div>
+                        <span class="text-sm text-gray-500" 
+                              th:text="'(' + ${vehicleRatings.get(vehicle.vehicleId).feedbackCount} + ' đánh giá)'">
+                            (12 đánh giá)
+                        </span>
+                    </div>
+                    <div class="mt-3 text-sm text-gray-500" th:if="${vehicleRatings == null or !vehicleRatings.containsKey(vehicle.vehicleId) or vehicleRatings.get(vehicle.vehicleId).feedbackCount == 0}">
+                        <i class="fas fa-star text-gray-300 mr-1"></i>
+                        <span>Chưa có đánh giá</span>
+                    </div>
 
                     <div class="mt-4">
                         <span class="text-2xl font-bold text-primary" th:text="${#numbers.formatDecimal(vehicle.getDailyPriceFromJson(), 0, 'COMMA', 0, 'POINT')}">1,200,000</span>

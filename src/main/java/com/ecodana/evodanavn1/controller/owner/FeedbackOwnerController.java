@@ -10,7 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,15 +26,27 @@ public class FeedbackOwnerController {
     private UserService userService;
 
     @GetMapping
-    public String feedbackManagement(HttpSession session, Model model, RedirectAttributes redirectAttributes) {
+    public String feedbackManagement(HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
         if (user == null || !userService.isOwner(user)) {
-            redirectAttributes.addFlashAttribute("error", "Vui lòng đăng nhập với tư cách chủ xe.");
             return "redirect:/login";
         }
 
-        // Chuyển hướng đến trang dashboard với tab feedback
-        return "redirect:/owner/dashboard?tab=feedback";
+        List<UserFeedback> ownerFeedback = userFeedbackService.getFeedbackForOwner(user);
+        List<UserFeedback> feedbackWithReplies = ownerFeedback.stream()
+                .filter(f -> f.getStaffReply() != null && !f.getStaffReply().trim().isEmpty())
+                .toList();
+        List<UserFeedback> feedbackWithoutReplies = ownerFeedback.stream()
+                .filter(f -> f.getStaffReply() == null || f.getStaffReply().trim().isEmpty())
+                .toList();
+
+        model.addAttribute("ownerFeedback", ownerFeedback);
+        model.addAttribute("feedbackWithReplies", feedbackWithReplies);
+        model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
+        model.addAttribute("currentUser", user);
+        model.addAttribute("currentPage", "feedback");
+
+        return "owner/owner-feedback";
     }
 
     @PostMapping("/reply/{feedbackId}")
@@ -44,7 +55,7 @@ public class FeedbackOwnerController {
                                                                @RequestParam String reply,
                                                                HttpSession session) {
         Map<String, Object> response = new HashMap<>();
-
+        
         User user = (User) session.getAttribute("currentUser");
         if (user == null || !userService.isOwner(user)) {
             response.put("success", false);
@@ -54,7 +65,7 @@ public class FeedbackOwnerController {
 
         // Verify that the feedback is for a vehicle owned by this user
         UserFeedback feedback = userFeedbackService.getFeedbackById(feedbackId);
-        if (feedback == null || feedback.getVehicle() == null || !user.getId().equals(feedback.getVehicle().getOwnerId())) {
+        if (feedback == null || !feedback.getVehicle().getOwnerId().equals(user.getId())) {
             response.put("success", false);
             response.put("message", "Không có quyền phản hồi đánh giá này");
             return ResponseEntity.status(403).body(response);

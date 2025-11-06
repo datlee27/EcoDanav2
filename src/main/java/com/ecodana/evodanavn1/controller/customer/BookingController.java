@@ -451,6 +451,16 @@ public class BookingController {
         for (Booking booking : bookings) {
             boolean hasFeedback = userFeedbackService.hasFeedbackForBooking(booking);
             booking.setHasFeedback(hasFeedback);
+
+            // Determine review eligibility: Completed and at least 5 days since pickup
+            boolean eligible = false;
+            try {
+                if (booking.getStatus() == Booking.BookingStatus.Completed) {
+                    java.time.LocalDate eligibleDate = booking.getPickupDateTime().toLocalDate().plusDays(5);
+                    eligible = !java.time.LocalDate.now().isBefore(eligibleDate);
+                }
+            } catch (Exception ignored) {}
+            booking.setCanReview(eligible && !hasFeedback);
         }
         
         model.addAttribute("bookings", bookings);

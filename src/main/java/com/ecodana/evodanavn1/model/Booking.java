@@ -79,6 +79,9 @@ public class Booking {
     @Transient
     private boolean hasFeedback = false;
 
+    @Transient
+    private boolean canReview = false;
+
     // Constructors
     public Booking() {
         this.createdDate = LocalDateTime.now();
@@ -125,6 +128,8 @@ public class Booking {
     public void setTermsVersion(String termsVersion) { this.termsVersion = termsVersion; }
     public boolean isHasFeedback() { return hasFeedback; }
     public void setHasFeedback(boolean hasFeedback) { this.hasFeedback = hasFeedback; }
+    public boolean isCanReview() { return canReview; }
+    public void setCanReview(boolean canReview) { this.canReview = canReview; }
 
     public enum BookingStatus {
         Pending,          // Khách vừa tạo, chờ chủ xe duyệt

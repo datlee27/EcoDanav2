@@ -1,13 +1,9 @@
 package com.ecodana.evodanavn1.controller.admin;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.model.Vehicle;
-import com.ecodana.evodanavn1.model.Notification;
-import com.ecodana.evodanavn1.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,12 +11,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import com.ecodana.evodanavn1.service.AnalyticsService;
+import com.ecodana.evodanavn1.service.BookingService;
+import com.ecodana.evodanavn1.service.UserService;
+import com.ecodana.evodanavn1.service.VehicleService;
+import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.service.FeedbackReportService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 @Controller
@@ -35,13 +33,11 @@ public class AdminController {
     @Autowired
     private AnalyticsService analyticsService;
     @Autowired
-    private NotificationService notificationService;
-    @Autowired
     private UserFeedbackService userFeedbackService;
+    @Autowired
+    private FeedbackReportService feedbackReportService;
     @GetMapping({"/admin", "/admin/dashboard"})
-    public String adminDashboard(@RequestParam(required = false) String tab, 
-                                  @RequestParam(required = false) String roleFilter,
-                                  HttpSession session, Model model, HttpServletResponse response) {
+    public String adminDashboard(@RequestParam(required = false) String tab, HttpSession session, Model model, HttpServletResponse response) {
         response.setHeader("Connection", "close");
         response.setHeader("Content-Encoding", "identity");
         User user = (User) session.getAttribute("currentUser");
@@ -63,33 +59,7 @@ public class AdminController {
             model.addAttribute("performanceMetrics", analyticsService.getPerformanceMetrics());
             model.addAttribute("systemHealth", analyticsService.getSystemHealth());
             List<User> allUsers = userService.getAllUsersWithRole();
-            
-            // Log all users and their roles for debugging
-            logger.info("Total users loaded: {}", allUsers.size());
-            logger.info("roleFilter parameter: '{}'", roleFilter);
-            
-            // Filter users by role if roleFilter parameter is provided
-            List<User> filteredUsers;
-            if (roleFilter != null && !roleFilter.trim().isEmpty()) {
-                logger.info("Filtering users by role: '{}'", roleFilter);
-                filteredUsers = allUsers.stream()
-                    .filter(u -> {
-                        String userRole = u.getRole() != null ? u.getRole().getRoleName() : "Customer";
-                        boolean matches = userRole.equalsIgnoreCase(roleFilter.trim());
-                        if (matches) {
-                            logger.info("User '{}' has role '{}' - MATCH", u.getUsername(), userRole);
-                        }
-                        return matches;
-                    })
-                    .collect(java.util.stream.Collectors.toList());
-                logger.info("Filtered {} users out of {} total users", filteredUsers.size(), allUsers.size());
-            } else {
-                logger.info("No filter applied - showing all users");
-                filteredUsers = allUsers;
-            }
-            
-            model.addAttribute("users", filteredUsers.size() > 100 ? filteredUsers.subList(0, 100) : filteredUsers);
-            model.addAttribute("roleFilter", roleFilter);
+            model.addAttribute("users", allUsers.size() > 100 ? allUsers.subList(0, 100) : allUsers);
             List<Vehicle> allVehicles = vehicleService.getAllVehicles();
             model.addAttribute("vehicles", allVehicles.size() > 100 ? allVehicles.subList(0, 100) : allVehicles);
             List<?> allBookings = bookingService.getAllBookings();
@@ -98,40 +68,12 @@ public class AdminController {
             model.addAttribute("insuranceList", List.of());
             model.addAttribute("contracts", List.of());
             model.addAttribute("payments", List.of());
-
-            // Lấy danh sách thông báo 1 LẦN DUY NHẤT
-            List<Notification> allNotifications = notificationService.getNotificationsByUserId(userWithRole.getId());
-            model.addAttribute("notifications", allNotifications);
-            model.addAttribute("recentNotifications", allNotifications);
-            // Tính toán số lượng thông báo "Today" trong Java
-            long notificationsTodayCount = 0;
-            if (allNotifications != null) {
-                LocalDate today = LocalDate.now();
-                notificationsTodayCount = allNotifications.stream()
-                        .filter(n -> n.getCreatedDate() != null && n.getCreatedDate().toLocalDate().isEqual(today))
-                        .count();
-            }
-            // Gửi biến đã tính toán sang view
-            model.addAttribute("notificationsTodayCount", notificationsTodayCount);
-
-            List<UserFeedback> allFeedback = userFeedbackService.getAllFeedback();
-            List<UserFeedback> feedbackWithReplies = allFeedback.stream()
-                    .filter(f -> f.getStaffReply() != null && !f.getStaffReply().trim().isEmpty())
-                    .toList();
-            List<UserFeedback> feedbackWithoutReplies = allFeedback.stream()
-                    .filter(f -> f.getStaffReply() == null || f.getStaffReply().trim().isEmpty())
-                    .toList();
-
-            model.addAttribute("allFeedback", allFeedback);
-            model.addAttribute("feedbackWithReplies", feedbackWithReplies);
-            model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
-
+            model.addAttribute("notifications", List.of());
             model.addAttribute("user", userWithRole);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("totalVehicles", allVehicles.size());
             model.addAttribute("totalBookings", allBookings.size());
             model.addAttribute("totalUsers", allUsers.size());
-            model.addAttribute("filteredUserCount", filteredUsers.size());
 
             // Add user statistics
             Map<String, Object> userStats = userService.getUserStatistics();
@@ -146,6 +88,12 @@ public class AdminController {
             model.addAttribute("adminCount", adminCount);
             model.addAttribute("ownerCount", ownerCount);
             model.addAttribute("customerCount", customerCount);
+
+            // Feedback datasets for feedback tab
+            model.addAttribute("allFeedback", userFeedbackService.getAllFeedback());
+            model.addAttribute("feedbackWithReplies", userFeedbackService.getFeedbackWithReplies());
+            model.addAttribute("feedbackWithoutReplies", userFeedbackService.getFeedbackWithoutReplies());
+            model.addAttribute("reports", feedbackReportService.getAllReports());
 
             // Add vehicle statistics
             long pendingApprovalVehicles = allVehicles.stream().filter(v -> "PendingApproval".equals(v.getStatus().name())).count();
@@ -166,9 +114,6 @@ public class AdminController {
             model.addAttribute("vehicles", List.of());
             model.addAttribute("bookings", List.of());
             model.addAttribute("users", List.of());
-            model.addAttribute("allFeedback", List.of());
-            model.addAttribute("feedbackWithReplies", List.of());
-            model.addAttribute("feedbackWithoutReplies", List.of());
             model.addAttribute("totalVehicles", 0);
             model.addAttribute("totalBookings", 0);
             model.addAttribute("totalUsers", 0);
@@ -181,7 +126,6 @@ public class AdminController {
             model.addAttribute("maintenanceVehicles", 0);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("analytics", new HashMap<>());
-            model.addAttribute("notificationsTodayCount", 0);
             return "admin/admin-dashboard";
         }
     }
@@ -197,8 +141,9 @@ public class AdminController {
         model.addAttribute("cancelledBookings", 0);
         return "admin/bookings-management";
     }
+    // Vehicle listing moved to VehicleAdminController at /admin/vehicles
     // User management moved to UserAdminController at /admin/users
-    // All /admin/users/* endpoints are now handled by dedicated controllers
+    // All /admin/users/* and /admin/vehicles/* endpoints are now handled by dedicated controllers
     @GetMapping("/admin/reports")
     public String adminReports(HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");
@@ -217,119 +162,9 @@ public class AdminController {
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
         }
     }
-    
-    // Vehicle Management APIs
-    @PostMapping("/admin/api/vehicles/{id}/approve")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> approveVehicle(@PathVariable String id, HttpSession session) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
-        }
-        
-        try {
-            vehicleService.updateVehicleStatus(id, "Available");
-            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle approved successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @PostMapping("/admin/api/vehicles/{id}/reject")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> rejectVehicle(@PathVariable String id, @RequestBody Map<String, String> payload, HttpSession session) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
-        }
-        
-        try {
-            vehicleService.updateVehicleStatus(id, "Unavailable");
-            // You can save the reason in a log table if needed
-            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle rejected"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @DeleteMapping("/admin/api/vehicles/{id}/delete")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> deleteVehicle(@PathVariable String id, HttpSession session) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
-        }
-        
-        try {
-            vehicleService.deleteVehicle(id);
-            return ResponseEntity.ok(Map.of("success", true, "message", "Vehicle deleted successfully"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/admin/api/vehicles/{id}/detail")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getVehicleDetail(@PathVariable String id, HttpSession session) {
-        User user = (User) session.getAttribute("currentUser");
-        if (user == null || !userService.isAdmin(user)) {
-            return ResponseEntity.status(403).body(Map.of("success", false, "message", "Unauthorized"));
-        }
-        
-        try {
-            var vehicle = vehicleService.getVehicleById(id).orElseThrow(() -> new RuntimeException("Vehicle not found"));
-            Map<String, Object> vehicleData = new HashMap<>();
-            
-            // Basic vehicle info
-            vehicleData.put("vehicleModel", vehicle.getVehicleModel());
-            vehicleData.put("licensePlate", vehicle.getLicensePlate());
-            vehicleData.put("vehicleType", vehicle.getVehicleType());
-            vehicleData.put("seats", vehicle.getSeats());
-            vehicleData.put("status", vehicle.getStatus().name());
-            vehicleData.put("dailyPrice", vehicle.getDailyPriceFromJson());
-            vehicleData.put("description", vehicle.getDescription());
-            
-            // Additional vehicle details
-            vehicleData.put("yearManufactured", vehicle.getYearManufactured());
-            vehicleData.put("odometer", vehicle.getOdometer());
-            vehicleData.put("transmission", vehicle.getTransmissionType() != null ? vehicle.getTransmissionType().getTransmissionTypeName() : null);
-            vehicleData.put("batteryCapacity", vehicle.getBatteryCapacity());
-            
-            // Images
-            vehicleData.put("mainImageUrl", vehicle.getMainImageUrl());
-            vehicleData.put("imageUrls", vehicle.getImageUrlsFromJson());
-            
-            // Features
-            vehicleData.put("features", vehicle.getFeaturesFromJson());
-            
-            // Owner information
-            if (vehicle.getOwnerId() != null) {
-                User owner = userService.findById(vehicle.getOwnerId());
-                if (owner != null) {
-                    vehicleData.put("ownerName", owner.getFirstName() + " " + owner.getLastName());
-                    vehicleData.put("ownerEmail", owner.getEmail());
-                    vehicleData.put("ownerPhone", owner.getPhoneNumber());
-                    vehicleData.put("ownerAddress", "Chưa cập nhật");
-                } else {
-                    vehicleData.put("ownerName", "N/A");
-                    vehicleData.put("ownerEmail", "N/A");
-                    vehicleData.put("ownerPhone", "N/A");
-                    vehicleData.put("ownerAddress", "N/A");
-                }
-            } else {
-                vehicleData.put("ownerName", "N/A");
-                vehicleData.put("ownerEmail", "N/A");
-                vehicleData.put("ownerPhone", "N/A");
-                vehicleData.put("ownerAddress", "N/A");
-            }
-            
-            return ResponseEntity.ok(Map.of("success", true, "vehicle", vehicleData));
-        } catch (Exception e) {
-            logger.error("Error getting vehicle detail: ", e);
-            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
-    
     // User CRUD Operations moved to UserAdminController
     // All /admin/users/* endpoints are now handled by UserAdminController
+
+    // Vehicle CRUD Operations moved to VehicleAdminController
+    // All /admin/vehicles/* endpoints (except /admin/vehicles listing) are now handled by VehicleAdminController
 }
