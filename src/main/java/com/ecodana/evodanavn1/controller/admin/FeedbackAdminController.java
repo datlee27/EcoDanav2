@@ -32,20 +32,8 @@ public class FeedbackAdminController {
             return "redirect:/login";
         }
 
-        List<UserFeedback> allFeedback = userFeedbackService.getAllFeedback();
-        List<UserFeedback> feedbackWithReplies = allFeedback.stream()
-                .filter(f -> f.getStaffReply() != null && !f.getStaffReply().trim().isEmpty())
-                .toList();
-        List<UserFeedback> feedbackWithoutReplies = allFeedback.stream()
-                .filter(f -> f.getStaffReply() == null || f.getStaffReply().trim().isEmpty())
-                .toList();
-
-        model.addAttribute("allFeedback", allFeedback);
-        model.addAttribute("feedbackWithReplies", feedbackWithReplies);
-        model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
-        model.addAttribute("currentUser", user);
-
-        return "admin/admin-feedback";
+        // Chuyển hướng đến admin dashboard, tab 'feedback'
+        return "redirect:/admin?tab=feedback";
     }
 
     @PostMapping("/delete/{feedbackId}")

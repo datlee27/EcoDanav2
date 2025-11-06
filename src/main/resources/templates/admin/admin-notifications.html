@@ -1,6 +1,4 @@
-<!-- Notifications Tab Content -->
 <div th:fragment="notifications-tab">
-    <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div class="flex items-center">
@@ -15,7 +13,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-yellow-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0 bg-yellow-500 rounded-lg p-3">
@@ -24,12 +22,12 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Unread</dt>
-                        <dd class="text-2xl font-semibold text-yellow-600" th:text="${#lists.size(#lists.select(notifications, n -> !n.isRead))}">0</dd>
+                        <dd class="text-2xl font-semibold text-yellow-600" th:text="${notifications != null ? #lists.size(notifications.?[isRead == false]) : 0}">0</dd>
                     </dl>
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-green-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0 bg-green-500 rounded-lg p-3">
@@ -38,12 +36,12 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Read</dt>
-                        <dd class="text-2xl font-semibold text-green-600" th:text="${#lists.size(#lists.select(notifications, n -> n.isRead))}">0</dd>
+                        <dd class="text-2xl font-semibold text-green-600" th:text="${notifications != null ? #lists.size(notifications.?[isRead == true]) : 0}">0</dd>
                     </dl>
                 </div>
             </div>
         </div>
-        
+
         <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-purple-500">
             <div class="flex items-center">
                 <div class="flex-shrink-0 bg-purple-500 rounded-lg p-3">
@@ -52,14 +50,13 @@
                 <div class="ml-5 w-0 flex-1">
                     <dl>
                         <dt class="text-sm font-medium text-gray-500 truncate">Today</dt>
-                        <dd class="text-2xl font-semibold text-purple-600" th:text="${#lists.size(#lists.select(notifications, n -> #temporals.format(n.createdDate, 'yyyy-MM-dd') == #temporals.format(#temporals.createNow(), 'yyyy-MM-dd')))}">0</dd>
+                        <dd class="text-2xl font-semibold text-purple-600" th:text="${notificationsTodayCount ?: 0}">0</dd>
                     </dl>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Action Buttons -->
     <div class="mb-6 flex justify-between items-center">
         <h3 class="text-lg font-semibold text-gray-900">
             <i class="fas fa-list mr-2"></i>All Notifications
@@ -76,9 +73,8 @@
         </div>
     </div>
 
-    <!-- Notifications Grid -->
     <div class="grid grid-cols-1 gap-4">
-        <div th:each="notification : ${notifications}" 
+        <div th:each="notification : ${notifications}"
              th:if="${notifications != null and !notifications.empty}"
              class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all"
              th:classappend="${!notification.isRead} ? 'border-l-4 border-blue-500' : ''">
@@ -86,65 +82,59 @@
                 <div class="flex items-start justify-between">
                     <div class="flex-1">
                         <div class="flex items-center mb-3">
-                            <!-- Status Badge -->
-                            <span th:if="${!notification.isRead}" 
+                            <span th:if="${!notification.isRead}"
                                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 mr-3">
                                 <i class="fas fa-circle text-xs mr-1"></i>New
                             </span>
-                            <span th:if="${notification.isRead}" 
+                            <span th:if="${notification.isRead}"
                                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 mr-3">
                                 <i class="fas fa-check-circle mr-1"></i>Read
                             </span>
-                            
-                            <!-- Type Badge -->
-                            <span th:if="${notification.notificationType}" 
-                                  th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100 text-purple-800' : 
-                                                 ${notification.notificationType == 'BOOKING'} ? 'bg-orange-100 text-orange-800' :
-                                                 ${notification.notificationType == 'PAYMENT'} ? 'bg-green-100 text-green-800' :
-                                                 ${notification.notificationType == 'VEHICLE'} ? 'bg-indigo-100 text-indigo-800' :
-                                                 ${notification.notificationType == 'PROMOTION'} ? 'bg-pink-100 text-pink-800' :
-                                                 'bg-gray-100 text-gray-800'"
+
+                            <span th:if="${notification.notificationType}"
+                                  th:classappend="${notification.notificationType == 'SYSTEM'} ? 'bg-purple-100 text-purple-800' :
+                                                 (notification.notificationType == 'BOOKING' ? 'bg-orange-100 text-orange-800' :
+                                                 (notification.notificationType == 'PAYMENT' ? 'bg-green-100 text-green-800' :
+                                                 (notification.notificationType == 'VEHICLE' ? 'bg-indigo-100 text-indigo-800' :
+                                                 (notification.notificationType == 'PROMOTION' ? 'bg-pink-100 text-pink-800' :
+                                                 'bg-gray-100 text-gray-800'))))"
                                   class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold">
                                 <i class="fas fa-tag mr-1"></i>
                                 <span th:text="${notification.notificationType}">Type</span>
                             </span>
-                            
-                            <!-- Time -->
+
                             <span class="text-xs text-gray-500 ml-auto">
                                 <i class="fas fa-clock mr-1"></i>
                                 <span th:text="${#temporals.format(notification.createdDate, 'dd/MM/yyyy HH:mm')}">Date</span>
                             </span>
                         </div>
-                        
-                        <!-- Message -->
+
                         <p class="text-gray-800 text-base leading-relaxed mb-3" th:text="${notification.message}">
                             Notification message
                         </p>
-                        
-                        <!-- Related ID -->
+
                         <div th:if="${notification.relatedId}" class="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 inline-block">
                             <i class="fas fa-link mr-2 text-gray-400"></i>
                             Related: <span class="font-mono ml-1" th:text="${notification.relatedId}">ID</span>
                         </div>
                     </div>
-                    
-                    <!-- Actions -->
+
                     <div class="flex flex-col space-y-2 ml-6">
-                        <form th:if="${!notification.isRead}" 
-                              method="post" 
+                        <form th:if="${!notification.isRead}"
+                              method="post"
                               th:action="@{/admin/notifications/{id}/mark-read(id=${notification.notificationId})}"
                               class="inline">
-                            <button type="submit" 
+                            <button type="submit"
                                     class="flex items-center justify-center w-10 h-10 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition"
                                     title="Mark as read">
                                 <i class="fas fa-check"></i>
                             </button>
                         </form>
-                        <form method="post" 
+                        <form method="post"
                               th:action="@{/admin/notifications/{id}/delete(id=${notification.notificationId})}"
                               onsubmit="return confirm('Are you sure?');"
                               class="inline">
-                            <button type="submit" 
+                            <button type="submit"
                                     class="flex items-center justify-center w-10 h-10 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition"
                                     title="Delete">
                                 <i class="fas fa-trash"></i>
@@ -154,8 +144,7 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Empty State -->
+
         <div th:if="${notifications == null or notifications.isEmpty()}" class="bg-white rounded-lg shadow-md p-12 text-center">
             <div class="inline-block bg-gray-100 rounded-full p-8 mb-4">
                 <i class="fas fa-bell-slash text-6xl text-gray-400"></i>

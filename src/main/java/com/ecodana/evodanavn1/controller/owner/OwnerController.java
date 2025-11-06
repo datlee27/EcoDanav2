@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.UserFeedback; // Thêm import
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
 import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
@@ -45,6 +46,9 @@ public class OwnerController {
     @Autowired
     private RoleService roleService;
 
+    @Autowired // Thêm service feedback
+    private UserFeedbackService userFeedbackService;
+
     // Các biến @Value để đọc cấu hình Cloudinary (Giữ nguyên như file của bạn)
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -57,7 +61,7 @@ public class OwnerController {
 
     @Autowired
     public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService, TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository,NotificationService notificationService,
-                           RoleService roleService) {
+                           RoleService roleService, UserFeedbackService userFeedbackService) { // Thêm UserFeedbackService
         this.userService = userService;
         this.vehicleService = vehicleService;
         this.bookingService = bookingService;
@@ -65,6 +69,7 @@ public class OwnerController {
         this.vehicleCategoriesRepository = vehicleCategoriesRepository;
         this.notificationService = notificationService;
         this.roleService = roleService;
+        this.userFeedbackService = userFeedbackService; // Khởi tạo
     }
 
     private String checkAuthentication(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
@@ -92,180 +97,180 @@ public class OwnerController {
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+    public String dashboard(@RequestParam(value = "tab", defaultValue = "dashboard") String tab,
+                            Model model, HttpSession session, RedirectAttributes redirectAttributes) {
         String redirect = checkAuthentication(session, redirectAttributes, model);
         if (redirect != null) return redirect;
 
-        model.addAttribute("currentPage", "dashboard");
-        model.addAttribute("totalVehicles", vehicleService.getAllVehicles().size());
-        model.addAttribute("availableVehicles", vehicleService.getAvailableVehicles().size());
+        User currentUser = (User) session.getAttribute("currentUser");
+        String ownerId = currentUser.getId();
 
-        long pendingBookingsCount = bookingService.getPendingBookings().size();
+        // Đặt currentPage dựa trên tab
+        model.addAttribute("currentPage", tab);
+
+        // Tải dữ liệu thông báo chung (cho chuông)
+        List<Booking> allOwnerBookings = bookingService.getBookingsByOwnerId(ownerId);
+        long pendingBookingsCount = allOwnerBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
+                .count();
         model.addAttribute("pendingBookings", pendingBookingsCount);
 
-        long rentedVehiclesCount = vehicleService.getAllVehicles().stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
-                .count();
-        model.addAttribute("rentedVehicles", rentedVehiclesCount);
+        // Tải dữ liệu dựa trên tab được yêu cầu
+        switch (tab) {
+            case "dashboard":
+                // === Dữ liệu thẻ thống kê ===
+                List<Vehicle> ownerVehicles = vehicleService.getVehiclesByOwnerId(ownerId);
+                model.addAttribute("totalVehicles", ownerVehicles.size());
 
+                long availableVehiclesCount = ownerVehicles.stream()
+                        .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
+                        .count();
+                model.addAttribute("availableVehicles", availableVehiclesCount);
 
+                long rentedVehiclesCount = ownerVehicles.stream()
+                        .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
+                        .count();
+                model.addAttribute("rentedVehicles", rentedVehiclesCount);
+                // pendingBookingsCount đã được thêm ở trên
+
+                // === Dữ liệu doanh thu (Thẻ + Biểu đồ) ===
+                Map<String, Object> revenueAnalytics = bookingService.getOwnerRevenueAnalytics(ownerId);
+                model.addAttribute("totalRevenueAllTime", revenueAnalytics.get("totalRevenueAllTime"));
+                Map<String, Object> chartData = bookingService.getOwnerRevenueChartData(ownerId);
+                model.addAttribute("revenueChartData", chartData);
+                break;
+
+            case "cars":
+                List<Vehicle> allVehicles = vehicleService.getVehiclesByOwnerId(currentUser.getId());
+                model.addAttribute("vehicles", allVehicles);
+
+                model.addAttribute("availableCount", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available).count());
+                model.addAttribute("rentedCount", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented).count());
+                model.addAttribute("maintenanceCount", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Maintenance).count());
+                model.addAttribute("unavailableCount", allVehicles.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Unavailable).count());
+
+                model.addAttribute("newVehicle", new Vehicle());
+                model.addAttribute("transmissions", transmissionTypeRepository.findAll());
+                model.addAttribute("categories", vehicleCategoriesRepository.findAll());
+
+                Map<String, String> transmissionMap = new HashMap<>();
+                transmissionTypeRepository.findAll().forEach(t -> transmissionMap.put(t.getTransmissionTypeId().toString(), t.getTransmissionTypeName()));
+                model.addAttribute("transmissionMap", transmissionMap);
+                Map<Integer, String> categoryMap = new HashMap<>();
+                vehicleCategoriesRepository.findAll().forEach(c -> categoryMap.put(c.getCategoryId(), c.getCategoryName()));
+                model.addAttribute("categoryMap", categoryMap);
+                break;
+
+            case "bookings":
+                // allOwnerBookings đã được tải ở trên
+                List<Map<String, Object>> bookingsDTO = allOwnerBookings.stream().map(booking -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("bookingId", booking.getBookingId());
+                    map.put("bookingCode", booking.getBookingCode());
+                    map.put("status", booking.getStatus().name());
+                    map.put("pickupDateTime", booking.getPickupDateTime() != null ? booking.getPickupDateTime().toString() : null);
+                    map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
+                    map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
+                    map.put("totalAmount", booking.getTotalAmount());
+                    if (booking.getUser() != null) {
+                        Map<String, Object> userMap = new HashMap<>();
+                        userMap.put("firstName", booking.getUser().getFirstName());
+                        userMap.put("lastName", booking.getUser().getLastName());
+                        userMap.put("username", booking.getUser().getUsername());
+                        map.put("user", userMap);
+                    } else { map.put("user", null); }
+                    if (booking.getVehicle() != null) {
+                        Map<String, Object> vehicleMap = new HashMap<>();
+                        vehicleMap.put("vehicleModel", booking.getVehicle().getVehicleModel());
+                        vehicleMap.put("licensePlate", booking.getVehicle().getLicensePlate());
+                        map.put("vehicle", vehicleMap);
+                    } else { map.put("vehicle", null); }
+                    return map;
+                }).collect(Collectors.toList());
+                model.addAttribute("bookings", bookingsDTO);
+
+                // Đếm số lượng cho các tab
+                model.addAttribute("countAll", allOwnerBookings.size());
+                model.addAttribute("countPending", pendingBookingsCount); // Đã tính
+                model.addAttribute("countApproved", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Approved || b.getStatus() == Booking.BookingStatus.AwaitingDeposit).count());
+                model.addAttribute("countOngoing", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed || b.getStatus() == Booking.BookingStatus.Ongoing).count());
+                model.addAttribute("countCompleted", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
+                model.addAttribute("countRejected", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Rejected || b.getStatus() == Booking.BookingStatus.Cancelled).count());
+                break;
+
+            case "customers":
+                // Tải dữ liệu cho tab customers
+                List<Booking> allBookingsForCustomers = bookingService.getAllBookings(); // Cân nhắc lại nếu chỉ cần booking của owner
+                Map<User, Long> customerBookingCounts = allBookingsForCustomers.stream()
+                        .filter(b -> b.getUser() != null)
+                        .collect(Collectors.groupingBy(Booking::getUser, Collectors.counting()));
+                List<Map<String, Object>> customers = customerBookingCounts.entrySet().stream()
+                        .map(entry -> {
+                            Map<String, Object> customerMap = new HashMap<>();
+                            customerMap.put("user", entry.getKey());
+                            customerMap.put("bookingCount", entry.getValue());
+                            return customerMap;
+                        })
+                        .collect(Collectors.toList());
+                model.addAttribute("customers", customers);
+                break;
+
+            case "feedback":
+                // Tải dữ liệu cho tab feedback
+                List<UserFeedback> ownerFeedback = userFeedbackService.getFeedbackForOwner(currentUser);
+                model.addAttribute("ownerFeedback", ownerFeedback);
+                model.addAttribute("feedbackWithReplies", ownerFeedback.stream()
+                        .filter(f -> f.getStaffReply() != null && !f.getStaffReply().trim().isEmpty())
+                        .toList());
+                model.addAttribute("feedbackWithoutReplies", ownerFeedback.stream()
+                        .filter(f -> f.getStaffReply() == null || f.getStaffReply().trim().isEmpty())
+                        .toList());
+                break;
+
+            case "profile":
+                // Trang profile không cần tải dữ liệu gì thêm ở đây
+                break;
+
+            default:
+                // Mặc định quay về tab 'dashboard'
+                model.addAttribute("currentPage", "dashboard");
+                // Tải lại dữ liệu cho dashboard
+                List<Vehicle> ov = vehicleService.getVehiclesByOwnerId(ownerId);
+                model.addAttribute("totalVehicles", ov.size());
+                model.addAttribute("availableVehicles", ov.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available).count());
+                model.addAttribute("rentedVehicles", ov.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented).count());
+                Map<String, Object> ra = bookingService.getOwnerRevenueAnalytics(ownerId);
+                model.addAttribute("totalRevenueAllTime", ra.get("totalRevenueAllTime"));
+                model.addAttribute("revenueChartData", bookingService.getOwnerRevenueChartData(ownerId));
+                break;
+        }
+
+        // Trả về view dashboard chính
         return "owner/dashboard";
     }
 
     @GetMapping("/cars")
     public String carsPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        String redirect = checkAuthentication(session, redirectAttributes, model);
-        if (redirect != null) return redirect;
-
-        User currentUser = (User) session.getAttribute("currentUser");
-
-        model.addAttribute("currentPage", "cars");
-
-        List<Vehicle> allVehicles = vehicleService.getVehiclesByOwnerId(currentUser.getId());
-        model.addAttribute("vehicles", allVehicles);
-
-        long availableCount = allVehicles.stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available)
-                .count();
-        long rentedCount = allVehicles.stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented)
-                .count();
-        long maintenanceCount = allVehicles.stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Maintenance)
-                .count();
-        long unavailableCount = allVehicles.stream()
-                .filter(v -> v.getStatus() == Vehicle.VehicleStatus.Unavailable)
-                .count();
-
-        model.addAttribute("availableCount", availableCount);
-        model.addAttribute("rentedCount", rentedCount);
-        model.addAttribute("maintenanceCount", maintenanceCount);
-        model.addAttribute("unavailableCount", unavailableCount);
-        model.addAttribute("newVehicle", new Vehicle());
-        model.addAttribute("transmissions", transmissionTypeRepository.findAll());
-        model.addAttribute("categories", vehicleCategoriesRepository.findAll());
-        Map<String, String> transmissionMap = new HashMap<>();
-        transmissionTypeRepository.findAll().forEach(t -> transmissionMap.put(t.getTransmissionTypeId().toString(), t.getTransmissionTypeName()));
-        model.addAttribute("transmissionMap", transmissionMap);
-        Map<Integer, String> categoryMap = new HashMap<>();
-        vehicleCategoriesRepository.findAll().forEach(c -> categoryMap.put(c.getCategoryId(), c.getCategoryName()));
-        model.addAttribute("categoryMap", categoryMap);
-
-        return "owner/cars-management";
+        // Cập nhật: Chuyển hướng đến dashboard tab 'cars'
+        return "redirect:/owner/dashboard?tab=cars";
     }
 
     @GetMapping("/bookings")
     public String bookingsPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        String redirect = checkAuthentication(session, redirectAttributes, model);
-        if (redirect != null) return redirect;
-
-        User currentUser = (User) session.getAttribute("currentUser");
-
-        model.addAttribute("currentPage", "bookings");
-
-        List<Booking> allBookings = bookingService.getBookingsByOwnerId(currentUser.getId());
-        List<Map<String, Object>> bookingsDTO = allBookings.stream().map(booking -> {
-            Map<String, Object> map = new HashMap<>();
-            map.put("bookingId", booking.getBookingId());
-            map.put("bookingCode", booking.getBookingCode());
-            map.put("status", booking.getStatus().name());
-            map.put("pickupDateTime", booking.getPickupDateTime() != null ? booking.getPickupDateTime().toString() : null);
-            map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
-            map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
-            map.put("totalAmount", booking.getTotalAmount());
-
-            // Lấy thông tin User (nếu có) một cách an toàn
-            if (booking.getUser() != null) {
-                Map<String, Object> userMap = new HashMap<>();
-                userMap.put("firstName", booking.getUser().getFirstName());
-                userMap.put("lastName", booking.getUser().getLastName());
-                userMap.put("username", booking.getUser().getUsername());
-                map.put("user", userMap);
-            } else {
-                map.put("user", null); // Gửi null nếu user không tồn tại
-            }
-
-            // Lấy thông tin Vehicle (nếu có) một cách an toàn
-            if (booking.getVehicle() != null) {
-                Map<String, Object> vehicleMap = new HashMap<>();
-                vehicleMap.put("vehicleModel", booking.getVehicle().getVehicleModel());
-                vehicleMap.put("licensePlate", booking.getVehicle().getLicensePlate());
-                map.put("vehicle", vehicleMap);
-            } else {
-                map.put("vehicle", null); // Gửi null nếu vehicle không tồn tại
-            }
-            return map;
-        }).collect(Collectors.toList());
-        model.addAttribute("bookings", bookingsDTO);
-
-        long pendingCount = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
-                .count();
-        long approvedCount = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Approved ||
-                        b.getStatus() == Booking.BookingStatus.AwaitingDeposit)
-                .count();
-        long ongoingCount = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed ||
-                        b.getStatus() == Booking.BookingStatus.Ongoing)
-                .count();
-        long completedCount = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed)
-                .count();
-        long rejectedCount = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Rejected ||
-                        b.getStatus() == Booking.BookingStatus.Cancelled)
-                .count();
-
-        // Đếm số lượng cho các tab
-        model.addAttribute("countAll", allBookings.size());
-        model.addAttribute("countPending", pendingCount);
-        model.addAttribute("countApproved", approvedCount);
-        model.addAttribute("countOngoing", ongoingCount);
-        model.addAttribute("countCompleted", completedCount);
-        model.addAttribute("countRejected", rejectedCount);
-
-        // Lọc danh sách booking 'Pending' cho chuông thông báo
-        List<Booking> pendingBookings = allBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
-                .collect(Collectors.toList());
-        model.addAttribute("pendingBookings", pendingBookings);
-
-        return "owner/bookings-management";
+        // Cập nhật: Chuyển hướng đến dashboard tab 'bookings'
+        return "redirect:/owner/dashboard?tab=bookings";
     }
 
     @GetMapping("/customers")
     public String customersPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        String redirect = checkAuthentication(session, redirectAttributes, model);
-        if (redirect != null) return redirect;
-
-        model.addAttribute("currentPage", "customers");
-        List<Booking> bookings = bookingService.getAllBookings();
-        Map<User, Long> customerBookingCounts = bookings.stream()
-                .filter(b -> b.getUser() != null)
-                .collect(Collectors.groupingBy(Booking::getUser, Collectors.counting()));
-
-        List<Map<String, Object>> customers = customerBookingCounts.entrySet().stream()
-                .map(entry -> {
-                    Map<String, Object> customerMap = new HashMap<>();
-                    customerMap.put("user", entry.getKey());
-                    customerMap.put("bookingCount", entry.getValue());
-                    return customerMap;
-                })
-                .collect(Collectors.toList());
-
-        model.addAttribute("customers", customers);
-
-        return "owner/customers-management";
+        // Cập nhật: Chuyển hướng đến dashboard tab 'customers'
+        return "redirect:/owner/dashboard?tab=customers";
     }
 
     @GetMapping("/profile")
     public String profilePage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        String redirect = checkAuthentication(session, redirectAttributes, model);
-        if (redirect != null) return redirect;
-
-        model.addAttribute("currentPage", "profile");
-        return "owner/profile-management";
+        // Cập nhật: Chuyển hướng đến dashboard tab 'profile'
+        return "redirect:/owner/dashboard?tab=profile";
     }
 
     @GetMapping("/cars/add")
@@ -441,14 +446,33 @@ public class OwnerController {
             // === XỬ LÝ THÀNH CÔNG ===
             redirectAttributes.addFlashAttribute("success", "Đăng ký xe thành công! Xe của bạn đang chờ Admin duyệt.");
 
-            // Nếu thành công, luôn về trang quản lý xe
-            return "redirect:/";
+            // ===================================
+            // === BẮT ĐẦU SỬA LỖI ĐIỀU HƯỚNG ===
+            // ===================================
+            // Kiểm tra nguồn gốc submit để điều hướng
+
+            // Nếu nguồn là trang "owner/vehicle-add" (Customer "Become Owner"), quay về trang chủ
+            if ("owner/vehicle-add".equals(sourceView)) {
+                return "redirect:/";
+            }
+
+            // Nếu nguồn là modal (bắt đầu bằng "redirect:"), quay lại chính nguồn đó
+            // (e.g., "redirect:/owner/dashboard?tab=cars" hoặc "redirect:/owner/cars")
+            if (sourceView.startsWith("redirect:")) {
+                return sourceView;
+            }
+
+            // Mặc định (fallback)
+            return "redirect:/owner/cars";
+            // ===================================
+            // === KẾT THÚC SỬA LỖI ĐIỀU HƯỚNG ===
+            // ===================================
 
         } catch (IllegalArgumentException e) { // Lỗi validation
             logger.warn("Validation failed for addCar: {}", e.getMessage());
             // Trả lỗi về đúng form
             if (sourceView.startsWith("redirect:")) {
-                // Gửi lỗi về modal (trang /owner/cars)
+                // Gửi lỗi về modal (trang /owner/cars hoặc /owner/dashboard)
                 redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
                 // Thêm param để JS tự mở modal
                 redirectAttributes.addAttribute("openModal", "add-car-modal");
@@ -461,7 +485,7 @@ public class OwnerController {
                 // Giữ lại các giá trị đã nhập
                 model.addAttribute("vehicle", vehicle);
             }
-            return errorRedirectPath; // Trả về view "owner/vehicle-add" hoặc "redirect:/owner/cars"
+            return errorRedirectPath; // Trả về view "owner/vehicle-add" hoặc "redirect:/owner/..."
 
         } catch (Exception e) { // Lỗi hệ thống
             logger.error("Error saving vehicle", e);
@@ -500,7 +524,7 @@ public class OwnerController {
             java.util.Optional<Vehicle> vehicleOptional = vehicleService.getVehicleById(id);
             if (vehicleOptional.isEmpty()) {
                 redirectAttributes.addFlashAttribute("error", "Vehicle not found.");
-                return "redirect:/owner/cars";
+                return "redirect:/owner/dashboard?tab=cars"; // Sửa thành dashboard?tab=cars
             }
 
             Vehicle vehicle = vehicleOptional.get();
@@ -620,7 +644,7 @@ public class OwnerController {
             redirectAttributes.addFlashAttribute("error", "Failed to update vehicle: " + e.getMessage());
         }
 
-        return "redirect:/owner/cars";
+        return "redirect:/owner/dashboard?tab=cars"; // Sửa thành dashboard?tab=cars
     }
 
     @PostMapping("/cars/{id}/toggle-availability")
@@ -636,7 +660,7 @@ public class OwnerController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to update status: " + e.getMessage());
         }
-        return "redirect:/owner/cars";
+        return "redirect:/owner/dashboard?tab=cars"; // Sửa thành dashboard?tab=cars
     }
 
     @DeleteMapping("/cars/{id}")
@@ -675,7 +699,7 @@ public class OwnerController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Failed to update profile: " + e.getMessage());
         }
-        return "redirect:/owner/profile";
+        return "redirect:/owner/dashboard?tab=profile"; // Sửa thành dashboard?tab=profile
     }
 
     @PostMapping("/bookings/{id}/update")
@@ -754,6 +778,8 @@ public class OwnerController {
         try {
             Booking booking = bookingService.approveBooking(id, currentUser);
             if (booking != null) {
+                // Gửi thông báo cho khách hàng
+                notificationService.notifyCustomerBookingApproved(booking);
                 return ResponseEntity.ok(Map.of("success", true, "message", "Booking approved successfully"));
             } else {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
@@ -781,6 +807,8 @@ public class OwnerController {
 
             Booking booking = bookingService.rejectBooking(id, reason, currentUser);
             if (booking != null) {
+                // Gửi thông báo cho khách hàng
+                notificationService.notifyCustomerBookingRejected(booking, reason);
                 return ResponseEntity.ok(Map.of("success", true, "message", "Booking rejected successfully"));
             } else {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
@@ -933,15 +961,15 @@ public class OwnerController {
             bookingService.handoverVehicle(bookingId, currentUser, imageUrls, odometer, notes);
 
             redirectAttributes.addFlashAttribute("success", "Đã giao xe thành công! Chuyến đi đã bắt đầu.");
-            return "redirect:/owner/bookings";
+            return "redirect:/owner/dashboard?tab=bookings"; // Sửa thành dashboard?tab=bookings
 
         } catch (IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
-            return "redirect:/owner/bookings";
+            return "redirect:/owner/dashboard?tab=bookings"; // Sửa thành dashboard?tab=bookings
         } catch (Exception e) {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi giao xe: " + e.getMessage());
-            return "redirect:/owner/bookings";
+            return "redirect:/owner/dashboard?tab=bookings"; // Sửa thành dashboard?tab=bookings
         }
     }
 }

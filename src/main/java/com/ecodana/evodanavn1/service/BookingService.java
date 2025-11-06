@@ -8,7 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import java.util.ArrayList;
+import java.time.LocalTime;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.model.VehicleConditionLogs;
@@ -429,5 +430,87 @@ public class BookingService {
         notificationService.notifyCustomerRentalStarted(updatedBooking);
 
         return updatedBooking;
+    }
+
+    /**
+     * Lấy phân tích doanh thu chi tiết cho một chủ xe cụ thể.
+     * Chỉ tính các booking đã 'Completed' (Hoàn thành) hoặc 'Confirmed' (Đã thanh toán cọc).
+     * @param ownerId ID của chủ xe
+     * @return Map chứa revenueToday, revenueThisMonth, revenueThisYear, totalRevenueAllTime
+     */
+    public Map<String, Object> getOwnerRevenueAnalytics(String ownerId) {
+        Map<String, Object> analytics = new HashMap<>();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Xác định các mốc thời gian
+        LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
+        LocalDateTime startOfMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
+        LocalDateTime startOfYear = now.withDayOfYear(1).toLocalDate().atStartOfDay();
+
+        // 1. Lấy TẤT CẢ booking của owner đó
+        List<Booking> ownerBookings = bookingRepository.findByVehicleOwnerId(ownerId);
+
+        // 2. Lọc các booking đã mang lại doanh thu (Hoàn thành hoặc Đã xác nhận/đã cọc)
+        List<Booking> revenueBookings = ownerBookings.stream()
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed || b.getStatus() == Booking.BookingStatus.Confirmed)
+                .collect(Collectors.toList());
+
+        // 3. Tính toán doanh thu dựa trên *ngày booking được tạo*
+        // (Lưu ý: Bạn có thể thay đổi logic này để dựa trên ngày hoàn thành (CompletedDate) nếu cần)
+
+        BigDecimal revenueToday = revenueBookings.stream()
+                .filter(b -> b.getCreatedDate().isAfter(startOfToday))
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal revenueThisMonth = revenueBookings.stream()
+                .filter(b -> b.getCreatedDate().isAfter(startOfMonth))
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal revenueThisYear = revenueBookings.stream()
+                .filter(b -> b.getCreatedDate().isAfter(startOfYear))
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalRevenueAllTime = revenueBookings.stream()
+                .map(Booking::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        analytics.put("revenueToday", revenueToday != null ? revenueToday : BigDecimal.ZERO);
+        analytics.put("revenueThisMonth", revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO);
+        analytics.put("revenueThisYear", revenueThisYear != null ? revenueThisYear : BigDecimal.ZERO);
+        analytics.put("totalRevenueAllTime", totalRevenueAllTime != null ? totalRevenueAllTime : BigDecimal.ZERO);
+
+        return analytics;
+    }
+
+    /**
+     * Lấy dữ liệu biểu đồ doanh thu cho owner (Ngày, Tháng, Năm)
+     * @param ownerId ID của chủ xe
+     * @return Map chứa dữ liệu cho 3 biểu đồ
+     */
+    public Map<String, Object> getOwnerRevenueChartData(String ownerId) {
+        Map<String, Object> chartData = new HashMap<>();
+
+        // 1. Dữ liệu 7 ngày qua (Daily)
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7).with(LocalTime.MIN);
+        List<Map<String, Object>> dailyResults = bookingRepository.findDailyRevenueForOwner(ownerId, sevenDaysAgo);
+        chartData.put("dailyLabels", dailyResults.stream().map(r -> r.get("period").toString()).collect(Collectors.toList()));
+        chartData.put("dailyData", dailyResults.stream().map(r -> (BigDecimal) r.get("revenue")).collect(Collectors.toList()));
+
+        // 2. Dữ liệu 12 tháng qua (Monthly)
+        LocalDateTime twelveMonthsAgo = LocalDateTime.now().minusMonths(12).withDayOfMonth(1).with(LocalTime.MIN);
+        List<Map<String, Object>> monthlyResults = bookingRepository.findMonthlyRevenueForOwner(ownerId, twelveMonthsAgo);
+        chartData.put("monthlyLabels", monthlyResults.stream().map(r -> r.get("period").toString()).collect(Collectors.toList()));
+        chartData.put("monthlyData", monthlyResults.stream().map(r -> (BigDecimal) r.get("revenue")).collect(Collectors.toList()));
+
+        // 3. Dữ liệu 5 năm qua (Yearly)
+        LocalDateTime fiveYearsAgo = LocalDateTime.now().minusYears(5).withDayOfYear(1).with(LocalTime.MIN);
+        List<Map<String, Object>> yearlyResults = bookingRepository.findYearlyRevenueForOwner(ownerId, fiveYearsAgo);
+        chartData.put("yearlyLabels", yearlyResults.stream().map(r -> r.get("period").toString()).collect(Collectors.toList()));
+        chartData.put("yearlyData", yearlyResults.stream().map(r -> (BigDecimal) r.get("revenue")).collect(Collectors.toList()));
+
+        return chartData;
     }
 }

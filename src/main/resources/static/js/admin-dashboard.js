@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
     setupSidebar();
     startAutoRefresh();
-    
+
     // Set initial tab based on URL parameter
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
@@ -21,9 +21,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // If no tab parameter, default to overview and highlight it
         switchTab('overview');
     }
-    
+
     // User management is now handled server-side
-    
+
     // DISABLED: Simple user rows protection - now using CSS-only filtering
     // setTimeout(() => {
     //     console.log('Running user rows protection...');
@@ -37,49 +37,49 @@ function setupSidebar() {
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const sidebarClose = document.getElementById('sidebar-close');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    
+
     // Toggle sidebar on mobile
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
             openSidebar();
         });
     }
-    
+
     // Close sidebar
     if (sidebarClose) {
         sidebarClose.addEventListener('click', function() {
             closeSidebar();
         });
     }
-    
+
     // Close sidebar when clicking overlay
     if (sidebarOverlay) {
         sidebarOverlay.addEventListener('click', function() {
             closeSidebar();
         });
     }
-    
+
     // Close sidebar on escape key
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closeSidebar();
         }
     });
-    
+
     // Handle window resize
     window.addEventListener('resize', function() {
         if (window.innerWidth >= 1024) {
             closeSidebar();
         }
     });
-    
+
     // Modal handling removed - using server-side forms
 }
 
 function openSidebar() {
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    
+
     if (sidebar && sidebarOverlay) {
         sidebar.classList.add('sidebar-open');
         sidebarOverlay.classList.remove('hidden');
@@ -90,7 +90,7 @@ function openSidebar() {
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
-    
+
     if (sidebar && sidebarOverlay) {
         sidebar.classList.remove('sidebar-open');
         sidebarOverlay.classList.add('hidden');
@@ -101,7 +101,7 @@ function closeSidebar() {
 // Tab switching functionality
 function switchTab(tabName, event) {
     console.log('Switching to tab:', tabName);
-    
+
     // Hide all tab contents
     const tabContents = document.querySelectorAll('.tab-content');
     console.log('Found', tabContents.length, 'tab contents');
@@ -110,11 +110,17 @@ function switchTab(tabName, event) {
         console.log('Removed active from:', content.id);
     });
 
+    // !!!!!!!!!!!! SỬA LỖI TẠI ĐÂY !!!!!!!!!!!!
+    // ĐÃ BÌNH LUẬN LẠI KHỐI CODE GÂY LỖI
+    // Lý do: Khối code này xóa class 'active' mà Thymeleaf đã render đúng
+    /*
     // Remove active class from all sidebar items
     const sidebarItems = document.querySelectorAll('.sidebar-item');
     sidebarItems.forEach(item => {
         item.classList.remove('active');
     });
+    */
+    // !!!!!!!!!!!! KẾT THÚC SỬA LỖI !!!!!!!!!!!!
 
     // Show selected tab content
     const targetTab = document.getElementById(tabName);
@@ -129,6 +135,10 @@ function switchTab(tabName, event) {
         console.log('Available elements with IDs:', Array.from(allTabs).map(el => el.id));
     }
 
+    // !!!!!!!!!!!! SỬA LỖI TẠI ĐÂY !!!!!!!!!!!!
+    // ĐÃ BÌNH LUẬN LẠI KHỐI CODE GÂY LỖI
+    // Lý do: Khối code này không cần thiết vì ta không dùng SPA
+    /*
     // Add active class to clicked sidebar item (if called from click event)
     if (event && event.target && event.target.closest) {
         const clickedButton = event.target.closest('.sidebar-item');
@@ -142,9 +152,11 @@ function switchTab(tabName, event) {
             sidebarItem.classList.add('active');
         }
     }
+    */
+    // !!!!!!!!!!!! KẾT THÚC SỬA LỖI !!!!!!!!!!!!
 
     currentTab = tabName;
-    
+
     // Show/hide dashboard statistics cards
     const dashboardStats = document.getElementById('dashboard-stats');
     const dashboardStats2 = document.getElementById('dashboard-stats-2');
@@ -154,19 +166,23 @@ function switchTab(tabName, event) {
             dashboardStats2.style.display = 'grid';
         } else {
             dashboardStats.style.display = 'none';
-            dashboardStats2.style.display = 'none';
         }
     }
-    
+
     // Close sidebar on mobile after selection
     if (window.innerWidth < 1024) {
         closeSidebar();
     }
-    
+
     // Update URL without page reload
+    // !!!!!!!!!!!! SỬA LỖI TẠI ĐÂY !!!!!!!!!!!!
+    // ĐÃ BÌNH LUẬN LẠI KHỐI CODE GÂY LỖI
+    // Lý do: Không cần pushState vì trang đang dùng cơ chế tải lại (th:href)
+    /*
     const url = new URL(window.location);
     url.searchParams.set('tab', tabName);
     window.history.pushState({}, '', url);
+    */
 }
 
 // Setup event listeners
@@ -194,13 +210,13 @@ function setupEventListeners() {
     if (refreshButton) {
         refreshButton.addEventListener('click', refreshData);
     }
-    
+
     // DISABLED: Reset all rows - now using CSS-only filtering
     // setTimeout(() => {
     //     resetAllRows();
     //     forceShowAllRows();
     // }, 1000);
-    
+
     // DISABLED: Force show all rows - now using CSS-only filtering
     // forceShowAllRows();
 
@@ -210,7 +226,7 @@ function setupEventListeners() {
         if (!button) return;
 
         const action = button.getAttribute('data-action');
-        
+
         switch(action) {
             case 'suspend':
                 const suspendUserId = button.getAttribute('data-user-id');
@@ -267,13 +283,13 @@ function setupEventListeners() {
 function handleSearch(event) {
     console.log('Search called with term:', event.target.value);
     console.log('Search functionality temporarily disabled for debugging');
-    
+
     // TEMPORARILY DISABLED - Just show all rows
     const table = event.target.closest('.bg-white').querySelector('table');
     const rows = table.querySelectorAll('tbody tr');
-    
+
     console.log('Found', rows.length, 'rows in table');
-    
+
     rows.forEach((row, index) => {
         row.style.display = '';
         console.log('Row', index, 'forced to visible');
@@ -284,7 +300,7 @@ function handleSearch(event) {
 function handleFilter(event) {
     console.log('Filter called with value:', event.target.value);
     console.log('Filter functionality temporarily disabled for debugging');
-    
+
     // TEMPORARILY DISABLED - Just show all rows
     const table = event.target.closest('.bg-white')?.querySelector('table');
     if (!table) {
@@ -292,7 +308,7 @@ function handleFilter(event) {
         return;
     }
     const rows = table.querySelectorAll('tbody tr');
-    
+
     rows.forEach(row => {
         row.style.display = '';
         console.log('Row forced to visible by filter');
@@ -302,20 +318,20 @@ function handleFilter(event) {
 // Force show all rows - simple approach
 function forceShowAllRows() {
     console.log('Force showing all rows...');
-    
+
     // Find all tables in the page
     const tables = document.querySelectorAll('table');
     tables.forEach((table, tableIndex) => {
         const rows = table.querySelectorAll('tbody tr');
         console.log('Force show - Table', tableIndex, 'has', rows.length, 'rows');
-        
+
         rows.forEach((row, rowIndex) => {
             // Skip debug rows
             if (row.textContent.includes('DEBUG:')) {
                 console.log('Force show - Skipping debug row', rowIndex);
                 return;
             }
-            
+
             // Simple force show
             row.style.display = '';
             row.style.visibility = 'visible';
@@ -330,20 +346,20 @@ function forceShowAllRows() {
 // Reset all rows to visible
 function resetAllRows() {
     console.log('Resetting all rows to visible...');
-    
+
     // Find all tables in the page
     const tables = document.querySelectorAll('table');
     tables.forEach((table, tableIndex) => {
         const rows = table.querySelectorAll('tbody tr');
         console.log('Table', tableIndex, 'has', rows.length, 'rows');
-        
+
         rows.forEach((row, rowIndex) => {
             // Skip debug rows
             if (row.textContent.includes('DEBUG:')) {
                 console.log('Skipping debug row', rowIndex);
                 return;
             }
-            
+
             row.style.display = '';
             console.log('Row', rowIndex, 'reset to visible');
         });
@@ -368,11 +384,11 @@ async function makeApiCall(url, method = 'GET', data = null) {
     try {
         console.log('Making API call to:', url, 'with method:', method);
         console.log('Data:', data);
-        
+
         // Get CSRF token
         const csrfToken = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
         const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
-        
+
         const options = {
             method: method,
             headers: {
@@ -380,7 +396,7 @@ async function makeApiCall(url, method = 'GET', data = null) {
             },
             credentials: 'same-origin' // Include cookies for session
         };
-        
+
         // Add CSRF token if available
         if (csrfToken && csrfHeader) {
             options.headers[csrfHeader] = csrfToken;
@@ -388,16 +404,16 @@ async function makeApiCall(url, method = 'GET', data = null) {
         } else {
             console.log('CSRF token not found');
         }
-        
+
         if (data) {
             options.body = new URLSearchParams(data);
             console.log('Request body:', options.body.toString());
         }
-        
+
         const response = await fetch(url, options);
         console.log('Response status:', response.status);
         console.log('Response headers:', response.headers);
-        
+
         if (!response.ok) {
             // Try to get error message from response
             let errorMessage = `HTTP error! status: ${response.status}`;
@@ -410,7 +426,7 @@ async function makeApiCall(url, method = 'GET', data = null) {
             } catch (e) {
                 console.log('Could not parse error response as JSON');
             }
-            
+
             if (response.status === 403) {
                 throw new Error('Bạn không có quyền thực hiện hành động này. Vui lòng đăng nhập lại.');
             } else if (response.status === 401) {
@@ -419,7 +435,7 @@ async function makeApiCall(url, method = 'GET', data = null) {
                 throw new Error(errorMessage);
             }
         }
-        
+
         const result = await response.json();
         console.log('Response data:', result);
         return result;
@@ -435,13 +451,13 @@ function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
         type === 'error' ? 'bg-red-500 text-white' :
-        type === 'success' ? 'bg-green-500 text-white' :
-        'bg-blue-500 text-white'
+            type === 'success' ? 'bg-green-500 text-white' :
+                'bg-blue-500 text-white'
     }`;
     notification.textContent = message;
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.remove();
     }, 5000);
@@ -822,7 +838,7 @@ function updateDashboardData(data) {
     const totalVehicles = document.querySelector('[data-stat="vehicles"]');
     const totalBookings = document.querySelector('[data-stat="bookings"]');
     const totalRevenue = document.querySelector('[data-stat="revenue"]');
-    
+
     if (totalUsers && data.totalUsers) totalUsers.textContent = data.totalUsers;
     if (totalVehicles && data.totalVehicles) totalVehicles.textContent = data.totalVehicles;
     if (totalBookings && data.totalBookings) totalBookings.textContent = data.totalBookings;
@@ -836,12 +852,12 @@ function logout() {
     if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
         // Show loading state
         showNotification('Đang đăng xuất...', 'info');
-        
+
         // Create a form to submit logout request
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '/logout';
-        
+
         // Add CSRF token if available
         const csrfToken = document.querySelector('meta[name="_csrf"]');
         if (csrfToken) {
@@ -851,7 +867,7 @@ function logout() {
             csrfInput.value = csrfToken.getAttribute('content');
             form.appendChild(csrfInput);
         }
-        
+
         document.body.appendChild(form);
         form.submit();
     }
@@ -862,7 +878,7 @@ function logout() {
 function testModal() {
     console.log('Test function called');
     alert('JavaScript đang hoạt động!');
-    
+
     // Test simple modal first
     const testModal = document.getElementById('testModal');
     if (testModal) {

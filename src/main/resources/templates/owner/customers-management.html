@@ -1,267 +1,63 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <div th:replace="~{fragments/layout :: head}"></div>
-    <link href="/css/sidebar-common.css" rel="stylesheet">
-    <link href="/css/owner-dashboard.css" rel="stylesheet">
-    <style>
-        .primary { color: #4CAF50; }
-        .hover\:text-blue-600:hover { color: #2563eb; } /* Tailwind blue-600 */
-        .modal { /* Style cơ bản cho modal */
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 100; display: flex; align-items: center; justify-content: center;
-            animation: modalFadeIn 0.3s ease-in-out;
-        }
-        @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .modal.hidden { display: none; }
-        .modal-overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
-        .modal-content {
-            position: relative; background-color: white; border-radius: 0.75rem;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-            display: flex; flex-direction: column; /* Added flex column */
-            max-width: 56rem; /* max-w-2xl */
-            width: 90%;
-            max-height: 90vh; /* Added max height */
-            animation: modalSlideIn 0.3s ease-out;
-        }
-        @keyframes modalSlideIn { from { transform: translateY(-30px) scale(0.95); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; flex-shrink: 0;}
-        .modal-body { padding: 1.5rem; overflow-y: auto; flex-grow: 1; /* Allow body to scroll */}
-        .modal-footer { display: flex; justify-content: flex-end; padding: 1rem 1.5rem; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; flex-shrink: 0;}
-    </style>
-</head>
-<body class="bg-gray-100">
-<div class="flex h-screen bg-gray-100 overflow-hidden">
+<div th:fragment="customers-content">
+    <h2 class="text-2xl font-bold text-gray-800 mb-6">Customer List</h2>
 
-    <div th:replace="~{fragments/sidebar-layout :: layout(navContentFragment=~{owner/owner-sidebar-nav :: nav})}"></div>
-
-    <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="flex items-center justify-between h-16 px-4 bg-white shadow-sm">
-            <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-900 lg:hidden">
-                <i class="fas fa-bars text-xl"></i>
-            </button>
-            <h1 class="text-lg font-semibold text-gray-900 lg:hidden">Customer Management</h1> <div class="flex-1"></div>
-
-            <div class="flex items-center space-x-4">
-                <div class="relative">
-                    <button id="notificationBell" class="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
-                        <i class="fas fa-bell text-xl"></i>
-                        <span id="notificationBadge" class="hidden absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-500 rounded-full">0</span>
-                    </button>
-                    <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
-                            <h3 class="font-semibold text-gray-900">Thông báo</h3>
-                            <button onclick="markAllAsRead()" class="text-sm text-blue-600 hover:text-blue-700">Đánh dấu tất cả đã đọc</button>
-                        </div>
-                        <div id="notificationList" class="max-h-96 overflow-y-auto">
-                            <div class="p-4 text-center text-gray-500">
-                                <i class="fas fa-bell-slash text-3xl mb-2"></i>
-                                <p>Không có thông báo mới</p>
+    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bookings</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                <tr th:each="customerInfo : ${customers}" class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center">
+                                <img th:if="${customerInfo.user != null and customerInfo.user.avatarUrl != null}" th:src="${customerInfo.user.avatarUrl}" class="w-full h-full rounded-full object-cover"/>
+                                <i th:unless="${customerInfo.user != null and customerInfo.user.avatarUrl != null}" class="fas fa-user text-gray-500 text-lg"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm" th:text="${customerInfo.user != null ? (customerInfo.user.firstName + ' ' + customerInfo.user.lastName) : 'N/A'}"></p>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="relative">
-                    <button id="userMenuButton" class="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg transition">
-                        <div th:if="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="w-8 h-8 rounded-full overflow-hidden">
-                            <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">
-                        </div>
-                        <i th:unless="${currentUser?.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}" class="fas fa-user-circle text-2xl text-gray-500"></i>
-                        <span class="hidden md:inline text-sm font-medium text-gray-700" th:text="${currentUser?.firstName}">Owner</span>
-                        <i class="fas fa-chevron-down text-xs text-gray-500"></i>
-                    </button>
-                    <div id="userMenuDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                        <div class="p-3 border-b border-gray-200">
-                            <p class="text-sm font-semibold text-gray-800" th:text="${currentUser?.firstName + ' ' + currentUser?.lastName}">Owner User</p>
-                            <p class="text-xs text-gray-500" th:text="${currentUser?.role?.roleName}">Owner</p>
-                        </div>
-                        <div class="py-1">
-                            <a href="/" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-home w-5 mr-2 text-gray-500"></i>
-                                Trang chủ
-                            </a>
-                            <a href="/owner/profile" class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                <i class="fas fa-user-edit w-5 mr-2 text-gray-500"></i>
-                                Hồ sơ
-                            </a>
-                            <a href="/logout" class="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                <i class="fas fa-sign-out-alt w-5 mr-2"></i>
-                                Đăng Xuất
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
-            <div class="container mx-auto px-0">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6">Customer List</h2>
-
-                <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full">
-                            <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Bookings</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-200">
-                            <tr th:each="customerInfo : ${customers}" class="hover:bg-gray-50">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center">
-                                            <img th:if="${customerInfo.user != null and customerInfo.user.avatarUrl != null}" th:src="${customerInfo.user.avatarUrl}" class="w-full h-full rounded-full object-cover"/>
-                                            <i th:unless="${customerInfo.user != null and customerInfo.user.avatarUrl != null}" class="fas fa-user text-gray-500 text-lg"></i>
-                                        </div>
-                                        <div>
-                                            <p class="font-medium text-gray-900 text-sm" th:text="${customerInfo.user != null ? (customerInfo.user.firstName + ' ' + customerInfo.user.lastName) : 'N/A'}"></p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 truncate max-w-[200px]" th:text="${customerInfo.user != null ? customerInfo.user.email : 'N/A'}"></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${customerInfo.user != null ? customerInfo.user.phoneNumber : 'N/A'}"></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-center" th:text="${customerInfo.bookingCount}"></td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button th:if="${customerInfo.user != null}" th:attr="onclick=|viewCustomer('${customerInfo.user.id}')|" class="text-blue-600 hover:text-blue-800" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr th:if="${customers == null or #lists.isEmpty(customers)}">
-                                <td colspan="5" class="text-center py-10 text-gray-500">No customers found.</td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-            </div>
-        </main>
-    </div>
-</div>
-
-<div id="customer-detail-modal" class="modal hidden">
-    <div class="modal-overlay" onclick="closeModal('customer-detail-modal')"></div>
-    <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
-        <div class="modal-header">
-            <h3 class="text-xl font-semibold text-gray-800">Customer Details</h3>
-            <button onclick="closeModal('customer-detail-modal')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
-        </div>
-        <div class="modal-body overflow-y-auto" id="customer-detail-content">
-            <p class="p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading customer details...</p>
-        </div>
-        <div class="modal-footer">
-            <button onclick="closeModal('customer-detail-modal')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm">Close</button>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600 truncate max-w-[200px]" th:text="${customerInfo.user != null ? customerInfo.user.email : 'N/A'}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${customerInfo.user != null ? customerInfo.user.phoneNumber : 'N/A'}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-center" th:text="${customerInfo.bookingCount}"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button th:if="${customerInfo.user != null}" th:attr="onclick=|viewCustomer('${customerInfo.user.id}')|" class="text-blue-600 hover:text-blue-800" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr th:if="${customers == null or #lists.isEmpty(customers)}">
+                    <td colspan="5" class="text-center py-10 text-gray-500">No customers found.</td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
-</div>
-
-<script th:src="@{/js/sidebar-common.js}"></script>
-<script th:src="@{/js/owner-dashboard.js}"></script>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    // Hàm closeModal chung
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-    }
-
-    // Hàm viewCustomer cập nhật
-    async function viewCustomer(customerId) {
-        const modal = document.getElementById('customer-detail-modal');
-        const contentEl = document.getElementById('customer-detail-content');
-        if (!modal || !contentEl) return;
-
-        modal.classList.remove('hidden');
-        contentEl.innerHTML = '<p class="p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading customer details...</p>'; // Show loading
-
-        try {
-            const response = await fetch(`/owner/management/customer/${customerId}`);
-            if (!response.ok) throw new Error('Failed to fetch customer details.');
-            const customer = await response.json();
-
-            // --- Generate HTML ---
-            let html = '<div class="space-y-4">';
-
-            // Basic Info
-            html += `
-                <div class="flex items-center space-x-4 pb-4 border-b">
-                    <div class="w-16 h-16 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center">`;
-            if (customer.avatarUrl) {
-                html += `<img src="${customer.avatarUrl}" alt="${customer.fullName}" class="w-full h-full rounded-full object-cover"/>`;
-            } else {
-                html += `<i class="fas fa-user text-gray-500 text-3xl"></i>`;
-            }
-            html += `</div>
-                    <div>
-                        <h4 class="text-xl font-bold text-gray-900">${customer.fullName || 'N/A'}</h4>
-                        <p class="text-sm text-gray-600">${customer.email || 'N/A'}</p>
-                         <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${customer.status || 'Unknown'}</span>
-                    </div>
-                </div>`;
-
-            // Details Grid
-            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 text-sm pt-4">';
-            html += `<div><strong class="text-gray-500 block mb-1">Username:</strong> <span class="text-gray-800">${customer.username || 'N/A'}</span></div>`;
-            html += `<div><strong class="text-gray-500 block mb-1">Phone:</strong> <span class="text-gray-800">${customer.phoneNumber || 'N/A'}</span></div>`;
-            html += `<div><strong class="text-gray-500 block mb-1">DOB:</strong> <span class="text-gray-800">${customer.dateOfBirth ? new Date(customer.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}</span></div>`;
-            html += `<div><strong class="text-gray-500 block mb-1">Gender:</strong> <span class="text-gray-800">${customer.gender || 'N/A'}</span></div>`;
-            html += `<div><strong class="text-gray-500 block mb-1">Role:</strong> <span class="text-gray-800">${customer.role || 'N/A'}</span></div>`;
-            html += `<div><strong class="text-gray-500 block mb-1">Member Since:</strong> <span class="text-gray-800">${customer.createdDate ? new Date(customer.createdDate).toLocaleDateString('vi-VN') : 'N/A'}</span></div>`;
-            html += '</div>';
-
-            // Booking Stats
-            html += `
-                <div class="pt-4 border-t mt-4">
-                    <h5 class="text-md font-semibold text-gray-700 mb-2">Booking Stats</h5>
-                    <div class="grid grid-cols-3 gap-3 text-center">
-                         <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                            <p class="text-xl font-bold text-blue-600">${customer.totalBookings || 0}</p>
-                            <p class="text-xs text-gray-500">Total</p>
-                        </div>
-                        <div class="bg-green-50 p-3 rounded-lg border border-green-200">
-                            <p class="text-xl font-bold text-green-600">${customer.completedBookings || 0}</p>
-                            <p class="text-xs text-gray-500">Completed</p>
-                        </div>
-                        <div class="bg-red-50 p-3 rounded-lg border border-red-200">
-                            <p class="text-xl font-bold text-red-600">${customer.cancelledBookings || 0}</p>
-                            <p class="text-xs text-gray-500">Cancelled</p>
-                        </div>
-                    </div>
-                </div>`;
-
-
-            html += '</div>'; // End space-y-4
-            // --- End Generate HTML ---
-
-            contentEl.innerHTML = html; // Update modal content
-
-        } catch (error) {
-            console.error('Error fetching customer details:', error);
-            contentEl.innerHTML = `<p class="p-6 text-center text-red-600">Could not load customer details. ${error.message}</p>`;
-        }
-    }
-
-    // Highlight sidebar script
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentPage = /*[[${currentPage}]]*/ 'customers';
-        if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
-            highlightOwnerSidebarLink(currentPage);
-        }
-        // Load notification count on page load (nếu cần)
-        if (typeof loadNotificationCount === 'function') {
-            loadNotificationCount();
-        }
-    });
-    /*]]>*/
-</script>
-
-</body>
-</html>
+</div> <div th:fragment="customer-modal">
+    <div id="customer-detail-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('customer-detail-modal')"></div>
+        <div class="modal-content w-full max-w-2xl max-h-[90vh] flex flex-col">
+            <div class="modal-header">
+                <h3 class="text-xl font-semibold text-gray-800">Customer Details</h3>
+                <button onclick="closeModal('customer-detail-modal')" class="text-gray-500 hover:text-gray-700"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <div class="modal-body overflow-y-auto" id="customer-detail-content">
+                <p class="p-6 text-center text-gray-500"><i class="fas fa-spinner fa-spin mr-2"></i>Loading customer details...</p>
+            </div>
+            <div class="modal-footer">
+                <button onclick="closeModal('customer-detail-modal')" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 text-sm">Close</button>
+            </div>
+        </div>
+    </div>
+</div> </html>

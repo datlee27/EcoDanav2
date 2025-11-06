@@ -39,9 +39,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    // =============================================
-    // === THAY ĐỔI 1: Thêm @NotBlank cho Họ/Tên ===
-    // =============================================
     @NotBlank(message = "Họ không được để trống")
     @Column(name = "FirstName", length = 256)
     private String firstName;
@@ -81,10 +78,8 @@ public class User {
     @Column(name = "PasswordHash", nullable = false, length = 255)
     private String password;
 
-    @NotBlank(message = "Số điện thoại là bắt buộc")
-    @Size(max = 10, message = "Số điện thoại không được vượt quá 10 ký tự")
-    @Pattern(regexp = "^(03|05|07|08|09)\\d{8}$", message = "Số điện thoại không hợp lệ")
-    @Column(name = "PhoneNumber", length = 10)
+    @Size(max = 15, message = "Số điện thoại không được vượt quá 15 ký tự")
+    @Column(name = "PhoneNumber", length = 15)
     private String phoneNumber;
 
     @Column(name = "SecurityStamp", columnDefinition = "TEXT")

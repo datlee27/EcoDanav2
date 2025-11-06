@@ -1,9 +1,13 @@
 package com.ecodana.evodanavn1.controller.admin;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.model.Notification;
+import com.ecodana.evodanavn1.service.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,11 +21,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import com.ecodana.evodanavn1.service.AnalyticsService;
-import com.ecodana.evodanavn1.service.BookingService;
-import com.ecodana.evodanavn1.service.NotificationService;
-import com.ecodana.evodanavn1.service.UserService;
-import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 @Controller
@@ -37,6 +36,8 @@ public class AdminController {
     private AnalyticsService analyticsService;
     @Autowired
     private NotificationService notificationService;
+    @Autowired
+    private UserFeedbackService userFeedbackService;
     @GetMapping({"/admin", "/admin/dashboard"})
     public String adminDashboard(@RequestParam(required = false) String tab, 
                                   @RequestParam(required = false) String roleFilter,
@@ -97,13 +98,34 @@ public class AdminController {
             model.addAttribute("insuranceList", List.of());
             model.addAttribute("contracts", List.of());
             model.addAttribute("payments", List.of());
-            
-            // Load all notifications for notifications tab
-            model.addAttribute("notifications", notificationService.getNotificationsByUserId(userWithRole.getId()));
-            
-            // Add recent notifications for dashboard widget (same data, can be reused)
-            model.addAttribute("recentNotifications", notificationService.getNotificationsByUserId(userWithRole.getId()));
-            
+
+            // Lấy danh sách thông báo 1 LẦN DUY NHẤT
+            List<Notification> allNotifications = notificationService.getNotificationsByUserId(userWithRole.getId());
+            model.addAttribute("notifications", allNotifications);
+            model.addAttribute("recentNotifications", allNotifications);
+            // Tính toán số lượng thông báo "Today" trong Java
+            long notificationsTodayCount = 0;
+            if (allNotifications != null) {
+                LocalDate today = LocalDate.now();
+                notificationsTodayCount = allNotifications.stream()
+                        .filter(n -> n.getCreatedDate() != null && n.getCreatedDate().toLocalDate().isEqual(today))
+                        .count();
+            }
+            // Gửi biến đã tính toán sang view
+            model.addAttribute("notificationsTodayCount", notificationsTodayCount);
+
+            List<UserFeedback> allFeedback = userFeedbackService.getAllFeedback();
+            List<UserFeedback> feedbackWithReplies = allFeedback.stream()
+                    .filter(f -> f.getStaffReply() != null && !f.getStaffReply().trim().isEmpty())
+                    .toList();
+            List<UserFeedback> feedbackWithoutReplies = allFeedback.stream()
+                    .filter(f -> f.getStaffReply() == null || f.getStaffReply().trim().isEmpty())
+                    .toList();
+
+            model.addAttribute("allFeedback", allFeedback);
+            model.addAttribute("feedbackWithReplies", feedbackWithReplies);
+            model.addAttribute("feedbackWithoutReplies", feedbackWithoutReplies);
+
             model.addAttribute("user", userWithRole);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("totalVehicles", allVehicles.size());
@@ -144,6 +166,9 @@ public class AdminController {
             model.addAttribute("vehicles", List.of());
             model.addAttribute("bookings", List.of());
             model.addAttribute("users", List.of());
+            model.addAttribute("allFeedback", List.of());
+            model.addAttribute("feedbackWithReplies", List.of());
+            model.addAttribute("feedbackWithoutReplies", List.of());
             model.addAttribute("totalVehicles", 0);
             model.addAttribute("totalBookings", 0);
             model.addAttribute("totalUsers", 0);
@@ -156,6 +181,7 @@ public class AdminController {
             model.addAttribute("maintenanceVehicles", 0);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("analytics", new HashMap<>());
+            model.addAttribute("notificationsTodayCount", 0);
             return "admin/admin-dashboard";
         }
     }
