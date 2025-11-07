@@ -59,6 +59,9 @@ public class BookingController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private com.ecodana.evodanavn1.service.EmailService emailService;
+
     /**
      * Show checkout page
      */
@@ -287,6 +290,29 @@ public class BookingController {
                 // Gửi cho Owner của xe
                 if(vehicle.getOwnerId() != null) {
                     notificationService.createNotification(vehicle.getOwnerId(), notificationMessage, booking.getBookingId(), "BOOKING_REQUEST");
+                    
+                    // Gửi email cho Owner
+                    try {
+                        User owner = userService.findById(vehicle.getOwnerId());
+                        if (owner != null && owner.getEmail() != null) {
+                            String ownerName = (owner.getFirstName() != null) ? (owner.getFirstName() + " " + owner.getLastName()) : owner.getUsername();
+                            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                            String pickupDateStr = booking.getPickupDateTime().format(formatter);
+                            String returnDateStr = booking.getReturnDateTime().format(formatter);
+                            
+                            emailService.sendBookingNotificationToOwner(
+                                owner.getEmail(),
+                                ownerName,
+                                booking.getBookingCode(),
+                                vehicle.getVehicleModel(),
+                                customerName,
+                                pickupDateStr,
+                                returnDateStr
+                            );
+                        }
+                    } catch (Exception emailError) {
+                        System.out.println("Warning: Failed to send email to owner: " + emailError.getMessage());
+                    }
                 } else {
                     // Fallback: Gửi cho admin nếu không tìm thấy owner
                     notificationService.createNotificationForAllAdmins(notificationMessage, booking.getBookingId(), "BOOKING_REQUEST");

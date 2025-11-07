@@ -45,6 +45,12 @@ public class UserService {
     @Autowired
     private com.ecodana.evodanavn1.service.RoleService roleService;
 
+    @Autowired
+    private com.ecodana.evodanavn1.repository.RoleRepository roleRepository;
+
+    @Autowired
+    private com.ecodana.evodanavn1.service.EmailService emailService;
+
     public User login(String username, String password, String secretKey) {
         Optional<User> userOpt = userRepository.findByUsername(username);
 
@@ -288,8 +294,34 @@ public class UserService {
         }
 
         return userRepository.findById(userId).map(user -> {
+            // Check if role is being changed to Owner
+            String oldRoleId = user.getRoleId();
+            boolean roleChangedToOwner = false;
+            
+            if (!oldRoleId.equals(roleId)) {
+                // Get the new role to check if it's Owner
+                com.ecodana.evodanavn1.model.Role newRole = roleRepository.findById(roleId).orElse(null);
+                if (newRole != null && "Owner".equalsIgnoreCase(newRole.getRoleName())) {
+                    roleChangedToOwner = true;
+                }
+            }
+            
             user.setRoleId(roleId);
-            userRepository.save(user);
+            User savedUser = userRepository.save(user);
+            
+            // Send email if role changed to Owner
+            if (roleChangedToOwner && savedUser.getEmail() != null) {
+                try {
+                    String userName = (savedUser.getFirstName() != null) ? 
+                        (savedUser.getFirstName() + " " + savedUser.getLastName()) : savedUser.getUsername();
+                    emailService.sendOwnerApprovalNotification(savedUser.getEmail(), userName);
+                    logger.info("Owner approval email sent to user: {}", savedUser.getEmail());
+                } catch (Exception emailError) {
+                    logger.warn("Failed to send owner approval email to {}: {}", 
+                        savedUser.getEmail(), emailError.getMessage());
+                }
+            }
+            
             return true;
         }).orElse(false);
     }

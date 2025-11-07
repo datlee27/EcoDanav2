@@ -40,6 +40,12 @@ public class VNPayController {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private com.ecodana.evodanavn1.service.EmailService emailService;
+
+    @Autowired
+    private com.ecodana.evodanavn1.service.UserService userService;
+
     /**
      * Xử lý callback từ VNPay khi customer hoàn tất thanh toán
      */
@@ -148,6 +154,36 @@ public class VNPayController {
 
                 // Gửi thông báo cho Admin và Customer
                 notificationService.notifyPaymentSuccess(booking, payment);
+                
+                // Gửi email xác nhận thanh toán cho Owner
+                try {
+                    if (booking.getVehicle() != null && booking.getVehicle().getOwnerId() != null) {
+                        com.ecodana.evodanavn1.model.User owner = userService.findById(booking.getVehicle().getOwnerId());
+                        if (owner != null && owner.getEmail() != null) {
+                            String ownerName = (owner.getFirstName() != null) ? 
+                                (owner.getFirstName() + " " + owner.getLastName()) : owner.getUsername();
+                            String vehicleName = booking.getVehicle().getVehicleModel();
+                            com.ecodana.evodanavn1.model.User customer = booking.getUser();
+                            String customerName = (customer.getFirstName() != null) ? 
+                                (customer.getFirstName() + " " + customer.getLastName()) : customer.getUsername();
+                            String formattedAmount = String.format("%,d", amountInVND);
+                            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+                            String pickupDateStr = booking.getPickupDateTime().format(formatter);
+                            
+                            emailService.sendPaymentConfirmationToOwner(
+                                owner.getEmail(),
+                                ownerName,
+                                booking.getBookingCode(),
+                                vehicleName,
+                                customerName,
+                                formattedAmount,
+                                pickupDateStr
+                            );
+                        }
+                    }
+                } catch (Exception emailError) {
+                    logger.warn("Failed to send payment confirmation email to owner: " + emailError.getMessage());
+                }
                 
                 logger.info("Payment successful for booking: {}, amount: {}", bookingId, amountInVND);
                 

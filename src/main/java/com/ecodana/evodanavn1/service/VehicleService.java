@@ -332,4 +332,85 @@ public class VehicleService {
         Optional<Vehicle> vehicle = vehicleRepository.findByLicensePlate(licensePlate);
         return vehicle.isPresent() && !vehicle.get().getVehicleId().equals(vehicleId);
     }
+
+    @Autowired
+    private com.ecodana.evodanavn1.service.UserService userService;
+    
+    @Autowired
+    private com.ecodana.evodanavn1.repository.RoleRepository roleRepository;
+
+    /**
+     * Approve vehicle - change status to Available
+     * Can approve from PendingApproval, Unavailable, or Maintenance status
+     * Also grants Owner role to the vehicle owner if they don't have it
+     */
+    @Transactional
+    public Vehicle approveVehicle(String vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        
+        // Log current status for debugging
+        System.out.println("=== Approving Vehicle ===");
+        System.out.println("Vehicle ID: " + vehicleId);
+        System.out.println("Current Status: " + vehicle.getStatus());
+        
+        // Only prevent approval if already Available or Rented
+        if (vehicle.getStatus() == Vehicle.VehicleStatus.Available) {
+            throw new RuntimeException("Vehicle is already approved and available");
+        }
+        
+        if (vehicle.getStatus() == Vehicle.VehicleStatus.Rented) {
+            throw new RuntimeException("Cannot approve vehicle that is currently rented");
+        }
+        
+        // Grant Owner role to vehicle owner if they don't have it
+        if (vehicle.getOwnerId() != null) {
+            try {
+                com.ecodana.evodanavn1.model.User owner = userService.findById(vehicle.getOwnerId());
+                if (owner != null && !userService.isOwner(owner) && !userService.isAdmin(owner)) {
+                    // Find Owner role
+                    com.ecodana.evodanavn1.model.Role ownerRole = roleRepository.findByRoleName("Owner")
+                            .orElseThrow(() -> new RuntimeException("Owner role not found"));
+                    
+                    // Grant Owner role
+                    owner.setRoleId(ownerRole.getRoleId());
+                    userService.save(owner);
+                    System.out.println("Granted Owner role to user: " + owner.getUsername());
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to grant Owner role: " + e.getMessage());
+                // Don't fail the approval if role grant fails
+            }
+        }
+        
+        vehicle.setStatus(Vehicle.VehicleStatus.Available);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        System.out.println("New Status: " + saved.getStatus());
+        return saved;
+    }
+
+    /**
+     * Reject vehicle - change status to Unavailable
+     */
+    @Transactional
+    public Vehicle rejectVehicle(String vehicleId, String reason) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new RuntimeException("Vehicle not found"));
+        
+        // Log current status for debugging
+        System.out.println("=== Rejecting Vehicle ===");
+        System.out.println("Vehicle ID: " + vehicleId);
+        System.out.println("Current Status: " + vehicle.getStatus());
+        System.out.println("Reason: " + reason);
+        
+        // Cannot reject if already rented
+        if (vehicle.getStatus() == Vehicle.VehicleStatus.Rented) {
+            throw new RuntimeException("Cannot reject vehicle that is currently rented");
+        }
+        
+        vehicle.setStatus(Vehicle.VehicleStatus.Unavailable);
+        Vehicle saved = vehicleRepository.save(vehicle);
+        System.out.println("New Status: " + saved.getStatus());
+        return saved;
+    }
 }

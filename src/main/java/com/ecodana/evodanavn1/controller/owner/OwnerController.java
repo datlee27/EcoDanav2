@@ -49,6 +49,9 @@ public class OwnerController {
     @Autowired // Thêm service feedback
     private UserFeedbackService userFeedbackService;
 
+    @Autowired
+    private EmailService emailService;
+
     // Các biến @Value để đọc cấu hình Cloudinary (Giữ nguyên như file của bạn)
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
     private String cloudName;
@@ -780,6 +783,36 @@ public class OwnerController {
             if (booking != null) {
                 // Gửi thông báo cho khách hàng
                 notificationService.notifyCustomerBookingApproved(booking);
+                
+                // Gửi email yêu cầu thanh toán cho Customer
+                try {
+                    User customer = booking.getUser();
+                    if (customer != null && customer.getEmail() != null) {
+                        String customerName = (customer.getFirstName() != null) ? 
+                            (customer.getFirstName() + " " + customer.getLastName()) : customer.getUsername();
+                        String vehicleName = booking.getVehicle() != null ? booking.getVehicle().getVehicleModel() : "N/A";
+                        String totalAmount = booking.getTotalAmount() != null ? 
+                            String.format("%,d", booking.getTotalAmount().longValue()) : "0";
+                        String depositAmount = booking.getDepositAmountRequired() != null ? 
+                            String.format("%,d", booking.getDepositAmountRequired().longValue()) : "0";
+                        
+                        // Tạo URL thanh toán - giả sử có endpoint /booking/payment/{bookingId}
+                        String paymentUrl = "http://localhost:8080/booking/payment/" + booking.getBookingId();
+                        
+                        emailService.sendPaymentRequestToCustomer(
+                            customer.getEmail(),
+                            customerName,
+                            booking.getBookingCode(),
+                            vehicleName,
+                            totalAmount,
+                            depositAmount,
+                            paymentUrl
+                        );
+                    }
+                } catch (Exception emailError) {
+                    logger.warn("Failed to send payment request email: " + emailError.getMessage());
+                }
+                
                 return ResponseEntity.ok(Map.of("success", true, "message", "Booking approved successfully"));
             } else {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));

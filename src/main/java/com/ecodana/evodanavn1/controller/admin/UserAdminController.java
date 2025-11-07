@@ -46,6 +46,9 @@ public class UserAdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired
+    private com.ecodana.evodanavn1.service.EmailService emailService;
+    
     /**
      * Display user management page
      */
@@ -383,6 +386,17 @@ public class UserAdminController {
                         .body(Map.of("success", false, "message", "Invalid role ID"));
             }
             
+            // Check if role is being changed to Owner
+            String oldRoleId = existingUser.getRoleId();
+            boolean roleChangedToOwner = false;
+            if (!oldRoleId.equals(userRequest.getRoleId())) {
+                // Get the new role to check if it's Owner
+                Role newRole = roleRepository.findById(userRequest.getRoleId()).orElse(null);
+                if (newRole != null && "Owner".equalsIgnoreCase(newRole.getRoleName())) {
+                    roleChangedToOwner = true;
+                }
+            }
+            
             // Update user fields
             existingUser.setUsername(userRequest.getUsername());
             existingUser.setFirstName(userRequest.getFirstName());
@@ -418,6 +432,19 @@ public class UserAdminController {
             
             // Save user
             User updatedUser = userService.save(existingUser);
+            
+            // Send email if role changed to Owner
+            if (roleChangedToOwner && updatedUser.getEmail() != null) {
+                try {
+                    String userName = (updatedUser.getFirstName() != null) ? 
+                        (updatedUser.getFirstName() + " " + updatedUser.getLastName()) : updatedUser.getUsername();
+                    emailService.sendOwnerApprovalNotification(updatedUser.getEmail(), userName);
+                    logger.info("Owner approval email sent to user: {}", updatedUser.getEmail());
+                } catch (Exception emailError) {
+                    logger.warn("Failed to send owner approval email to {}: {}", 
+                        updatedUser.getEmail(), emailError.getMessage());
+                }
+            }
             
             // Load with role for response
             User userWithRole = userService.findByIdWithRole(updatedUser.getId());
