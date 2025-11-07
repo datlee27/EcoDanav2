@@ -5,6 +5,7 @@ import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
+import com.ecodana.evodanavn1.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,9 @@ public class VehicleController {
 
     @Autowired
     private UserFeedbackService userFeedbackService;
+
+    @Autowired
+    private UserService userService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -97,6 +101,12 @@ public class VehicleController {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy xe"));
 
         model.addAttribute("vehicle", vehicle);
+
+        // Get owner information
+        if (vehicle.getOwnerId() != null) {
+            User owner = userService.findById(vehicle.getOwnerId());
+            model.addAttribute("vehicleOwner", owner);
+        }
 
         // Add the API key to the model to pass it to the view
         model.addAttribute("googleApiKey", googleApiKey);

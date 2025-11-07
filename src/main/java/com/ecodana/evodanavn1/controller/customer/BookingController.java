@@ -27,6 +27,7 @@ import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import com.ecodana.evodanavn1.service.VNPayService;
 
@@ -55,6 +56,9 @@ public class BookingController {
     @Autowired
     private UserFeedbackService userFeedbackService;
 
+    @Autowired
+    private UserService userService;
+
     /**
      * Show checkout page
      */
@@ -80,22 +84,26 @@ public class BookingController {
             LocalTime pickupTime = LocalTime.parse(bookingRequest.getPickupTime());
             LocalTime returnTime = LocalTime.parse(bookingRequest.getReturnTime());
 
+            // Calculate rental price based on exact hours
+            BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
+            BigDecimal hourlyPrice = vehicle.getHourlyPriceFromJson();
+            
+            // Calculate total hours
+            LocalDateTime pickupDateTimeObj = LocalDateTime.of(pickupDate, pickupTime);
+            LocalDateTime returnDateTimeObj = LocalDateTime.of(returnDate, returnTime);
+            
             // Format for display
             String pickupDateTime = pickupDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " " + pickupTime;
             String returnDateTime = returnDate.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) + " " + returnTime;
-
-            // Calculate rental price
-            BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
-            BigDecimal rentalPrice = dailyPrice.multiply(new BigDecimal(bookingRequest.getRentalDays()));
-
-            // Calculate basic insurance
-            BigDecimal basicInsurance = new BigDecimal("110401");
-
-            // Calculate additional insurance
-            BigDecimal additionalInsuranceAmount = BigDecimal.ZERO;
-            if (bookingRequest.getAdditionalInsurance() != null && bookingRequest.getAdditionalInsurance()) {
-                additionalInsuranceAmount = new BigDecimal("50000").multiply(new BigDecimal(bookingRequest.getRentalDays()));
-            }
+            long totalHours = java.time.Duration.between(pickupDateTimeObj, returnDateTimeObj).toHours();
+            double totalHoursDouble = java.time.Duration.between(pickupDateTimeObj, returnDateTimeObj).toMinutes() / 60.0;
+            
+            // Calculate price: (full days × daily price) + (remaining hours × hourly price)
+            long fullDays = totalHours / 24;
+            double remainingHours = totalHoursDouble - (fullDays * 24);
+            
+            BigDecimal rentalPrice = dailyPrice.multiply(new BigDecimal(fullDays))
+                    .add(hourlyPrice.multiply(new BigDecimal(remainingHours)));
 
             // Get discount info and calculate discount amount
             String discountCode = null;
@@ -107,24 +115,27 @@ public class BookingController {
                 if (discount != null && discountService.isDiscountValid(discount)) {
                     discountCode = discount.getVoucherCode();
 
-                    BigDecimal subtotal = rentalPrice.add(basicInsurance).add(additionalInsuranceAmount);
-
+                    BigDecimal subtotal = rentalPrice;
                     discountAmount = discountService.calculateDiscountAmount(discount, subtotal);
-
-                    // Gán lại discountAmount từ request nếu nó khác (trường hợp JS tính)
-                    if (bookingRequest.getDiscountAmount() != null && bookingRequest.getDiscountAmount().compareTo(BigDecimal.ZERO) > 0) {
-                        discountAmount = bookingRequest.getDiscountAmount();
-                    }
                 }
             }
 
-            // Calculate total amount
-            BigDecimal totalAmount = rentalPrice.add(basicInsurance).add(additionalInsuranceAmount).subtract(discountAmount);
-
-            // Cập nhật lại totalAmount từ request (vì JS đã tính toán cuối cùng)
-            if(bookingRequest.getTotalAmount() != null && bookingRequest.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
-                totalAmount = bookingRequest.getTotalAmount();
+            // Calculate total amount - always recalculate to ensure accuracy
+            BigDecimal totalAmount = rentalPrice.subtract(discountAmount);
+            
+            // Ensure total is not negative
+            if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+                totalAmount = BigDecimal.ZERO;
             }
+            
+            // Debug logging
+            System.out.println("=== Checkout Calculation ===");
+            System.out.println("Rental Days: " + bookingRequest.getRentalDays());
+            System.out.println("Daily Price: " + dailyPrice);
+            System.out.println("Rental Price: " + rentalPrice);
+            System.out.println("Discount Code: " + discountCode);
+            System.out.println("Discount Amount: " + discountAmount);
+            System.out.println("Total Amount: " + totalAmount);
 
             // Add attributes to model
             model.addAttribute("vehicle", vehicle);
@@ -138,8 +149,10 @@ public class BookingController {
             model.addAttribute("pickupLocation", bookingRequest.getPickupLocation());
             model.addAttribute("rentalDays", bookingRequest.getRentalDays());
             model.addAttribute("rentalPrice", rentalPrice);
-            model.addAttribute("additionalInsurance", bookingRequest.getAdditionalInsurance());
-            model.addAttribute("additionalInsuranceAmount", additionalInsuranceAmount);
+            model.addAttribute("dailyPrice", dailyPrice);
+            model.addAttribute("hourlyPrice", hourlyPrice);
+            model.addAttribute("fullDays", fullDays);
+            model.addAttribute("remainingHours", Math.ceil(remainingHours));
             model.addAttribute("discountId", bookingRequest.getDiscountId()); // Vẫn gửi ID (code)
             model.addAttribute("discountCode", discountCode); // Tên mã
             model.addAttribute("discountAmount", discountAmount);
@@ -428,6 +441,12 @@ public class BookingController {
             return "redirect:/booking/my-bookings";
         }
 
+        // Get owner information
+        if (vehicle.getOwnerId() != null) {
+            User owner = userService.findById(vehicle.getOwnerId());
+            model.addAttribute("vehicleOwner", owner);
+        }
+
         model.addAttribute("booking", booking);
         model.addAttribute("vehicle", vehicle);
         model.addAttribute("currentUser", user);
@@ -435,9 +454,6 @@ public class BookingController {
         return "customer/booking-confirmation";
     }
 
-    /**
-     * Show user's bookings
-     */
     @GetMapping("/my-bookings")
     public String myBookings(HttpSession session, Model model) {
         User user = (User) session.getAttribute("currentUser");

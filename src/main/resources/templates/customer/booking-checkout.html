@@ -120,7 +120,16 @@
                         <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <div class="flex items-center">
                                 <i class="fas fa-clock text-blue-500 mr-2"></i>
-                                <span class="text-gray-700">Thời gian thuê: <span class="font-bold text-blue-600" id="displayRentalDays" th:text="${rentalDays} + ' ngày'">5 ngày</span></span>
+                                <span class="text-gray-700">Thời gian thuê: 
+                                    <span class="font-bold text-blue-600" id="displayRentalDays">
+                                        <span th:if="${remainingHours != null && remainingHours > 0}">
+                                            <span th:text="${fullDays}">1</span> ngày <span th:text="${remainingHours}">2</span> giờ
+                                        </span>
+                                        <span th:if="${remainingHours == null || remainingHours == 0}">
+                                            <span th:text="${rentalDays}">2</span> ngày
+                                        </span>
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -203,7 +212,6 @@
                         <input type="hidden" name="pickupLocation" th:value="${pickupLocation}">
                         <input type="hidden" name="totalAmount" th:value="${totalAmount}">
                         <input type="hidden" name="rentalDays" th:value="${rentalDays}">
-                        <input type="hidden" name="additionalInsurance" th:value="${additionalInsurance}">
                         <input type="hidden" name="discountId" th:value="${discountId}">
                         <input type="hidden" name="discountAmount" th:value="${discountAmount}">
                         <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="Cash">
@@ -309,19 +317,15 @@
                     
                     <!-- Price Breakdown -->
                     <div class="space-y-3 text-sm mb-4" id="priceBreakdown">
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Đơn giá thuê (<span id="summaryRentalDays" th:text="${rentalDays}">5</span> ngày)</span>
-                            <span class="font-semibold" id="summaryRentalPrice" th:text="${#numbers.formatDecimal(rentalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">5.000.000 ₫</span>
-                        </div>
-                        
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">Bảo hiểm thuê xe</span>
-                            <span class="font-semibold">110.401 ₫</span>
-                        </div>
-                        
-                        <div th:if="${additionalInsurance}" class="flex justify-between">
-                            <span class="text-gray-600">Bảo hiểm người trên xe</span>
-                            <span class="font-semibold" th:text="${#numbers.formatDecimal(additionalInsuranceAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">250.000 ₫</span>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <span class="text-gray-600 font-medium">Đơn giá thuê (<span id="summaryRentalDays" th:text="${rentalDays}">5</span> ngày)</span>
+                                <span class="font-semibold" id="summaryRentalPrice" th:text="${#numbers.formatDecimal(rentalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">5.000.000 ₫</span>
+                            </div>
+                            <div th:if="${remainingHours != null && remainingHours > 0}" class="text-xs text-gray-500 ml-2">
+                                • <span th:text="${fullDays}">2</span> ngày × <span th:text="${#numbers.formatDecimal(dailyPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.100.000 ₫</span><br/>
+                                • <span th:text="${remainingHours}">2</span> giờ × <span th:text="${#numbers.formatDecimal(hourlyPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">50.000 ₫</span>
+                            </div>
                         </div>
                         
                         <div th:if="${discountAmount != null && discountAmount > 0}" class="flex justify-between text-green-600">
@@ -420,15 +424,26 @@
             return;
         }
         
-        // Calculate new rental days
-        const pickup = new Date(pickupDate + ' ' + pickupTime);
-        const returnD = new Date(returnDate + ' ' + returnTime);
-        const diffTime = Math.abs(returnD - pickup);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // Calculate new rental days (same logic as vehicle-detail)
+        const pickupDateTime = new Date(`${pickupDate}T${pickupTime}`);
+        const returnDateTime = new Date(`${returnDate}T${returnTime}`);
         
-        if (diffDays < 1) {
+        if (returnDateTime <= pickupDateTime) {
             alert('Ngày trả xe phải sau ngày nhận xe!');
             return;
+        }
+        
+        const diffMilliseconds = returnDateTime - pickupDateTime;
+        const totalHours = diffMilliseconds / (1000 * 60 * 60);
+        
+        let diffDays = 0;
+        if (totalHours > 0) {
+            diffDays = Math.ceil(totalHours / 24);
+            if (diffDays === 0 && diffMilliseconds > 0) {
+                diffDays = 1;
+            }
+        } else {
+            diffDays = 1;
         }
         
         // Update display

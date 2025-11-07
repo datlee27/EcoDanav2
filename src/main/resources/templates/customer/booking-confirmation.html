@@ -90,6 +90,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Owner Information -->
+                <div th:if="${vehicleOwner != null}">
+                    <h3 class="font-semibold text-gray-700 mb-3">Chủ xe</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white text-lg font-bold flex-shrink-0">
+                                <span th:text="${vehicleOwner.firstName != null ? vehicleOwner.firstName.substring(0,1).toUpperCase() : 'O'}">O</span>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900" th:text="${vehicleOwner.firstName != null ? (vehicleOwner.firstName + ' ' + vehicleOwner.lastName) : vehicleOwner.username}">Chủ xe</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div th:if="${vehicleOwner.phoneNumber != null}" class="flex items-center gap-2 text-gray-700">
+                                <i class="fas fa-phone text-green-500 w-4"></i>
+                                <span th:text="${vehicleOwner.phoneNumber}">0236 123 456</span>
+                            </div>
+                            <div th:if="${vehicleOwner.email != null}" class="flex items-center gap-2 text-gray-700">
+                                <i class="fas fa-envelope text-green-500 w-4"></i>
+                                <span th:text="${vehicleOwner.email}">owner@example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Price -->
