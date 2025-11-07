@@ -37,7 +37,9 @@ public class AdminController {
     @Autowired
     private FeedbackReportService feedbackReportService;
     @GetMapping({"/admin", "/admin/dashboard"})
-    public String adminDashboard(@RequestParam(required = false) String tab, HttpSession session, Model model, HttpServletResponse response) {
+    public String adminDashboard(@RequestParam(required = false) String tab, 
+                                  @RequestParam(required = false) String roleFilter,
+                                  HttpSession session, Model model, HttpServletResponse response) {
         response.setHeader("Connection", "close");
         response.setHeader("Content-Encoding", "identity");
         User user = (User) session.getAttribute("currentUser");
@@ -59,7 +61,23 @@ public class AdminController {
             model.addAttribute("performanceMetrics", analyticsService.getPerformanceMetrics());
             model.addAttribute("systemHealth", analyticsService.getSystemHealth());
             List<User> allUsers = userService.getAllUsersWithRole();
-            model.addAttribute("users", allUsers.size() > 100 ? allUsers.subList(0, 100) : allUsers);
+            
+            // Filter users by role if roleFilter is provided
+            List<User> filteredUsers = allUsers;
+            if (roleFilter != null && !roleFilter.isEmpty()) {
+                filteredUsers = allUsers.stream()
+                    .filter(u -> {
+                        if (u.getRole() != null) {
+                            return roleFilter.equals(u.getRole().getRoleName());
+                        } else {
+                            return "Customer".equals(roleFilter);
+                        }
+                    })
+                    .toList();
+            }
+            
+            model.addAttribute("users", filteredUsers.size() > 100 ? filteredUsers.subList(0, 100) : filteredUsers);
+            model.addAttribute("roleFilter", roleFilter);
             List<Vehicle> allVehicles = vehicleService.getAllVehicles();
             model.addAttribute("vehicles", allVehicles.size() > 100 ? allVehicles.subList(0, 100) : allVehicles);
             List<?> allBookings = bookingService.getAllBookings();

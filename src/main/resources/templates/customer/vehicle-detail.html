@@ -1394,7 +1394,7 @@
               discountNameEl.textContent = appliedDiscount.voucherCode;
               discountAmountEl.textContent = "-" + formatCurrency(finalDiscount);
               discountAmountInput.value = discountAmount;
-              discountIdInput.value = appliedDiscount.discountId || appliedDiscount.voucherCode;
+              discountIdInput.value = appliedDiscount.voucherCode; // Lưu voucher code thay vì UUID
             } else {
               appliedDiscount = null;
               discountAmount = 0;
