@@ -252,7 +252,14 @@
 </main>
 
 <!-- Cancel Car Modal (for confirmed bookings) -->
-<div id="cancelCarModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+<div id="cancelCarModal"
+     class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+
+     th:data-payment-confirmed-at="${booking.paymentConfirmedAt}"
+     th:data-pickup-date-time="${booking.pickupDateTime}"
+     th:data-total-amount="${booking.totalAmount}"
+     th:data-total-paid="${booking.depositAmountRequired}"
+>
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
@@ -261,42 +268,45 @@
                     <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            
+
             <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                 <div class="flex items-center mb-2">
                     <i class="fas fa-clock text-orange-500 mr-2"></i>
-                    <span class="font-semibold text-orange-800">Thời gian đặt xe:</span>
-                    <span class="ml-auto text-orange-700" th:text="${#temporals.format(booking.createdDate, 'dd/MM/yyyy HH:mm')}">19/10/2025 14:30</span>
+                    <span class="font-semibold text-orange-800">Thời gian thanh toán:</span>
+                    <span class="ml-auto text-orange-700"
+                          th:text="${booking.paymentConfirmedAt != null ? #temporals.format(booking.paymentConfirmedAt, 'dd/MM/yyyy HH:mm') : 'N/A'}">
+                        19/10/2025 14:30
+                    </span>
                 </div>
                 <p class="text-sm text-orange-700">
                     <i class="fas fa-info-circle mr-2"></i>
-                    Hủy trong 2 tiếng: hoàn tiền 100% | Sau 2 tiếng: mất 10% phí
+                    <span id="refundPolicyText">Đang tính toán chính sách...</span>
                 </p>
             </div>
-            
+
             <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p class="text-sm text-green-800">
                     <i class="fas fa-dollar-sign mr-2"></i>
-                    <strong>Số tiền hoàn lại:</strong> 
-                    <span id="refundAmount" class="font-bold text-green-600">1.231.937 ₫</span>
+                    <strong>Số tiền hoàn lại (dự kiến):</strong>
+                    <span id="refundAmount" class="font-bold text-green-600">...</span>
                 </p>
             </div>
-            
+
             <form th:action="@{'/booking/cancel-car/' + ${booking.bookingId}}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Lý do hủy</label>
-                    <textarea name="cancelReason" rows="3" 
+                    <textarea name="cancelReason" rows="3"
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                               placeholder="Nhập lý do hủy xe..."></textarea>
                 </div>
-                
+
                 <div class="flex gap-3">
-                    <button type="button" onclick="closeCancelCarModal()" 
+                    <button type="button" onclick="closeCancelCarModal()"
                             class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold">
                         Đóng
                     </button>
-                    <button type="submit" 
+                    <button type="submit"
                             class="flex-1 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold">
                         Xác nhận hủy
                     </button>
@@ -351,66 +361,142 @@
 <div th:replace="~{fragments/footer :: footer}"></div>
 
 <script>
+    /*<![CDATA[*/
+    // --- KHÔNG SỬ DỤNG th:inline="javascript" ---
+
+    /**
+     * Lấy dữ liệu từ các thuộc tính data-* trên modal
+     * Hàm này sẽ được gọi khi mở modal Hủy Xe.
+     */
+    function getBookingDataFromModal() {
+        const modal = document.getElementById('cancelCarModal');
+        if (!modal) {
+            console.error("Modal 'cancelCarModal' not found.");
+            return null;
+        }
+
+        const paymentTimeStr = modal.getAttribute('data-payment-confirmed-at');
+        const pickupTimeStr = modal.getAttribute('data-pickup-date-time');
+        const totalAmountStr = modal.getAttribute('data-total-amount');
+        const totalPaidStr = modal.getAttribute('data-total-paid');
+
+        // Kiểm tra dữ liệu quan trọng
+        if (!paymentTimeStr || paymentTimeStr === "null" || !pickupTimeStr || pickupTimeStr === "null") {
+            console.error("Missing data attributes on modal: paymentConfirmedAt or pickupDateTime is null.");
+            return null;
+        }
+
+        return {
+            paymentConfirmedAt: new Date(paymentTimeStr),
+            pickupDateTime: new Date(pickupTimeStr),
+            totalAmount: parseFloat(totalAmountStr || '0'),
+            totalPaid: parseFloat(totalPaidStr || '0')
+        };
+    }
+
+    /**
+     * Hàm mở modal Hủy (Pending)
+     */
     function showCancelModal() {
         document.getElementById('cancelModal').classList.remove('hidden');
     }
-    
+
+    /**
+     * Hàm đóng modal Hủy (Pending)
+     */
     function closeCancelModal() {
         document.getElementById('cancelModal').classList.add('hidden');
     }
-    
-    function closeCancelModal() {
-        document.getElementById('cancelModal').classList.add('hidden');
-    }
-    
+
+    /**
+     * Hàm mở modal Hủy Xe (Đã thanh toán)
+     */
     function showCancelCarModal() {
         document.getElementById('cancelCarModal').classList.remove('hidden');
-        calculateRefund();
+        calculateRefund(); // Gọi hàm tính toán khi mở modal
     }
-    
+
+    /**
+     * Hàm đóng modal Hủy Xe (Đã thanh toán)
+     */
     function closeCancelCarModal() {
         document.getElementById('cancelCarModal').classList.add('hidden');
     }
-    
-    // Close modal on outside click for cancel car modal
+
+    // Đóng modal khi click ra ngoài
     document.getElementById('cancelCarModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeCancelCarModal();
         }
     });
-    
-    function calculateRefund() {
-        // Tính toán thời gian từ lúc đặt xe đến bây giờ
-        const createdDate = new Date(/*[[${#temporals.format(booking.createdDate, 'yyyy-MM-dd HH:mm:ss')}]]*/ '2025-01-01 14:30:00');
-        const now = new Date();
-        const hoursDiff = (now - createdDate) / (1000 * 60 * 60); // tính bằng giờ
-        
-        const totalAmount = parseFloat(/*[[${booking.totalAmount}]]*/ '1231937');
-        
-        let refundAmount;
-        if (hoursDiff <= 2) {
-            // Trong 2 tiếng: hoàn 100%
-            refundAmount = totalAmount;
-        } else {
-            // Sau 2 tiếng: mất 10% phí
-            refundAmount = totalAmount * 0.9;
-        }
-        
-        // Hiển thị số tiền hoàn lại
-        document.getElementById('refundAmount').textContent = formatCurrency(refundAmount);
-    }
-    
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' ₫';
-    }
-    
-    // Close modal on outside click
+
     document.getElementById('cancelModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeCancelModal();
         }
     });
-</script>
 
+    /**
+     * HÀM TÍNH TOÁN HOÀN TIỀN
+     * Đọc dữ liệu từ modal data attributes
+     */
+    function calculateRefund() {
+        const policyTextEl = document.getElementById('refundPolicyText');
+        const refundAmountEl = document.getElementById('refundAmount');
+        const bookingData = getBookingDataFromModal(); // Lấy dữ liệu khi cần
+
+        if (!bookingData) {
+            policyTextEl.textContent = "Lỗi: Không thể xác định thời gian thanh toán hoặc thời gian nhận xe.";
+            refundAmountEl.textContent = "0 ₫";
+            return;
+        }
+
+        const now = new Date();
+        const paymentTime = bookingData.paymentConfirmedAt;
+        const tripStartTime = bookingData.pickupDateTime;
+
+        const totalPaid = bookingData.totalPaid;
+        const tripValue = bookingData.totalAmount; // Tổng giá trị chuyến đi
+
+        let refundAmount = 0;
+        let policyText = "";
+
+        const hoursSincePayment = (now.getTime() - paymentTime.getTime()) / (1000 * 60 * 60);
+        const daysBeforeTrip = (tripStartTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+        if (hoursSincePayment < 1) {
+            // 1. Hoàn 100%
+            refundAmount = totalPaid;
+            policyText = "Hủy trong 1 giờ sau khi thanh toán: Hoàn 100%.";
+
+        } else if (daysBeforeTrip >= 7) {
+            // 2. Mất 10%
+            const penalty = tripValue * 0.10;
+            refundAmount = totalPaid - penalty;
+            policyText = `Hủy trước 7 ngày: Mất 10% giá trị chuyến (${formatCurrency(penalty)}).`;
+
+        } else {
+            // 3. Mất 40%
+            const penalty = tripValue * 0.40;
+            refundAmount = totalPaid - penalty;
+            policyText = `Hủy trong 7 ngày: Mất 40% giá trị chuyến (${formatCurrency(penalty)}).`;
+        }
+
+        // Đảm bảo không hoàn tiền âm
+        if (refundAmount < 0) {
+            refundAmount = 0;
+        }
+
+        // Hiển thị kết quả
+        policyTextEl.textContent = policyText;
+        refundAmountEl.textContent = formatCurrency(refundAmount);
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' ₫';
+    }
+
+    /*]]>*/
+</script>
 </body>
 </html>

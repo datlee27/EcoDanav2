@@ -147,6 +147,8 @@ public class VNPayController {
                 }
                 
                 payment.setNotes("Thanh toán thành công qua VNPay - TxnRef: " + txnRef);
+
+                booking.setPaymentConfirmedAt(LocalDateTime.now());
                 
                 // Lưu payment
                 paymentRepository.save(payment);

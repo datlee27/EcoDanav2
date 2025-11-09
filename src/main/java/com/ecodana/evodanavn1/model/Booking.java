@@ -34,6 +34,15 @@ public class Booking {
     @Column(name = "ReturnDateTime", nullable = false)
     private LocalDateTime returnDateTime;
 
+    @Column(name = "VehicleRentalFee", precision = 10, scale = 2, nullable = false)
+    private BigDecimal vehicleRentalFee;
+
+    @Column(name = "PlatformFee", precision = 10, scale = 2, nullable = false)
+    private BigDecimal platformFee;
+
+    @Column(name = "OwnerPayout", precision = 10, scale = 2, nullable = false)
+    private BigDecimal ownerPayout;
+
     @Column(name = "TotalAmount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
@@ -42,6 +51,9 @@ public class Booking {
 
     @Column(name = "RemainingAmount", precision = 10, scale = 2, nullable = false)
     private BigDecimal remainingAmount = BigDecimal.ZERO;
+
+    @Column(name = "PaymentConfirmedAt")
+    private LocalDateTime paymentConfirmedAt;
 
     @Column(name = "Status", length = 50, nullable = false)
     @Enumerated(EnumType.STRING)
@@ -85,6 +97,9 @@ public class Booking {
     // Constructors
     public Booking() {
         this.createdDate = LocalDateTime.now();
+        this.vehicleRentalFee = BigDecimal.ZERO;
+        this.platformFee = BigDecimal.ZERO;
+        this.ownerPayout = BigDecimal.ZERO;
     }
 
     // Getters and Setters
@@ -130,6 +145,14 @@ public class Booking {
     public void setHasFeedback(boolean hasFeedback) { this.hasFeedback = hasFeedback; }
     public boolean isCanReview() { return canReview; }
     public void setCanReview(boolean canReview) { this.canReview = canReview; }
+    public BigDecimal getVehicleRentalFee() { return vehicleRentalFee; }
+    public void setVehicleRentalFee(BigDecimal vehicleRentalFee) { this.vehicleRentalFee = vehicleRentalFee; }
+    public BigDecimal getPlatformFee() { return platformFee; }
+    public void setPlatformFee(BigDecimal platformFee) { this.platformFee = platformFee; }
+    public BigDecimal getOwnerPayout() { return ownerPayout; }
+    public void setOwnerPayout(BigDecimal ownerPayout) { this.ownerPayout = ownerPayout; }
+    public LocalDateTime getPaymentConfirmedAt() { return paymentConfirmedAt; }
+    public void setPaymentConfirmedAt(LocalDateTime paymentConfirmedAt) { this.paymentConfirmedAt = paymentConfirmedAt; }
 
     public enum BookingStatus {
         Pending,          // Khách vừa tạo, chờ chủ xe duyệt

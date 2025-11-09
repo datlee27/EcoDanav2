@@ -473,3 +473,12 @@ ALTER TABLE `Vehicle`
 ALTER TABLE `Booking`
     ADD COLUMN `DepositAmountRequired` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Số tiền cọc 20% cần thanh toán' AFTER `TotalAmount`,
     ADD COLUMN `RemainingAmount` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Số tiền 80% còn lại thanh toán khi nhận xe' AFTER `DepositAmountRequired`;
+
+-- =============================================
+-- CẬP NHẬT BẢNG BOOKING (THÊM PHÍ NỀN TẢNG)
+-- =============================================
+ALTER TABLE `Booking`
+    ADD COLUMN `VehicleRentalFee` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Tiền thuê xe gốc' AFTER `ReturnDateTime`,
+    ADD COLUMN `PlatformFee` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Phí nền tảng (cho EcoDana)' AFTER `VehicleRentalFee`,
+    ADD COLUMN `OwnerPayout` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Tiền chủ xe nhận (RentalFee - PlatformFee)' AFTER `PlatformFee`,
+    ADD COLUMN `PaymentConfirmedAt` DATETIME NULL COMMENT 'Thời điểm thanh toán cọc/toàn bộ thành công' AFTER `RemainingAmount`;

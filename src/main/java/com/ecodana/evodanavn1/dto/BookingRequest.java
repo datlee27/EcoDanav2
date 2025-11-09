@@ -15,6 +15,7 @@ public class BookingRequest {
     private String returnTime;
     private String pickupLocation;
     private BigDecimal totalAmount;
+    private BigDecimal vehicleRentalFee;
     private Integer rentalDays;
     private String discountId;
     private BigDecimal discountAmount;
@@ -43,4 +44,6 @@ public class BookingRequest {
     public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
+    public BigDecimal getVehicleRentalFee() { return vehicleRentalFee; }
+    public void setVehicleRentalFee(BigDecimal vehicleRentalFee) { this.vehicleRentalFee = vehicleRentalFee; }
 }
