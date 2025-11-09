@@ -112,15 +112,30 @@ public class BookingController {
             String discountCode = null;
             BigDecimal discountAmount = BigDecimal.ZERO;
 
+            // Debug: Log discount info from request
+            System.out.println("=== Discount Debug ===");
+            System.out.println("Discount ID from request: " + bookingRequest.getDiscountId());
+            System.out.println("Discount Amount from request: " + bookingRequest.getDiscountAmount());
+
             // Sửa: Lấy discount code từ bookingRequest.getDiscountId() (vì nó đang lưu code)
             if (bookingRequest.getDiscountId() != null && !bookingRequest.getDiscountId().isEmpty()) {
+                System.out.println("Searching for discount with code: " + bookingRequest.getDiscountId());
                 Discount discount = discountService.findByVoucherCode(bookingRequest.getDiscountId()).orElse(null); // Tìm bằng Code
-                if (discount != null && discountService.isDiscountValid(discount)) {
-                    discountCode = discount.getVoucherCode();
-
-                    BigDecimal subtotal = rentalPrice;
-                    discountAmount = discountService.calculateDiscountAmount(discount, subtotal);
+                if (discount != null) {
+                    System.out.println("Discount found: " + discount.getDiscountName());
+                    if (discountService.isDiscountValid(discount)) {
+                        discountCode = discount.getVoucherCode();
+                        BigDecimal subtotal = rentalPrice;
+                        discountAmount = discountService.calculateDiscountAmount(discount, subtotal);
+                        System.out.println("Discount is valid. Amount: " + discountAmount);
+                    } else {
+                        System.out.println("Discount is NOT valid (expired, inactive, or usage limit reached)");
+                    }
+                } else {
+                    System.out.println("Discount NOT found in database!");
                 }
+            } else {
+                System.out.println("No discount ID provided in request");
             }
 
             // Calculate total amount - always recalculate to ensure accuracy

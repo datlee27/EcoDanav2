@@ -501,7 +501,137 @@
     };
     
     window.showAddDiscountModal = function() {
-        alert('Add discount modal - To be implemented');
+        var modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4';
+        modal.id = 'addDiscountModal';
+        modal.onclick = function(e) {
+            if (e.target === modal) closeAddDiscountModal();
+        };
+        
+        var today = new Date().toISOString().split('T')[0];
+        var content = '<div class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">';
+        
+        // Header
+        content += '<div class="bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-t-xl">';
+        content += '<div class="flex justify-between items-center">';
+        content += '<h3 class="text-2xl font-bold text-white"><i class="fas fa-plus-circle mr-2"></i>Add New Discount</h3>';
+        content += '<button onclick="closeAddDiscountModal()" class="text-white hover:text-gray-200 transition-colors">';
+        content += '<i class="fas fa-times text-2xl"></i></button>';
+        content += '</div></div>';
+        
+        // Form
+        content += '<form id="addDiscountForm" class="p-6 space-y-4">';
+        
+        content += '<div class="grid grid-cols-2 gap-4">';
+        content += '<div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Discount Name *</label>';
+        content += '<input type="text" id="addDiscountName" placeholder="e.g., Summer Sale 2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div class="col-span-2"><label class="block text-sm font-medium text-gray-700 mb-2">Description</label>';
+        content += '<textarea id="addDescription" rows="2" placeholder="Describe this discount..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></textarea></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Type *</label>';
+        content += '<select id="addDiscountType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required>';
+        content += '<option value="Percentage">Percentage (%)</option>';
+        content += '<option value="FixedAmount">Fixed Amount (VND)</option>';
+        content += '</select></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Value *</label>';
+        content += '<input type="number" id="addDiscountValue" placeholder="e.g., 10 or 50000" step="0.01" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Voucher Code</label>';
+        content += '<input type="text" id="addVoucherCode" placeholder="e.g., SUMMER2024" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>';
+        content += '<input type="text" id="addCategory" placeholder="e.g., Seasonal" value="General" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>';
+        content += '<input type="date" id="addStartDate" value="' + today + '" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">End Date *</label>';
+        content += '<input type="date" id="addEndDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Min Order Amount *</label>';
+        content += '<input type="number" id="addMinOrder" placeholder="e.g., 100000" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" required></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Max Discount Amount</label>';
+        content += '<input type="number" id="addMaxDiscount" placeholder="Leave empty for no limit" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></div>';
+        
+        content += '<div><label class="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>';
+        content += '<input type="number" id="addUsageLimit" placeholder="Leave empty for unlimited" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"></div>';
+        
+        content += '<div class="flex items-center"><input type="checkbox" id="addIsActive" checked class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500">';
+        content += '<label for="addIsActive" class="ml-2 text-sm text-gray-700">Active</label></div>';
+        
+        content += '</div></form>';
+        
+        // Footer
+        content += '<div class="px-6 py-4 bg-gray-50 rounded-b-xl flex justify-end space-x-3">';
+        content += '<button onclick="closeAddDiscountModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"><i class="fas fa-times mr-2"></i>Cancel</button>';
+        content += '<button onclick="createNewDiscount()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"><i class="fas fa-plus mr-2"></i>Create Discount</button>';
+        content += '</div></div>';
+        
+        modal.innerHTML = content;
+        document.body.appendChild(modal);
+    };
+    
+    window.createNewDiscount = function() {
+        var data = {
+            discountName: document.getElementById('addDiscountName').value,
+            description: document.getElementById('addDescription').value,
+            discountType: document.getElementById('addDiscountType').value,
+            discountValue: parseFloat(document.getElementById('addDiscountValue').value),
+            voucherCode: document.getElementById('addVoucherCode').value || null,
+            discountCategory: document.getElementById('addCategory').value,
+            startDate: document.getElementById('addStartDate').value,
+            endDate: document.getElementById('addEndDate').value,
+            minOrderAmount: parseFloat(document.getElementById('addMinOrder').value),
+            maxDiscountAmount: document.getElementById('addMaxDiscount').value ? parseFloat(document.getElementById('addMaxDiscount').value) : null,
+            usageLimit: document.getElementById('addUsageLimit').value ? parseInt(document.getElementById('addUsageLimit').value) : null,
+            isActive: document.getElementById('addIsActive').checked
+        };
+        
+        // Validation
+        if (!data.discountName || !data.discountType || !data.discountValue || !data.startDate || !data.endDate) {
+            alert('❌ Please fill in all required fields!');
+            return;
+        }
+        
+        if (data.startDate > data.endDate) {
+            alert('❌ End date must be after start date!');
+            return;
+        }
+        
+        fetch('/admin/api/discounts', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || ''
+            },
+            body: JSON.stringify(data)
+        })
+        .then(function(response) {
+            if (!response.ok) throw new Error('Failed to create discount');
+            return response.json();
+        })
+        .then(function(result) {
+            if (result.status === 'success') {
+                alert('✅ Discount created successfully!');
+                closeAddDiscountModal();
+                loadDiscounts();
+                loadStatistics();
+            } else {
+                throw new Error(result.message || 'Creation failed');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('❌ Failed to create discount: ' + error.message);
+        });
+    };
+    
+    window.closeAddDiscountModal = function() {
+        var modal = document.getElementById('addDiscountModal');
+        if (modal) modal.remove();
     };
     
     // Initial load if discounts tab is active
