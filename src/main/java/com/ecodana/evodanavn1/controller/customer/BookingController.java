@@ -1,10 +1,12 @@
 package com.ecodana.evodanavn1.controller.customer;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import com.ecodana.evodanavn1.dto.BookingRequest;
@@ -61,6 +63,8 @@ public class BookingController {
 
     @Autowired
     private com.ecodana.evodanavn1.service.EmailService emailService;
+
+    private static final BigDecimal PLATFORM_FEE_RATE = new BigDecimal("0.2");
 
     /**
      * Show checkout page
@@ -232,18 +236,8 @@ public class BookingController {
                 return "redirect:/vehicles/" + bookingRequest.getVehicleId();
             }
 
-            // ================================================================
-            // === BẮT ĐẦU THAY ĐỔI: CẬP NHẬT TRẠNG THÁI XE ===
-            // ================================================================
-            // Chuyển trạng thái xe thành "Rented" (hoặc "Unavailable") ngay lập tức
-            // để xe này không còn xuất hiện trong kết quả tìm kiếm.
-            // Trạng thái này sẽ được đặt lại thành "Available" nếu Owner từ chối
-            // (logic đã có trong BookingService.rejectBooking)
             vehicle.setStatus(Vehicle.VehicleStatus.Rented);
-            vehicleService.updateVehicle(vehicle); // Lưu thay đổi trạng thái của xe
-            // ================================================================
-            // === KẾT THÚC THAY ĐỔI ===
-            // ================================================================
+            vehicleService.updateVehicle(vehicle);
 
 
             // Handle discount if provided
@@ -270,7 +264,40 @@ public class BookingController {
             booking.setVehicle(vehicle);
             booking.setPickupDateTime(pickupDateTime);
             booking.setReturnDateTime(returnDateTime);
-            booking.setTotalAmount(bookingRequest.getTotalAmount());
+
+            // Lấy tiền thuê xe gốc (trước discount) từ request
+            BigDecimal vehicleRentalFee = bookingRequest.getVehicleRentalFee();
+            if (vehicleRentalFee == null || vehicleRentalFee.compareTo(BigDecimal.ZERO) <= 0) {
+                // Tính toán lại nếu frontend không gửi
+                BigDecimal dailyPrice = vehicle.getDailyPriceFromJson();
+                BigDecimal hourlyPrice = vehicle.getHourlyPriceFromJson();
+                long totalHours = java.time.Duration.between(pickupDateTime, returnDateTime).toHours();
+                double totalHoursDouble = java.time.Duration.between(pickupDateTime, returnDateTime).toMinutes() / 60.0;
+                long fullDays = totalHours / 24;
+                double remainingHours = totalHoursDouble - (fullDays * 24);
+                vehicleRentalFee = dailyPrice.multiply(new BigDecimal(fullDays))
+                        .add(hourlyPrice.multiply(new BigDecimal(remainingHours)));
+            }
+            // Tính toán các loại phí
+            // Phí nền tảng (12% của tiền thuê gốc), làm tròn 2 chữ số
+            BigDecimal platformFee = vehicleRentalFee.multiply(PLATFORM_FEE_RATE).setScale(2, RoundingMode.HALF_UP);
+            // Tiền chủ xe nhận = Tiền thuê gốc - Phí nền tảng
+            BigDecimal ownerPayout = vehicleRentalFee.subtract(platformFee);
+
+            // Tổng tiền khách trả (đã bao gồm discount)
+            BigDecimal totalAmount = bookingRequest.getTotalAmount();
+            // Tính tiền cọc (20% của tổng tiền khách trả)
+            BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.2")).setScale(2, RoundingMode.HALF_UP);
+            // Tiền còn lại
+            BigDecimal remainingAmount = totalAmount.subtract(depositAmount);
+
+            // Set các giá trị phí vào booking
+            booking.setVehicleRentalFee(vehicleRentalFee);
+            booking.setPlatformFee(platformFee);
+            booking.setOwnerPayout(ownerPayout);
+            booking.setTotalAmount(totalAmount);
+            booking.setDepositAmountRequired(depositAmount);
+            booking.setRemainingAmount(remainingAmount);
             booking.setStatus(Booking.BookingStatus.Pending); // Trạng thái chờ Owner duyệt
             booking.setBookingCode("BK" + System.currentTimeMillis());
             booking.setRentalType(Booking.RentalType.daily);
@@ -279,11 +306,6 @@ public class BookingController {
             booking.setTermsAgreedAt(LocalDateTime.now());
             booking.setExpectedPaymentMethod(bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod() : "Cash");
             booking.setDiscount(discount);
-
-            // Tính toán và lưu tiền cọc (20%) và tiền còn lại (80%)
-            BigDecimal totalAmount = bookingRequest.getTotalAmount();
-            BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.2"));
-            BigDecimal remainingAmount = totalAmount.subtract(depositAmount); // Lấy tổng trừ cọc
 
             booking.setDepositAmountRequired(depositAmount);
             booking.setRemainingAmount(remainingAmount);
@@ -615,29 +637,20 @@ public class BookingController {
             return "redirect:/booking/my-bookings";
         }
 
-        // Check cancellation policy for confirmed bookings
-        LocalDateTime now = LocalDateTime.now();
+        try {
+            String finalReason = cancelReason != null ? cancelReason : "Khách hàng yêu cầu hủy";
+            Map<String, Object> refundResult = bookingService.processCancellationAndRefund(bookingId, finalReason, user);
 
-        // Tìm payment liên quan (giả sử paymentDate là thời điểm thanh toán)
-        // Đây là logic giả định, cần xem lại cách lưu paymentDate
-        LocalDateTime paymentDate = booking.getCreatedDate(); // Tạm dùng createdDate
-
-        if (paymentDate == null) {
-            paymentDate = booking.getCreatedDate(); // Fallback
+            if (refundResult.get("success") == Boolean.TRUE) {
+                redirectAttributes.addFlashAttribute("success", refundResult.get("message").toString());
+            } else {
+                redirectAttributes.addFlashAttribute("error", refundResult.get("message").toString());
+            }
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi hủy xe: " + e.getMessage());
         }
-
-        long hoursFromPayment = java.time.Duration.between(paymentDate, now).toHours();
-
-        // Check if within 2 hours of payment
-        if (hoursFromPayment > 2) {
-            redirectAttributes.addFlashAttribute("error", "Không thể hủy! Đã quá 2 tiếng kể từ lúc đặt xe (mất 10% phí). Vui lòng liên hệ CSKH.");
-            return "redirect:/booking/my-bookings";
-        }
-
-        String reason = cancelReason != null ? cancelReason : "Khách hàng hủy sau thanh toán (trong 2 giờ)";
-        bookingService.cancelCar(bookingId, reason); // Hàm này đã tự động cập nhật status xe
-
-        redirectAttributes.addFlashAttribute("success", "Đã hủy xe thành công! Bạn sẽ được hoàn tiền 100% (trong vòng 2 giờ).");
         return "redirect:/booking/my-bookings";
     }
 }

@@ -1,6 +1,8 @@
 package com.ecodana.evodanavn1.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -13,6 +15,8 @@ import java.time.LocalTime;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.model.VehicleConditionLogs;
+import com.ecodana.evodanavn1.model.Payment;
+import com.ecodana.evodanavn1.repository.PaymentRepository;
 import com.ecodana.evodanavn1.repository.VehicleConditionLogsRepository;
 import com.ecodana.evodanavn1.repository.VehicleRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +42,9 @@ public class BookingService {
 
     @Autowired
     private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     @Autowired
     private VehicleConditionLogsRepository vehicleConditionLogsRepository;
@@ -258,12 +265,17 @@ public class BookingService {
     public Booking cancelBooking(String bookingId, String reason) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
-                    booking.setStatus(Booking.BookingStatus.Cancelled);
-                    booking.setCancelReason(reason);
-                    // Update vehicle status back to Available when booking is cancelled
-                    Booking updatedBooking = bookingRepository.save(booking);
-                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
-                    return updatedBooking;
+                    // Chỉ cho phép hủy nếu đang Pending hoặc AwaitingDeposit (chưa trả tiền)
+                    if (booking.getStatus() == Booking.BookingStatus.Pending || booking.getStatus() == Booking.BookingStatus.AwaitingDeposit) {
+                        booking.setStatus(Booking.BookingStatus.Cancelled);
+                        booking.setCancelReason(reason);
+                        Booking updatedBooking = bookingRepository.save(booking);
+                        updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+                        return updatedBooking;
+                    } else {
+                        // Nếu đã Confirmed (đã trả tiền), phải dùng logic cancelCar/processCancellationAndRefund
+                        throw new IllegalStateException("Không thể hủy đơn đã thanh toán. Vui lòng sử dụng chức năng Hủy Xe.");
+                    }
                 })
                 .orElse(null);
     }
@@ -358,6 +370,136 @@ public class BookingService {
         return counts;
     }
 
+    /**
+     * Logic hủy phức tạp (cho trạng thái Confirmed - đã thanh toán)
+     * Tính toán phí hủy và số tiền hoàn lại dựa trên chính sách.
+     * @param bookingId ID đơn hàng
+     * @param reason Lý do hủy
+     * @param canceller Người thực hiện hủy (để kiểm tra quyền)
+     * @return Map chứa kết quả
+     */
+    @Transactional
+    public Map<String, Object> processCancellationAndRefund(String bookingId, String reason, User canceller) {
+        Map<String, Object> result = new HashMap<>();
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new IllegalStateException("Không tìm thấy Booking."));
+
+        // Kiểm tra quyền sở hữu
+        if (!booking.getUser().getId().equals(canceller.getId())) {
+            throw new IllegalStateException("Bạn không có quyền hủy đơn đặt xe này.");
+        }
+
+        // Chỉ xử lý các booking đã thanh toán hoặc đang diễn ra
+        if (booking.getStatus() != Booking.BookingStatus.Confirmed &&
+                booking.getStatus() != Booking.BookingStatus.Ongoing &&
+                booking.getStatus() != Booking.BookingStatus.AwaitingDeposit) {
+
+            // Nếu là Pending, dùng logic cancelBooking đơn giản
+            if(booking.getStatus() == Booking.BookingStatus.Pending) {
+                cancelBooking(bookingId, reason);
+                result.put("success", true);
+                result.put("message", "Đã hủy đơn (chưa thanh toán).");
+                return result;
+            }
+            throw new IllegalStateException("Trạng thái đơn hàng không hợp lệ để hủy và hoàn tiền (" + booking.getStatus() + ").");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime paymentTime = booking.getPaymentConfirmedAt();
+        LocalDateTime tripStartTime = booking.getPickupDateTime();
+
+        // Kiểm tra nếu chuyến đi đã bắt đầu
+        if (now.isAfter(tripStartTime)) {
+            throw new IllegalStateException("Không thể hủy chuyến đi đã bắt đầu hoặc đã kết thúc.");
+        }
+
+        // Nếu AwaitingDeposit (chủ xe duyệt nhưng khách chưa trả tiền) -> Hủy đơn giản
+        if (booking.getStatus() == Booking.BookingStatus.AwaitingDeposit) {
+            booking.setStatus(Booking.BookingStatus.Cancelled);
+            booking.setCancelReason(reason + " | Khách hủy trước khi thanh toán cọc.");
+            bookingRepository.save(booking);
+            updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+            result.put("success", true);
+            result.put("message", "Đã hủy đơn (chưa thanh toán).");
+            return result;
+        }
+
+        // --- Bắt đầu logic tính phí khi đã thanh toán (Status = Confirmed) ---
+        if (paymentTime == null) {
+            // Trường hợp hy hữu: status là Confirmed nhưng không có paymentTime
+            throw new IllegalStateException("Không thể hủy vì không tìm thấy thời điểm thanh toán. Vui lòng liên hệ CSKH.");
+        }
+
+        // Tìm tổng số tiền khách đã trả (Completed)
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        BigDecimal totalPaid = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalPaid.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("Không tìm thấy giao dịch thanh toán thành công cho đơn hàng này.");
+        }
+
+        BigDecimal tripValue = booking.getTotalAmount(); // Tổng giá trị chuyến đi (đã bao gồm discount)
+        BigDecimal refundAmount = BigDecimal.ZERO;
+        String refundMessage = "";
+
+        long hoursSincePayment = Duration.between(paymentTime, now).toHours();
+        long daysBeforeTrip = Duration.between(now, tripStartTime).toDays();
+
+        if (hoursSincePayment < 1) {
+            // 1. Hủy trong 1 giờ sau khi thanh toán -> Hoàn 100%
+            refundAmount = totalPaid;
+            refundMessage = "Hủy trong 1 giờ sau khi thanh toán. Hoàn 100% số tiền đã trả.";
+
+        } else if (daysBeforeTrip >= 7) {
+            // 2. Hủy trước 7 ngày so với chuyến đi -> Mất 10% tổng giá trị chuyến
+            BigDecimal penalty = tripValue.multiply(new BigDecimal("0.10")).setScale(2, RoundingMode.HALF_UP);
+            refundAmount = totalPaid.subtract(penalty);
+            refundMessage = "Hủy trước 7 ngày: Phí hủy 10% tổng giá trị chuyến (" + penalty + " ₫).";
+
+        } else {
+            // 3. Hủy trong 7 ngày trước chuyến đi -> Mất 40% tổng giá trị chuyến
+            BigDecimal penalty = tripValue.multiply(new BigDecimal("0.40")).setScale(2, RoundingMode.HALF_UP);
+            refundAmount = totalPaid.subtract(penalty);
+            refundMessage = "Hủy trong 7 ngày: Phí hủy 40% tổng giá trị chuyến (" + penalty + " ₫).";
+        }
+
+        // Đảm bảo số tiền hoàn không bị âm
+        if (refundAmount.compareTo(BigDecimal.ZERO) < 0) {
+            refundAmount = BigDecimal.ZERO;
+        }
+
+        // TODO: Tích hợp API hoàn tiền VNPay/Ngân hàng tại đây
+        // Ghi nhận giao dịch hoàn tiền vào bảng Payment
+        Payment refundPayment = new Payment();
+        refundPayment.setPaymentId(UUID.randomUUID().toString());
+        refundPayment.setBooking(booking);
+        refundPayment.setUser(booking.getUser());
+        refundPayment.setAmount(refundAmount.negate()); // Lưu số âm
+        refundPayment.setPaymentMethod("VNPay_Refund"); // (Hoặc phương thức hoàn tiền)
+        refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
+        refundPayment.setPaymentType(Payment.PaymentType.Refund);
+        refundPayment.setPaymentDate(now);
+        refundPayment.setNotes(refundMessage);
+        paymentRepository.save(refundPayment);
+
+        // Cập nhật trạng thái Booking
+        booking.setStatus(Booking.BookingStatus.Cancelled);
+        booking.setCancelReason(reason + " | " + refundMessage);
+        bookingRepository.save(booking);
+
+        // Mở lại xe
+        updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+
+        result.put("success", true);
+        result.put("message", "Đã hủy đơn thành công. " + refundMessage + " Số tiền hoàn dự kiến: " + refundAmount.setScale(0, RoundingMode.HALF_UP) + " ₫");
+        return result;
+    }
+
+    @Deprecated
     public Booking cancelCar(String bookingId, String reason) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
