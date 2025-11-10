@@ -56,6 +56,7 @@ public class FavoriteController {
         if (currentUser == null) {
             return "redirect:/login";
         }
+        model.addAttribute("currentUser", currentUser);
         List<UserFavoriteVehicles> favorites = favoriteService.getFavorites(currentUser);
         List<Vehicle> vehicles = favorites.stream().map(UserFavoriteVehicles::getVehicle).collect(Collectors.toList());
         model.addAttribute("vehicles", vehicles);
