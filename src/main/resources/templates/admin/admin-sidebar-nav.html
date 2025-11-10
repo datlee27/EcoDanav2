@@ -3,94 +3,102 @@
   <body>
     <div th:fragment="nav">
       <div class="space-y-1">
-        <a
-          th:href="@{/admin(tab='overview')}"
-          th:classappend="${tab == null or tab == 'overview'} ? 'active' : ''"
-          class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
+        <button
+          onclick="switchTab('overview', event)"
+          data-tab="overview"
+          class="sidebar-item active w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-chart-pie mr-3 text-lg"></i>
           <span>Dashboard</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='users')}"
-          th:classappend="${tab == 'users'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('users', event)"
+          data-tab="users"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-users mr-3 text-lg"></i>
           <span>User Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='vehicles')}"
-          th:classappend="${tab == 'vehicles'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('vehicles', event)"
+          data-tab="vehicles"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-car mr-3 text-lg"></i>
           <span>Vehicle Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='bookings')}"
-          th:classappend="${tab == 'bookings'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('bookings', event)"
+          data-tab="bookings"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-calendar-check mr-3 text-lg"></i>
           <span>Booking Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='contracts')}"
-          th:classappend="${tab == 'contracts'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('contracts', event)"
+          data-tab="contracts"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-file-contract mr-3 text-lg"></i>
           <span>Contract Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='payments')}"
-          th:classappend="${tab == 'payments'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('payments', event)"
+          data-tab="payments"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-credit-card mr-3 text-lg"></i>
           <span>Payment Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='discounts')}"
-          th:classappend="${tab == 'discounts'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('discounts', event)"
+          data-tab="discounts"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-tags mr-3 text-lg"></i>
           <span>Discount Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='insurance')}"
-          th:classappend="${tab == 'insurance'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('insurance', event)"
+          data-tab="insurance"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-shield-alt mr-3 text-lg"></i>
           <span>Insurance Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='notifications')}"
-          th:classappend="${tab == 'notifications'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('notifications', event)"
+          data-tab="notifications"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-bell mr-3 text-lg"></i>
           <span>Notifications</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='feedback')}"
-          th:classappend="${tab == 'feedback'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('feedback', event)"
+          data-tab="feedback"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-comments mr-3 text-lg"></i>
           <span>Feedback Management</span>
-        </a>
-        <a
-          th:href="@{/admin(tab='reports')}"
-          th:classappend="${tab == 'reports'} ? 'active' : ''"
+        </button>
+        <button
+          onclick="switchTab('inappropriateWords', event)"
+          data-tab="inappropriateWords"
+          class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
+        >
+          <i class="fas fa-ban mr-3 text-lg"></i>
+          <span>Từ ngữ không chuẩn mực</span>
+        </button>
+        <button
+          onclick="switchTab('reports', event)"
+          data-tab="reports"
           class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
         >
           <i class="fas fa-chart-bar mr-3 text-lg"></i>
           <span>Reports & Analytics</span>
-        </a>
+        </button>
       </div>
     </div>
   </body>

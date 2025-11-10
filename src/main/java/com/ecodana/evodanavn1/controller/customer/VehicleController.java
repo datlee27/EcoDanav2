@@ -3,9 +3,9 @@ package com.ecodana.evodanavn1.controller.customer;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.service.FavoriteService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
-import com.ecodana.evodanavn1.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ public class VehicleController {
     private UserFeedbackService userFeedbackService;
 
     @Autowired
-    private UserService userService;
+    private FavoriteService favoriteService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -102,12 +102,6 @@ public class VehicleController {
 
         model.addAttribute("vehicle", vehicle);
 
-        // Get owner information
-        if (vehicle.getOwnerId() != null) {
-            User owner = userService.findById(vehicle.getOwnerId());
-            model.addAttribute("vehicleOwner", owner);
-        }
-
         // Add the API key to the model to pass it to the view
         model.addAttribute("googleApiKey", googleApiKey);
 
@@ -128,6 +122,12 @@ public class VehicleController {
                 .limit(3)
                 .toList();
         model.addAttribute("relatedVehicles", relatedVehicles);
+
+        // Favorite state
+        try {
+            boolean isFavorite = currentUser != null && favoriteService.isFavorite(currentUser, vehicle);
+            model.addAttribute("isFavorite", isFavorite);
+        } catch (Exception ignored) {}
 
         return "customer/vehicle-detail";
     }

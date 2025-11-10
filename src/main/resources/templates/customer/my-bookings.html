@@ -86,14 +86,16 @@
                 >0</span
               >)
             </button>
-              <button
-                      class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500"
-                      data-status="Cancelled,Rejected" >
-                  Đã hủy/Từ chối (<span
-                      id="count-cancelled"
-                      th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' || status.name() == 'Rejected'])}" >0</span
+            <button
+              class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500"
+              data-status="Cancelled,Rejected"
+            >
+              Đã hủy/Từ chối (<span
+                id="count-cancelled"
+                th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' || status.name() == 'Rejected'])}"
+                >0</span
               >)
-              </button>
+            </button>
           </div>
         </div>
 
@@ -207,7 +209,7 @@
                 <button
                   th:if="${booking.status.toString() == 'Completed' && !booking.hasFeedback}"
                   onclick="openFeedbackModal(this)"
-                  th:attr="data-booking-id=${booking.bookingId}"
+                  th:attr="data-booking-id=${booking.bookingId},data-return-datetime=${#temporals.format(booking.returnDateTime, 'yyyy-MM-dd''T''HH:mm:ss')}"
                   class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-all text-sm font-medium"
                 >
                   <i class="fas fa-star mr-1"></i>
@@ -328,8 +330,8 @@
       </div>
     </div>
 
-<!--    &lt;!&ndash; Footer &ndash;&gt;-->
-<!--    <div th:replace="~{fragments/footer :: footer}"></div>-->
+    <!--    &lt;!&ndash; Footer &ndash;&gt;-->
+    <!--    <div th:replace="~{fragments/footer :: footer}"></div>-->
 
     <script>
       // Filter tabs
@@ -607,6 +609,28 @@
             setTimeout(() => notification.remove(), 500);
           }, 5000);
         }
+      });
+
+      // Enforce 5-day feedback window after return time
+      window.addEventListener("DOMContentLoaded", function () {
+        const feedbackButtons = document.querySelectorAll(
+          'button[onclick="openFeedbackModal(this)"][data-return-datetime]'
+        );
+        feedbackButtons.forEach(function (btn) {
+          const returnAtStr = btn.getAttribute("data-return-datetime");
+          const returnAt = new Date(returnAtStr);
+          if (isNaN(returnAt.getTime())) {
+            return;
+          }
+          const fiveDaysMs = 5 * 24 * 60 * 60 * 1000;
+          const deadlineMs = returnAt.getTime() + fiveDaysMs;
+          if (Date.now() > deadlineMs) {
+            const expired = document.createElement("span");
+            expired.className = "px-4 py-2 bg-gray-300 text-gray-600 rounded-lg text-sm font-medium";
+            expired.innerHTML = '<i class="fas fa-hourglass-end mr-1"></i> Hết hạn đánh giá';
+            btn.replaceWith(expired);
+          }
+        });
       });
     </script>
   </body>
