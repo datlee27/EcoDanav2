@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.controller.customer;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.service.FavoriteService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
@@ -23,6 +24,9 @@ public class VehicleController {
 
     @Autowired
     private UserFeedbackService userFeedbackService;
+
+    @Autowired
+    private FavoriteService favoriteService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -118,6 +122,12 @@ public class VehicleController {
                 .limit(3)
                 .toList();
         model.addAttribute("relatedVehicles", relatedVehicles);
+
+        // Favorite state
+        try {
+            boolean isFavorite = currentUser != null && favoriteService.isFavorite(currentUser, vehicle);
+            model.addAttribute("isFavorite", isFavorite);
+        } catch (Exception ignored) {}
 
         return "customer/vehicle-detail";
     }

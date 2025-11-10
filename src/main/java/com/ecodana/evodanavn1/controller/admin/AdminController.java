@@ -18,6 +18,7 @@ import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.repository.InappropriateWordRepository;
 import com.ecodana.evodanavn1.service.FeedbackReportService;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -36,6 +37,8 @@ public class AdminController {
     private UserFeedbackService userFeedbackService;
     @Autowired
     private FeedbackReportService feedbackReportService;
+    @Autowired
+    private InappropriateWordRepository inappropriateWordRepository;
     @GetMapping({"/admin", "/admin/dashboard"})
     public String adminDashboard(@RequestParam(required = false) String tab, HttpSession session, Model model, HttpServletResponse response) {
         response.setHeader("Connection", "close");
@@ -94,6 +97,9 @@ public class AdminController {
             model.addAttribute("feedbackWithReplies", userFeedbackService.getFeedbackWithReplies());
             model.addAttribute("feedbackWithoutReplies", userFeedbackService.getFeedbackWithoutReplies());
             model.addAttribute("reports", feedbackReportService.getAllReports());
+
+            // Inappropriate words for moderation tab
+            model.addAttribute("inappropriateWords", inappropriateWordRepository.findAll());
 
             // Add vehicle statistics
             long pendingApprovalVehicles = allVehicles.stream().filter(v -> "PendingApproval".equals(v.getStatus().name())).count();

@@ -7,6 +7,7 @@ import com.ecodana.evodanavn1.service.NotificationService;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
+import com.ecodana.evodanavn1.service.InappropriateWordService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,9 @@ public class FeedbackController {
 
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private InappropriateWordService inappropriateWordService;
 
     @PostMapping("/submit/{bookingId}")
     public String submitFeedback(@PathVariable String bookingId,
@@ -66,7 +70,24 @@ public class FeedbackController {
         }
 
         try {
-            userFeedbackService.createFeedback(currentUser, booking, rating, content);
+            UserFeedback feedback = userFeedbackService.createFeedback(currentUser, booking, rating, content);
+
+            // Kiểm tra từ ngữ không chuẩn mực và tự động báo cáo + thông báo admin
+            try {
+                java.util.Set<String> matches = inappropriateWordService.findMatches(content);
+                if (matches != null && !matches.isEmpty()) {
+                    String reason = "Từ ngữ không chuẩn mực: " + String.join(", ", matches);
+                    feedbackReportService.createReport(currentUser, feedback, reason);
+                    try {
+                        notificationService.createNotificationForAllAdmins(
+                                "Feedback có từ ngữ không chuẩn mực cho đơn #" + booking.getBookingCode(),
+                                feedback.getFeedbackId(),
+                                "FEEDBACK_FLAGGED"
+                        );
+                    } catch (Exception ignored) {}
+                }
+            } catch (Exception ignored) {}
+
             redirectAttributes.addFlashAttribute("success", "Cảm ơn bạn đã đánh giá! Đánh giá của bạn đã được gửi thành công.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi gửi đánh giá. Vui lòng thử lại.");
