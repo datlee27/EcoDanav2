@@ -39,79 +39,90 @@
           </div>
         </div>
 
-        <!-- Filter Tabs -->
-        <div class="bg-white rounded-lg shadow-md mb-6">
-          <div class="flex border-b border-gray-200 overflow-x-auto">
-            <button
-              class="filter-tab active px-6 py-3 font-medium text-green-500 border-b-2 border-green-500"
-              data-status="all"
-            >
-              Tất cả (<span id="count-all" th:text="${bookings.size()}">0</span>)
-            </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Pending">
-              Chờ duyệt (<span id="count-pending" th:text="${#lists.size(bookings.?[status.name() == 'Pending'])}"
-                >0</span
-              >)
-            </button>
-            <button
-              class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500 relative"
-              data-status="AwaitingDeposit,Approved"
-            >
-              Chờ thanh toán (<span
-                id="count-approved"
-                th:text="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved'])}"
-                >0</span
-              >)
-              <span
-                th:if="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved']) > 0}"
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse"
-              >
-                NEW
-              </span>
-            </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Confirmed">
-              Đã thanh toán (<span
-                id="count-confirmed"
-                th:text="${#lists.size(bookings.?[status.name() == 'Confirmed'])}"
-                >0</span
-              >)
-            </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Ongoing">
-              Đang thuê (<span id="count-ongoing" th:text="${#lists.size(bookings.?[status.name() == 'Ongoing'])}"
-                >0</span
-              >)
-            </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Completed">
-              Hoàn thành (<span id="count-completed" th:text="${#lists.size(bookings.?[status.name() == 'Completed'])}"
-                >0</span
-              >)
-            </button>
-              <button
-                      class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500"
-                      data-status="Cancelled,Rejected" >
-                  Đã hủy/Từ chối (<span
-                      id="count-cancelled"
-                      th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' || status.name() == 'Rejected'])}" >0</span
-              >)
-              </button>
+        <!-- Layout with Sidebar and Content -->
+        <div class="flex gap-6">
+          <!-- Filter Sidebar -->
+          <div class="w-72 flex-shrink-0">
+            <div class="bg-white rounded-lg shadow-md p-5 sticky top-24">
+              <h3 class="text-lg font-bold text-gray-800 mb-5">Trạng thái đơn</h3>
+              <div class="flex flex-col space-y-2">
+                <button
+                  class="filter-tab active px-5 py-4 font-semibold text-left rounded-lg bg-green-50 text-green-600 border-l-4 border-green-500 text-base"
+                  data-status="all"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>Tất cả</span>
+                    <span class="bg-green-100 text-green-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-all" th:text="${bookings.size()}">0</span>
+                  </div>
+                </button>
+                <button class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent text-base" data-status="Pending">
+                  <div class="flex items-center justify-between">
+                    <span>Chờ duyệt</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-pending" th:text="${#lists.size(bookings.?[status.name() == 'Pending'])}">0</span>
+                  </div>
+                </button>
+                <button
+                  class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent relative text-base"
+                  data-status="AwaitingDeposit,Approved"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>Chờ thanh toán</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-approved" th:text="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved'])}">0</span>
+                  </div>
+                  <span
+                    th:if="${#lists.size(bookings.?[status.name() == 'AwaitingDeposit' || status.name() == 'Approved']) > 0}"
+                    class="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full animate-pulse"
+                  >
+                    NEW
+                  </span>
+                </button>
+                <button class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent text-base" data-status="Confirmed">
+                  <div class="flex items-center justify-between">
+                    <span>Đã thanh toán</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-confirmed" th:text="${#lists.size(bookings.?[status.name() == 'Confirmed'])}">0</span>
+                  </div>
+                </button>
+                <button class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent text-base" data-status="Ongoing">
+                  <div class="flex items-center justify-between">
+                    <span>Đang thuê</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-ongoing" th:text="${#lists.size(bookings.?[status.name() == 'Ongoing'])}">0</span>
+                  </div>
+                </button>
+                <button class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent text-base" data-status="Completed">
+                  <div class="flex items-center justify-between">
+                    <span>Hoàn thành</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-completed" th:text="${#lists.size(bookings.?[status.name() == 'Completed'])}">0</span>
+                  </div>
+                </button>
+                <button
+                  class="filter-tab px-5 py-4 font-semibold text-left rounded-lg text-gray-600 hover:bg-gray-50 hover:text-green-500 border-l-4 border-transparent text-base"
+                  data-status="Cancelled,Rejected"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>Đã hủy/Từ chối</span>
+                    <span class="bg-gray-100 text-gray-600 px-3 py-1.5 rounded-full text-sm font-bold" id="count-cancelled" th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' || status.name() == 'Rejected'])}">0</span>
+                  </div>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- Bookings List -->
-        <div th:if="${bookings.isEmpty()}" class="bg-white rounded-lg shadow-md p-12 text-center">
-          <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
-          <h3 class="text-xl font-semibold text-gray-700 mb-2">Chưa có đơn đặt xe nào</h3>
-          <p class="text-gray-500 mb-6">Hãy bắt đầu thuê xe để trải nghiệm dịch vụ của chúng tôi!</p>
-          <a
-            th:href="@{/vehicles}"
-            class="inline-block bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all"
-          >
-            <i class="fas fa-car mr-2"></i>
-            Thuê xe ngay
-          </a>
-        </div>
+          <!-- Bookings List -->
+          <div class="flex-1">
+            <div th:if="${bookings.isEmpty()}" class="bg-white rounded-lg shadow-md p-12 text-center">
+              <i class="fas fa-inbox text-6xl text-gray-300 mb-4"></i>
+              <h3 class="text-xl font-semibold text-gray-700 mb-2">Chưa có đơn đặt xe nào</h3>
+              <p class="text-gray-500 mb-6">Hãy bắt đầu thuê xe để trải nghiệm dịch vụ của chúng tôi!</p>
+              <a
+                th:href="@{/vehicles}"
+                class="inline-block bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all"
+              >
+                <i class="fas fa-car mr-2"></i>
+                Thuê xe ngay
+              </a>
+            </div>
 
-        <div th:if="${!bookings.isEmpty()}" class="space-y-4">
+            <div th:if="${!bookings.isEmpty()}" class="space-y-4">
           <div
             th:each="booking : ${bookings}"
             th:class="${booking.status.name() == 'AwaitingDeposit' || booking.status.name() == 'Approved'} ? 'booking-card bg-blue-50 border-2 border-blue-400 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all' : 'booking-card bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all'"
@@ -194,6 +205,15 @@
                   Xem chi tiết
                 </a>
 
+                <a
+                  th:if="${booking.status.name() == 'AwaitingDeposit' || booking.status.name() == 'Approved'}"
+                  th:href="@{'/booking/payment/' + ${booking.bookingId}}"
+                  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium animate-pulse"
+                >
+                  <i class="fas fa-credit-card mr-1"></i>
+                  Thanh toán ngay
+                </a>
+
                 <button
                   th:if="${booking.status == 'Pending'}"
                   onclick="cancelBooking(this)"
@@ -222,6 +242,8 @@
                   Đã đánh giá
                 </span>
               </div>
+            </div>
+          </div>
             </div>
           </div>
         </div>
@@ -337,13 +359,13 @@
         tab.addEventListener("click", function () {
           // Remove active from all tabs
           document.querySelectorAll(".filter-tab").forEach((t) => {
-            t.classList.remove("active", "text-green-500", "border-b-2", "border-green-500");
-            t.classList.add("text-gray-600");
+            t.classList.remove("active", "bg-green-50", "text-green-600", "border-green-500");
+            t.classList.add("text-gray-600", "border-transparent");
           });
 
           // Add active to clicked tab
-          this.classList.remove("text-gray-600");
-          this.classList.add("active", "text-green-500", "border-b-2", "border-green-500");
+          this.classList.remove("text-gray-600", "border-transparent");
+          this.classList.add("active", "bg-green-50", "text-green-600", "border-green-500");
 
           // Filter bookings
           const status = this.getAttribute("data-status");
