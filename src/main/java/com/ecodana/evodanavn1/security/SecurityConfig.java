@@ -103,7 +103,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 ) 
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/documents/**", "/feedback/**", "/admin/**", "/owner/**") // Đã bao gồm /api/chatbot/**
+                        .ignoringRequestMatchers("/oauth2/**", "/api/**", "/documents/**", "/feedback/**", "/admin/**", "/owner/**", "/favorites/**") // Đã bao gồm /api/chatbot/**
                 )
                 .formLogin(form -> form
                         .loginPage("/login")

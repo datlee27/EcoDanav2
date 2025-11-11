@@ -182,8 +182,8 @@ CREATE TABLE `Booking` (
                            KEY `HandledBy` (`HandledBy`),
                            KEY `DiscountId` (`DiscountId`),
                            KEY `idx_booking_dates_status` (`PickupDateTime`, `ReturnDateTime`, `Status`),
-                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
-                           CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`VehicleId`) REFERENCES `Vehicle` (`VehicleId`),
+                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,                           
+                           CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`VehicleId`) REFERENCES `Vehicle` (`VehicleId`) ON DELETE RESTRICT,
                            CONSTRAINT `booking_ibfk_3` FOREIGN KEY (`HandledBy`) REFERENCES `Users` (`UserId`),
                            CONSTRAINT `booking_ibfk_4` FOREIGN KEY (`DiscountId`) REFERENCES `Discount` (`DiscountId`) ON DELETE SET NULL,
                            CONSTRAINT `CHK_Booking_Amount` CHECK ((`TotalAmount` >= 0))
@@ -436,6 +436,19 @@ CREATE TABLE `Terms` (
                          `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                          PRIMARY KEY (`TermsId`),
                          UNIQUE KEY `Version` (`Version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+DROP TABLE IF EXISTS `InappropriateWord`;
+CREATE TABLE `InappropriateWord` (
+                                     `Id` char(36) NOT NULL,
+                                     `Word` varchar(255) NOT NULL,
+                                     `Category` varchar(100) DEFAULT NULL,
+                                     `Severity` ENUM('LOW', 'MEDIUM', 'HIGH') NOT NULL DEFAULT 'MEDIUM',
+                                     `IsActive` tinyint(1) NOT NULL DEFAULT '1',
+                                     `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                     PRIMARY KEY (`Id`),
+                                     UNIQUE KEY `Word` (`Word`),
+                                     KEY `idx_inappropriate_word_active` (`IsActive`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Khôi phục lại các thiết lập ban đầu

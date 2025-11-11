@@ -27,7 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
+import com.ecodana.evodanavn1.model.BookingApproval;
+import com.ecodana.evodanavn1.repository.BookingApprovalRepository;
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.repository.BookingRepository;
 
@@ -50,6 +51,9 @@ public class BookingService {
     private VehicleConditionLogsRepository vehicleConditionLogsRepository;
 
     @Autowired
+    private BookingApprovalRepository bookingApprovalRepository;
+
+    @Autowired
     private NotificationService notificationService;
 
     private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
@@ -59,6 +63,9 @@ public class BookingService {
 
     @Value("${booking.owner-approval-timeout-minutes}")
     private int ownerApprovalTimeoutMinutes;
+
+    @Value("${booking.customer-payment-timeout-minutes}")
+    private int customerPaymentTimeoutMinutes;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -225,10 +232,22 @@ public class BookingService {
     public Booking approveBooking(String bookingId, User approver) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
-                    // Chuyển sang AwaitingDeposit - yêu cầu customer thanh toán
+                    // 1. Cập nhật trạng thái Booking
                     booking.setStatus(Booking.BookingStatus.AwaitingDeposit);
                     booking.setHandledBy(approver);
-                    // Không set vehicle status thành Rented ngay - chỉ set khi đã thanh toán
+                    // booking.setApprovedAt(LocalDateTime.now()); // <-- Chúng ta KHÔNG dùng cách này
+
+                    // 2. THÊM MỚI: Tạo log duyệt đơn (BookingApproval)
+                    // Đây là cách chúng ta lưu thời điểm duyệt mà không cần sửa bảng Booking
+                    BookingApproval approval = new BookingApproval();
+                    approval.setApprovalId(UUID.randomUUID().toString());
+                    approval.setBooking(booking);
+                    approval.setStaff(approver);
+                    approval.setApprovalStatus("Approved"); // Đánh dấu là đã duyệt
+                    approval.setApprovalDate(LocalDateTime.now()); // Đây chính là mốc thời gian
+                    approval.setNote("Owner approved.");
+                    bookingApprovalRepository.save(approval); // Lưu log
+
                     return bookingRepository.save(booking);
                 })
                 .orElse(null);
@@ -348,6 +367,71 @@ public class BookingService {
             }
         }
         logger.info("Hoàn tất tác vụ tự động hủy booking.");
+    }
+
+    /**
+     * Tác vụ định kỳ: Tự động hủy các booking 'AwaitingDeposit' (chờ Khách) đã quá hạn.
+     * Chạy mỗi 5 phút (300000ms).
+     */
+    @Scheduled(fixedRate = 15000) // 5 phút
+    @Transactional
+    public void autoCancelExpiredPayments() {
+        logger.info("Chạy tác vụ tự động HỦY (AwaitingDeposit) booking quá hạn (Customer)...");
+
+        // 1. Xác định mốc thời gian timeout
+        LocalDateTime timeoutThreshold = LocalDateTime.now().minusMinutes(customerPaymentTimeoutMinutes);
+
+        // 2. Tìm tất cả booking 'AwaitingDeposit' đã quá hạn
+        List<Booking> expiredBookings = bookingApprovalRepository.findBookingsWithExpiredPaymentWindow(
+                Booking.BookingStatus.AwaitingDeposit,
+                timeoutThreshold
+        );
+
+        if (expiredBookings.isEmpty()) {
+            logger.info("Không có booking (AwaitingDeposit) nào quá hạn (Timeout = {} phút).", customerPaymentTimeoutMinutes);
+            return;
+        }
+
+        logger.warn("Tìm thấy {} booking (AwaitingDeposit) quá hạn thanh toán. Bắt đầu xử lý...", expiredBookings.size());
+
+        // 3. Xử lý từng booking
+        for (Booking booking : expiredBookings) {
+            try {
+                Vehicle vehicle = booking.getVehicle();
+
+                // 4. Cập nhật trạng thái Booking
+                booking.setStatus(Booking.BookingStatus.Cancelled);
+                booking.setCancelReason("Khách hàng không thanh toán cọc (tự động hủy).");
+                bookingRepository.save(booking);
+
+                // 5. Mở lại xe cho người khác đặt
+                updateVehicleStatusOnBookingCompletionOrCancellation(vehicle);
+
+                // 6. Gửi thông báo cho khách hàng
+                notificationService.createNotification(
+                        booking.getUser().getId(),
+                        String.format("Đơn hàng #%s đã bị hủy do quá hạn thanh toán cọc.", booking.getBookingCode()),
+                        booking.getBookingId(),
+                        "BOOKING_CANCELLED"
+                );
+
+                // (Tùy chọn) Gửi thông báo cho Owner
+                if (vehicle.getOwnerId() != null) {
+                    notificationService.createNotification(
+                            vehicle.getOwnerId(),
+                            String.format("Đơn hàng #%s đã bị hủy do khách không thanh toán.", booking.getBookingCode()),
+                            booking.getBookingId(),
+                            "BOOKING_CANCELLED"
+                    );
+                }
+
+                logger.info("Đã tự động HỦY (Cancelled) booking: {}", booking.getBookingCode());
+
+            } catch (Exception e) {
+                logger.error("Lỗi khi tự động HỦY (Cancelled) booking {}: {}", booking.getBookingId(), e.getMessage(), e);
+            }
+        }
+        logger.info("Hoàn tất tác vụ tự động HỦY (Cancelled) booking.");
     }
 
     public Map<String, Long> getBookingCountsByStatus() {
