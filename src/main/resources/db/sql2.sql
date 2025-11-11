@@ -182,8 +182,8 @@ CREATE TABLE `Booking` (
                            KEY `HandledBy` (`HandledBy`),
                            KEY `DiscountId` (`DiscountId`),
                            KEY `idx_booking_dates_status` (`PickupDateTime`, `ReturnDateTime`, `Status`),
-                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
-                           CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`VehicleId`) REFERENCES `Vehicle` (`VehicleId`),
+                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,                           
+                           CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`VehicleId`) REFERENCES `Vehicle` (`VehicleId`) ON DELETE RESTRICT,
                            CONSTRAINT `booking_ibfk_3` FOREIGN KEY (`HandledBy`) REFERENCES `Users` (`UserId`),
                            CONSTRAINT `booking_ibfk_4` FOREIGN KEY (`DiscountId`) REFERENCES `Discount` (`DiscountId`) ON DELETE SET NULL,
                            CONSTRAINT `CHK_Booking_Amount` CHECK ((`TotalAmount` >= 0))
