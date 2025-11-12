@@ -34,6 +34,9 @@ public class Booking {
     @Column(name = "ReturnDateTime", nullable = false)
     private LocalDateTime returnDateTime;
 
+    @Column(name = "PickupLocation", length = 500)
+    private String pickupLocation;
+
     @Column(name = "VehicleRentalFee", precision = 10, scale = 2, nullable = false)
     private BigDecimal vehicleRentalFee;
 
@@ -117,6 +120,8 @@ public class Booking {
     public void setReturnDateTime(LocalDateTime returnDateTime) { this.returnDateTime = returnDateTime; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public String getPickupLocation() { return pickupLocation; }
+    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
     public BigDecimal getDepositAmountRequired() { return depositAmountRequired; }
     public void setDepositAmountRequired(BigDecimal depositAmountRequired) { this.depositAmountRequired = depositAmountRequired; }
     public BigDecimal getRemainingAmount() { return remainingAmount; }

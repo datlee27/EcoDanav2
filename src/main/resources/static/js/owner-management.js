@@ -27,6 +27,7 @@ function renderBookingItem(booking) {
     const returnDate = booking.returnDateTime ? new Date(booking.returnDateTime).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
     const created = booking.createdDate ? new Date(booking.createdDate).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
     const amount = booking.totalAmount ? booking.totalAmount.toLocaleString('vi-VN') + ' VND' : 'N/A';
+    const pickupLocation =booking.pickupLocation?.pickupLocation ||'N/A' +'('+booking.pickupLocation||'N/A'+')';
 
     // --- Actions (Nút bấm) ---
     let actionsHtml = `
@@ -75,6 +76,7 @@ function renderBookingItem(booking) {
              data-code="${booking.bookingCode}"
              data-customer="${customerName}"
              data-created="${booking.createdDate}"
+             
              data-amount="${booking.totalAmount}">
 
             <div class="md:col-span-4">
@@ -84,6 +86,8 @@ function renderBookingItem(booking) {
             </div>
 
             <div class="md:col-span-3 text-sm">
+            
+              <p class="text-gray-700"><strong class="font-medium text-gray-500">Ở:</strong> ${pickupLocation}</p>
                 <p class="text-gray-700"><strong class="font-medium text-gray-500">Từ:</strong> ${pickup}</p>
                 <p class="text-gray-700"><strong class="font-medium text-gray-500">Đến:</strong> ${returnDate}</p>
             </div>
@@ -315,6 +319,7 @@ function viewBooking(bookingId) {
                             <p><strong>Loại thuê:</strong> <span>${data.rentalType || 'N/A'}</span></p>
                             <p><strong>Nhận xe:</strong> <span>${data.pickupDateTime ? new Date(data.pickupDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
                             <p><strong>Trả xe:</strong> <span>${data.returnDateTime ? new Date(data.returnDateTime).toLocaleString('vi-VN') : 'N/A'}</span></p>
+                            <p class="md:col-span-2"><strong>Địa điểm giao xe:</strong> <span class="font-medium text-blue-600">${data.pickupLocation || 'Chưa có thông tin'}</span></p>
                         </div>
                     </div>
                     <div class="p-4 border rounded-lg bg-gray-50">

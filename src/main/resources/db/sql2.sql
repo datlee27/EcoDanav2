@@ -495,3 +495,7 @@ ALTER TABLE `Booking`
     ADD COLUMN `PlatformFee` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Phí nền tảng (cho EcoDana)' AFTER `VehicleRentalFee`,
     ADD COLUMN `OwnerPayout` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Tiền chủ xe nhận (RentalFee - PlatformFee)' AFTER `PlatformFee`,
     ADD COLUMN `PaymentConfirmedAt` DATETIME NULL COMMENT 'Thời điểm thanh toán cọc/toàn bộ thành công' AFTER `RemainingAmount`;
+
+-- Thêm cột địa điểm giao xe
+ALTER TABLE `Booking`
+    ADD COLUMN `PickupLocation` VARCHAR(500) NULL COMMENT 'Địa điểm giao xe khách hàng đã chọn' AFTER `ReturnDateTime`;

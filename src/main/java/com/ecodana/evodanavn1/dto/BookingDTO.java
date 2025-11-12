@@ -17,6 +17,7 @@ public class BookingDTO {
     private String handledByName;
     private LocalDateTime pickupDateTime;
     private LocalDateTime returnDateTime;
+    private String pickupLocation;
     private BigDecimal totalAmount;
     private String status;
     private String discountId;
@@ -134,6 +135,14 @@ public class BookingDTO {
 
     public void setReturnDateTime(LocalDateTime returnDateTime) {
         this.returnDateTime = returnDateTime;
+    }
+
+    public String getPickupLocation() {
+        return pickupLocation;
+    }
+
+    public void setPickupLocation(String pickupLocation) {
+        this.pickupLocation = pickupLocation;
     }
 
     public BigDecimal getTotalAmount() {

@@ -244,6 +244,7 @@ public class BookingAdminController {
         dto.setHandledBy(booking.getHandledBy() != null ? booking.getHandledBy().getId() : null);
         dto.setPickupDateTime(booking.getPickupDateTime());
         dto.setReturnDateTime(booking.getReturnDateTime());
+        dto.setPickupLocation(booking.getPickupLocation());
         dto.setTotalAmount(booking.getTotalAmount());
         dto.setStatus(booking.getStatus() != null ? booking.getStatus().name() : null);
         dto.setDiscountId(booking.getDiscount() != null ? booking.getDiscount().getDiscountId() : null);

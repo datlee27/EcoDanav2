@@ -312,6 +312,7 @@ public class BookingController {
             booking.setBookingCode("BK" + System.currentTimeMillis());
             booking.setRentalType(Booking.RentalType.daily);
             booking.setCreatedDate(LocalDateTime.now());
+            booking.setPickupLocation(bookingRequest.getPickupLocation());
             booking.setTermsAgreed(true);
             booking.setTermsAgreedAt(LocalDateTime.now());
             booking.setExpectedPaymentMethod(bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod() : "Cash");

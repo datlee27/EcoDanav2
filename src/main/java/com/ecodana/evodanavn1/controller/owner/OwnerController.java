@@ -171,6 +171,7 @@ public class OwnerController {
                     map.put("bookingId", booking.getBookingId());
                     map.put("bookingCode", booking.getBookingCode());
                     map.put("status", booking.getStatus().name());
+                    map.put("pickupLocation", booking.getPickupLocation());
                     map.put("pickupDateTime", booking.getPickupDateTime() != null ? booking.getPickupDateTime().toString() : null);
                     map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
                     map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
@@ -736,6 +737,7 @@ public class OwnerController {
                 bookingData.put("status", booking.getStatus().name());
                 bookingData.put("pickupDateTime", booking.getPickupDateTime());
                 bookingData.put("returnDateTime", booking.getReturnDateTime());
+                bookingData.put("pickupLocation", booking.getPickupLocation());
                 bookingData.put("totalAmount", booking.getTotalAmount());
                 bookingData.put("rentalType", booking.getRentalType().name());
                 bookingData.put("createdDate", booking.getCreatedDate());
