@@ -281,6 +281,57 @@
 <div th:replace="~{owner/cars-management :: car-modals}"></div>
 <div th:replace="~{owner/customers-management :: customer-modal}"></div>
 
+<div id="complete-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('complete-modal')"></div>
+    <div class="modal-content max-w-lg">
+        <div class="modal-header">
+            <h3 class="text-xl font-bold text-gray-800">Hoàn thành chuyến đi</h3>
+            <button type="button" onclick="closeModal('complete-modal')" class="text-gray-600 hover:text-gray-800">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div id="complete-form-content" class="modal-body">
+            <p class="text-sm text-gray-600 mb-4">
+                Xác nhận tình trạng xe khi nhận lại và ghi chú (nếu có) để hoàn thành chuyến đi.
+            </p>
+
+            <div class="mb-4">
+                <label for="complete-notes" class="block text-sm font-medium text-gray-700 mb-1">Ghi chú trả xe</label>
+                <textarea id="complete-notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" placeholder="Ví dụ: Xe sạch sẽ, không có vấn đề..."></textarea>
+            </div>
+
+            <div class="mb-4">
+                <label for="complete-images" class="block text-sm font-medium text-gray-700 mb-1">Ảnh thực tế khi trả xe (Tối đa 5 ảnh)</label>
+                <input type="file" id="complete-images" multiple accept="image/*" onchange="previewCompleteImages(event, 5)" class="w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-50 file:text-blue-700
+                    hover:file:bg-blue-100
+                "/>
+                <p id="complete-images-error" class="text-xs text-red-600 mt-1 hidden">Bạn chỉ có thể upload tối đa 5 ảnh.</p>
+            </div>
+
+            <div id="complete-images-preview" class="flex flex-wrap gap-2 p-2 bg-gray-50 rounded-md border min-h-[60px]">
+                <p class="text-xs text-gray-400 p-2">Chưa chọn ảnh nào.</p>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <div class="flex justify-end space-x-3">
+                <button type="button" onclick="closeModal('complete-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                    Hủy
+                </button>
+                <button type="button" id="confirmMaintenanceBtn" onclick="confirmComplete(true)" class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                    <i class="fas fa-tools mr-2"></i>Hoàn thành & Bảo trì
+                </button>
+                <button type="button" id="confirmCompleteBtn" onclick="confirmComplete(false)" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    <i class="fas fa-flag-checkered mr-2"></i>Hoàn thành
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <script th:inline="javascript">
     /*<![CDATA[*/
     // Lấy dữ liệu doanh thu (chỉ khi ở tab dashboard)
@@ -359,6 +410,46 @@
             tab.classList.toggle('active', tab.getAttribute('data-period') === period);
         });
     }
+
+    /**
+     * THÊM MỚI: Hàm preview ảnh cho modal hoàn thành
+     * @param {Event} event Event từ input file
+     * @param {number} maxFiles Số lượng file tối đa
+     */
+    function previewCompleteImages(event, maxFiles) {
+        const input = event.target;
+        const previewContainer = document.getElementById('complete-images-preview');
+        const errorEl = document.getElementById('complete-images-error');
+        if (!previewContainer || !errorEl) return;
+
+        previewContainer.innerHTML = ''; // Xóa preview cũ
+        errorEl.classList.add('hidden');
+
+        if (!input.files || input.files.length === 0) {
+            previewContainer.innerHTML = '<p class="text-xs text-gray-400 p-2">Chưa chọn ảnh nào.</p>';
+            return;
+        }
+
+        if (input.files.length > maxFiles) {
+            errorEl.textContent = `Bạn chỉ có thể upload tối đa ${maxFiles} ảnh.`;
+            errorEl.classList.remove('hidden');
+            input.value = ''; // Xóa file đã chọn
+            previewContainer.innerHTML = '<p class="text-xs text-gray-400 p-2">Chưa chọn ảnh nào.</p>';
+            return;
+        }
+
+        Array.from(input.files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const div = document.createElement('div');
+                div.className = 'relative w-20 h-20 rounded-md overflow-hidden border border-gray-300';
+                div.innerHTML = `<img src="${e.target.result}" alt="${file.name}" class="w-full h-full object-cover">`;
+                previewContainer.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+    // KẾT THÚC THÊM MỚI
 
     // Khởi tạo chung khi DOM tải xong
     document.addEventListener('DOMContentLoaded', function() {

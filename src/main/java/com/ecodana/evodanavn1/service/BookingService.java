@@ -269,16 +269,70 @@ public class BookingService {
                 .orElse(null);
     }
 
-    public Booking completeBooking(String bookingId) {
-        return bookingRepository.findById(bookingId)
-                .map(booking -> {
-                    booking.setStatus(Booking.BookingStatus.Completed);
-                    // Update vehicle status back to Available when booking is completed
-                    Booking updatedBooking = bookingRepository.save(booking);
-                    updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
-                    return updatedBooking;
-                })
-                .orElse(null);
+    /**
+     * SỬA ĐỔI: Phương thức completeBooking mới, xử lý đầy đủ nghiệp vụ
+     * @param bookingId ID của booking
+     * @param completer Người dùng (owner) thực hiện
+     * @param notes Ghi chú khi trả xe
+     * @param imageUrls Danh sách ảnh khi trả xe
+     * @param setMaintenance Cờ (true/false) yêu cầu bảo trì xe
+     * @return Booking đã cập nhật
+     * @throws Exception
+     */
+    @Transactional
+    public Booking completeBooking(String bookingId, User completer, String notes, List<String> imageUrls, boolean setMaintenance) throws Exception {
+        logger.info("Completing booking {}. Set Maintenance: {}", bookingId, setMaintenance);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy Booking với ID: " + bookingId));
+
+        // 1. Chỉ cho phép hoàn thành khi status là Ongoing
+        if (booking.getStatus() != Booking.BookingStatus.Ongoing) {
+            throw new IllegalStateException("Không thể hoàn thành. Trạng thái booking không phải là 'Ongoing'.");
+        }
+
+        Vehicle vehicle = booking.getVehicle();
+        if (vehicle == null) {
+            throw new RuntimeException("Không tìm thấy Vehicle cho booking này.");
+        }
+
+        // 2. Cập nhật trạng thái Booking
+        booking.setStatus(Booking.BookingStatus.Completed);
+        booking.setHandledBy(completer); // Ghi nhận người xử lý
+
+        // 3. Tạo Log ghi nhận tình trạng xe lúc TRẢ (Return)
+        VehicleConditionLogs log = new VehicleConditionLogs();
+        log.setLogId(UUID.randomUUID().toString());
+        log.setBooking(booking);
+        log.setVehicle(vehicle);
+        log.setStaff(completer); // Ghi nhận owner là người nhận xe
+        log.setCheckType("Return"); // Đánh dấu đây là log lúc Trả xe
+        log.setCheckTime(LocalDateTime.now());
+        log.setNote(notes);
+        // Lưu ý: Chúng ta chưa yêu cầu owner nhập Odometer khi trả xe, nên tạm thời không set
+        // log.setOdometer(odometer);
+
+        // Lưu ảnh dưới dạng JSON
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            log.setDamageImages(objectMapper.writeValueAsString(imageUrls));
+        }
+
+        // 4. Lưu log
+        vehicleConditionLogsRepository.save(log);
+
+        // 5. Cập nhật trạng thái Vehicle dựa trên lựa chọn
+        if (setMaintenance) {
+            logger.info("Setting vehicle {} to Maintenance.", vehicle.getLicensePlate());
+            vehicle.setStatus(Vehicle.VehicleStatus.Maintenance);
+            vehicleRepository.save(vehicle);
+        } else {
+            logger.info("Setting vehicle {} to Available (if no other bookings).", vehicle.getLicensePlate());
+            // Sử dụng logic cũ để set Available nếu xe rảnh
+            updateVehicleStatusOnBookingCompletionOrCancellation(vehicle);
+        }
+
+        // 6. Lưu booking đã cập nhật
+        return bookingRepository.save(booking);
     }
 
     public Booking cancelBooking(String bookingId, String reason) {

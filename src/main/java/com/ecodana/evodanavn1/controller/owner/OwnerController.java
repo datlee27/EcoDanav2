@@ -853,20 +853,62 @@ public class OwnerController {
 
     @PostMapping("/management/bookings/{id}/complete")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> completeBookingManagement(@PathVariable String id, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> completeBookingManagement(
+            @PathVariable String id,
+            @RequestParam(value = "images", required = false) MultipartFile[] images,
+            @RequestParam(value = "notes", required = false) String notes,
+            @RequestParam(value = "setMaintenance", defaultValue = "false") String setMaintenance,
+            HttpSession session) {
+
         User currentUser = (User) session.getAttribute("currentUser");
         if (currentUser == null) {
             return ResponseEntity.status(401).body(Map.of("success", false, "message", "User not authenticated"));
         }
 
         try {
-            Booking booking = bookingService.completeBooking(id);
+            // 1. Khởi tạo Cloudinary
+            Cloudinary cloudinary = null;
+            if (cloudName != null && !cloudName.isBlank() && cloudApiKey != null && !cloudApiKey.isBlank() && cloudApiSecret != null && !cloudApiSecret.isBlank()) {
+                cloudinary = new Cloudinary(ObjectUtils.asMap(
+                        "cloud_name", cloudName,
+                        "api_key", cloudApiKey,
+                        "api_secret", cloudApiSecret));
+            } else {
+                logger.warn("Cloudinary credentials not fully configured. Return images will not be uploaded.");
+                // Không ném lỗi, cho phép hoàn thành không cần ảnh
+            }
+
+            // 2. Tải ảnh (nếu có)
+            List<String> imageUrls = new ArrayList<>();
+            if (cloudinary != null && images != null && images.length > 0) {
+                logger.info("Uploading {} return images for booking {}", images.length, id);
+                for (MultipartFile image : images) {
+                    if (!image.isEmpty()) {
+                        Map<String, Object> uploadResult = cloudinary.uploader().upload(
+                                image.getBytes(),
+                                ObjectUtils.asMap(
+                                        "folder", "ecodana/vehicle_conditions/" + id + "/return", // Thư mục riêng cho ảnh trả xe
+                                        "resource_type", "image"
+                                )
+                        );
+                        imageUrls.add(uploadResult.get("secure_url").toString());
+                    }
+                }
+            }
+
+            // 3. Chuyển đổi cờ setMaintenance
+            boolean setMaintenanceFlag = Boolean.parseBoolean(setMaintenance);
+
+            // 4. Gọi Service
+            Booking booking = bookingService.completeBooking(id, currentUser, notes, imageUrls, setMaintenanceFlag);
+
             if (booking != null) {
                 return ResponseEntity.ok(Map.of("success", true, "message", "Booking marked as completed"));
             } else {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
             }
         } catch (Exception e) {
+            logger.error("Failed to complete booking {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(500).body(Map.of("success", false, "message", "Failed to complete booking: " + e.getMessage()));
         }
     }
