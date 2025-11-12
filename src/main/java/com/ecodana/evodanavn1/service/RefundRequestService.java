@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.service;
 import com.ecodana.evodanavn1.model.*;
 import com.ecodana.evodanavn1.repository.RefundRequestRepository;
 import com.ecodana.evodanavn1.repository.PaymentRepository;
+import com.ecodana.evodanavn1.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,22 +30,43 @@ public class RefundRequestService {
     @Autowired
     private NotificationService notificationService;
 
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    @Autowired
+    private com.ecodana.evodanavn1.repository.BankAccountRepository bankAccountRepository;
+
     @Transactional
     public RefundRequest createRefundRequest(Booking booking, User user, String cancelReason) {
+        return createRefundRequest(booking, user, cancelReason, null, null);
+    }
+
+    @Transactional
+    public RefundRequest createRefundRequest(Booking booking, User user, String cancelReason, String bankAccountId) {
+        return createRefundRequest(booking, user, cancelReason, bankAccountId, null);
+    }
+
+    @Transactional
+    public RefundRequest createRefundRequest(Booking booking, User user, String cancelReason, String bankAccountId, BigDecimal customRefundAmount) {
         // Check if refund request already exists
         Optional<RefundRequest> existingRequest = refundRequestRepository.findByBookingBookingId(booking.getBookingId());
         if (existingRequest.isPresent()) {
             throw new IllegalStateException("Yêu cầu hoàn tiền cho đơn hàng này đã tồn tại!");
         }
 
-        // Get user's default bank account
-        Optional<BankAccount> defaultBankAccount = bankAccountService.getDefaultBankAccount(user.getId());
-        if (defaultBankAccount.isEmpty()) {
-            throw new IllegalStateException("Bạn cần thêm thông tin tài khoản ngân hàng trước khi yêu cầu hoàn tiền!");
+        // Get bank account - use provided ID or default
+        Optional<BankAccount> selectedBankAccount = Optional.empty();
+        
+        if (bankAccountId != null && !bankAccountId.isEmpty()) {
+            // Use the provided bank account ID
+            selectedBankAccount = bankAccountRepository.findById(bankAccountId);
+        } else {
+            // Fall back to default bank account
+            selectedBankAccount = bankAccountService.getDefaultBankAccount(user.getId());
         }
 
-        // Calculate refund amount
-        BigDecimal refundAmount = calculateRefundAmount(booking);
+        // Calculate refund amount - use custom amount if provided, otherwise calculate
+        BigDecimal refundAmount = customRefundAmount != null ? customRefundAmount : calculateRefundAmount(booking);
 
         // Check if within 2 hours of payment
         boolean isWithinTwoHours = isWithinTwoHoursOfPayment(booking);
@@ -54,13 +76,26 @@ public class RefundRequestService {
         refundRequest.setRefundRequestId(UUID.randomUUID().toString());
         refundRequest.setBooking(booking);
         refundRequest.setUser(user);
-        refundRequest.setBankAccount(defaultBankAccount.get());
+        
+        // Set bank account if available, otherwise leave null (admin can add later)
+        if (selectedBankAccount.isPresent()) {
+            refundRequest.setBankAccount(selectedBankAccount.get());
+        }
+        
         refundRequest.setRefundAmount(refundAmount);
         refundRequest.setCancelReason(cancelReason);
         refundRequest.setStatus(RefundRequest.RefundStatus.Pending);
         refundRequest.setWithinTwoHours(isWithinTwoHours);
 
         RefundRequest savedRequest = refundRequestRepository.save(refundRequest);
+
+        // Note: Booking status should already be set to RefundPending by the caller (BookingService)
+        // Only update if booking is not already in RefundPending status
+        if (booking.getStatus() != Booking.BookingStatus.RefundPending) {
+            booking.setStatus(Booking.BookingStatus.RefundPending);
+            booking.setCancelReason(cancelReason);
+            bookingRepository.save(booking);
+        }
 
         // Send notification to admin
         notifyAdminOfRefundRequest(savedRequest);
@@ -69,41 +104,46 @@ public class RefundRequestService {
     }
 
     private BigDecimal calculateRefundAmount(Booking booking) {
-        // Get total paid amount
+        // Get all payments (Completed or Pending - both should be refunded)
         List<Payment> payments = paymentRepository.findByBookingId(booking.getBookingId());
-        BigDecimal totalPaid = payments.stream()
-                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
-                .map(Payment::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<Payment> refundablePayments = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
+                            p.getPaymentStatus() == Payment.PaymentStatus.Pending)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
+                            p.getPaymentType() == Payment.PaymentType.FinalPayment)
+                .toList();
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime paymentTime = booking.getPaymentConfirmedAt();
-        LocalDateTime tripStartTime = booking.getPickupDateTime();
 
         if (paymentTime == null) {
-            return totalPaid; // Fallback
+            // Fallback: sum all refundable payments
+            return refundablePayments.stream()
+                    .map(Payment::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         }
 
         long hoursSincePayment = Duration.between(paymentTime, now).toHours();
-        long daysBeforeTrip = Duration.between(now, tripStartTime).toDays();
 
-        BigDecimal tripValue = booking.getTotalAmount();
-        BigDecimal refundAmount;
+        BigDecimal totalRefundAmount = BigDecimal.ZERO;
 
-        if (hoursSincePayment < 2) {
-            // Hủy trong 2 giờ -> Hoàn 100%
-            refundAmount = totalPaid;
-        } else if (daysBeforeTrip >= 7) {
-            // Hủy trước 7 ngày -> Phí hủy 10%
-            BigDecimal penalty = tripValue.multiply(new BigDecimal("0.10"));
-            refundAmount = totalPaid.subtract(penalty);
-        } else {
-            // Hủy trong 7 ngày -> Phí hủy 40%
-            BigDecimal penalty = tripValue.multiply(new BigDecimal("0.40"));
-            refundAmount = totalPaid.subtract(penalty);
+        // Calculate refund for each payment type separately
+        for (Payment payment : refundablePayments) {
+            BigDecimal paymentRefundAmount;
+
+            if (hoursSincePayment < 2) {
+                // Hủy trong 2 giờ -> Hoàn 100% cho cả Deposit và FinalPayment
+                paymentRefundAmount = payment.getAmount();
+            } else {
+                // Hủy sau 2 giờ -> Hoàn 70% (trừ 30% phí hủy)
+                BigDecimal penalty = payment.getAmount().multiply(new BigDecimal("0.30"));
+                paymentRefundAmount = payment.getAmount().subtract(penalty);
+            }
+
+            totalRefundAmount = totalRefundAmount.add(paymentRefundAmount);
         }
 
-        return refundAmount.max(BigDecimal.ZERO);
+        return totalRefundAmount.max(BigDecimal.ZERO);
     }
 
     private boolean isWithinTwoHoursOfPayment(Booking booking) {
@@ -164,10 +204,26 @@ public class RefundRequestService {
 
         refundRequestRepository.save(refundRequest);
 
-        // Update booking status
+        // Create Payment record with Refunded status
         Booking booking = refundRequest.getBooking();
+        Payment refundPayment = new Payment();
+        refundPayment.setPaymentId(UUID.randomUUID().toString());
+        refundPayment.setBooking(booking);
+        refundPayment.setUser(booking.getUser());
+        refundPayment.setAmount(refundRequest.getRefundAmount().negate()); // Lưu số âm
+        refundPayment.setPaymentMethod("PayOS_Refund");
+        refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
+        refundPayment.setPaymentType(Payment.PaymentType.Refund);
+        refundPayment.setPaymentDate(LocalDateTime.now());
+        refundPayment.setNotes("Admin duyệt hoàn tiền: " + adminNotes);
+        paymentRepository.save(refundPayment);
+
+        System.out.println("Payment record created for refund: " + refundPayment.getPaymentId());
+
+        // Update booking status
         booking.setStatus(Booking.BookingStatus.Cancelled);
         booking.setCancelReason("Admin đã duyệt yêu cầu hoàn tiền: " + adminNotes);
+        bookingRepository.save(booking);
 
         // Notify customer
         notificationService.createNotification(

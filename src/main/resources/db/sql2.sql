@@ -471,29 +471,29 @@ CREATE TABLE `BankAccount` (
 
 DROP TABLE IF EXISTS `RefundRequest`;
 CREATE TABLE `RefundRequest` (
-                                 `RefundRequestId` char(36) NOT NULL,
-                                 `BookingId` char(36) NOT NULL,
-                                 `UserId` char(36) NOT NULL,
-                                 `BankAccountId` char(36) NOT NULL,
-                                 `RefundAmount` decimal(10,2) NOT NULL,
-                                 `CancelReason` varchar(1000) NOT NULL,
-                                 `Status` ENUM('Pending', 'Approved', 'Rejected', 'Completed') NOT NULL DEFAULT 'Pending',
-                                 `AdminNotes` varchar(1000) DEFAULT NULL,
-                                 `ProcessedBy` char(36) DEFAULT NULL COMMENT 'Admin user ID',
-                                 `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                                 `ProcessedDate` datetime DEFAULT NULL,
-                                 `IsWithinTwoHours` tinyint(1) NOT NULL DEFAULT '0',
-                                 PRIMARY KEY (`RefundRequestId`),
-                                 KEY `BookingId` (`BookingId`),
-                                 KEY `UserId` (`UserId`),
-                                 KEY `BankAccountId` (`BankAccountId`),
-                                 KEY `ProcessedBy` (`ProcessedBy`),
-                                 KEY `idx_refund_status` (`Status`),
-                                 CONSTRAINT `refundrequest_ibfk_1` FOREIGN KEY (`BookingId`) REFERENCES `Booking` (`BookingId`) ON DELETE RESTRICT,
-                                 CONSTRAINT `refundrequest_ibfk_2` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
-                                 CONSTRAINT `refundrequest_ibfk_3` FOREIGN KEY (`BankAccountId`) REFERENCES `BankAccount` (`BankAccountId`) ON DELETE RESTRICT,
-                                 CONSTRAINT `refundrequest_ibfk_4` FOREIGN KEY (`ProcessedBy`) REFERENCES `Users` (`UserId`) ON DELETE SET NULL,
-                                 CONSTRAINT `CHK_RefundRequest_Amount` CHECK ((`RefundAmount` >= 0))
+                                `RefundRequestId` char(36) NOT NULL,
+                                `BookingId` char(36) NOT NULL,
+                                `UserId` char(36) NOT NULL,
+                                `BankAccountId` char(36) DEFAULT NULL COMMENT 'Can be NULL if customer has not set default bank account',
+                                `RefundAmount` decimal(10,2) NOT NULL,
+                                `CancelReason` varchar(1000) NOT NULL,
+                                `Status` ENUM('Pending', 'Approved', 'Rejected', 'Completed', 'Refunded') NOT NULL DEFAULT 'Pending',
+                                `AdminNotes` varchar(1000) DEFAULT NULL,
+                                `ProcessedBy` char(36) DEFAULT NULL COMMENT 'Admin user ID',
+                                `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                `ProcessedDate` datetime DEFAULT NULL,
+                                `IsWithinTwoHours` tinyint(1) NOT NULL DEFAULT '0',
+                                PRIMARY KEY (`RefundRequestId`),
+                                KEY `BookingId` (`BookingId`),
+                                KEY `UserId` (`UserId`),
+                                KEY `BankAccountId` (`BankAccountId`),
+                                KEY `ProcessedBy` (`ProcessedBy`),
+                                KEY `idx_refund_status` (`Status`),
+                                CONSTRAINT `refundrequest_ibfk_1` FOREIGN KEY (`BookingId`) REFERENCES `Booking` (`BookingId`) ON DELETE RESTRICT,
+                                CONSTRAINT `refundrequest_ibfk_2` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
+                                CONSTRAINT `refundrequest_ibfk_3` FOREIGN KEY (`BankAccountId`) REFERENCES `BankAccount` (`BankAccountId`) ON DELETE SET NULL,
+                                CONSTRAINT `refundrequest_ibfk_4` FOREIGN KEY (`ProcessedBy`) REFERENCES `Users` (`UserId`) ON DELETE SET NULL,
+                                CONSTRAINT `CHK_RefundRequest_Amount` CHECK ((`RefundAmount` >= 0))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- Khôi phục lại các thiết lập ban đầu
@@ -516,7 +516,8 @@ ALTER TABLE `Booking`
         'Rejected',         -- Chủ xe từ chối
         'Ongoing',          -- Đang trong quá trình thuê (đã nhận xe)
         'Completed',        -- Đã hoàn tất chuyến đi và thanh toán
-        'Cancelled'         -- Đơn bị hủy
+        'Cancelled',        -- Đơn bị hủy
+        'RefundPending'     -- Chờ hoàn tiền (admin duyệt)
         ) NOT NULL DEFAULT 'Pending';
 
 

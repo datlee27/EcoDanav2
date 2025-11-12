@@ -20,10 +20,14 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
     List<Payment> findByUserId(@Param("userId") String userId);
 
     List<Payment> findByPaymentStatus(String paymentStatus);
+    
+    List<Payment> findByPaymentStatus(Payment.PaymentStatus paymentStatus);
 
     List<Payment> findByPaymentMethod(String paymentMethod);
 
     List<Payment> findByPaymentType(String paymentType);
+    
+    List<Payment> findByPaymentType(Payment.PaymentType paymentType);
 
     Optional<Payment> findByTransactionId(String transactionId);
 

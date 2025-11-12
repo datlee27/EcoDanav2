@@ -669,6 +669,27 @@ public class BookingController {
                 }
             } catch (Exception ignored) {}
             booking.setCanReview(eligible && !hasFeedback);
+            
+            // Fallback: Check if payment was successful but webhook was delayed
+            // If booking is Confirmed but has Pending payments, mark them as Completed
+            if (booking.getStatus() == Booking.BookingStatus.Confirmed) {
+                try {
+                    java.util.List<com.ecodana.evodanavn1.model.Payment> payments = 
+                        bookingService.getPaymentsByBookingId(booking.getBookingId());
+                    boolean hasPendingPayments = payments.stream()
+                        .anyMatch(p -> p.getPaymentStatus() == com.ecodana.evodanavn1.model.Payment.PaymentStatus.Pending);
+                    
+                    if (hasPendingPayments) {
+                        // Mark all pending payments as Completed since booking is Confirmed
+                        for (com.ecodana.evodanavn1.model.Payment payment : payments) {
+                            if (payment.getPaymentStatus() == com.ecodana.evodanavn1.model.Payment.PaymentStatus.Pending) {
+                                payment.setPaymentStatus(com.ecodana.evodanavn1.model.Payment.PaymentStatus.Completed);
+                                bookingService.updatePayment(payment);
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {}
+            }
         }
         
         model.addAttribute("bookings", bookings);
@@ -722,6 +743,7 @@ public class BookingController {
     @PostMapping("/cancel/{bookingId}")
     public String processCancelBooking(@PathVariable String bookingId,
                                      @RequestParam String cancelReason,
+                                     @RequestParam(required = false) String bankAccountId,
                                      HttpSession session,
                                      RedirectAttributes redirectAttributes) {
 
@@ -750,7 +772,16 @@ public class BookingController {
             }
 
             // Create refund request
-            RefundRequest refundRequest = refundRequestService.createRefundRequest(booking, user, cancelReason);
+            System.out.println("=== CREATE REFUND REQUEST ===");
+            System.out.println("Booking ID: " + bookingId);
+            System.out.println("Booking Status: " + booking.getStatus());
+            System.out.println("Cancel Reason: " + cancelReason);
+            System.out.println("Bank Account ID: " + bankAccountId);
+            
+            RefundRequest refundRequest = refundRequestService.createRefundRequest(booking, user, cancelReason, bankAccountId);
+            
+            System.out.println("RefundRequest created: " + refundRequest.getRefundRequestId());
+            System.out.println("Booking Status after: " + booking.getStatus());
             
             redirectAttributes.addFlashAttribute("success", 
                 "Yêu cầu hủy xe đã được gửi đến admin. Mã yêu cầu: " + refundRequest.getRefundRequestId().substring(0, 8) + 
@@ -759,7 +790,8 @@ public class BookingController {
             return "redirect:/booking/my-bookings";
             
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("ERROR in processCancelBooking: " + e.getMessage());
+            e.printStackTrace(System.out);
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/booking/my-bookings";
         }
@@ -772,11 +804,13 @@ public class BookingController {
     public String cancelCar(
             @PathVariable String bookingId,
             @RequestParam(required = false) String cancelReason,
+            @RequestParam(required = false) String bankAccountId,
             HttpSession session,
             RedirectAttributes redirectAttributes) {
 
         System.out.println("=== Cancel Car Request ===");
         System.out.println("Booking ID: " + bookingId);
+        System.out.println("Bank Account ID: " + bankAccountId);
 
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
@@ -817,7 +851,7 @@ public class BookingController {
             System.out.println("User ID: " + user.getId());
             
             String finalReason = cancelReason != null ? cancelReason : "Khách hàng yêu cầu hủy";
-            Map<String, Object> refundResult = bookingService.processCancellationAndRefund(bookingId, finalReason, user);
+            Map<String, Object> refundResult = bookingService.processCancellationAndRefund(bookingId, finalReason, user, bankAccountId);
 
             if (refundResult.get("success") == Boolean.TRUE) {
                 redirectAttributes.addFlashAttribute("success", refundResult.get("message").toString());

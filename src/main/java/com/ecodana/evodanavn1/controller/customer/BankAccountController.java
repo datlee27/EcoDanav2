@@ -164,4 +164,49 @@ public class BankAccountController {
             return ResponseEntity.status(500).body(error);
         }
     }
+
+    @PostMapping("/api/add")
+    @ResponseBody
+    public ResponseEntity<?> addBankAccountApi(
+            @RequestParam String bankName,
+            @RequestParam String accountNumber,
+            @RequestParam String accountHolder,
+            @RequestParam(required = false) MultipartFile qrCodeImage,
+            HttpSession session) {
+        try {
+            User user = (User) session.getAttribute("currentUser");
+            if (user == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "User not authenticated");
+                return ResponseEntity.status(401).body(error);
+            }
+
+            // Create new bank account
+            BankAccount bankAccount = new BankAccount();
+            bankAccount.setBankAccountId(UUID.randomUUID().toString());
+            bankAccount.setUser(user);
+            bankAccount.setBankName(bankName);
+            bankAccount.setAccountNumber(accountNumber);
+            bankAccount.setAccountHolderName(accountHolder);
+            bankAccount.setDefault(false);
+
+            // Save bank account with QR code if provided
+            bankAccountService.saveBankAccount(bankAccount, qrCodeImage);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Thêm tài khoản ngân hàng thành công!");
+            response.put("bankAccountId", bankAccount.getBankAccountId());
+            response.put("bankAccount", bankAccount);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "Lỗi khi thêm tài khoản: " + e.getMessage());
+            error.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
 }

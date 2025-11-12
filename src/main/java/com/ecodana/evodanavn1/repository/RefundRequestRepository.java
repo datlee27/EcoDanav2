@@ -18,12 +18,12 @@ public interface RefundRequestRepository extends JpaRepository<RefundRequest, St
     
     Optional<RefundRequest> findByBookingBookingId(String bookingId);
     
-    @Query("SELECT rr FROM RefundRequest rr WHERE rr.status = 'Pending' ORDER BY rr.createdDate ASC")
+    @Query("SELECT rr FROM RefundRequest rr WHERE rr.status = com.ecodana.evodanavn1.model.RefundRequest$RefundStatus.Pending ORDER BY rr.createdDate DESC")
     List<RefundRequest> findPendingRequestsOrderByCreatedDate();
     
-    @Query("SELECT COUNT(rr) FROM RefundRequest rr WHERE rr.status = 'Pending'")
+    @Query("SELECT COUNT(rr) FROM RefundRequest rr WHERE rr.status = com.ecodana.evodanavn1.model.RefundRequest$RefundStatus.Pending")
     long countPendingRequests();
     
-    @Query("SELECT rr FROM RefundRequest rr WHERE rr.isWithinTwoHours = true AND rr.status = 'Pending'")
+    @Query("SELECT rr FROM RefundRequest rr WHERE rr.isWithinTwoHours = true AND rr.status = com.ecodana.evodanavn1.model.RefundRequest$RefundStatus.Pending ORDER BY rr.createdDate DESC")
     List<RefundRequest> findUrgentPendingRequests();
 }

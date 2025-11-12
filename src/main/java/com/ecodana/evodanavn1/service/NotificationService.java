@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,6 +20,9 @@ public class NotificationService {
     
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BankAccountService bankAccountService;
     
     /**
      * Create notification for a specific user
@@ -208,5 +212,47 @@ public class NotificationService {
                 booking.getBookingCode()
         );
         createNotification(customerId, message, booking.getBookingId(), "RENTAL_STARTED");
+    }
+
+    /**
+     * Gửi thông báo cho admin khi khách hàng yêu cầu hủy chuyến và hoàn tiền
+     */
+    public void notifyAdminRefundRequest(com.ecodana.evodanavn1.model.Booking booking, BigDecimal refundAmount, String refundMessage) {
+        // Lấy ngân hàng mặc định của khách hàng
+        String bankInfo = "";
+        try {
+            var defaultBank = bankAccountService.getDefaultBankAccount(booking.getUser().getId());
+            if (defaultBank.isPresent()) {
+                var bank = defaultBank.get();
+                bankInfo = String.format(
+                    "\n\n📱 THÔNG TIN NGÂN HÀNG KHÁCH HÀNG:\n" +
+                    "Ngân hàng: %s\n" +
+                    "Số tài khoản: %s\n" +
+                    "Chủ tài khoản: %s",
+                    bank.getBankName(),
+                    bank.getAccountNumber(),
+                    bank.getAccountHolderName()
+                );
+            }
+        } catch (Exception e) {
+            bankInfo = "\n\n⚠️ Không tìm thấy thông tin ngân hàng của khách hàng";
+        }
+
+        String message = String.format(
+            "🔔 YÊU CẦU HOÀN TIỀN - Đơn hàng #%s\n" +
+            "Khách hàng: %s (%s)\n" +
+            "Xe: %s\n" +
+            "Số tiền hoàn dự kiến: %s ₫\n" +
+            "Chi tiết: %s%s\n\n" +
+            "✅ Vui lòng xem xét và duyệt hoàn tiền.",
+            booking.getBookingCode(),
+            booking.getUser().getFirstName() + " " + booking.getUser().getLastName(),
+            booking.getUser().getEmail(),
+            booking.getVehicle().getLicensePlate(),
+            refundAmount.setScale(0, java.math.RoundingMode.HALF_UP),
+            refundMessage,
+            bankInfo
+        );
+        createNotificationForAllAdmins(message, booking.getBookingId(), "REFUND_REQUEST");
     }
 }
