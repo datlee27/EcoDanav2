@@ -24,14 +24,18 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.Discount;
+import com.ecodana.evodanavn1.model.Payment;
+import com.ecodana.evodanavn1.model.RefundRequest;
 import com.ecodana.evodanavn1.model.Vehicle; // Đảm bảo import Vehicle
+import com.ecodana.evodanavn1.repository.PaymentRepository;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.service.NotificationService;
+import com.ecodana.evodanavn1.service.RefundRequestService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
-import com.ecodana.evodanavn1.service.VNPayService;
+import com.ecodana.evodanavn1.service.PayOSService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -53,7 +57,13 @@ public class BookingController {
     private NotificationService notificationService;
 
     @Autowired
-    private VNPayService vnPayService;
+    private PayOSService payOSService;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
+
+    @Autowired
+    private RefundRequestService refundRequestService;
 
     @Autowired
     private UserFeedbackService userFeedbackService;
@@ -430,7 +440,7 @@ public class BookingController {
     }
 
     /**
-     * Process payment - Create VNPay URL
+     * Process payment - Create PayOS payment link
      */
     @PostMapping("/payment/process/{bookingId}")
     public String processPayment(
@@ -440,33 +450,47 @@ public class BookingController {
             HttpServletRequest request,
             RedirectAttributes redirectAttributes) {
 
+        System.out.println("=== processPayment called ===");
+        System.out.println("bookingId: " + bookingId);
+        System.out.println("paymentType: " + paymentType);
+        System.out.println("payOSService: " + payOSService);
+
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
+            System.out.println("User not logged in");
             return "redirect:/login";
         }
 
         Booking booking = bookingService.findById(bookingId).orElse(null);
         if (booking == null) {
+            System.out.println("Booking not found");
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
             return "redirect:/booking/my-bookings";
         }
 
         try {
+            System.out.println("Creating payment link...");
             long amount;
             String orderInfo;
 
             if ("deposit".equals(paymentType)) {
-                // Thanh toán 20% cọc
-                amount = booking.getDepositAmountRequired().longValue();
-                orderInfo = "Thanh toán cọc 20% đơn hàng " + booking.getBookingCode();
+                // Thanh toán 20% cọc - không nhân 1000 vì đã là VND
+                amount = booking.getDepositAmountRequired().longValue(); // Already in VND
+                orderInfo = "Coc 20% " + booking.getBookingCode(); // Max 25 chars
+                System.out.println("=== DEPOSIT PAYMENT ===");
+                System.out.println("Deposit Required (VND): " + booking.getDepositAmountRequired());
+                System.out.println("Amount to PayOS (VND): " + amount);
             } else {
-                // Thanh toán 100%
-                amount = booking.getTotalAmount().longValue();
-                orderInfo = "Thanh toán toàn bộ đơn hàng " + booking.getBookingCode();
+                // Thanh toán 100% - không nhân 1000 vì đã là VND
+                amount = booking.getTotalAmount().longValue(); // Already in VND
+                orderInfo = "Toan bo " + booking.getBookingCode(); // Max 25 chars
+                System.out.println("=== FULL PAYMENT ===");
+                System.out.println("Total Amount (VND): " + booking.getTotalAmount());
+                System.out.println("Amount to PayOS (VND): " + amount);
             }
 
-            // Tạo URL thanh toán VNPay
-            String paymentUrl = vnPayService.createPaymentUrl(amount, orderInfo, bookingId, request);
+            // Tạo link thanh toán PayOS
+            String paymentUrl = payOSService.createPaymentLink(amount, orderInfo, bookingId, request);
 
             return "redirect:" + paymentUrl;
 
@@ -475,6 +499,111 @@ public class BookingController {
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra khi tạo thanh toán: " + e.getMessage());
             return "redirect:/booking/payment/" + bookingId;
         }
+    }
+
+    /**
+     * PayOS payment return handler
+     */
+    @GetMapping("/payment/payos-return")
+    public String payosReturn(
+            @RequestParam(required = false) String code,
+            @RequestParam(required = false) String id,
+            @RequestParam(required = false) String cancel,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String orderCode,
+            @RequestParam(required = false) String bookingId,
+            HttpSession session,
+            Model model) {
+        
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            System.out.println("=== PayOS Return Handler ===");
+            System.out.println("BookingId: " + bookingId);
+            System.out.println("Status: " + status);
+            System.out.println("Code: " + code);
+            System.out.println("OrderCode: " + orderCode);
+            
+            // Check if payment was successful
+            if ("PAID".equals(status) || "00".equals(code)) {
+                model.addAttribute("success", true);
+                model.addAttribute("message", "Thanh toán thành công! Đơn đặt xe của bạn đã được xác nhận.");
+                
+                if (bookingId != null) {
+                    Booking booking = bookingService.findById(bookingId).orElse(null);
+                    if (booking != null) {
+                        // FALLBACK: Cập nhật trạng thái booking nếu webhook chưa xử lý
+                        if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
+                            System.out.println("=== FALLBACK: Updating booking status ===");
+                            System.out.println("Current booking status: " + booking.getStatus());
+                            
+                            // Verify payment with PayOS API before updating
+                            try {
+                                if (orderCode != null) {
+                                    String paymentInfo = payOSService.getPaymentInfo(orderCode);
+                                    System.out.println("PayOS payment info: " + paymentInfo);
+                                }
+                            } catch (Exception e) {
+                                System.out.println("Could not verify payment with PayOS: " + e.getMessage());
+                            }
+                            
+                            booking.setStatus(Booking.BookingStatus.Confirmed);
+                            booking.setPaymentConfirmedAt(LocalDateTime.now());
+                            bookingService.updateBooking(booking);
+                            System.out.println("Booking status updated to Confirmed");
+                        }
+                        
+                        model.addAttribute("bookingId", bookingId);
+                        model.addAttribute("bookingCode", booking.getBookingCode());
+                        model.addAttribute("amount", booking.getDepositAmountRequired());
+                        model.addAttribute("orderCode", orderCode);
+                        model.addAttribute("paymentDate", LocalDateTime.now());
+                    }
+                }
+                
+                return "customer/payos-return";
+                
+            } else if ("CANCELLED".equals(status) || cancel != null) {
+                model.addAttribute("warning", true);
+                model.addAttribute("message", "Bạn đã hủy thanh toán. Vui lòng thử lại khi sẵn sàng.");
+                model.addAttribute("bookingId", bookingId);
+                return "customer/payos-return";
+                
+            } else {
+                model.addAttribute("error", true);
+                model.addAttribute("message", "Thanh toán không thành công. Vui lòng thử lại.");
+                model.addAttribute("bookingId", bookingId);
+                return "customer/payos-return";
+            }
+        } catch (Exception e) {
+            model.addAttribute("error", true);
+            model.addAttribute("message", "Có lỗi xảy ra: " + e.getMessage());
+            return "customer/payos-return";
+        }
+    }
+
+    /**
+     * Payment cancellation handler
+     */
+    @GetMapping("/payment/cancel")
+    public String paymentCancel(
+            @RequestParam(required = false) String bookingId,
+            HttpSession session,
+            Model model) {
+        
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        model.addAttribute("warning", true);
+        model.addAttribute("message", "Bạn đã hủy thanh toán. Vui lòng thử lại khi sẵn sàng.");
+        model.addAttribute("bookingId", bookingId);
+        
+        return "customer/payos-return";
     }
 
     /**
@@ -544,52 +673,96 @@ public class BookingController {
         
         model.addAttribute("bookings", bookings);
         model.addAttribute("currentUser", user);
-
+        
         return "customer/my-bookings";
     }
 
     /**
-     * Cancel booking
+     * Show cancel booking form
+     */
+    @GetMapping("/cancel/{bookingId}")
+    public String showCancelForm(@PathVariable String bookingId,
+                                HttpSession session,
+                                Model model) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check ownership
+            if (!booking.getUser().getId().equals(user.getId())) {
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Only allow cancellation for Confirmed bookings (paid)
+            if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
+                return "redirect:/booking/my-bookings";
+            }
+
+            model.addAttribute("booking", booking);
+            model.addAttribute("currentUser", user);
+            
+            return "customer/cancel-booking-form";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "redirect:/booking/my-bookings";
+        }
+    }
+
+    /**
+     * Process cancel booking request
      */
     @PostMapping("/cancel/{bookingId}")
-    public String cancelBooking(
-            @PathVariable String bookingId,
-            @RequestParam(required = false) String cancelReason,
-            HttpSession session,
-            RedirectAttributes redirectAttributes) {
+    public String processCancelBooking(@PathVariable String bookingId,
+                                     @RequestParam String cancelReason,
+                                     HttpSession session,
+                                     RedirectAttributes redirectAttributes) {
 
         User user = (User) session.getAttribute("currentUser");
         if (user == null) {
             return "redirect:/login";
         }
 
-        Booking booking = bookingService.findById(bookingId).orElse(null);
-        if (booking == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check ownership
+            if (!booking.getUser().getId().equals(user.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Không có quyền hủy booking này!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Only allow cancellation for Confirmed bookings (paid)
+            if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
+                redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đã thanh toán!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Create refund request
+            RefundRequest refundRequest = refundRequestService.createRefundRequest(booking, user, cancelReason);
+            
+            redirectAttributes.addFlashAttribute("success", 
+                "Yêu cầu hủy xe đã được gửi đến admin. Mã yêu cầu: " + refundRequest.getRefundRequestId().substring(0, 8) + 
+                ". Bạn sẽ nhận được thông báo khi admin xử lý.");
+            
+            return "redirect:/booking/my-bookings";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/booking/my-bookings";
         }
-
-        // Check booking ownership
-        String bookingUserId = booking.getUser() != null ? booking.getUser().getId() : null;
-        if (bookingUserId == null || !bookingUserId.equals(user.getId())) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
-            return "redirect:/booking/my-bookings";
-        }
-
-        // CHỈ cho phép hủy khi đang Pending
-        if (booking.getStatus() != Booking.BookingStatus.Pending) {
-            redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đang chờ duyệt (Pending)! Nếu đã thanh toán, vui lòng dùng nút Hủy Xe.");
-            return "redirect:/booking/my-bookings";
-        }
-
-        // Check cancellation policy (Logic chính sách hủy của bạn)
-        // ... (Giữ nguyên logic kiểm tra thời gian)
-
-        String reason = cancelReason != null ? cancelReason : "Khách hàng hủy";
-        bookingService.cancelBooking(bookingId, reason); // Hàm này đã tự động cập nhật status xe
-
-        redirectAttributes.addFlashAttribute("success", "Đã hủy booking thành công!");
-        return "redirect:/booking/my-bookings";
     }
 
     /**
@@ -630,14 +803,19 @@ public class BookingController {
             return "redirect:/booking/my-bookings";
         }
 
-        // CHỈ cho phép hủy khi đã Confirmed (đã thanh toán)
-        if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
-            System.out.println("ERROR: Booking status is not Confirmed. Current status: " + booking.getStatus());
-            redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking đã thanh toán! Trạng thái hiện tại: " + booking.getStatus());
+        // Cho phép hủy khi đã Confirmed (đã thanh toán) hoặc AwaitingDeposit (chưa thanh toán)
+        if (booking.getStatus() != Booking.BookingStatus.Confirmed && 
+            booking.getStatus() != Booking.BookingStatus.AwaitingDeposit) {
+            System.out.println("ERROR: Cannot cancel booking. Current status: " + booking.getStatus());
+            redirectAttributes.addFlashAttribute("error", "Không thể hủy booking ở trạng thái hiện tại: " + booking.getStatus());
             return "redirect:/booking/my-bookings";
         }
 
         try {
+            System.out.println("=== ATTEMPTING CANCELLATION ===");
+            System.out.println("Booking Status: " + booking.getStatus());
+            System.out.println("User ID: " + user.getId());
+            
             String finalReason = cancelReason != null ? cancelReason : "Khách hàng yêu cầu hủy";
             Map<String, Object> refundResult = bookingService.processCancellationAndRefund(bookingId, finalReason, user);
 
@@ -652,5 +830,103 @@ public class BookingController {
             redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi hủy xe: " + e.getMessage());
         }
         return "redirect:/booking/my-bookings";
+    }
+
+    /**
+     * Manual check payment status and update booking
+     */
+    @PostMapping("/payment/check-status/{bookingId}")
+    public String checkPaymentStatus(@PathVariable String bookingId, 
+                                   HttpSession session,
+                                   RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt xe!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check if booking belongs to user
+            if (!booking.getUser().getId().equals(user.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Bạn không có quyền truy cập đơn đặt xe này!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            System.out.println("=== Manual Payment Status Check ===");
+            System.out.println("BookingId: " + bookingId);
+            System.out.println("Current Status: " + booking.getStatus());
+
+            // Force update to Confirmed if payment was successful
+            if (booking.getStatus() == Booking.BookingStatus.AwaitingDeposit) {
+                booking.setStatus(Booking.BookingStatus.Confirmed);
+                booking.setPaymentConfirmedAt(LocalDateTime.now());
+                bookingService.updateBooking(booking);
+                
+                redirectAttributes.addFlashAttribute("success", "Trạng thái đơn đặt xe đã được cập nhật thành công!");
+                System.out.println("Booking status manually updated to Confirmed");
+            } else {
+                redirectAttributes.addFlashAttribute("info", "Trạng thái đơn đặt xe hiện tại: " + booking.getStatus());
+            }
+
+            return "redirect:/booking/detail/" + bookingId;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/booking/my-bookings";
+        }
+    }
+
+    /**
+     * Debug endpoint to check booking and payment status
+     */
+    @GetMapping("/debug/{bookingId}")
+    public String debugBooking(@PathVariable String bookingId, 
+                              HttpSession session,
+                              Model model) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                model.addAttribute("error", "Booking not found");
+                return "debug/booking-debug";
+            }
+
+            // Get all payments for this booking
+            List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+            
+            model.addAttribute("booking", booking);
+            model.addAttribute("payments", payments);
+            model.addAttribute("currentUser", user);
+            
+            System.out.println("=== BOOKING DEBUG ===");
+            System.out.println("Booking ID: " + bookingId);
+            System.out.println("Booking Status: " + booking.getStatus());
+            System.out.println("Payment Confirmed At: " + booking.getPaymentConfirmedAt());
+            System.out.println("Total Payments: " + payments.size());
+            
+            for (Payment payment : payments) {
+                System.out.println("Payment: " + payment.getPaymentId() + 
+                                 ", Amount: " + payment.getAmount() + 
+                                 ", Status: " + payment.getPaymentStatus() +
+                                 ", Method: " + payment.getPaymentMethod());
+            }
+            
+            return "debug/booking-debug";
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            model.addAttribute("error", "Error: " + e.getMessage());
+            return "debug/booking-debug";
+        }
     }
 }

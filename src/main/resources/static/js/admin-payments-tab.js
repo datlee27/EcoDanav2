@@ -391,7 +391,7 @@
         content += '<option value="Credit Card" ' + (payment.paymentMethod === 'Credit Card' ? 'selected' : '') + '>Credit Card</option>';
         content += '<option value="Bank Transfer" ' + (payment.paymentMethod === 'Bank Transfer' ? 'selected' : '') + '>Bank Transfer</option>';
         content += '<option value="Cash" ' + (payment.paymentMethod === 'Cash' ? 'selected' : '') + '>Cash</option>';
-        content += '<option value="VNPay" ' + (payment.paymentMethod === 'VNPay' ? 'selected' : '') + '>VNPay</option>';
+        content += '<option value="PayOS" ' + (payment.paymentMethod === 'PayOS' ? 'selected' : '') + '>PayOS</option>';
         content += '<option value="MoMo" ' + (payment.paymentMethod === 'MoMo' ? 'selected' : '') + '>MoMo</option>';
         content += '<option value="E-Wallet" ' + (payment.paymentMethod === 'E-Wallet' ? 'selected' : '') + '>E-Wallet</option>';
         content += '</select>';

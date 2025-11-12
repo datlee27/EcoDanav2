@@ -1396,46 +1396,34 @@
             const discountAmountInput = document.getElementById("discountAmountInput");
             const discountIdInput = document.getElementById("discountIdInput");
 
-            // --- Lấy các element mới cho phí giao xe ---
+            // --- Lấy các element mới cho phí giao xe (optional) ---
             const deliveryFeeInput = document.getElementById("deliveryFeeInput");
             const deliveryFeeRow = document.getElementById("deliveryFeeRow");
             const deliveryFeeAmountEl = document.getElementById("deliveryFeeAmount");
 
-
+            // Check only essential elements - make delivery fee elements optional
             if (
                 !pickupDateInput ||
                 !returnDateInput ||
                 !pickupTimeInput ||
                 !returnTimeInput ||
                 !dailyPriceInput ||
-                !rentalDuration ||
-                !durationText ||
-                !daysCount ||
-                !rentalPriceEl ||
-                !discountRow ||
-                !discountNameEl ||
-                !discountAmountEl ||
                 !totalAmountEl ||
                 !totalAmountInput ||
-                !rentalDaysInput ||
-                !discountAmountInput ||
-                !discountIdInput ||
-                !deliveryFeeInput || // Thêm check
-                !deliveryFeeRow || // Thêm check
-                !deliveryFeeAmountEl // Thêm check
+                !rentalDaysInput
             ) {
-                console.error("One or more elements not found for price calculation.");
+                console.error("Essential elements not found for price calculation.");
                 return;
             }
 
             if (!pickupDateInput.value || !returnDateInput.value || !pickupTimeInput.value || !returnTimeInput.value) {
-                rentalDuration.classList.add("hidden");
+                if (rentalDuration) rentalDuration.classList.add("hidden");
                 totalAmountEl.textContent = "0 ₫";
                 totalAmountInput.value = 0;
                 rentalDaysInput.value = 0;
-                rentalPriceEl.textContent = "0 ₫";
-                discountRow.classList.add("hidden");
-                deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
+                if (rentalPriceEl) rentalPriceEl.textContent = "0 ₫";
+                if (discountRow) discountRow.classList.add("hidden");
+                if (deliveryFeeRow) deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
                 return;
             }
 
@@ -1443,13 +1431,13 @@
             const returnDateTime = new Date(`${returnDateInput.value}T${returnTimeInput.value}`);
 
             if (returnDateTime <= pickupDateTime) {
-                rentalDuration.classList.add("hidden");
+                if (rentalDuration) rentalDuration.classList.add("hidden");
                 totalAmountEl.textContent = "0 ₫";
                 totalAmountInput.value = 0;
                 rentalDaysInput.value = 0;
-                rentalPriceEl.textContent = "0 ₫";
-                discountRow.classList.add("hidden");
-                deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
+                if (rentalPriceEl) rentalPriceEl.textContent = "0 ₫";
+                if (discountRow) discountRow.classList.add("hidden");
+                if (deliveryFeeRow) deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
                 return;
             }
 
@@ -1458,15 +1446,15 @@
 
             // Check minimum rental duration (24 hours)
             if (totalHours < 24) {
-                rentalDuration.classList.remove("hidden");
-                durationText.innerHTML = `<span class="text-red-600"><i class="fas fa-exclamation-triangle mr-1"></i>${Math.ceil(totalHours)} giờ - Thời gian thuê tối thiểu là 24 giờ!</span>`;
-                daysCount.textContent = 0;
+                if (rentalDuration) rentalDuration.classList.remove("hidden");
+                if (durationText) durationText.innerHTML = `<span class="text-red-600"><i class="fas fa-exclamation-triangle mr-1"></i>${Math.ceil(totalHours)} giờ - Thời gian thuê tối thiểu là 24 giờ!</span>`;
+                if (daysCount) daysCount.textContent = 0;
                 totalAmountEl.textContent = "0 ₫";
                 totalAmountInput.value = 0;
                 rentalDaysInput.value = 0;
-                rentalPriceEl.textContent = "0 ₫";
-                discountRow.classList.add("hidden");
-                deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
+                if (rentalPriceEl) rentalPriceEl.textContent = "0 ₫";
+                if (discountRow) discountRow.classList.add("hidden");
+                if (deliveryFeeRow) deliveryFeeRow.classList.add("hidden"); // Ẩn phí giao xe
                 return;
             }
 
@@ -1782,8 +1770,11 @@
                     alert("Thời gian thuê không hợp lệ. Vui lòng kiểm tra lại ngày giờ.");
                     event.preventDefault();
                 } else if (!pickupLocation || pickupLocation === "Chọn địa điểm giao xe") {
-                    alert("Vui lòng chọn địa điểm giao xe!");
-                    event.preventDefault();
+                    // Set default location if not selected
+                    if (pickupLocationInput) {
+                        pickupLocationInput.value = "Địa điểm mặc định";
+                    }
+                    console.warn("Pickup location not selected, using default location");
                 } else if (isNaN(totalAmount) || totalAmount <= 0) {
                     // Phí giao xe có thể làm tổng tiền > 0 ngay cả khi tiền thuê = 0 (nếu logic cho phép)
                     // Nhưng logic hiện tại yêu cầu rentalDays > 0, nên totalAmount cũng phải > 0 (trừ khi giảm giá 100%)

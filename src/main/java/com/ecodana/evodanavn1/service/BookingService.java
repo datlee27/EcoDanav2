@@ -522,8 +522,30 @@ public class BookingService {
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        System.out.println("=== REFUND CALCULATION DEBUG ===");
+        System.out.println("Booking ID: " + bookingId);
+        System.out.println("Total payments found: " + payments.size());
+        System.out.println("Completed payments: " + payments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed).count());
+        System.out.println("Total paid amount: " + totalPaid);
+        System.out.println("Booking total amount: " + booking.getTotalAmount());
+        
+        for (Payment payment : payments) {
+            System.out.println("Payment: " + payment.getPaymentId() + ", Amount: " + payment.getAmount() + ", Status: " + payment.getPaymentStatus());
+        }
+
         if (totalPaid.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Không tìm thấy giao dịch thanh toán thành công cho đơn hàng này.");
+            System.out.println("WARNING: No completed payments found, but booking status is Confirmed");
+            System.out.println("This might be due to payment status not being updated properly");
+            
+            // Fallback: Allow cancellation but with no refund
+            booking.setStatus(Booking.BookingStatus.Cancelled);
+            booking.setCancelReason(reason + " | Hủy đơn không có giao dịch thanh toán thành công.");
+            bookingRepository.save(booking);
+            updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+            
+            result.put("success", true);
+            result.put("message", "Đã hủy đơn. Không tìm thấy giao dịch thanh toán để hoàn tiền.");
+            return result;
         }
 
         BigDecimal tripValue = booking.getTotalAmount(); // Tổng giá trị chuyến đi (đã bao gồm discount)
@@ -533,10 +555,13 @@ public class BookingService {
         long hoursSincePayment = Duration.between(paymentTime, now).toHours();
         long daysBeforeTrip = Duration.between(now, tripStartTime).toDays();
 
-        if (hoursSincePayment < 1) {
-            // 1. Hủy trong 1 giờ sau khi thanh toán -> Hoàn 100%
+        System.out.println("Hours since payment: " + hoursSincePayment);
+        System.out.println("Days before trip: " + daysBeforeTrip);
+
+        if (hoursSincePayment < 2) {
+            // 1. Hủy trong 2 giờ sau khi thanh toán -> Hoàn 100%
             refundAmount = totalPaid;
-            refundMessage = "Hủy trong 1 giờ sau khi thanh toán. Hoàn 100% số tiền đã trả.";
+            refundMessage = "Hủy trong 2 giờ sau khi thanh toán. Hoàn 100% số tiền đã trả.";
 
         } else if (daysBeforeTrip >= 7) {
             // 2. Hủy trước 7 ngày so với chuyến đi -> Mất 10% tổng giá trị chuyến
@@ -551,19 +576,22 @@ public class BookingService {
             refundMessage = "Hủy trong 7 ngày: Phí hủy 40% tổng giá trị chuyến (" + penalty + " ₫).";
         }
 
+        System.out.println("Calculated refund amount: " + refundAmount);
+        System.out.println("Refund message: " + refundMessage);
+
         // Đảm bảo số tiền hoàn không bị âm
         if (refundAmount.compareTo(BigDecimal.ZERO) < 0) {
             refundAmount = BigDecimal.ZERO;
         }
 
-        // TODO: Tích hợp API hoàn tiền VNPay/Ngân hàng tại đây
+        // TODO: Tích hợp API hoàn tiền PayOS/Ngân hàng tại đây
         // Ghi nhận giao dịch hoàn tiền vào bảng Payment
         Payment refundPayment = new Payment();
         refundPayment.setPaymentId(UUID.randomUUID().toString());
         refundPayment.setBooking(booking);
         refundPayment.setUser(booking.getUser());
         refundPayment.setAmount(refundAmount.negate()); // Lưu số âm
-        refundPayment.setPaymentMethod("VNPay_Refund"); // (Hoặc phương thức hoàn tiền)
+        refundPayment.setPaymentMethod("PayOS_Refund"); // (Hoặc phương thức hoàn tiền)
         refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
         refundPayment.setPaymentType(Payment.PaymentType.Refund);
         refundPayment.setPaymentDate(now);

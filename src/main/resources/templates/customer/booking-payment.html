@@ -83,6 +83,7 @@
             <div class="space-y-4">
                 <!-- Option 1: Pay 20% Deposit -->
                 <form th:action="@{/booking/payment/process/{id}(id=${booking.bookingId})}" method="post" class="border-2 border-green-500 rounded-lg p-6 hover:bg-green-50 transition-all">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <input type="hidden" name="paymentType" value="deposit">
                     
                     <div class="flex items-start justify-between mb-4">
@@ -107,12 +108,13 @@
                     
                     <button type="submit" class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all shadow-md flex items-center justify-center">
                         <i class="fas fa-lock mr-2"></i>
-                        Thanh toán cọc 20% qua VNPay
+                        Thanh toán cọc 20% qua PayOS
                     </button>
                 </form>
 
                 <!-- Option 2: Pay 100% -->
                 <form th:action="@{/booking/payment/process/{id}(id=${booking.bookingId})}" method="post" class="border-2 border-blue-500 rounded-lg p-6 hover:bg-blue-50 transition-all">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <input type="hidden" name="paymentType" value="full">
                     
                     <div class="flex items-start justify-between mb-4">
@@ -133,7 +135,7 @@
                     
                     <button type="submit" class="w-full bg-blue-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-600 transition-all shadow-md flex items-center justify-center">
                         <i class="fas fa-lock mr-2"></i>
-                        Thanh toán toàn bộ qua VNPay
+                        Thanh toán toàn bộ qua PayOS
                     </button>
                 </form>
             </div>
@@ -145,7 +147,7 @@
                 <i class="fas fa-shield-alt text-blue-500 text-2xl mr-3 mt-1"></i>
                 <div>
                     <h3 class="font-semibold text-blue-900 mb-1">Thanh toán an toàn & bảo mật</h3>
-                    <p class="text-sm text-blue-800">Giao dịch được bảo mật bởi VNPay - Cổng thanh toán trực tuyến hàng đầu Việt Nam</p>
+                    <p class="text-sm text-blue-800">Giao dịch được bảo mật bởi PayOS - Cổng thanh toán trực tuyến hiện đại</p>
                 </div>
             </div>
         </div>

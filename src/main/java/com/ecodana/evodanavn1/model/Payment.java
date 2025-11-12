@@ -47,6 +47,9 @@ public class Payment {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
+    @Column(name = "OrderCode", length = 100)
+    private String orderCode;
+
     @Column(name = "Notes", length = 500)
     private String notes;
 
@@ -88,6 +91,9 @@ public class Payment {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    public String getOrderCode() { return orderCode; }
+    public void setOrderCode(String orderCode) { this.orderCode = orderCode; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

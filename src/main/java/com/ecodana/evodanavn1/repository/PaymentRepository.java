@@ -29,6 +29,8 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     boolean existsByTransactionId(String transactionId);
 
+    Optional<Payment> findByOrderCode(String orderCode);
+
     @Query("SELECT p FROM Payment p WHERE p.paymentStatus = 'Paid'")
     List<Payment> findSuccessfulPayments();
 
