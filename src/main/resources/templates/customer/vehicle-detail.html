@@ -112,6 +112,16 @@
             ring: #4CAF50;
             ring-offset-color: white;
         }
+        /* Style cho modal thông báo giấy tờ */
+        #document-alert-modal {
+            transition: opacity 0.3s ease;
+        }
+        #document-alert-modal:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+            backdrop-filter: blur(4px);
+        }
+
     </style>
 </head>
 <body class="bg-gray-50">
@@ -938,6 +948,46 @@
             </div>
         </div>
     </div>
+
+    <!-- Document Requirement Modal -->
+    <div id="document-alert-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center transform transition-all opacity-0 -translate-y-4" id="document-modal-content">
+            <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-id-card text-4xl text-yellow-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-3">Yêu cầu hoàn tất hồ sơ</h3>
+            <p class="text-gray-600 mb-6">
+                Để tiếp tục đặt xe, bạn cần tải lên đầy đủ
+                <strong>Căn cước công dân</strong> và <strong>Giấy phép lái xe</strong>.
+            </p>
+            <div class="flex gap-4">
+                <button
+                        type="button"
+                        onclick="closeDocumentAlertModal()"
+                        class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-semibold"
+                >
+                    Để sau
+                </button>
+                <button
+                        type="button"
+                        onclick="redirectToProfileDocuments()"
+                        class="flex-1 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold shadow-md"
+                >
+                    Tải lên ngay
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>
+        #document-alert-modal.hidden #document-modal-content {
+            opacity: 0;
+            transform: translateY(-1rem);
+        }
+        #document-alert-modal:not(.hidden) #document-modal-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
 </main>
 
 <style>
@@ -1739,12 +1789,10 @@
 
                 if (data.success && data.status.hasRequiredDocuments) {
                     // Nếu đã có đủ giấy tờ, cho phép submit form
-                    form.submit();
+                     form.submit();
                 } else {
-                    // Nếu chưa đủ giấy tờ, hiển thị thông báo và không submit
-                    alert('Vui lòng tải lên đầy đủ CCCD và Giấy phép lái xe trong hồ sơ của bạn trước khi đặt xe.');
-                    // Chuyển hướng người dùng đến trang hồ sơ, tab giấy tờ
-                    window.location.href = '/profile#documents';
+                    // Nếu chưa đủ giấy tờ, hiển thị modal thông báo
+                    openDocumentAlertModal();
                 }
             } catch (error) {
                 console.error('Lỗi khi kiểm tra giấy tờ:', error);
@@ -1929,6 +1977,25 @@
             .catch(() => alert("Có lỗi xảy ra. Vui lòng thử lại."));
     }
     /*]]>*/
+
+    // --- Document Alert Modal Functions ---
+    function openDocumentAlertModal() {
+        const modal = document.getElementById('document-alert-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    }
+
+    function closeDocumentAlertModal() {
+        const modal = document.getElementById('document-alert-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    }
+
+    function redirectToProfileDocuments() {
+        window.location.href = '/profile#documents';
+    }
 </script>
 </body>
 </html>

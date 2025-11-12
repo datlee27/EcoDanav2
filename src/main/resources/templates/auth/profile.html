@@ -528,7 +528,13 @@
                         document.getElementById("cccd-upload-btn").innerHTML =
                             '<i class="fa-solid fa-rotate"></i> Cập nhật CCCD';
                     } else {
-                        statusDiv.innerHTML = '<p class="no-doc-message">Chưa tải lên CCCD</p>';
+                        statusDiv.innerHTML = `
+                            <div class="no-doc-message-enhanced">
+                                <i class="fa-solid fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                                <p class="text-gray-600">Bạn chưa tải lên <strong>Căn cước công dân</strong>.</p>
+                                <p class="text-sm text-gray-500">Vui lòng tải lên để hoàn tất hồ sơ và đặt xe.</p>
+                            </div>
+                        `;
                     }
                 })
                 .catch((error) => console.error("Error loading CCCD:", error));
@@ -598,7 +604,13 @@
                         document.getElementById("gplx-upload-btn").innerHTML =
                             '<i class="fa-solid fa-rotate"></i> Cập nhật GPLX';
                     } else {
-                        statusDiv.innerHTML = '<p class="no-doc-message">Chưa tải lên GPLX</p>';
+                        statusDiv.innerHTML = `
+                            <div class="no-doc-message-enhanced">
+                                <i class="fa-solid fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                                <p class="text-gray-600">Bạn chưa tải lên <strong>Giấy phép lái xe</strong>.</p>
+                                <p class="text-sm text-gray-500">Vui lòng tải lên để hoàn tất hồ sơ và đặt xe.</p>
+                            </div>
+                        `;
                     }
                 })
                 .catch((error) => console.error("Error loading GPLX:", error));
