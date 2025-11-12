@@ -1720,9 +1720,47 @@
         // --- END OF NEW/MODIFIED MODAL LISTENERS ---
 
 
+        // --- Document Check before booking ---
+        const checkDocumentsAndSubmit = async (event) => {
+            event.preventDefault(); // Ngăn form submit ngay lập tức
+
+            const form = event.target;
+
+            try {
+                const response = await fetch('/documents/check-status');
+
+                if (response.status === 401) {
+                    // Nếu người dùng chưa đăng nhập, chuyển hướng đến trang đăng nhập
+                    window.location.href = '/login?redirect=' + window.location.pathname + window.location.search;
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success && data.status.hasRequiredDocuments) {
+                    // Nếu đã có đủ giấy tờ, cho phép submit form
+                    form.submit();
+                } else {
+                    // Nếu chưa đủ giấy tờ, hiển thị thông báo và không submit
+                    alert('Vui lòng tải lên đầy đủ CCCD và Giấy phép lái xe trong hồ sơ của bạn trước khi đặt xe.');
+                    // Chuyển hướng người dùng đến trang hồ sơ, tab giấy tờ
+                    window.location.href = '/profile#documents';
+                }
+            } catch (error) {
+                console.error('Lỗi khi kiểm tra giấy tờ:', error);
+                alert('Đã có lỗi xảy ra khi kiểm tra thông tin giấy tờ của bạn. Vui lòng thử lại.');
+            }
+        };
+
+
         const bookingForm = document.getElementById("bookingForm");
         if (bookingForm) {
-            bookingForm.addEventListener("submit", function (event) {
+            // Gắn hàm kiểm tra vào sự kiện submit
+            bookingForm.addEventListener("submit", checkDocumentsAndSubmit);
+
+            // Giữ lại logic validation cũ bên trong một hàm riêng để checkDocumentsAndSubmit có thể gọi nếu cần
+            // Hoặc đơn giản là để logic validation của trình duyệt (required, min, etc.) tự xử lý
+            const originalSubmitValidation = function (event) {
                 const totalAmountInput = document.getElementById("totalAmountInput");
                 const pickupLocationInput = document.getElementById("pickupLocationInput");
                 const rentalDaysInput = document.getElementById("rentalDaysInput");
@@ -1785,7 +1823,7 @@
                         event.preventDefault();
                     }
                 }
-            });
+            };
         }
 
         // --- TÍNH TOÁN GIÁ BAN ĐẦU (NẾU CÓ THAM SỐ URL) ---
