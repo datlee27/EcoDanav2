@@ -12,12 +12,15 @@ import java.util.Optional;
 @Repository
 public interface BankAccountRepository extends JpaRepository<BankAccount, String> {
     
-    List<BankAccount> findByUserIdOrderByCreatedDateDesc(String userId);
+    @Query("SELECT ba FROM BankAccount ba WHERE ba.user.id = :userId ORDER BY ba.createdDate DESC")
+    List<BankAccount> findByUserIdOrderByCreatedDateDesc(@Param("userId") String userId);
     
-    Optional<BankAccount> findByUserIdAndIsDefaultTrue(String userId);
+    @Query("SELECT ba FROM BankAccount ba WHERE ba.user.id = :userId AND ba.isDefault = true")
+    Optional<BankAccount> findByUserIdAndIsDefaultTrue(@Param("userId") String userId);
     
     @Query("SELECT ba FROM BankAccount ba WHERE ba.user.id = :userId AND ba.isDefault = true")
     Optional<BankAccount> findDefaultBankAccountByUserId(@Param("userId") String userId);
     
-    long countByUserId(String userId);
+    @Query("SELECT COUNT(ba) FROM BankAccount ba WHERE ba.user.id = :userId")
+    long countByUserId(@Param("userId") String userId);
 }

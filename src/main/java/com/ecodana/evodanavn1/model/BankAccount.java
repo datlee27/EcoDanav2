@@ -3,11 +3,12 @@ package com.ecodana.evodanavn1.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "BankAccount")
+@Table(name = "bankaccount")
 public class BankAccount {
     @Id
     @Column(name = "BankAccountId", length = 36)
@@ -16,6 +17,7 @@ public class BankAccount {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserId", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @JsonIgnore
     private User user;
 
     @Column(name = "AccountNumber", length = 50, nullable = false)
@@ -105,6 +107,10 @@ public class BankAccount {
     }
 
     public boolean isDefault() {
+        return isDefault;
+    }
+
+    public boolean getDefault() {
         return isDefault;
     }
 

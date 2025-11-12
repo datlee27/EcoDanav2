@@ -1,5 +1,7 @@
 package com.ecodana.evodanavn1.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import com.ecodana.evodanavn1.model.BankAccount;
 import com.ecodana.evodanavn1.repository.BankAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,11 +10,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,8 +22,10 @@ public class BankAccountService {
     @Autowired
     private BankAccountRepository bankAccountRepository;
 
-    private static final String UPLOAD_DIR = "uploads/qr-codes/";
+    @Autowired
+    private Cloudinary cloudinary;
 
+    @Transactional(readOnly = true)
     public List<BankAccount> getBankAccountsByUserId(String userId) {
         return bankAccountRepository.findByUserIdOrderByCreatedDateDesc(userId);
     }
@@ -83,24 +85,20 @@ public class BankAccountService {
     }
 
     private String saveQRCodeFile(MultipartFile file, String bankAccountId) throws IOException {
-        // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(UPLOAD_DIR);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
+        try {
+            // Upload to Cloudinary
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "public_id", "bank-qr-" + bankAccountId + "-" + System.currentTimeMillis(),
+                "folder", "ecodana/bank-qr-codes",
+                "resource_type", "auto"
+            ));
+            
+            // Return the secure URL
+            return (String) uploadResult.get("secure_url");
+        } catch (IOException e) {
+            System.err.println("Error uploading QR code to Cloudinary: " + e.getMessage());
+            throw new IOException("Failed to upload QR code to Cloudinary", e);
         }
-
-        // Generate unique filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = originalFilename != null && originalFilename.contains(".") 
-            ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
-            : ".jpg";
-        String fileName = "qr_" + bankAccountId + "_" + System.currentTimeMillis() + extension;
-        
-        // Save file
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), filePath);
-        
-        return fileName;
     }
 
     public void deleteBankAccount(String bankAccountId, String userId) {
@@ -108,16 +106,8 @@ public class BankAccountService {
         if (bankAccountOpt.isPresent()) {
             BankAccount bankAccount = bankAccountOpt.get();
             if (bankAccount.getUser().getId().equals(userId)) {
-                // Delete QR code file if exists
-                if (bankAccount.getQrCodeImagePath() != null) {
-                    try {
-                        Path filePath = Paths.get(UPLOAD_DIR + bankAccount.getQrCodeImagePath());
-                        Files.deleteIfExists(filePath);
-                    } catch (IOException e) {
-                        // Log error but don't fail the deletion
-                        System.err.println("Could not delete QR code file: " + e.getMessage());
-                    }
-                }
+                // Note: Cloudinary files are automatically managed by Cloudinary
+                // No need to manually delete from local storage
                 bankAccountRepository.delete(bankAccount);
             }
         }

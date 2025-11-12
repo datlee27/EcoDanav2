@@ -5,13 +5,17 @@ import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.service.BankAccountService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -28,11 +32,8 @@ public class BankAccountController {
             return "redirect:/login";
         }
 
-        List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
-        model.addAttribute("bankAccounts", bankAccounts);
-        model.addAttribute("currentUser", user);
-        
-        return "customer/bank-accounts";
+        // Redirect to profile page with bank-accounts tab
+        return "redirect:/profile#bank-accounts-section";
     }
 
     @GetMapping("/add")
@@ -42,10 +43,8 @@ public class BankAccountController {
             return "redirect:/login";
         }
 
-        model.addAttribute("bankAccount", new BankAccount());
-        model.addAttribute("currentUser", user);
-        
-        return "customer/bank-account-form";
+        // Redirect to profile page with bank-accounts tab
+        return "redirect:/profile#bank-accounts-section";
     }
 
     @GetMapping("/edit/{id}")
@@ -55,15 +54,8 @@ public class BankAccountController {
             return "redirect:/login";
         }
 
-        BankAccount bankAccount = bankAccountService.getBankAccountById(id).orElse(null);
-        if (bankAccount == null || !bankAccount.getUser().getId().equals(user.getId())) {
-            return "redirect:/customer/bank-accounts";
-        }
-
-        model.addAttribute("bankAccount", bankAccount);
-        model.addAttribute("currentUser", user);
-        
-        return "customer/bank-account-form";
+        // Redirect to profile page with bank-accounts tab
+        return "redirect:/profile#bank-accounts-section";
     }
 
     @PostMapping("/save")
@@ -87,21 +79,24 @@ public class BankAccountController {
                 // Verify ownership for existing account
                 BankAccount existing = bankAccountService.getBankAccountById(bankAccount.getBankAccountId()).orElse(null);
                 if (existing == null || !existing.getUser().getId().equals(user.getId())) {
-                    redirectAttributes.addFlashAttribute("error", "Không có quyền chỉnh sửa tài khoản này!");
-                    return "redirect:/customer/bank-accounts";
+                    redirectAttributes.addFlashAttribute("bank_error", "Không có quyền chỉnh sửa tài khoản này!");
+                    return "redirect:/profile#bank-accounts-section";
                 }
                 bankAccount.setUser(user);
             }
 
             bankAccountService.saveBankAccount(bankAccount, qrCodeFile);
-            redirectAttributes.addFlashAttribute("success", "Lưu thông tin tài khoản thành công!");
+            String message = (bankAccount.getBankAccountId() == null) ? 
+                "Thêm tài khoản ngân hàng thành công!" : 
+                "Cập nhật tài khoản ngân hàng thành công!";
+            redirectAttributes.addFlashAttribute("bank_success", message);
             
         } catch (Exception e) {
             e.printStackTrace();
-            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
         }
 
-        return "redirect:/customer/bank-accounts";
+        return "redirect:/profile#bank-accounts-section";
     }
 
     @PostMapping("/set-default/{id}")
@@ -113,12 +108,12 @@ public class BankAccountController {
 
         try {
             bankAccountService.setAsDefault(id, user.getId());
-            redirectAttributes.addFlashAttribute("success", "Đã đặt làm tài khoản mặc định!");
+            redirectAttributes.addFlashAttribute("bank_success", "Đã đặt làm tài khoản mặc định!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
         }
 
-        return "redirect:/customer/bank-accounts";
+        return "redirect:/profile#bank-accounts-section";
     }
 
     @PostMapping("/delete/{id}")
@@ -130,11 +125,43 @@ public class BankAccountController {
 
         try {
             bankAccountService.deleteBankAccount(id, user.getId());
-            redirectAttributes.addFlashAttribute("success", "Xóa tài khoản thành công!");
+            redirectAttributes.addFlashAttribute("bank_success", "Xóa tài khoản ngân hàng thành công!");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
         }
 
-        return "redirect:/customer/bank-accounts";
+        return "redirect:/profile#bank-accounts-section";
+    }
+
+    @GetMapping("/api/list")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getBankAccountsApi(HttpSession session) {
+        try {
+            User user = (User) session.getAttribute("currentUser");
+            if (user == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "User not authenticated");
+                return ResponseEntity.status(401).body(error);
+            }
+
+            System.out.println("Getting bank accounts for user: " + user.getId());
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
+            System.out.println("Found " + bankAccounts.size() + " bank accounts");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("bankAccounts", bankAccounts);
+            response.put("count", bankAccounts.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            error.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.status(500).body(error);
+        }
     }
 }

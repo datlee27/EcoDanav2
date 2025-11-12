@@ -451,6 +451,51 @@ CREATE TABLE `InappropriateWord` (
                                      KEY `idx_inappropriate_word_active` (`IsActive`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+DROP TABLE IF EXISTS `BankAccount`;
+CREATE TABLE `BankAccount` (
+                               `BankAccountId` char(36) NOT NULL,
+                               `UserId` char(36) NOT NULL,
+                               `AccountNumber` varchar(50) NOT NULL,
+                               `AccountHolderName` varchar(100) NOT NULL,
+                               `BankName` varchar(100) NOT NULL,
+                               `BankCode` varchar(20) DEFAULT NULL,
+                               `QRCodeImagePath` varchar(500) DEFAULT NULL,
+                               `IsDefault` tinyint(1) NOT NULL DEFAULT '0',
+                               `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                               `UpdatedDate` datetime DEFAULT NULL,
+                               PRIMARY KEY (`BankAccountId`),
+                               KEY `UserId` (`UserId`),
+                               KEY `idx_bank_account_default` (`UserId`, `IsDefault`),
+                               CONSTRAINT `bankaccount_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+DROP TABLE IF EXISTS `RefundRequest`;
+CREATE TABLE `RefundRequest` (
+                                 `RefundRequestId` char(36) NOT NULL,
+                                 `BookingId` char(36) NOT NULL,
+                                 `UserId` char(36) NOT NULL,
+                                 `BankAccountId` char(36) NOT NULL,
+                                 `RefundAmount` decimal(10,2) NOT NULL,
+                                 `CancelReason` varchar(1000) NOT NULL,
+                                 `Status` ENUM('Pending', 'Approved', 'Rejected', 'Completed') NOT NULL DEFAULT 'Pending',
+                                 `AdminNotes` varchar(1000) DEFAULT NULL,
+                                 `ProcessedBy` char(36) DEFAULT NULL COMMENT 'Admin user ID',
+                                 `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                 `ProcessedDate` datetime DEFAULT NULL,
+                                 `IsWithinTwoHours` tinyint(1) NOT NULL DEFAULT '0',
+                                 PRIMARY KEY (`RefundRequestId`),
+                                 KEY `BookingId` (`BookingId`),
+                                 KEY `UserId` (`UserId`),
+                                 KEY `BankAccountId` (`BankAccountId`),
+                                 KEY `ProcessedBy` (`ProcessedBy`),
+                                 KEY `idx_refund_status` (`Status`),
+                                 CONSTRAINT `refundrequest_ibfk_1` FOREIGN KEY (`BookingId`) REFERENCES `Booking` (`BookingId`) ON DELETE RESTRICT,
+                                 CONSTRAINT `refundrequest_ibfk_2` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
+                                 CONSTRAINT `refundrequest_ibfk_3` FOREIGN KEY (`BankAccountId`) REFERENCES `BankAccount` (`BankAccountId`) ON DELETE RESTRICT,
+                                 CONSTRAINT `refundrequest_ibfk_4` FOREIGN KEY (`ProcessedBy`) REFERENCES `Users` (`UserId`) ON DELETE SET NULL,
+                                 CONSTRAINT `CHK_RefundRequest_Amount` CHECK ((`RefundAmount` >= 0))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 -- Khôi phục lại các thiết lập ban đầu
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
