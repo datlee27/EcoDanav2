@@ -94,10 +94,27 @@
                 </div>
                 <div class="info-item-linked">
                     <div class="linked-content">
-                        <label class="info-label">Google</label>
-                        <p class="info-value static">Chưa liên kết</p>
+                        <label class="info-label">Liên kết Google</label>
+
+                        <p class="info-value static" th:if="${isGoogleLinked}">
+                            <i class="fab fa-google" style="color: #4285F4; margin-right: 8px;"></i>
+                            Đã liên kết
+                        </p>
+
+                        <p class="info-value static" th:unless="${isGoogleLinked}">
+                            Chưa liên kết
+                        </p>
                     </div>
-                    <a href="#" class="link-button">Liên kết</a>
+
+                    <a th:href="@{/oauth2/authorization/google}" class="link-button" th:if="${isPasswordAccount and !isGoogleLinked}">
+                        Liên kết ngay
+                    </a>
+
+                    <a href="#" class="link-button" th:if="${isGoogleLinked and isPasswordAccount}"
+                       style="background-color: #f44336; color: white; border-color: #f44336; opacity: 0.7; cursor: not-allowed;"
+                       onclick="alert('Tính năng hủy liên kết đang phát triển'); return false;">
+                        Hủy liên kết
+                    </a>
                 </div>
             </div>
         </form>

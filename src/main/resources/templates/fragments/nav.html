@@ -53,18 +53,11 @@
         <div id="userMenu" class="flex items-center space-x-4" th:if="${currentUser != null}">
           <div class="relative group">
             <button class="flex items-center space-x-2 text-gray-700 hover:text-primary transition-colors">
-              <div
-                th:if="${currentUser.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}"
-                class="w-8 h-8 rounded-full overflow-hidden"
-              >
-                <img th:src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />
-              </div>
-              <div
-                th:unless="${currentUser.avatarUrl != null and !currentUser.avatarUrl.isEmpty()}"
-                class="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
-              >
-                <i class="fas fa-user text-white text-sm"></i>
-              </div>
+                <div
+                        class="w-8 h-8 bg-primary rounded-full flex items-center justify-center"
+                >
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
               <span
                 class="hidden md:inline font-semibold"
                 th:text="${currentUser.firstName != null ? currentUser.firstName : currentUser.username}"

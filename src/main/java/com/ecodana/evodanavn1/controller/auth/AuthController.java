@@ -223,26 +223,35 @@ public class AuthController {
         }
     }
 
-    @GetMapping("/profile")
+    @GetMapping({"/profile", "/profile/"})
     public String userProfile(Model model, HttpSession session) {
-        // Get current user from session
+        // Lấy người dùng hiện tại từ session
         User currentUser = (User) session.getAttribute("currentUser");
 
         if (currentUser == null) {
             return "redirect:/login";
         }
 
-        // --- STEP 1: Provide information for the NAV bar ---
-        model.addAttribute("currentUser", currentUser);
+        // Lấy thông tin người dùng từ cơ sở dữ liệu để đảm bảo dữ liệu mới nhất
+        User userForProfile = userService.findByIdWithRole(currentUser.getId()); // Lấy user CÓ ROLE
 
-        // --- STEP 2: Provide information for the PROFILE page content ---
-        // Check if there is a "user" object from a failed validation redirect
+        // Cung cấp thông tin cho NAV bar
+        model.addAttribute("currentUser", userForProfile);
+
+        // Cung cấp thông tin cho nội dung trang PROFILE
         if (!model.containsAttribute("user")) {
-            // If not, get the latest user information from the database
-            User userForProfile = userService.findByEmail(currentUser.getEmail());
             model.addAttribute("user", userForProfile);
         }
-        // If "user" (from redirect) *is* present, it will be used automatically by Thymeleaf.
+
+        // === LOGIC MỚI: Kiểm tra trạng thái liên kết ===
+        // (Đoạn code này giả định bạn đã thêm 2 phương thức 'isProviderLinked'
+        // và 'isPasswordAccount' vào UserService như hướng dẫn trước)
+        boolean isGoogleLinked = userService.isProviderLinked(currentUser.getId(), "google");
+        boolean isPasswordAccount = userService.isPasswordAccount(userForProfile);
+
+        model.addAttribute("isGoogleLinked", isGoogleLinked);
+        model.addAttribute("isPasswordAccount", isPasswordAccount);
+        // (isPasswordAccount = true nghĩa là tài khoản được tạo bằng mật khẩu)
 
         return "auth/profile";
     }

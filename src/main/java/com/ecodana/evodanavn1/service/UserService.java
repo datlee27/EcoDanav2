@@ -12,7 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
-
+import com.ecodana.evodanavn1.model.UserLogins;
+import com.ecodana.evodanavn1.repository.UserLoginsRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -32,6 +33,9 @@ public class UserService {
         EXPIRED,
         USED
     }
+
+    @Autowired
+    private UserLoginsRepository userLoginsRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -134,6 +138,83 @@ public class UserService {
         } catch (Exception e) {
             logger.error("Error in UserService.register(): " + e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * Tìm người dùng bằng thông tin đăng nhập OAuth (LoginProvider và ProviderKey)
+     *
+     * @param loginProvider Tên nhà cung cấp (vd: "google")
+     * @param providerKey   ID người dùng từ nhà cung cấp
+     * @return Optional<User>
+     */
+    public Optional<User> findUserByLogin(String loginProvider, String providerKey) {
+        return userLoginsRepository.findByLoginProviderAndProviderKey(loginProvider, providerKey)
+                .map(UserLogins::getUser);
+    }
+
+    /**
+     * Tạo liên kết OAuth cho một người dùng đã tồn tại
+     *
+     * @param user          Người dùng trong hệ thống
+     * @param loginProvider Tên nhà cung cấp
+     * @param providerKey   ID người dùng từ nhà cung cấp
+     * @param providerDisplayName Tên hiển thị (vd: Email)
+     */
+    @Transactional
+    public void linkOAuthAccount(User user, String loginProvider, String providerKey, String providerDisplayName) {
+        UserLogins userLogin = new UserLogins();
+        userLogin.setUser(user);
+        userLogin.setLoginProvider(loginProvider);
+        userLogin.setProviderKey(providerKey);
+        userLogin.setProviderDisplayName(providerDisplayName);
+
+        userLoginsRepository.save(userLogin);
+    }
+
+    /**
+     * Kiểm tra xem người dùng có liên kết OAuth (như Google) hay không.
+     *
+     * @param userId ID của người dùng
+     * @param provider Tên nhà cung cấp (vd: "google")
+     * @return true nếu có liên kết, false nếu không
+     */
+    public boolean isProviderLinked(String userId, String provider) {
+        try {
+            List<UserLogins> logins = userLoginsRepository.findByUser_Id(userId);
+            for (UserLogins login : logins) {
+                if (provider.equalsIgnoreCase(login.getLoginProvider())) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Lỗi khi kiểm tra UserLogins: " + e.getMessage());
+        }
+        return false;
+    }
+
+
+    /**
+     * Kiểm tra xem tài khoản có mật khẩu (không phải chỉ OAuth) hay không
+     */
+    public boolean isPasswordAccount(User user) {
+        if (user == null || user.getPassword() == null) {
+            return false;
+        }
+        // Tài khoản OAuth được tạo bởi SuccessHandler (bản gốc) có mật khẩu là "OAUTH_USER_..."
+        // và được mã hóa bởi register().
+        // Tài khoản OAuth (bản sửa lỗi) có mật khẩu là HASH của "OAUTH_USER_..."
+
+        // Cách kiểm tra đơn giản nhất (nhưng không hoàn toàn chính xác nếu bạn thay đổi logic):
+        // Nếu user *không* có liên kết "google" (hoặc provider nào khác),
+        // thì đó chắc chắn là tài khoản mật khẩu.
+        try {
+            List<UserLogins> logins = userLoginsRepository.findByUser_Id(user.getId());
+            return logins.isEmpty(); // Nếu không có liên kết nào, đó là tài khoản mật khẩu
+        } catch (Exception e) {
+            logger.error("Lỗi khi kiểm tra UserLogins: " + e.getMessage());
+            // An toàn nhất là giả định là tài khoản mật khẩu nếu có lỗi
+            return true;
         }
     }
 

@@ -495,3 +495,89 @@ ALTER TABLE `Booking`
     ADD COLUMN `PlatformFee` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Phí nền tảng (cho EcoDana)' AFTER `VehicleRentalFee`,
     ADD COLUMN `OwnerPayout` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Tiền chủ xe nhận (RentalFee - PlatformFee)' AFTER `PlatformFee`,
     ADD COLUMN `PaymentConfirmedAt` DATETIME NULL COMMENT 'Thời điểm thanh toán cọc/toàn bộ thành công' AFTER `RemainingAmount`;
+
+-- Add OrderCode column to Payment table
+ALTER TABLE Payment ADD COLUMN OrderCode VARCHAR(100) NULL AFTER UserId;
+
+-- Add index for better query performance
+CREATE INDEX idx_payment_ordercode ON Payment(OrderCode);
+
+
+-- Create BankAccount table
+CREATE TABLE BankAccount (
+                             BankAccountId VARCHAR(36) PRIMARY KEY,
+                             UserId VARCHAR(36) NOT NULL,
+                             AccountNumber VARCHAR(50) NOT NULL,
+                             AccountHolderName VARCHAR(100) NOT NULL,
+                             BankName VARCHAR(100) NOT NULL,
+                             BankCode VARCHAR(20),
+                             QRCodeImagePath VARCHAR(500),
+                             IsDefault BOOLEAN NOT NULL DEFAULT FALSE,
+                             CreatedDate DATETIME NOT NULL,
+                             UpdatedDate DATETIME,
+                             FOREIGN KEY (UserId) REFERENCES Users(UserId) ON DELETE CASCADE
+);
+
+-- Create RefundRequest table
+CREATE TABLE RefundRequest (
+                               RefundRequestId VARCHAR(36) PRIMARY KEY,
+                               BookingId VARCHAR(36) NOT NULL,
+                               UserId VARCHAR(36) NOT NULL,
+                               BankAccountId VARCHAR(36) NOT NULL,
+                               RefundAmount DECIMAL(10,2) NOT NULL,
+                               CancelReason TEXT NOT NULL,
+                               Status VARCHAR(20) NOT NULL DEFAULT 'Pending',
+                               AdminNotes TEXT,
+                               ProcessedBy VARCHAR(36),
+                               CreatedDate DATETIME NOT NULL,
+                               ProcessedDate DATETIME,
+                               IsWithinTwoHours BOOLEAN NOT NULL DEFAULT FALSE,
+                               FOREIGN KEY (BookingId) REFERENCES Booking(BookingId),
+                               FOREIGN KEY (UserId) REFERENCES Users(UserId) ON DELETE CASCADE,
+                               FOREIGN KEY (BankAccountId) REFERENCES BankAccount(BankAccountId)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_bankaccount_userid ON BankAccount(UserId);
+CREATE INDEX idx_bankaccount_isdefault ON BankAccount(IsDefault);
+CREATE INDEX idx_refundrequest_bookingid ON RefundRequest(BookingId);
+CREATE INDEX idx_refundrequest_userid ON RefundRequest(UserId);
+CREATE INDEX idx_refundrequest_status ON RefundRequest(Status);
+CREATE INDEX idx_refundrequest_createddate ON RefundRequest(CreatedDate);
+
+
+-- Thêm dữ liệu cho loại hộp số
+INSERT INTO `TransmissionTypes` (`TransmissionTypeId`, `TransmissionTypeName`)
+VALUES
+    (1, 'Automatic')
+ON DUPLICATE KEY UPDATE TransmissionTypeName=VALUES(TransmissionTypeName);
+
+-- Thêm dữ liệu cho các danh mục xe
+INSERT INTO `VehicleCategories` (`CategoryId`, `CategoryName`)
+VALUES
+    (1, 'Electric Car'),
+    (2, 'Electric Motorbike')
+ON DUPLICATE KEY UPDATE CategoryName=VALUES(CategoryName);
+
+ALTER TABLE Vehicle MODIFY COLUMN Status VARCHAR(20);
+
+UPDATE Vehicle
+SET Status = 'Available'
+WHERE Status IS NULL OR Status = '' OR Status NOT IN ('PendingApproval', 'Available', 'Rented', 'Maintenance', 'Unavailable');
+
+create table FeedbackReport
+(
+    ReportId    varchar(36)                  not null
+        primary key,
+    CreatedDate datetime(6)                  not null,
+    Reason      varchar(1000)                null,
+    Status      enum ('Pending', 'Resolved') not null,
+    FeedbackId  varchar(36)                  not null,
+    ReporterId  varchar(36)                  not null,
+    constraint FK1griu1vmthuss7auxrqnxal4p
+        foreign key (FeedbackId) references UserFeedback (FeedbackId)
+            on delete cascade,
+    constraint FK7s63wl5nvqjox2t68ma3ftqy9
+        foreign key (ReporterId) references Users (UserId)
+            on delete cascade
+);
