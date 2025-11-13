@@ -72,6 +72,24 @@ public class BankAccountService {
             }
         }
     }
+    
+    @Transactional
+    public void unsetAsDefault(String bankAccountId, String userId) {
+        Optional<BankAccount> bankAccountOpt = bankAccountRepository.findById(bankAccountId);
+        if (bankAccountOpt.isPresent()) {
+            BankAccount bankAccount = bankAccountOpt.get();
+            // Ensure the user owns this account
+            if (bankAccount.getUser().getId().equals(userId)) {
+                bankAccount.setDefault(false);
+                bankAccount.setUpdatedDate(LocalDateTime.now());
+                bankAccountRepository.save(bankAccount);
+            } else {
+                throw new SecurityException("User does not have permission to modify this bank account.");
+            }
+        } else {
+            throw new IllegalArgumentException("Bank account not found with ID: " + bankAccountId);
+        }
+    }
 
     private void unsetDefaultBankAccounts(String userId) {
         List<BankAccount> userBankAccounts = bankAccountRepository.findByUserIdOrderByCreatedDateDesc(userId);
