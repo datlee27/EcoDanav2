@@ -169,6 +169,11 @@ function switchTab(tabName, event) {
         }
     }
 
+    // Dispatch tabChanged event for tab-specific scripts
+    const event = new CustomEvent('tabChanged', { detail: tabName });
+    window.dispatchEvent(event);
+    console.log('Dispatched tabChanged event for tab:', tabName);
+
     // Close sidebar on mobile after selection
     if (window.innerWidth < 1024) {
         closeSidebar();

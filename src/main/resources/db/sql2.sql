@@ -594,3 +594,21 @@ create table `FeedbackReport`
         foreign key (`ReporterId`) references `Users` (`UserId`)
             on delete cascade
 );
+
+
+ALTER TABLE Booking
+    MODIFY COLUMN Status ENUM(
+    'Pending',
+    'Approved',
+    'AwaitingDeposit',
+    'Confirmed',
+    'Rejected',
+    'Ongoing',
+    'Completed',
+    'Cancelled',
+    'RefundPending'
+    ) NOT NULL DEFAULT 'Pending';
+
+
+ALTER TABLE RefundRequest
+    MODIFY COLUMN BankAccountId VARCHAR(36) NULL;

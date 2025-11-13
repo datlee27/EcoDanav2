@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.model.RefundRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +19,13 @@ import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
-import com.ecodana.evodanavn1.repository.InappropriateWordRepository;
 import com.ecodana.evodanavn1.service.FeedbackReportService;
+import com.ecodana.evodanavn1.repository.InappropriateWordRepository;
+import com.ecodana.evodanavn1.repository.RefundRequestRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
+
 @Controller
 public class AdminController {
     private static final Logger logger = LoggerFactory.getLogger(AdminController.class);
@@ -39,6 +43,8 @@ public class AdminController {
     private FeedbackReportService feedbackReportService;
     @Autowired
     private InappropriateWordRepository inappropriateWordRepository;
+    @Autowired
+    private RefundRequestRepository refundRequestRepository;
     @GetMapping({"/admin", "/admin/dashboard"})
     public String adminDashboard(@RequestParam(required = false) String tab, 
                                   @RequestParam(required = false) String roleFilter,
@@ -129,6 +135,26 @@ public class AdminController {
             model.addAttribute("rentedVehicles", rentedVehicles);
             model.addAttribute("maintenanceVehicles", maintenanceVehicles);
 
+            // Add refund requests data for refund-requests tab
+            List<RefundRequest> allRefundRequests = refundRequestRepository.findAll();
+            long totalRefundCount = allRefundRequests.size();
+            long pendingRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending).count();
+            long approvedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved).count();
+            long rejectedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Rejected).count();
+            long urgentRefundCount = allRefundRequests.stream().filter(r -> r.isWithinTwoHours() && r.getStatus() == RefundRequest.RefundStatus.Pending).count();
+            BigDecimal totalPendingAmount = allRefundRequests.stream()
+                    .filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending)
+                    .map(RefundRequest::getRefundAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            model.addAttribute("refundRequests", allRefundRequests);
+            model.addAttribute("totalCount", totalRefundCount);
+            model.addAttribute("pendingCount", pendingRefundCount);
+            model.addAttribute("approvedCount", approvedRefundCount);
+            model.addAttribute("rejectedCount", rejectedRefundCount);
+            model.addAttribute("urgentCount", urgentRefundCount);
+            model.addAttribute("totalPendingAmount", totalPendingAmount);
+
             return "admin/admin-dashboard";
         } catch (Exception e) {
             logger.error("Error loading admin data: " + e.getMessage(), e);
@@ -148,6 +174,13 @@ public class AdminController {
             model.addAttribute("availableVehicles", 0);
             model.addAttribute("rentedVehicles", 0);
             model.addAttribute("maintenanceVehicles", 0);
+            model.addAttribute("refundRequests", List.of());
+            model.addAttribute("totalCount", 0);
+            model.addAttribute("pendingCount", 0);
+            model.addAttribute("approvedCount", 0);
+            model.addAttribute("rejectedCount", 0);
+            model.addAttribute("urgentCount", 0);
+            model.addAttribute("totalPendingAmount", BigDecimal.ZERO);
             model.addAttribute("tab", tab != null ? tab : "overview");
             model.addAttribute("analytics", new HashMap<>());
             return "admin/admin-dashboard";

@@ -167,7 +167,8 @@ public class Booking {
         Rejected,         // Chủ xe từ chối
         Ongoing,          // Đang trong quá trình thuê (đã nhận xe)
         Completed,        // Đã hoàn tất chuyến đi và thanh toán
-        Cancelled         // Đơn bị hủy
+        Cancelled,        // Đơn bị hủy
+        RefundPending     // Chờ hoàn tiền
     }
 
     public enum RentalType {

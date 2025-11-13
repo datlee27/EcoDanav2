@@ -126,15 +126,7 @@ public class PayOSService {
             Payment payment = paymentRepository.findByOrderCode(orderCode)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy thanh toán cho order: " + orderCode));
 
-            // Cập nhật thông tin thanh toán
-            payment.setTransactionId(transactionId);
-            payment.setPaymentStatus(Payment.PaymentStatus.Completed);
-            payment.setPaymentDate(LocalDateTime.now());
-            paymentRepository.save(payment);
-
-            // Cập nhật trạng thái booking dựa trên số tiền đã trả
             Booking booking = payment.getBooking();
-            // Amount từ PayOS và booking amount đều là VND, so sánh trực tiếp
             BigDecimal paidAmount = BigDecimal.valueOf(amount);
             
             logger.info("=== PAYMENT SUCCESS PROCESSING ===");
@@ -143,12 +135,57 @@ public class PayOSService {
             logger.info("Deposit required (VND): {}", booking.getDepositAmountRequired());
             logger.info("Total amount (VND): {}", booking.getTotalAmount());
             
+            // Xác định loại payment dựa trên số tiền thanh toán
+            if (paidAmount.compareTo(booking.getTotalAmount()) >= 0) {
+                // Thanh toán toàn bộ (100%) - tạo cả Deposit và FinalPayment
+                logger.info("Full payment detected - creating Deposit and FinalPayment records");
+                
+                // Cập nhật payment hiện tại thành Deposit
+                payment.setPaymentType(Payment.PaymentType.Deposit);
+                payment.setAmount(booking.getDepositAmountRequired());
+                payment.setTransactionId(transactionId);
+                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                payment.setPaymentDate(LocalDateTime.now());
+                paymentRepository.save(payment);
+                
+                // Tạo FinalPayment record
+                Payment finalPayment = new Payment();
+                finalPayment.setPaymentId(UUID.randomUUID().toString());
+                finalPayment.setOrderCode(orderCode + "_FINAL");
+                finalPayment.setAmount(booking.getRemainingAmount());
+                finalPayment.setPaymentMethod("PayOS");
+                finalPayment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                finalPayment.setPaymentType(Payment.PaymentType.FinalPayment);
+                finalPayment.setTransactionId(transactionId + "_FINAL");
+                finalPayment.setCreatedDate(LocalDateTime.now());
+                finalPayment.setPaymentDate(LocalDateTime.now());
+                finalPayment.setBooking(booking);
+                finalPayment.setUser(booking.getUser());
+                paymentRepository.save(finalPayment);
+                
+                logger.info("Created Deposit: {} and FinalPayment: {}", booking.getDepositAmountRequired(), booking.getRemainingAmount());
+                
+            } else if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
+                // Thanh toán cọc (20%) - chỉ tạo Deposit
+                logger.info("Deposit payment detected");
+                payment.setPaymentType(Payment.PaymentType.Deposit);
+                payment.setTransactionId(transactionId);
+                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                payment.setPaymentDate(LocalDateTime.now());
+                paymentRepository.save(payment);
+            } else {
+                // Thanh toán không đủ
+                logger.warn("Payment amount insufficient");
+                payment.setPaymentStatus(Payment.PaymentStatus.Failed);
+                paymentRepository.save(payment);
+                return;
+            }
+            
+            // Cập nhật trạng thái booking
             if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
                 booking.setStatus(Booking.BookingStatus.Confirmed);
                 booking.setPaymentConfirmedAt(LocalDateTime.now());
                 logger.info("Booking confirmed - payment amount sufficient");
-            } else {
-                logger.info("Booking not confirmed - payment amount insufficient");
             }
             bookingRepository.save(booking);
 

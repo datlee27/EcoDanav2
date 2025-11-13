@@ -52,6 +52,14 @@
             <span>Payment Management</span>
         </a>
         <a
+                th:href="@{/admin(tab='refund-requests')}"
+                th:classappend="${tab == 'refund-requests'} ? 'active' : ''"
+                class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
+        >
+            <i class="fas fa-undo-alt mr-3 text-lg"></i>
+            <span>Refund Requests</span>
+        </a>
+        <a
                 th:href="@{/admin(tab='discounts')}"
                 th:classappend="${tab == 'discounts'} ? 'active' : ''"
                 class="sidebar-item w-full flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
