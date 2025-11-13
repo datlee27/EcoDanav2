@@ -239,8 +239,8 @@ public class RefundRequestService {
             throw new IllegalStateException("Chỉ có thể chuyển tiền cho các yêu cầu đang chờ hoặc đã được duyệt");
         }
 
-        // Set status to Approved (Đã duyệt) after upload
-        refundRequest.setStatus(RefundRequest.RefundStatus.Approved);
+        // Set status to Refunded (Đã hoàn tiền) after upload
+        refundRequest.setStatus(RefundRequest.RefundStatus.Refunded);
         refundRequest.setTransferProofImagePath(transferProofImagePath);
         refundRequest.setProcessedDate(LocalDateTime.now());
         refundRequestRepository.save(refundRequest);
@@ -261,7 +261,7 @@ public class RefundRequestService {
 
         System.out.println("Payment record created for refund: " + refundPayment.getPaymentId());
 
-        // Update booking status to Cancelled
+        // Update booking status to Cancelled (đã hủy chuyến)
         booking.setStatus(Booking.BookingStatus.Cancelled);
         booking.setCancelReason("Admin đã chuyển tiền hoàn lại");
         bookingRepository.save(booking);

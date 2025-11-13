@@ -101,8 +101,8 @@
                 >0</span
               >)
             </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Approved">
-              Đã hoàn tiền (<span id="count-refunded" th:text="${#lists.size(bookings.?[status.name() == 'Approved' && cancelReason != null])}"
+            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Cancelled">
+              Đã hoàn tiền (<span id="count-refunded" th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' && cancelReason != null])}"
                 >0</span
               >)
             </button>
@@ -177,7 +177,7 @@
               </div>
 
               <!-- Refund Information (if refunded) -->
-              <div th:if="${booking.status == 'Approved' && booking.cancelReason != null}" class="p-4 bg-green-50 border-2 border-green-300 rounded-lg mb-4">
+              <div th:if="${booking.status == 'Cancelled' && booking.cancelReason != null}" class="p-4 bg-green-50 border-2 border-green-300 rounded-lg mb-4">
                 <h4 class="font-semibold text-green-900 mb-3">
                   <i class="fas fa-check-circle text-green-600 mr-2"></i>Thông tin hoàn tiền
                 </h4>
@@ -758,8 +758,8 @@
       window.viewRefundProofImage = function(button) {
         const bookingId = button.getAttribute('data-booking-id');
         
-        // Fetch refund request for this booking
-        fetch('/admin/api/refund-requests/by-booking/' + bookingId)
+        // Fetch refund request for this booking (customer API)
+        fetch('/api/refund-requests/by-booking/' + bookingId)
           .then(response => {
             if (!response.ok) {
               throw new Error('Không tìm thấy thông tin hoàn tiền');
