@@ -112,28 +112,21 @@ public class PayOSService {
     @Transactional
     public Map<String, Object> createCompletionPaymentLink(String bookingId, long amount, String description) {
         try {
-            // FIX 1: Kiểm tra số tiền. Nếu số tiền <= 0, không gọi API PayOS.
             if (amount <= 0) {
-                // Ném lỗi ngay để Service không cần gọi DB/Client
-                throw new RuntimeException("Số tiền cần thanh toán phải lớn hơn 0. (Đã được thanh toán đủ)");
+                throw new RuntimeException("Số tiền cần thanh toán phải lớn hơn 0.");
             }
 
-            // Lấy thông tin booking
             Booking booking = bookingRepository.findById(bookingId)
                     .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
 
-            // Tạo orderCode mới (Service generates timestamp in milliseconds)
             long orderCodeNumber = System.currentTimeMillis();
             String orderCode = String.valueOf(orderCodeNumber);
 
-            // URL return (có thể dùng URL mặc định cấu hình hoặc URL riêng)
             String successUrl = this.returnUrl;
             String cancelUrlStr = this.returnUrl.replace("success", "cancel");
 
-            // FIX 2: Thêm chi tiết vào description để dễ dàng debug trên cổng PayOS
             String fullDescription = "TT bổ sung Booking: " + bookingId + " - " + description;
 
-            // Gọi Client
             String responseBody = payOSClient.createPaymentLink(
                     amount,
                     orderCode,
@@ -147,16 +140,15 @@ public class PayOSService {
             if (jsonNode.has("code") && "00".equals(jsonNode.get("code").asText()) && jsonNode.has("data")) {
                 JsonNode dataNode = jsonNode.get("data");
 
-                // Lưu payment record để tracking
                 savePaymentRecord(orderCode, amount, bookingId, "Pending_Completion");
 
                 Map<String, Object> result = new HashMap<>();
+                result.put("success", true); // FIX: Add success flag
                 result.put("qrCode", dataNode.has("qrCode") ? dataNode.get("qrCode").asText() : "");
                 result.put("checkoutUrl", dataNode.has("checkoutUrl") ? dataNode.get("checkoutUrl").asText() : "");
                 result.put("orderCode", orderCode);
                 return result;
             } else {
-                // FIX 3: Thêm chi tiết lỗi từ PayOS vào ngoại lệ
                 String payosDesc = jsonNode.has("desc") ? jsonNode.get("desc").asText() : "Unknown PayOS error.";
                 throw new RuntimeException("Failed to create completion link (PayOS says: " + payosDesc + "): " + responseBody);
             }

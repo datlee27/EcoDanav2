@@ -42,9 +42,6 @@ public class PayOSClient {
                                   String returnUrl, String cancelUrl) throws Exception {
         String url = BASE_URL + "/payment-requests";
         
-        // Use current timestamp as orderCode (PayOS requires unique number)
-        long orderCodeNumber = System.currentTimeMillis() / 1000; // Convert to seconds
-        
         // Build items array (required by PayOS)
         java.util.List<Map<String, Object>> items = new java.util.ArrayList<>();
         Map<String, Object> item = new HashMap<>();
@@ -57,7 +54,8 @@ public class PayOSClient {
         
         // Build request body following PayOS API spec
         Map<String, Object> requestBody = new TreeMap<>(); // Use TreeMap for sorted keys
-        requestBody.put("orderCode", orderCodeNumber);
+        // FIX: Use the passed-in orderCode, converted to a number
+        requestBody.put("orderCode", Long.parseLong(orderCode));
         requestBody.put("amount", amount);
         // Ensure description is max 25 chars
         String shortDescription = description.length() > 25 ? description.substring(0, 25) : description;

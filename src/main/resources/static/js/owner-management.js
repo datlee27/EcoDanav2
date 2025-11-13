@@ -204,7 +204,8 @@ function closeModal(modalId) {
     }
 
     if (modalId === 'complete-trip-modal') {
-        currentCompletingBookingId = null;
+        // We no longer reset the ID here as it caused bugs.
+        // The ID is now read from the hidden input when needed.
         document.getElementById('complete-trip-form').reset();
         document.getElementById('return-images-error').classList.add('hidden');
     } else if (modalId === 'transfer-payment-modal') {
@@ -419,8 +420,6 @@ function validateCompletionForm() {
 
 // 1. Mở modal chính để nhập Ghi chú và Ảnh
 function showCompleteTripModal(bookingId, remainingAmount) {
-    currentCompletingBookingId = bookingId;
-
     // Lưu thông tin vào các trường ẩn
     document.getElementById('complete-booking-id').value = bookingId;
     document.getElementById('complete-remaining-amount').value = parseFloat(remainingAmount) || 0;
@@ -452,6 +451,8 @@ async function openTransferPaymentModal() {
     // Kiểm tra ảnh và ghi chú trước
     if (!validateCompletionForm()) return;
 
+    // FIX: Read the ID and amount from the persistent hidden inputs
+    const bookingId = document.getElementById('complete-booking-id').value;
     const remainingAmount = parseFloat(document.getElementById('complete-remaining-amount').value) || 0;
 
     // Nếu không còn tiền phải trả, đi thẳng đến bước xác nhận cuối cùng
@@ -476,7 +477,7 @@ async function openTransferPaymentModal() {
             method: 'POST',
             headers: getCsrfHeaders(),
             body: JSON.stringify({
-                bookingId: currentCompletingBookingId,
+                bookingId: bookingId, // Use the ID from the hidden input
                 amount: remainingAmount
             })
         });
@@ -487,11 +488,21 @@ async function openTransferPaymentModal() {
             throw new Error(data.message || 'Lỗi không xác định từ Backend');
         }
 
-        qrContainer.innerHTML = `<img src="${data.qrCode}" alt="Mã QR PayOS" class="w-full h-full">`;
+        // FIX: Use QRCode.js to render the QR code
+        qrContainer.innerHTML = ''; // Clear the spinner
+        new QRCode(qrContainer, {
+            text: data.qrCode,
+            width: 256,
+            height: 256,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
         startPaymentPolling(data.orderCode);
 
     } catch (error) {
-        showNotification(false, error.message);
+        showNotification(false, "Lỗi tạo mã QR: " + error.message);
         qrContainer.innerHTML = `<p class="text-red-500">Lỗi tạo mã QR: ${error.message}</p>`;
     }
 }
@@ -529,7 +540,8 @@ function stopPaymentPolling() {
 
 // 6. Xử lý hoàn tất (gọi API cuối cùng)
 async function processTripCompletion(finalStatus) {
-    const bookingId = currentCompletingBookingId;
+    // FIX: Read the bookingId from the persistent hidden input field
+    const bookingId = document.getElementById('complete-booking-id').value;
     if (!bookingId) {
         showNotification(false, 'Lỗi: Không tìm thấy mã booking.');
         return;
