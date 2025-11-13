@@ -1,7 +1,5 @@
-<!-- Refund Requests Tab Content - Server-Side Rendered -->
 <div th:fragment="refund-requests-tab">
     <div class="bg-white shadow rounded-lg">
-        <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 p-6 border-b border-gray-200">
             <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg">
                 <div class="flex items-center justify-between">
@@ -50,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Total Pending Amount -->
         <div class="px-6 py-4 border-b border-gray-200 bg-red-50">
             <div class="flex items-center justify-between">
                 <div>
@@ -61,191 +58,179 @@
             </div>
         </div>
 
-        <!-- Table -->
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Amount</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Urgency</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request ID</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Booking Code</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Refund Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Urgency</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Request Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    <tr th:each="refund : ${refundRequests}" class="hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm text-gray-900" th:text="${#strings.abbreviate(refund.refundRequestId, 8)}">ID</td>
-                        <td class="px-6 py-4 text-sm text-gray-900" th:text="${refund.booking?.bookingCode}">-</td>
-                        <td class="px-6 py-4 text-sm text-gray-900">
-                            <span th:if="${refund.user}" th:text="${refund.user.firstName + ' ' + refund.user.lastName}">-</span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-900" th:text="${refund.user?.phoneNumber}">-</td>
-                        <td class="px-6 py-4 text-sm font-medium text-red-600" th:text="${#numbers.formatDecimal(refund.refundAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</td>
-                        <td class="px-6 py-4 text-sm">
+                <tr th:each="refund : ${refundRequests}" class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900" th:text="${#strings.abbreviate(refund.refundRequestId, 8)}">ID</td>
+                    <td class="px-6 py-4 text-sm text-gray-900" th:text="${refund.booking?.bookingCode}">-</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        <span th:if="${refund.user}" th:text="${refund.user.firstName + ' ' + refund.user.lastName}">-</span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900" th:text="${refund.user?.phoneNumber}">-</td>
+                    <td class="px-6 py-4 text-sm font-medium text-red-600" th:text="${#numbers.formatDecimal(refund.refundAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</td>
+                    <td class="px-6 py-4 text-sm">
                             <span th:if="${refund.status.toString() == 'Pending'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                                 <i class="fas fa-clock mr-1"></i>Chờ duyệt
                             </span>
-                            <span th:if="${refund.status.toString() == 'Approved'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                        <span th:if="${refund.status.toString() == 'Approved'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                                 <i class="fas fa-check mr-1"></i>Đã duyệt
                             </span>
-                            <span th:if="${refund.status.toString() == 'Rejected'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
+                        <span th:if="${refund.status.toString() == 'Rejected'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                 <i class="fas fa-times mr-1"></i>Từ chối
                             </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm">
+                    </td>
+                    <td class="px-6 py-4 text-sm">
                             <span th:if="${refund.isWithinTwoHours}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                 <i class="fas fa-exclamation-circle mr-1"></i>Khẩn cấp
                             </span>
-                            <span th:unless="${refund.isWithinTwoHours}" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
+                        <span th:unless="${refund.isWithinTwoHours}" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">
                                 Bình thường
                             </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-900" th:text="${#temporals.format(refund.createdDate, 'dd/MM/yyyy HH:mm')}">-</td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex gap-2">
-                                <button type="button" 
-                                        onclick="showRefundDetailModal(this)"
-                                        th:data-refund-id="${refund.refundRequestId}"
-                                        th:data-refund-amount="${refund.refundAmount}"
-                                        th:data-booking-code="${refund.booking?.bookingCode}"
-                                        th:data-customer-name="${refund.user?.firstName} ${refund.user?.lastName}"
-                                        th:data-customer-email="${refund.user?.email}"
-                                        th:data-customer-phone="${refund.user?.phoneNumber}"
-                                        th:data-status="${refund.status}"
-                                        th:data-cancel-reason="${refund.cancelReason}"
-                                        th:data-admin-notes="${refund.adminNotes}"
-                                        th:data-created-date="${#temporals.format(refund.createdDate, 'dd/MM/yyyy HH:mm')}"
-                                        th:data-is-urgent="${refund.isWithinTwoHours}"
-                                        th:data-bank-name="${refund.bankAccount?.bankName}"
-                                        th:data-account-number="${refund.bankAccount?.accountNumber}"
-                                        th:data-account-holder="${refund.bankAccount?.accountHolderName}"
-                                        class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr th:if="${#lists.isEmpty(refundRequests)}">
-                        <td colspan="9" class="px-6 py-12 text-center text-gray-500">
-                            <i class="fas fa-inbox text-4xl mb-4 block text-gray-300"></i>
-                            Không có yêu cầu hoàn tiền nào
-                        </td>
-                    </tr>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900" th:text="${#temporals.format(refund.createdDate, 'dd/MM/yyyy HH:mm')}">-</td>
+                    <td class="px-6 py-4 text-sm">
+                        <div class="flex gap-2">
+                            <button type="button"
+                                    onclick="showRefundDetailModal(this)"
+                                    th:data-refund-id="${refund.refundRequestId}"
+                                    th:data-refund-amount="${refund.refundAmount}"
+                                    th:data-booking-code="${refund.booking?.bookingCode}"
+                                    th:data-customer-name="${refund.user?.firstName + ' ' + refund.user?.lastName}"
+                                    th:data-customer-email="${refund.user?.email}"
+                                    th:data-customer-phone="${refund.user?.phoneNumber}"
+                                    th:data-status="${refund.status}"
+                                    th:data-cancel-reason="${refund.cancelReason}"
+                                    th:data-admin-notes="${refund.adminNotes}"
+                                    th:data-created-date="${#temporals.format(refund.createdDate, 'dd/MM/yyyy HH:mm')}"
+                                    th:data-is-urgent="${refund.isWithinTwoHours}"
+                                    th:data-bank-name="${refund.bankAccount?.bankName}"
+                                    th:data-account-number="${refund.bankAccount?.accountNumber}"
+                                    th:data-account-holder="${refund.bankAccount?.accountHolderName}"
+                                    class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(refundRequests)}">
+                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                        <i class="fas fa-inbox text-4xl mb-4 block text-gray-300"></i>
+                        Không có yêu cầu hoàn tiền nào
+                    </td>
+                </tr>
                 </tbody>
             </table>
         </div>
     </div>
-</div>
 
-<!-- Detail Modal -->
-<div id="refundDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Header -->
-        <div class="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white sticky top-0">
-            <div class="flex justify-between items-start">
-                <div>
-                    <h3 class="text-2xl font-bold">Chi tiết yêu cầu hoàn tiền</h3>
-                    <p class="text-orange-100 text-sm mt-1" id="modalRefundId">ID: -</p>
+    <div id="refundDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-orange-600 to-red-600 p-6 text-white sticky top-0">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-2xl font-bold">Chi tiết yêu cầu hoàn tiền</h3>
+                        <p class="text-orange-100 text-sm mt-1" id="modalRefundId">ID: -</p>
+                    </div>
+                    <button onclick="closeRefundDetailModal()" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <button onclick="closeRefundDetailModal()" class="text-white hover:text-gray-200 text-2xl">
-                    <i class="fas fa-times"></i>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div id="statusBadge" class="px-4 py-2 rounded-full text-sm font-semibold inline-block">-</div>
+
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                    <p class="text-sm text-gray-600">Số tiền hoàn</p>
+                    <p class="text-3xl font-bold text-red-600" id="modalRefundAmount">0 ₫</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded">
+                        <p class="text-sm text-gray-600">Mã booking</p>
+                        <p class="text-lg font-semibold text-gray-900" id="modalBookingCode">-</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded">
+                        <p class="text-sm text-gray-600">Ngày yêu cầu</p>
+                        <p class="text-lg font-semibold text-gray-900" id="modalCreatedDate">-</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">Thông tin khách hàng</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="text-sm text-gray-600">Tên</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalCustomerName">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="text-sm text-gray-600">Email</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalCustomerEmail">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded col-span-2">
+                            <p class="text-sm text-gray-600">Số điện thoại</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalCustomerPhone">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="bankAccountSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Thông tin tài khoản ngân hàng</h4>
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Ngân hàng</p>
+                                <p class="text-lg font-semibold text-gray-900" id="modalBankName">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Số tài khoản</p>
+                                <p class="text-lg font-semibold text-gray-900" id="modalAccountNumber">-</p>
+                            </div>
+                            <div class="col-span-2">
+                                <p class="text-sm text-gray-600">Chủ tài khoản</p>
+                                <p class="text-lg font-semibold text-gray-900" id="modalAccountHolder">-</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">Lý do hủy</h4>
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+                        <p class="text-gray-900" id="modalCancelReason">-</p>
+                    </div>
+                </div>
+
+                <div id="adminNotesSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Ghi chú từ admin</h4>
+                    <div class="bg-gray-50 border-l-4 border-gray-500 p-4 rounded">
+                        <p class="text-gray-900" id="modalAdminNotes">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-between gap-3">
+                <div id="actionButtons" class="flex gap-3">
+                </div>
+                <button onclick="closeRefundDetailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                    <i class="fas fa-times mr-2"></i>Đóng
                 </button>
             </div>
         </div>
-
-        <!-- Content -->
-        <div class="p-6 space-y-4">
-            <!-- Status Badge -->
-            <div id="statusBadge" class="px-4 py-2 rounded-full text-sm font-semibold inline-block">-</div>
-
-            <!-- Refund Amount -->
-            <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <p class="text-sm text-gray-600">Số tiền hoàn</p>
-                <p class="text-3xl font-bold text-red-600" id="modalRefundAmount">0 ₫</p>
-            </div>
-
-            <!-- Booking & Customer Info -->
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-blue-50 p-4 rounded">
-                    <p class="text-sm text-gray-600">Mã booking</p>
-                    <p class="text-lg font-semibold text-gray-900" id="modalBookingCode">-</p>
-                </div>
-                <div class="bg-blue-50 p-4 rounded">
-                    <p class="text-sm text-gray-600">Ngày yêu cầu</p>
-                    <p class="text-lg font-semibold text-gray-900" id="modalCreatedDate">-</p>
-                </div>
-            </div>
-
-            <!-- Customer Info -->
-            <div>
-                <h4 class="font-semibold text-gray-900 mb-3">Thông tin khách hàng</h4>
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="bg-gray-50 p-4 rounded">
-                        <p class="text-sm text-gray-600">Tên</p>
-                        <p class="text-lg font-semibold text-gray-900" id="modalCustomerName">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded">
-                        <p class="text-sm text-gray-600">Email</p>
-                        <p class="text-lg font-semibold text-gray-900" id="modalCustomerEmail">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-4 rounded col-span-2">
-                        <p class="text-sm text-gray-600">Số điện thoại</p>
-                        <p class="text-lg font-semibold text-gray-900" id="modalCustomerPhone">-</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bank Account Info -->
-            <div id="bankAccountSection" class="hidden">
-                <h4 class="font-semibold text-gray-900 mb-3">Thông tin tài khoản ngân hàng</h4>
-                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <p class="text-sm text-gray-600">Ngân hàng</p>
-                            <p class="text-lg font-semibold text-gray-900" id="modalBankName">-</p>
-                        </div>
-                        <div>
-                            <p class="text-sm text-gray-600">Số tài khoản</p>
-                            <p class="text-lg font-semibold text-gray-900" id="modalAccountNumber">-</p>
-                        </div>
-                        <div class="col-span-2">
-                            <p class="text-sm text-gray-600">Chủ tài khoản</p>
-                            <p class="text-lg font-semibold text-gray-900" id="modalAccountHolder">-</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cancel Reason -->
-            <div>
-                <h4 class="font-semibold text-gray-900 mb-3">Lý do hủy</h4>
-                <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-                    <p class="text-gray-900" id="modalCancelReason">-</p>
-                </div>
-            </div>
-
-            <!-- Admin Notes -->
-            <div id="adminNotesSection" class="hidden">
-                <h4 class="font-semibold text-gray-900 mb-3">Ghi chú từ admin</h4>
-                <div class="bg-gray-50 border-l-4 border-gray-500 p-4 rounded">
-                    <p class="text-gray-900" id="modalAdminNotes">-</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Footer -->
-        <div class="px-6 py-4 bg-gray-50 border-t flex justify-between gap-3">
-            <div id="actionButtons" class="flex gap-3">
-                <!-- Will be populated by JavaScript -->
-            </div>
-            <button onclick="closeRefundDetailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                <i class="fas fa-times mr-2"></i>Đóng
-            </button>
-        </div>
     </div>
+
 </div>
