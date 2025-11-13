@@ -20,7 +20,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 
 import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.Discount;
@@ -933,6 +936,112 @@ public class BookingController {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
             return "redirect:/booking/my-bookings";
+        }
+    }
+
+    /**
+     * Confirm return success - Change RefundPending to Completed
+     */
+    @PostMapping("/confirm-return-success/{bookingId}")
+    public ResponseEntity<?> confirmReturnSuccess(@PathVariable String bookingId, 
+                                                   HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found");
+            }
+
+            // Check if booking belongs to user
+            if (!booking.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+
+            // Check if booking is in RefundPending status
+            if (booking.getStatus() != Booking.BookingStatus.RefundPending) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Booking is not in RefundPending status");
+            }
+
+            // Update booking status to Completed
+            booking.setStatus(Booking.BookingStatus.Completed);
+            bookingService.updateBooking(booking);
+
+            // Send notification to owner
+            Vehicle vehicle = booking.getVehicle();
+            if (vehicle != null && vehicle.getOwnerId() != null) {
+                notificationService.createNotification(
+                    vehicle.getOwnerId(),
+                    "Chuyến đi " + booking.getBookingCode() + " đã hoàn thành thành công",
+                    booking.getBookingId(),
+                    "RENTAL_COMPLETED"
+                );
+            }
+
+            return ResponseEntity.ok().body("Return confirmed successfully");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Confirm return failed - Keep RefundPending status and record reason
+     */
+    @PostMapping("/confirm-return-failed/{bookingId}")
+    public ResponseEntity<?> confirmReturnFailed(@PathVariable String bookingId,
+                                                  @RequestBody Map<String, String> body,
+                                                  HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Booking not found");
+            }
+
+            // Check if booking belongs to user
+            if (!booking.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied");
+            }
+
+            // Check if booking is in RefundPending status
+            if (booking.getStatus() != Booking.BookingStatus.RefundPending) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Booking is not in RefundPending status");
+            }
+
+            // Record the reason in cancelReason field
+            String reason = body.get("reason");
+            if (reason != null && !reason.isEmpty()) {
+                booking.setCancelReason("Hoàn chuyến không thành công: " + reason);
+            } else {
+                booking.setCancelReason("Hoàn chuyến không thành công");
+            }
+            bookingService.updateBooking(booking);
+
+            // Send notification to owner
+            Vehicle vehicle = booking.getVehicle();
+            if (vehicle != null && vehicle.getOwnerId() != null) {
+                notificationService.createNotification(
+                    vehicle.getOwnerId(),
+                    "Chuyến đi " + booking.getBookingCode() + " hoàn chuyến không thành công",
+                    booking.getBookingId(),
+                    "RENTAL_FAILED"
+                );
+            }
+
+            return ResponseEntity.ok().body("Return failure recorded");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
 

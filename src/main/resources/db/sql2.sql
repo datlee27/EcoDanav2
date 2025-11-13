@@ -165,10 +165,11 @@ CREATE TABLE `Booking` (
                            `PickupDateTime` datetime NOT NULL,
                            `ReturnDateTime` datetime NOT NULL,
                            `TotalAmount` decimal(10,2) NOT NULL,
-                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled') NOT NULL DEFAULT 'Pending',
+                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
                            `DiscountId` char(36) DEFAULT NULL,
                            `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            `CancelReason` varchar(500) DEFAULT NULL,
+                           `CancellationType` varchar(50) DEFAULT NULL,
                            `BookingCode` varchar(20) NOT NULL,
                            `ExpectedPaymentMethod` varchar(50) DEFAULT NULL,
                            `RentalType` ENUM('hourly', 'daily', 'monthly') NOT NULL DEFAULT 'daily',
@@ -605,10 +606,15 @@ ALTER TABLE Booking
     'Rejected',
     'Ongoing',
     'Completed',
-    'Cancelled',
-    'RefundPending'
+    'Cancelled'
     ) NOT NULL DEFAULT 'Pending';
 
-
 ALTER TABLE RefundRequest
-    MODIFY COLUMN BankAccountId VARCHAR(36) NULL;
+    MODIFY COLUMN Status ENUM(
+    'Pending',
+    'Approved',
+    'Rejected',
+    'Transferred',
+    'Completed',
+    'Refunded'
+    ) NOT NULL DEFAULT 'Pending';

@@ -92,6 +92,9 @@
                         <span th:if="${refund.status.toString() == 'Rejected'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                 <i class="fas fa-times mr-1"></i>Từ chối
                             </span>
+                        <span th:if="${refund.status.toString() == 'Completed'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
+                                <i class="fas fa-check-double mr-1"></i>Đã hoàn thành
+                            </span>
                     </td>
                     <td class="px-6 py-4 text-sm">
                             <span th:if="${refund.isWithinTwoHours}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
@@ -203,6 +206,14 @@
                         <p class="text-gray-900" id="modalAdminNotes">-</p>
                     </div>
                 </div>
+
+                <div id="rejectionReasonSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Lý do từ chối</h4>
+                    <textarea id="rejectionReason" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                              rows="3"
+                              placeholder="Nhập lý do từ chối..."></textarea>
+                </div>
             </div>
 
             <div class="px-6 py-4 bg-gray-50 border-t flex justify-between gap-3">
@@ -248,6 +259,52 @@
             <div class="px-6 py-4 bg-gray-50 border-t sticky bottom-0">
                 <button onclick="closeBankAccountModal()" class="w-full px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
                     <i class="fas fa-times mr-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Proof Modal - Upload ảnh chứng minh chuyển khoản -->
+    <div id="transferProofModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-purple-600 to-purple-700 p-6 text-white sticky top-0">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-2xl font-bold">Xác Nhận Hoàn Tiền</h3>
+                        <p class="text-purple-100 text-sm mt-1">Tải ảnh chứng minh chuyển khoản</p>
+                    </div>
+                    <button onclick="closeTransferProofModal()" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <form id="transferProofForm">
+                    <!-- Upload ảnh -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Ảnh chứng minh chuyển khoản</label>
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-500 transition">
+                            <input type="file" id="transferProofFile" accept="image/*" class="hidden" onchange="previewTransferImage(this)">
+                            <button type="button" onclick="document.getElementById('transferProofFile').click()" class="text-purple-600 hover:text-purple-700 font-medium">
+                                <i class="fas fa-cloud-upload-alt text-3xl mb-2 block"></i>
+                                Chọn ảnh hoặc kéo thả
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2">PNG, JPG, GIF tối đa 5MB</p>
+                            <div id="transferImagePreview" class="mt-4 hidden">
+                                <img id="transferImagePreviewImg" src="" alt="Preview" class="max-h-48 mx-auto rounded border border-gray-300">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-between gap-3">
+                <button onclick="submitTransferProof()" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium">
+                    <i class="fas fa-check mr-2"></i>Xác Nhận Hoàn Tiền
+                </button>
+                <button onclick="closeTransferProofModal()" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                    <i class="fas fa-times mr-2"></i>Hủy
                 </button>
             </div>
         </div>

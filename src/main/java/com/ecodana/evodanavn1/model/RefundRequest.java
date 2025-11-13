@@ -52,6 +52,9 @@ public class RefundRequest {
     @Column(name = "IsWithinTwoHours", nullable = false)
     private boolean isWithinTwoHours = false;
 
+    @Column(name = "TransferProofImagePath", length = 500)
+    private String transferProofImagePath; // Ảnh chứng minh chuyển khoản từ Cloudinary
+
     // Constructors
     public RefundRequest() {
         this.createdDate = LocalDateTime.now();
@@ -154,10 +157,19 @@ public class RefundRequest {
         isWithinTwoHours = withinTwoHours;
     }
 
+    public String getTransferProofImagePath() {
+        return transferProofImagePath;
+    }
+
+    public void setTransferProofImagePath(String transferProofImagePath) {
+        this.transferProofImagePath = transferProofImagePath;
+    }
+
     public enum RefundStatus {
         Pending,    // Chờ admin duyệt
         Approved,   // Admin đã duyệt
         Rejected,   // Admin từ chối
+        Transferred, // Đã chuyển tiền
         Completed   // Đã hoàn tiền thành công
     }
 }
