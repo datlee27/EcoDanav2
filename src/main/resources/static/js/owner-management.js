@@ -58,16 +58,14 @@ function renderBookingItem(booking) {
         `;
     }
 
-    // === THÊM MỚI LOGIC HIỂN THỊ NÚT HOÀN THÀNH ===
     if (statusLower === 'ongoing') {
         actionsHtml += `
-            <button onclick="completeBooking('${booking.bookingId}')"
+            <button onclick="showCompleteTripModal('${booking.bookingId}', ${booking.remainingAmount || 0})"
                     class="text-blue-600 hover:text-blue-800 transition-colors ml-3" title="Hoàn thành chuyến đi">
                 <i class="fas fa-flag-checkered text-lg"></i>
             </button>
         `;
     }
-    // === KẾT THÚC THÊM MỚI ===
 
     // --- HTML của thẻ booking ---
     return `
@@ -76,7 +74,6 @@ function renderBookingItem(booking) {
              data-code="${booking.bookingCode}"
              data-customer="${customerName}"
              data-created="${booking.createdDate}"
-             
              data-amount="${booking.totalAmount}">
 
             <div class="md:col-span-4">
@@ -86,8 +83,7 @@ function renderBookingItem(booking) {
             </div>
 
             <div class="md:col-span-3 text-sm">
-            
-              <p class="text-gray-700"><strong class="font-medium text-gray-500">Ở:</strong> ${pickupLocation}</p>
+                <p class="text-gray-700"><strong class="font-medium text-gray-500">Ở:</strong> ${pickupLocation}</p>
                 <p class="text-gray-700"><strong class="font-medium text-gray-500">Từ:</strong> ${pickup}</p>
                 <p class="text-gray-700"><strong class="font-medium text-gray-500">Đến:</strong> ${returnDate}</p>
             </div>
@@ -112,87 +108,65 @@ function renderBookingItem(booking) {
 
 // --- Hàm thay đổi tab trạng thái ---
 function changeStatusTab(tabElement) {
-    // Xóa class 'active' khỏi tất cả các tab
     document.querySelectorAll('#status-tabs .status-tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    // Thêm class 'active' cho tab vừa click
     tabElement.classList.add('active');
-    // Lọc và render lại danh sách
     filterAndSortBookings();
 }
 
 
 // --- Hàm sắp xếp và lọc (đọc từ tab) ---
 function filterAndSortBookings() {
-    // Lấy trạng thái từ tab đang active
     const statusFilterElement = document.querySelector('#status-tabs .status-tab.active');
-    if (!statusFilterElement) return; // Thoát nếu chưa có tab
+    if (!statusFilterElement) return;
 
     const statusFilter = statusFilterElement.dataset.status;
     const searchInput = document.getElementById("search-input").value.toLowerCase();
     const sortSelect = document.getElementById("sort-select").value;
 
-    // 1. Lọc
     let filteredBookings = allBookingsData.filter(booking => {
         const status = booking.status || 'Unknown';
         const customerName = (booking.user?.firstName || '') + ' ' + (booking.user?.lastName || booking.user?.username || 'N/A');
         const code = booking.bookingCode || '';
-
-        // Lọc trạng thái (hỗ trợ gom nhóm: "Approved,AwaitingDeposit")
         const statusMatch = !statusFilter || statusFilter.split(',').includes(status);
-
-        // Lọc tìm kiếm
         const searchMatch = !searchInput ||
             code.toLowerCase().includes(searchInput) ||
             customerName.toLowerCase().includes(searchInput);
-
         return statusMatch && searchMatch;
     });
 
-    // 2. Sắp xếp
     filteredBookings.sort((a, b) => {
         switch (sortSelect) {
-            case "newest":
-                return new Date(b.createdDate) - new Date(a.createdDate);
-            case "oldest":
-                return new Date(a.createdDate) - new Date(b.createdDate);
-            case "amount-high":
-                return (b.totalAmount || 0) - (a.totalAmount || 0);
-            case "amount-low":
-                return (a.totalAmount || 0) - (b.totalAmount || 0);
-            default:
-                return 0;
+            case "newest": return new Date(b.createdDate) - new Date(a.createdDate);
+            case "oldest": return new Date(a.createdDate) - new Date(b.createdDate);
+            case "amount-high": return (b.totalAmount || 0) - (a.totalAmount || 0);
+            case "amount-low": return (a.totalAmount || 0) - (b.totalAmount || 0);
+            default: return 0;
         }
     });
 
-    // 3. Render (vào 1 container duy nhất)
     renderFilteredBookings(filteredBookings);
 }
 
-// --- Hàm render danh sách (đơn giản hóa) ---
+// --- Hàm render danh sách ---
 function renderFilteredBookings(filteredBookings) {
     const container = document.getElementById('booking-list-container');
     const noBookingsMessage = document.getElementById('no-bookings-message');
 
-    // Xóa nội dung cũ, ngoại trừ noBookingsMessage
     while (container.firstChild && container.firstChild !== noBookingsMessage) {
         container.removeChild(container.firstChild);
     }
 
     if (filteredBookings.length === 0) {
-        if (noBookingsMessage) {
-            noBookingsMessage.classList.remove('hidden');
-        }
+        noBookingsMessage?.classList.remove('hidden');
     } else {
-        if (noBookingsMessage) {
-            noBookingsMessage.classList.add('hidden');
-        }
+        noBookingsMessage?.classList.add('hidden');
         let allItemsHtml = '';
         filteredBookings.forEach(booking => {
             allItemsHtml += renderBookingItem(booking);
         });
-        container.insertAdjacentHTML('afterbegin', allItemsHtml); // Thêm vào đầu container
+        container.insertAdjacentHTML('afterbegin', allItemsHtml);
     }
 }
 
@@ -200,16 +174,25 @@ function renderFilteredBookings(filteredBookings) {
 // --- Các hàm Modal ---
 
 let currentBookingId = null;
+let currentCompletingBookingId = null;
+let paymentPollInterval = null;
 
-// Lấy CSRF token (nếu cần cho POST/PUT/DELETE)
 function getCsrfHeaders() {
-    // Sửa đổi: Chỉ trả về object headers cho JSON, hoặc một phần cho FormData
     const headers = { 'Content-Type': 'application/json' };
     if (typeof csrfToken !== 'undefined' && csrfToken && typeof csrfHeaderName !== 'undefined' && csrfHeaderName) {
         headers[csrfHeaderName] = csrfToken;
     }
     return headers;
 }
+
+function getCsrfHeaderOnly() {
+    const headers = {};
+    if (typeof csrfToken !== 'undefined' && csrfToken && typeof csrfHeaderName !== 'undefined' && csrfHeaderName) {
+        headers[csrfHeaderName] = csrfToken;
+    }
+    return headers;
+}
+
 
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
@@ -220,36 +203,20 @@ function closeModal(modalId) {
         if(rejectReason) rejectReason.value = '';
     }
 
-    // === SỬA ĐỔI: Reset khi đóng modal complete ===
-    if (modalId === 'complete-modal') {
-        currentBookingId = null;
-
-        // Reset nút Hoàn thành
-        const btn = document.getElementById('confirmCompleteBtn');
-        if(btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-flag-checkered mr-2"></i>Hoàn thành';
-        }
-
-        // THÊM MỚI: Reset nút Bảo trì
-        const maintenanceBtn = document.getElementById('confirmMaintenanceBtn');
-        if(maintenanceBtn) {
-            maintenanceBtn.disabled = false;
-            maintenanceBtn.innerHTML = '<i class="fas fa-tools mr-2"></i>Hoàn thành & Bảo trì';
-        }
-
-        // Reset form fields
-        const notes = document.getElementById('complete-notes');
-        if(notes) notes.value = '';
-        const images = document.getElementById('complete-images');
-        if(images) images.value = null;
-        const preview = document.getElementById('complete-images-preview');
-        if(preview) preview.innerHTML = '<p class="text-xs text-gray-400 p-2">Chưa chọn ảnh nào.</p>';
-        const error = document.getElementById('complete-images-error');
-        if(error) error.classList.add('hidden');
+    if (modalId === 'complete-trip-modal') {
+        currentCompletingBookingId = null;
+        document.getElementById('complete-trip-form').reset();
+        document.getElementById('return-images-error').classList.add('hidden');
+    } else if (modalId === 'transfer-payment-modal') {
+        stopPaymentPolling();
     }
-    // === KẾT THÚC SỬA ĐỔI ===
 }
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if(modal) modal.classList.remove('hidden');
+}
+
 
 function showNotification(isSuccess, message) {
     const successEl = document.getElementById('success-notification');
@@ -280,16 +247,9 @@ function showNotification(isSuccess, message) {
 }
 
 function closeNotification(button) {
-    // Tìm thẻ cha gần nhất có ID kết thúc bằng "-notification" và ẩn nó đi
     const notificationDiv = button.closest('div[id$="-notification"]');
     if (notificationDiv) {
         notificationDiv.style.transform = 'translateX(100%)';
-        // Xóa hẳn sau khi animation kết thúc (tùy chọn)
-        setTimeout(() => {
-            if (notificationDiv) {
-                notificationDiv.remove();
-            }
-        }, 500);
     }
 }
 
@@ -352,8 +312,7 @@ function viewBooking(bookingId) {
 // Duyệt
 function approveBooking(bookingId) {
     currentBookingId = bookingId;
-    const modal = document.getElementById('approve-modal');
-    if(modal) modal.classList.remove('hidden');
+    openModal('approve-modal');
 }
 
 function confirmApprove() {
@@ -370,13 +329,12 @@ function confirmApprove() {
             if (data.success) {
                 showNotification(true, 'Đã duyệt booking thành công!');
                 closeModal('approve-modal');
-                location.reload(); // Tải lại
+                location.reload();
             } else {
                 throw new Error(data.message || 'Không thể duyệt booking');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showNotification(false, `Lỗi: ${error.message}`);
             if(btn) btn.disabled = false;
         });
@@ -385,8 +343,7 @@ function confirmApprove() {
 // Từ chối
 function rejectBooking(bookingId) {
     currentBookingId = bookingId;
-    const modal = document.getElementById('reject-modal');
-    if(modal) modal.classList.remove('hidden');
+    openModal('reject-modal');
 }
 
 function confirmReject() {
@@ -412,143 +369,215 @@ function confirmReject() {
             if (data.success) {
                 showNotification(true, 'Đã từ chối booking thành công!');
                 closeModal('reject-modal');
-                location.reload(); // Tải lại
+                location.reload();
             } else {
                 throw new Error(data.message || 'Không thể từ chối booking');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showNotification(false, `Lỗi: ${error.message}`);
             if(btn) btn.disabled = false;
         });
 }
 
-// --- SỬA ĐỔI: Hàm Hoàn thành (Complete) ---
-function completeBooking(bookingId) {
+// Giao xe
+function handoverBooking(bookingId) {
     currentBookingId = bookingId;
-    const modal = document.getElementById('complete-modal');
-    if(modal) {
-        modal.classList.remove('hidden');
+    const modal = document.getElementById('handover-modal');
+    const form = document.getElementById('handover-form');
 
-        // Reset form fields khi mở
-        const notes = document.getElementById('complete-notes');
-        if(notes) notes.value = '';
-
-        const images = document.getElementById('complete-images');
-        if(images) images.value = null; // Quan trọng: reset file input
-
-        const preview = document.getElementById('complete-images-preview');
-        if(preview) preview.innerHTML = '<p class="text-xs text-gray-400 p-2">Chưa chọn ảnh nào.</p>';
-
-        const error = document.getElementById('complete-images-error');
-        if(error) error.classList.add('hidden');
-
-        // Reset cả 2 nút
-        const btn = document.getElementById('confirmCompleteBtn');
-        if(btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-flag-checkered mr-2"></i>Hoàn thành';
-        }
-        const maintenanceBtn = document.getElementById('confirmMaintenanceBtn');
-        if(maintenanceBtn) {
-            maintenanceBtn.disabled = false;
-            maintenanceBtn.innerHTML = '<i class="fas fa-tools mr-2"></i>Hoàn thành & Bảo trì';
-        }
+    if(modal && form) {
+        form.action = `/owner/management/bookings/${bookingId}/handover`;
+        form.reset();
+        openModal('handover-modal');
     }
 }
 
-// Sửa đổi: Thêm tham số isMaintenance, mặc định là false
-function confirmComplete(isMaintenance = false) {
-    if (!currentBookingId) return;
+// --- Logic Hoàn thành chuyến đi ---
 
-    const btn = document.getElementById('confirmCompleteBtn');
-    const maintenanceBtn = document.getElementById('confirmMaintenanceBtn'); // Nút mới
-    const notes = document.getElementById('complete-notes').value;
-    const imageInput = document.getElementById('complete-images');
-    const files = imageInput.files;
+function validateImageUpload(fileInput, maxFiles) {
+    const errorEl = document.getElementById(fileInput.id + '-error');
+    if (fileInput.files.length > maxFiles) {
+        errorEl.classList.remove('hidden');
+        fileInput.value = "";
+        return false;
+    } else {
+        errorEl.classList.add('hidden');
+        return true;
+    }
+}
 
-    // Kiểm tra số lượng ảnh (dù đã check ở onchange, check lại an toàn)
-    if (files.length > 5) {
-        const errorEl = document.getElementById('complete-images-error');
-        if(errorEl) {
-            errorEl.textContent = 'Bạn chỉ có thể upload tối đa 5 ảnh.';
-            errorEl.classList.remove('hidden');
-        }
+// Hàm kiểm tra form ghi chú và ảnh
+function validateCompletionForm() {
+    const images = document.getElementById('return-images').files;
+    if (images.length > 5) {
+        showNotification(false, 'Chỉ được phép tải lên tối đa 5 ảnh.');
+        return false;
+    }
+    return true;
+}
+
+// 1. Mở modal chính để nhập Ghi chú và Ảnh
+function showCompleteTripModal(bookingId, remainingAmount) {
+    currentCompletingBookingId = bookingId;
+
+    // Lưu thông tin vào các trường ẩn
+    document.getElementById('complete-booking-id').value = bookingId;
+    document.getElementById('complete-remaining-amount').value = parseFloat(remainingAmount) || 0;
+
+    // Reset lại form
+    document.getElementById('complete-trip-form').reset();
+    document.getElementById('return-images-error').classList.add('hidden');
+
+    // Mở modal. Các nút trong modal này là cố định trong HTML.
+    openModal('complete-trip-modal');
+}
+
+// 2. Xử lý khi nhấn nút "Tiền mặt"
+function openCashPaymentModal() {
+    // Kiểm tra ảnh và ghi chú trước
+    if (!validateCompletionForm()) return;
+
+    const remainingAmount = document.getElementById('complete-remaining-amount').value;
+    const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(remainingAmount);
+    document.getElementById('cash-amount-display').textContent = formattedAmount;
+
+    // Chuyển sang modal thanh toán tiền mặt
+    closeModal('complete-trip-modal');
+    openModal('cash-payment-modal');
+}
+
+// 3. Xử lý khi nhấn nút "Chuyển khoản"
+async function openTransferPaymentModal() {
+    // Kiểm tra ảnh và ghi chú trước
+    if (!validateCompletionForm()) return;
+
+    const remainingAmount = parseFloat(document.getElementById('complete-remaining-amount').value) || 0;
+
+    // Nếu không còn tiền phải trả, đi thẳng đến bước xác nhận cuối cùng
+    if (remainingAmount <= 0) {
+        closeModal('complete-trip-modal');
+        openModal('payment-success-modal'); // Modal này có các nút xác nhận cuối
         return;
     }
 
-    // Vô hiệu hóa cả hai nút
-    if(btn) btn.disabled = true;
-    if(maintenanceBtn) maintenanceBtn.disabled = true;
+    // Nếu còn tiền, tiếp tục quy trình thanh toán QR
+    const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(remainingAmount);
+    document.getElementById('transfer-amount-display').textContent = formattedAmount;
 
-    // Hiển thị loading trên nút đã được nhấp
-    const clickedBtn = isMaintenance ? maintenanceBtn : btn;
-    if(clickedBtn) clickedBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+    closeModal('complete-trip-modal');
+    openModal('transfer-payment-modal');
+
+    const qrContainer = document.getElementById('payos-qr-code-container');
+    qrContainer.innerHTML = '<i class="fas fa-spinner fa-spin text-4xl text-gray-400"></i>';
+
+    try {
+        const response = await fetch('/api/payos/create-completion-payment', {
+            method: 'POST',
+            headers: getCsrfHeaders(),
+            body: JSON.stringify({
+                bookingId: currentCompletingBookingId,
+                amount: remainingAmount
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || 'Lỗi không xác định từ Backend');
+        }
+
+        qrContainer.innerHTML = `<img src="${data.qrCode}" alt="Mã QR PayOS" class="w-full h-full">`;
+        startPaymentPolling(data.orderCode);
+
+    } catch (error) {
+        showNotification(false, error.message);
+        qrContainer.innerHTML = `<p class="text-red-500">Lỗi tạo mã QR: ${error.message}</p>`;
+    }
+}
+
+// 4. Bắt đầu kiểm tra trạng thái thanh toán (polling)
+function startPaymentPolling(orderCode) {
+    stopPaymentPolling(); // Dừng polling cũ nếu có
+
+    paymentPollInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`/api/payos/check-payment-status/${orderCode}`);
+            const data = await response.json();
+
+            if (data.status === 'PAID') {
+                stopPaymentPolling();
+                closeModal('transfer-payment-modal');
+                openModal('payment-success-modal'); // Chuyển đến modal thành công
+            } else if (data.status === 'CANCELLED' || data.status === 'EXPIRED') {
+                stopPaymentPolling();
+                document.getElementById('payos-qr-code-container').innerHTML = '<p class="text-red-500">Mã thanh toán đã hết hạn/bị hủy. Vui lòng thử lại.</p>';
+            }
+        } catch (error) {
+            console.error('Lỗi khi kiểm tra thanh toán:', error);
+        }
+    }, 3000);
+}
+
+// 5. Dừng Polling
+function stopPaymentPolling() {
+    if (paymentPollInterval) {
+        clearInterval(paymentPollInterval);
+        paymentPollInterval = null;
+    }
+}
+
+// 6. Xử lý hoàn tất (gọi API cuối cùng)
+async function processTripCompletion(finalStatus) {
+    const bookingId = currentCompletingBookingId;
+    if (!bookingId) {
+        showNotification(false, 'Lỗi: Không tìm thấy mã booking.');
+        return;
+    }
+
+    // Lấy dữ liệu từ form Ghi chú/Ảnh (đang bị ẩn)
+    const notes = document.getElementById('return-notes').value;
+    const images = document.getElementById('return-images').files;
 
     const formData = new FormData();
-    formData.append('notes', notes);
-    if (files.length > 0) {
-        for (let i = 0; i < files.length; i++) {
-            formData.append('images', files[i]); // Backend sẽ nhận List<MultipartFile> ten la 'images'
-        }
+    formData.append('bookingId', bookingId);
+    formData.append('returnNotes', notes);
+    formData.append('newStatus', finalStatus); // 'Completed' hoặc 'Maintenance'
+
+    for (let i = 0; i < images.length; i++) {
+        formData.append('returnImages', images[i]);
     }
 
-    // THÊM MỚI: Gửi cờ 'setMaintenance'
-    // FormData không thể gửi boolean, gửi string "true"
-    formData.append('setMaintenance', isMaintenance.toString());
-
-    // Lấy CSRF header (nhưng không set Content-Type)
-    const csrfHeaders = getCsrfHeaders();
-    const headers = {};
-    if (csrfHeaderName && csrfHeaders[csrfHeaderName]) {
-        headers[csrfHeaderName] = csrfHeaders[csrfHeaderName];
-    }
-
-    fetch(`/owner/management/bookings/${currentBookingId}/complete`, {
-        method: 'POST',
-        headers: headers, // Chỉ gửi CSRF header, không gửi Content-Type
-        body: formData
-    })
-        .then(response => {
-            // Kiểm tra nếu response không phải JSON (ví dụ: lỗi server 500)
-            const contentType = response.headers.get("content-type");
-            if (contentType && contentType.indexOf("application/json") !== -1) {
-                return response.json();
-            } else {
-                // Nếu không phải JSON, ném lỗi với status text
-                throw new Error(`Server error: ${response.statusText}`);
-            }
-        })
-        .then(data => {
-            if (data.success) {
-                showNotification(true, 'Đã hoàn thành booking!');
-                closeModal('complete-modal');
-                location.reload(); // Tải lại
-            } else {
-                throw new Error(data.message || 'Không thể hoàn thành booking');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification(false, `Lỗi: ${error.message}`);
-
-            // Kích hoạt lại cả hai nút
-            if(btn) btn.disabled = false;
-            if(maintenanceBtn) maintenanceBtn.disabled = false;
-
-            // Reset lại text cho nút đã click
-            if(clickedBtn) clickedBtn.innerHTML = isMaintenance
-                ? '<i class="fas fa-tools mr-2"></i>Hoàn thành & Bảo trì'
-                : '<i class="fas fa-flag-checkered mr-2"></i>Hoàn thành';
+    try {
+        const response = await fetch('/owner/api/bookings/complete-trip', {
+            method: 'POST',
+            headers: getCsrfHeaderOnly(),
+            body: formData
         });
+
+        if (!response.ok) throw new Error(`Lỗi server: ${response.status}`);
+
+        const result = await response.json();
+
+        if (result.success) {
+            showNotification(true, 'Đã hoàn tất chuyến đi thành công!');
+            // Đóng tất cả các modal có thể đang mở
+            closeModal('cash-payment-modal');
+            closeModal('payment-success-modal');
+            closeModal('complete-trip-modal');
+            location.reload(); // Tải lại trang để cập nhật danh sách
+        } else {
+            throw new Error(result.message || 'Lỗi không xác định');
+        }
+
+    } catch (error) {
+        showNotification(false, 'Lỗi: ' + error.message);
+    }
 }
-// --- KẾT THÚC SỬA ĐỔI ---
 
-// --- Khởi chạy lần đầu ---
+
+// --- Khởi chạy ---
 document.addEventListener('DOMContentLoaded', function() {
-
-    // Biến 'currentPage' được lấy từ thẻ script inline trong HTML
     if (typeof currentPage !== 'undefined' && currentPage && typeof highlightOwnerSidebarLink === 'function') {
         highlightOwnerSidebarLink(currentPage);
     }
@@ -557,32 +586,10 @@ document.addEventListener('DOMContentLoaded', function() {
         loadNotificationCount();
     }
 
-    // Ẩn <p> message đi để JS thêm vào
     const noBookingsMessage = document.getElementById('no-bookings-message');
     if(noBookingsMessage) {
-        // Tạm thời giữ lại, nhưng đảm bảo nó bị ẩn ban đầu
         noBookingsMessage.classList.add('hidden');
     }
 
-    // Render danh sách ban đầu (cho tab "Tất cả")
     filterAndSortBookings();
 });
-// --- MỚI: Hàm mở Modal Giao Xe ---
-function handoverBooking(bookingId) {
-    currentBookingId = bookingId;
-    const modal = document.getElementById('handover-modal');
-    const form = document.getElementById('handover-form');
-
-    if(modal && form) {
-        // Cập nhật action của form
-        form.action = `/owner/management/bookings/${bookingId}/handover`;
-
-        // Reset form (xóa ảnh và text cũ nếu có)
-        form.reset();
-
-        // Mở modal
-        modal.classList.remove('hidden');
-    } else {
-        console.error('Handover modal or form not found!');
-    }
-}

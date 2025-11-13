@@ -176,6 +176,7 @@ public class OwnerController {
                     map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
                     map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
                     map.put("totalAmount", booking.getTotalAmount());
+                    map.put("remainingAmount", booking.getRemainingAmount()); // Add remainingAmount
                     if (booking.getUser() != null) {
                         Map<String, Object> userMap = new HashMap<>();
                         userMap.put("firstName", booking.getUser().getFirstName());
