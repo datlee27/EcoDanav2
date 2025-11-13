@@ -3,6 +3,7 @@ package com.ecodana.evodanavn1.security;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 
 import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,41 +27,63 @@ public class CustomOAuth2UserService extends OidcUserService {
 
     @Override
     public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
-        // Get the default OidcUser from Google
+        // Lấy OidcUser mặc định từ Google
         OidcUser oidcUser = super.loadUser(userRequest);
-        
-        // Extract email from Google response
+
+        // Lấy thông tin provider
+        String loginProvider = userRequest.getClientRegistration().getRegistrationId(); // vd: "google"
+        String providerKey = oidcUser.getSubject(); // Đây là ID duy nhất từ Google
         String email = oidcUser.getAttribute("email");
-        System.out.println("CustomOAuth2UserService - Processing OIDC user with email: " + email);
-        
+
+        System.out.println("CustomOAuth2UserService - Provider: " + loginProvider + ", Key: " + providerKey + ", Email: " + email);
+
         if (email == null || email.isEmpty()) {
-            throw new OAuth2AuthenticationException("No email provided by OAuth2 provider");
+            throw new OAuth2AuthenticationException("Không có email từ nhà cung cấp OAuth2");
         }
-        
-        // Find user in our database
-        User user = userService.findByEmailWithRole(email);
-        if (user == null) {
-            System.out.println("CustomOAuth2UserService - User not found in database, will be created with default role");
-            // User will be created later in OAuth2LoginSuccessHandler
-            return oidcUser;
+
+        // --- LOGIC MỚI: TÌM BẰNG PROVIDER KEY TRƯỚC ---
+        Optional<User> userOpt = userService.findUserByLogin(loginProvider, providerKey);
+        User user;
+
+        if (userOpt.isPresent()) {
+            // 1. TÌM THẤY: Người dùng này đã đăng nhập bằng Google trước đây.
+            user = userOpt.get();
+            // Cập nhật thông tin (nếu cần, ví dụ: avatar)
+            // (Bỏ qua để đơn giản)
+            System.out.println("CustomOAuth2UserService - Đã tìm thấy người dùng bằng ProviderKey: " + user.getEmail());
+
+        } else {
+            // 2. KHÔNG TÌM THẤY BẰNG PROVIDER KEY: Đây là lần đầu tiên họ đăng nhập bằng Google
+            // Kiểm tra xem email đã tồn tại trong hệ thống chưa (đăng ký bằng password)
+            Optional<User> userByEmailOpt = Optional.ofNullable(userService.findByEmailWithRole(email));
+
+            if (userByEmailOpt.isPresent()) {
+                // 2a. Email đã tồn tại (Đã đăng ký bằng password) -> Chỉ cần LIÊN KẾT
+                user = userByEmailOpt.get();
+                System.out.println("CustomOAuth2UserService - Đã tìm thấy người dùng bằng Email, sẽ liên kết tài khoản: " + user.getEmail());
+                // Việc liên kết (tạo UserLogins) sẽ được thực hiện trong SuccessHandler
+                // vì nó cần ghi vào CSDL (tốt nhất là sau khi xác thực thành công)
+            } else {
+                // 2b. Email không tồn tại -> Sẽ TẠO MỚI user trong SuccessHandler
+                user = null; // Đánh dấu là user mới, cần được tạo
+                System.out.println("CustomOAuth2UserService - Không tìm thấy người dùng, sẽ tạo mới.");
+            }
         }
-        
-        System.out.println("CustomOAuth2UserService - Found user in database: " + user.getEmail() + " with role: " + user.getRoleName());
-        
-        // Create authorities based on user's role
-        Collection<? extends GrantedAuthority> authorities = createAuthorities(user);
-        
-        // Create custom OidcUser with our user's authorities
+
+        // Tạo authorities dựa trên user (nếu tìm thấy)
+        Collection<? extends GrantedAuthority> authorities = (user != null) ? createAuthorities(user) : Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+
+        // Trả về CustomOidcUser với user (có thể là null nếu là user mới)
         return new CustomOidcUser(oidcUser.getClaims(), oidcUser.getIdToken(), oidcUser.getUserInfo(), authorities, user);
     }
-    
+
     private Collection<? extends GrantedAuthority> createAuthorities(User user) {
         if (user.getRole() != null && user.getRole().getRoleName() != null) {
             String roleName = user.getRole().getRoleName().toUpperCase();
-            System.out.println("CustomOAuth2UserService - Creating authority for role: " + roleName);
+            System.out.println("CustomOAuth2UserService - Đang tạo quyền cho vai trò: " + roleName);
             return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + roleName));
         }
-        System.out.println("CustomOAuth2UserService - No role found, using default authority");
+        System.out.println("CustomOAuth2UserService - Không tìm thấy vai trò, dùng quyền mặc định ROLE_CUSTOMER");
         return Collections.singletonList(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
     }
     
@@ -108,10 +131,13 @@ public class CustomOAuth2UserService extends OidcUserService {
         public Collection<? extends GrantedAuthority> getAuthorities() {
             return authorities;
         }
-        
+
         @Override
         public String getName() {
-            return user.getUsername();
+            if (user != null && user.getUsername() != null) {
+                return user.getUsername();
+            }
+            return (String) this.claims.get("email");
         }
         
         public User getUser() {

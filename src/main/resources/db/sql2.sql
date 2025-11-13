@@ -1,7 +1,7 @@
 -- =============================================
 -- DATABASE: ecodanav2
 -- HỆ QUẢN TRỊ: MySQL
--- PHIÊN BẢN TỐI ƯU HÓA
+-- PHIÊNBẢN TỐI ƯU HÓA (ĐÃ ĐỒNG BỘ ĐỂ CHẠY LẠI)
 -- =============================================
 
 -- USE ecodanangv2;
@@ -182,7 +182,7 @@ CREATE TABLE `Booking` (
                            KEY `HandledBy` (`HandledBy`),
                            KEY `DiscountId` (`DiscountId`),
                            KEY `idx_booking_dates_status` (`PickupDateTime`, `ReturnDateTime`, `Status`),
-                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,                           
+                           CONSTRAINT `booking_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
                            CONSTRAINT `booking_ibfk_2` FOREIGN KEY (`VehicleId`) REFERENCES `Vehicle` (`VehicleId`) ON DELETE RESTRICT,
                            CONSTRAINT `booking_ibfk_3` FOREIGN KEY (`HandledBy`) REFERENCES `Users` (`UserId`),
                            CONSTRAINT `booking_ibfk_4` FOREIGN KEY (`DiscountId`) REFERENCES `Discount` (`DiscountId`) ON DELETE SET NULL,
@@ -337,21 +337,21 @@ CREATE TABLE `BatteryLogs` (
                                CONSTRAINT `batterylogs_ibfk_2` FOREIGN KEY (`BookingId`) REFERENCES `Booking` (`BookingId`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-DROP TABLE IF EXISTS `EmailOTPVerification`;
-CREATE TABLE `EmailOTPVerification` (
-                                        `Id` char(36) NOT NULL,
-                                        `OTP` varchar(255) NOT NULL,
-                                        `ExpiryTime` datetime NOT NULL,
-                                        `IsUsed` tinyint(1) NOT NULL,
-                                        `UserId` char(36) NOT NULL,
-                                        `CreatedAt` datetime NOT NULL,
-                                        `ResendCount` int NOT NULL,
-                                        `LastResendTime` datetime DEFAULT NULL,
-                                        `ResendBlockUntil` datetime DEFAULT NULL,
-                                        PRIMARY KEY (`Id`),
-                                        KEY `UserId` (`UserId`),
-                                        CONSTRAINT `emailotpverification_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+# DROP TABLE IF EXISTS `EmailOTPVerification`;
+# CREATE TABLE `EmailOTPVerification` (
+#                                         `Id` char(36) NOT NULL,
+#                                         `OTP` varchar(255) NOT NULL,
+#                                         `ExpiryTime` datetime NOT NULL,
+#                                         `IsUsed` tinyint(1) NOT NULL,
+#                                         `UserId` char(36) NOT NULL,
+#                                         `CreatedAt` datetime NOT NULL,
+#                                         `ResendCount` int NOT NULL,
+#                                         `LastResendTime` datetime DEFAULT NULL,
+#                                         `ResendBlockUntil` datetime DEFAULT NULL,
+#                                         PRIMARY KEY (`Id`),
+#                                         KEY `UserId` (`UserId`),
+#                                         CONSTRAINT `emailotpverification_ibfk_1` FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE
+# ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `PasswordResetTokens`;
 CREATE TABLE `PasswordResetTokens` (
@@ -451,6 +451,15 @@ CREATE TABLE `InappropriateWord` (
                                      KEY `idx_inappropriate_word_active` (`IsActive`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- =============================================
+-- SECTION 4: CÁC BẢNG BỔ SUNG (ĐÃ ĐỒNG BỘ)
+-- =============================================
+
+DROP TABLE IF EXISTS `BankAccount`;
+DROP TABLE IF EXISTS `RefundRequest`;
+DROP TABLE IF EXISTS `FeedbackReport`;
+
+
 -- Khôi phục lại các thiết lập ban đầu
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -496,6 +505,92 @@ ALTER TABLE `Booking`
     ADD COLUMN `OwnerPayout` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Tiền chủ xe nhận (RentalFee - PlatformFee)' AFTER `PlatformFee`,
     ADD COLUMN `PaymentConfirmedAt` DATETIME NULL COMMENT 'Thời điểm thanh toán cọc/toàn bộ thành công' AFTER `RemainingAmount`;
 
+-- Add OrderCode column to Payment table
+ALTER TABLE Payment ADD COLUMN OrderCode VARCHAR(100) NULL AFTER UserId;
+
+-- Add index for better query performance
+CREATE INDEX idx_payment_ordercode ON Payment(OrderCode);
+
+
+-- Create BankAccount table
+CREATE TABLE `BankAccount` (
+                               `BankAccountId` VARCHAR(36) PRIMARY KEY,
+                               `UserId` VARCHAR(36) NOT NULL,
+                               `AccountNumber` VARCHAR(50) NOT NULL,
+                               `AccountHolderName` VARCHAR(100) NOT NULL,
+                               `BankName` VARCHAR(100) NOT NULL,
+                               `BankCode` VARCHAR(20),
+                               `QRCodeImagePath` VARCHAR(500),
+                               `IsDefault` BOOLEAN NOT NULL DEFAULT FALSE,
+                               `CreatedDate` DATETIME NOT NULL,
+                               `UpdatedDate` DATETIME,
+                               FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE
+);
+
+-- Create RefundRequest table
+CREATE TABLE `RefundRequest` (
+                                 `RefundRequestId` VARCHAR(36) PRIMARY KEY,
+                                 `BookingId` VARCHAR(36) NOT NULL,
+                                 `UserId` VARCHAR(36) NOT NULL,
+                                 `BankAccountId` VARCHAR(36) NOT NULL,
+                                 `RefundAmount` DECIMAL(10,2) NOT NULL,
+                                 `CancelReason` TEXT NOT NULL,
+                                 `Status` VARCHAR(20) NOT NULL DEFAULT 'Pending',
+                                 `AdminNotes` TEXT,
+                                 `ProcessedBy` VARCHAR(36),
+                                 `CreatedDate` DATETIME NOT NULL,
+                                 `ProcessedDate` DATETIME,
+                                 `IsWithinTwoHours` BOOLEAN NOT NULL DEFAULT FALSE,
+                                 FOREIGN KEY (`BookingId`) REFERENCES `Booking` (`BookingId`),
+                                 FOREIGN KEY (`UserId`) REFERENCES `Users` (`UserId`) ON DELETE CASCADE,
+                                 FOREIGN KEY (`BankAccountId`) REFERENCES `BankAccount` (`BankAccountId`)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_bankaccount_userid ON BankAccount(UserId);
+CREATE INDEX idx_bankaccount_isdefault ON BankAccount(IsDefault);
+CREATE INDEX idx_refundrequest_bookingid ON RefundRequest(BookingId);
+CREATE INDEX idx_refundrequest_userid ON RefundRequest(UserId);
+CREATE INDEX idx_refundrequest_status ON RefundRequest(Status);
+CREATE INDEX idx_refundrequest_createddate ON RefundRequest(CreatedDate);
+
+
+-- Thêm dữ liệu cho loại hộp số
+INSERT INTO `TransmissionTypes` (`TransmissionTypeId`, `TransmissionTypeName`)
+VALUES
+    (1, 'Automatic')
+ON DUPLICATE KEY UPDATE TransmissionTypeName=VALUES(TransmissionTypeName);
+
+-- Thêm dữ liệu cho các danh mục xe
+INSERT INTO `VehicleCategories` (`CategoryId`, `CategoryName`)
+VALUES
+    (1, 'Electric Car'),
+    (2, 'Electric Motorbike')
+ON DUPLICATE KEY UPDATE CategoryName=VALUES(CategoryName);
+
+ALTER TABLE Vehicle MODIFY COLUMN Status VARCHAR(20);
+
+UPDATE Vehicle
+SET Status = 'Available'
+WHERE Status IS NULL OR Status = '' OR Status NOT IN ('PendingApproval', 'Available', 'Rented', 'Maintenance', 'Unavailable');
+
 -- Thêm cột địa điểm giao xe
 ALTER TABLE `Booking`
     ADD COLUMN `PickupLocation` VARCHAR(500) NULL COMMENT 'Địa điểm giao xe khách hàng đã chọn' AFTER `ReturnDateTime`;
+
+create table `FeedbackReport`
+(
+    `ReportId`    varchar(36)                  not null
+        primary key,
+    `CreatedDate` datetime(6)                  not null,
+    `Reason`      varchar(1000)                null,
+    `Status`      enum ('Pending', 'Resolved') not null,
+    `FeedbackId`  varchar(36)                  not null,
+    `ReporterId`  varchar(36)                  not null,
+    constraint `FK1griu1vmthuss7auxrqnxal4p`
+        foreign key (`FeedbackId`) references `UserFeedback` (`FeedbackId`)
+            on delete cascade,
+    constraint `FK7s63wl5nvqjox2t68ma3ftqy9`
+        foreign key (`ReporterId`) references `Users` (`UserId`)
+            on delete cascade
+);
