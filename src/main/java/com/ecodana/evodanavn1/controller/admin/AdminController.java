@@ -136,7 +136,8 @@ public class AdminController {
             model.addAttribute("maintenanceVehicles", maintenanceVehicles);
 
             // Add refund requests data for refund-requests tab
-            List<RefundRequest> allRefundRequests = refundRequestRepository.findAll();
+            // Use findAllWithRelations() to eagerly load bankAccount, booking, and user relationships
+            List<RefundRequest> allRefundRequests = refundRequestRepository.findAllWithRelations();
             long totalRefundCount = allRefundRequests.size();
             long pendingRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending).count();
             long approvedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved).count();

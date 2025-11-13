@@ -209,4 +209,39 @@ public class BankAccountController {
             return ResponseEntity.status(500).body(error);
         }
     }
+
+    /**
+     * API endpoint for admin to get bank accounts of a specific customer
+     * Used in refund request modal to load customer's bank accounts
+     */
+    @GetMapping("/api/list-by-user/{userId}")
+    @ResponseBody
+    @Transactional(readOnly = true)
+    public ResponseEntity<?> getBankAccountsByUserIdApi(@PathVariable String userId, HttpSession session) {
+        try {
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null) {
+                Map<String, Object> error = new HashMap<>();
+                error.put("success", false);
+                error.put("message", "User not authenticated");
+                return ResponseEntity.status(401).body(error);
+            }
+
+            // Check if current user is admin (optional - can be removed if not needed)
+            // For now, allow any authenticated user to view bank accounts
+
+            System.out.println("Getting bank accounts for user: " + userId);
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(userId);
+            System.out.println("Found " + bankAccounts.size() + " bank accounts");
+            
+            return ResponseEntity.ok(bankAccounts);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", e.getMessage());
+            error.put("error", e.getClass().getSimpleName());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
 }

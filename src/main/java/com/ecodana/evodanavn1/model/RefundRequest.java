@@ -23,7 +23,7 @@ public class RefundRequest {
     @OnDelete(action = OnDeleteAction.CASCADE)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "BankAccountId", nullable = true)
     private BankAccount bankAccount;
 

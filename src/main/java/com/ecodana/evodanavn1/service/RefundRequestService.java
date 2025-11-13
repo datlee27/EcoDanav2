@@ -106,24 +106,37 @@ public class RefundRequestService {
     private BigDecimal calculateRefundAmount(Booking booking) {
         // Get all payments (Completed or Pending - both should be refunded)
         List<Payment> payments = paymentRepository.findByBookingId(booking.getBookingId());
+        System.out.println("DEBUG: Total payments found: " + payments.size());
+        for (Payment p : payments) {
+            System.out.println("  - Payment: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Status: " + p.getPaymentStatus() + ", Amount: " + p.getAmount());
+        }
+        
         List<Payment> refundablePayments = payments.stream()
                 .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
                             p.getPaymentStatus() == Payment.PaymentStatus.Pending)
                 .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
                             p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .toList();
+        
+        System.out.println("DEBUG: Refundable payments found: " + refundablePayments.size());
+        for (Payment p : refundablePayments) {
+            System.out.println("  - Refundable: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Amount: " + p.getAmount());
+        }
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime paymentTime = booking.getPaymentConfirmedAt();
 
         if (paymentTime == null) {
             // Fallback: sum all refundable payments
-            return refundablePayments.stream()
+            BigDecimal fallbackAmount = refundablePayments.stream()
                     .map(Payment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            System.out.println("DEBUG: paymentTime is null, using fallback amount: " + fallbackAmount);
+            return fallbackAmount;
         }
 
         long hoursSincePayment = Duration.between(paymentTime, now).toHours();
+        System.out.println("DEBUG: Hours since payment: " + hoursSincePayment);
 
         BigDecimal totalRefundAmount = BigDecimal.ZERO;
 
@@ -141,8 +154,10 @@ public class RefundRequestService {
             }
 
             totalRefundAmount = totalRefundAmount.add(paymentRefundAmount);
+            System.out.println("DEBUG: Payment " + payment.getPaymentId() + " refund: " + paymentRefundAmount);
         }
 
+        System.out.println("DEBUG: Total refund amount: " + totalRefundAmount);
         return totalRefundAmount.max(BigDecimal.ZERO);
     }
 

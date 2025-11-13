@@ -126,6 +126,12 @@ public class PayOSService {
             Payment payment = paymentRepository.findByOrderCode(orderCode)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy thanh toán cho order: " + orderCode));
 
+            // IDEMPOTENCY CHECK: Nếu payment đã được xử lý (status = Completed), không xử lý lại
+            if (payment.getPaymentStatus() == Payment.PaymentStatus.Completed) {
+                logger.warn("Payment already processed for order: {}. Skipping duplicate processing.", orderCode);
+                return;
+            }
+
             Booking booking = payment.getBooking();
             BigDecimal paidAmount = BigDecimal.valueOf(amount);
             

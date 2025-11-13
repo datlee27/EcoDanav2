@@ -19,6 +19,7 @@
     <script th:src="@{/js/admin-dashboard.js}"></script>
     <script th:src="@{/js/admin-users.js}"></script>
     <script th:src="@{/js/admin-payments-tab.js}"></script>
+    <script th:src="@{/js/admin-refund-requests-tab.js}"></script>
     <link
       rel="icon"
       type="image/x-icon"
@@ -1231,141 +1232,18 @@
         }
       });
 
-      // Refund Requests Modal Functions
-      function showRefundDetailModal(button) {
-          const data = {
-              refundId: button.getAttribute('data-refund-id'),
-              refundAmount: button.getAttribute('data-refund-amount'),
-              bookingCode: button.getAttribute('data-booking-code'),
-              customerName: button.getAttribute('data-customer-name'),
-              customerEmail: button.getAttribute('data-customer-email'),
-              customerPhone: button.getAttribute('data-customer-phone'),
-              status: button.getAttribute('data-status'),
-              cancelReason: button.getAttribute('data-cancel-reason'),
-              adminNotes: button.getAttribute('data-admin-notes'),
-              createdDate: button.getAttribute('data-created-date'),
-              isUrgent: button.getAttribute('data-is-urgent'),
-              bankName: button.getAttribute('data-bank-name'),
-              accountNumber: button.getAttribute('data-account-number'),
-              accountHolder: button.getAttribute('data-account-holder')
-          };
-
-          // Set values
-          document.getElementById('modalRefundId').textContent = 'ID: ' + data.refundId.substring(0, 8) + '...';
-          document.getElementById('modalRefundAmount').textContent = new Intl.NumberFormat('vi-VN').format(data.refundAmount) + ' ₫';
-          document.getElementById('modalBookingCode').textContent = data.bookingCode || '-';
-          document.getElementById('modalCreatedDate').textContent = data.createdDate || '-';
-          document.getElementById('modalCustomerName').textContent = data.customerName || '-';
-          document.getElementById('modalCustomerEmail').textContent = data.customerEmail || '-';
-          document.getElementById('modalCustomerPhone').textContent = data.customerPhone || '-';
-          document.getElementById('modalCancelReason').textContent = data.cancelReason || '-';
-
-          // Status badge
-          const statusBadge = document.getElementById('statusBadge');
-          if (data.status === 'Pending') {
-              statusBadge.className = 'px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 inline-block';
-              statusBadge.innerHTML = '<i class="fas fa-clock mr-1"></i>Chờ duyệt';
-          } else if (data.status === 'Approved') {
-              statusBadge.className = 'px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800 inline-block';
-              statusBadge.innerHTML = '<i class="fas fa-check mr-1"></i>Đã duyệt';
-          } else if (data.status === 'Rejected') {
-              statusBadge.className = 'px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-800 inline-block';
-              statusBadge.innerHTML = '<i class="fas fa-times mr-1"></i>Từ chối';
-          }
-
-          // Bank account section
-          if (data.bankName && data.bankName !== 'null') {
-              document.getElementById('bankAccountSection').classList.remove('hidden');
-              document.getElementById('modalBankName').textContent = data.bankName || '-';
-              document.getElementById('modalAccountNumber').textContent = data.accountNumber || '-';
-              document.getElementById('modalAccountHolder').textContent = data.accountHolder || '-';
-          } else {
-              document.getElementById('bankAccountSection').classList.add('hidden');
-          }
-
-          // Admin notes section
-          if (data.adminNotes && data.adminNotes !== 'null') {
-              document.getElementById('adminNotesSection').classList.remove('hidden');
-              document.getElementById('modalAdminNotes').textContent = data.adminNotes || '-';
-          } else {
-              document.getElementById('adminNotesSection').classList.add('hidden');
-          }
-
-          // Action buttons
-          const actionButtons = document.getElementById('actionButtons');
-          actionButtons.innerHTML = '';
-          if (data.status === 'Pending') {
-              const approveBtn = document.createElement('button');
-              approveBtn.type = 'button';
-              approveBtn.className = 'px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700';
-              approveBtn.innerHTML = '<i class="fas fa-check mr-2"></i>Duyệt';
-              approveBtn.onclick = function() {
-                  approveRefund(data.refundId);
-              };
-              
-              const rejectBtn = document.createElement('button');
-              rejectBtn.type = 'button';
-              rejectBtn.className = 'px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700';
-              rejectBtn.innerHTML = '<i class="fas fa-times mr-2"></i>Từ chối';
-              rejectBtn.onclick = function() {
-                  rejectRefund(data.refundId);
-              };
-              
-              actionButtons.appendChild(approveBtn);
-              actionButtons.appendChild(rejectBtn);
-          }
-
-          // Show modal
-          document.getElementById('refundDetailModal').classList.remove('hidden');
-      }
-
-      function approveRefund(refundId) {
-          const notes = prompt('Nhập ghi chú (tùy chọn):', '');
-          if (notes === null) return;
-          
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '/admin/refund-requests/' + refundId + '/approve';
-          if (notes) {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = 'adminNotes';
-              input.value = notes;
-              form.appendChild(input);
-          }
-          document.body.appendChild(form);
-          form.submit();
-      }
-
-      function rejectRefund(refundId) {
-          const notes = prompt('Nhập lý do từ chối:', '');
-          if (notes === null || notes.trim() === '') {
-              alert('Vui lòng nhập lý do từ chối');
-              return;
-          }
-          
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '/admin/refund-requests/' + refundId + '/reject';
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'adminNotes';
-          input.value = notes;
-          form.appendChild(input);
-          document.body.appendChild(form);
-          form.submit();
-      }
-
-      function closeRefundDetailModal() {
-          document.getElementById('refundDetailModal').classList.add('hidden');
-      }
-
+      // Refund Requests Modal Functions are now in admin-refund-requests-tab.js
+      // This file provides: showRefundDetailModal(), closeRefundDetailModal(), 
+      // approveRefundRequest(), rejectRefundRequest(), showBankAccountModal(), closeBankAccountModal()
+      
       // Close modal when clicking outside
       const refundDetailModal = document.getElementById('refundDetailModal');
       if (refundDetailModal) {
           refundDetailModal.addEventListener('click', function(e) {
               if (e.target === this) {
-                  closeRefundDetailModal();
+                  if (window.closeRefundDetailModal) {
+                      window.closeRefundDetailModal();
+                  }
               }
           });
       }

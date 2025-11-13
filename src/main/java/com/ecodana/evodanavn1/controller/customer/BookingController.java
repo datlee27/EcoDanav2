@@ -39,6 +39,7 @@ import com.ecodana.evodanavn1.service.PayOSService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.transaction.annotation.Transactional;
 
 @Controller
 @RequestMapping("/booking")
@@ -204,6 +205,7 @@ public class BookingController {
      * Create new booking
      */
     @PostMapping("/create")
+    @Transactional
     public String createBooking(@ModelAttribute BookingRequest bookingRequest, HttpSession session, RedirectAttributes redirectAttributes) {
 
         User user = (User) session.getAttribute("currentUser");
@@ -213,7 +215,7 @@ public class BookingController {
         }
 
         try {
-            // Parse dates and times
+            // Prevent duplicate booking creation - check if a pending booking already exists for this vehicle and time
             LocalDate pickup = LocalDate.parse(bookingRequest.getPickupDate());
             LocalDate returnD = LocalDate.parse(bookingRequest.getReturnDate());
             LocalTime pickupT = LocalTime.parse(bookingRequest.getPickupTime());
@@ -221,6 +223,23 @@ public class BookingController {
 
             LocalDateTime pickupDateTime = LocalDateTime.of(pickup, pickupT);
             LocalDateTime returnDateTime = LocalDateTime.of(returnD, returnT);
+            
+            // Check for existing pending/confirmed booking with same vehicle and time
+            List<Booking> existingBookings = bookingService.getBookingsByUserId(user.getId());
+            for (Booking existing : existingBookings) {
+                if (existing.getVehicle().getVehicleId().equals(bookingRequest.getVehicleId()) &&
+                    existing.getPickupDateTime().equals(pickupDateTime) &&
+                    existing.getReturnDateTime().equals(returnDateTime) &&
+                    (existing.getStatus() == Booking.BookingStatus.Pending || 
+                     existing.getStatus() == Booking.BookingStatus.Confirmed ||
+                     existing.getStatus() == Booking.BookingStatus.AwaitingDeposit)) {
+                    System.out.println("=== DUPLICATE BOOKING DETECTED ===");
+                    System.out.println("Existing booking: " + existing.getBookingCode());
+                    redirectAttributes.addFlashAttribute("warning", "Bạn đã có đơn đặt xe này rồi! Mã đơn: " + existing.getBookingCode());
+                    return "redirect:/booking/confirmation/" + existing.getBookingId();
+                }
+            }
+
 
             // Validate dates
             if (pickupDateTime.isBefore(LocalDateTime.now().minusMinutes(5))) { // Cho phép trễ 5 phút

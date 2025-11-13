@@ -1,7 +1,9 @@
 package com.ecodana.evodanavn1.controller.admin;
 
+import com.ecodana.evodanavn1.model.BankAccount;
 import com.ecodana.evodanavn1.model.RefundRequest;
 import com.ecodana.evodanavn1.model.User;
+import com.ecodana.evodanavn1.repository.BankAccountRepository;
 import com.ecodana.evodanavn1.repository.RefundRequestRepository;
 import com.ecodana.evodanavn1.service.RefundRequestService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpSession;
-import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -24,76 +25,15 @@ public class RefundRequestController {
     @Autowired
     private RefundRequestService refundRequestService;
 
+    @Autowired
+    private BankAccountRepository bankAccountRepository;
+
     /**
-     * Display all refund requests (server-side rendering)
+     * Redirect to admin dashboard with refund-requests tab
      */
     @GetMapping
-    public String listRefundRequests(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String search,
-            Model model,
-            HttpSession session) {
-
-        User currentUser = (User) session.getAttribute("currentUser");
-        if (currentUser == null) {
-            return "redirect:/login";
-        }
-
-        // Get all refund requests
-        List<RefundRequest> refundRequests = refundRequestRepository.findAll();
-
-        // Filter by status if provided
-        if (status != null && !status.isEmpty() && !status.equals("All")) {
-            refundRequests = refundRequests.stream()
-                    .filter(r -> r.getStatus().toString().equals(status))
-                    .toList();
-        }
-
-        // Filter by search term if provided
-        if (search != null && !search.isEmpty()) {
-            String searchLower = search.toLowerCase();
-            refundRequests = refundRequests.stream()
-                    .filter(r -> 
-                        (r.getBooking() != null && r.getBooking().getBookingCode().toLowerCase().contains(searchLower)) ||
-                        (r.getUser() != null && (r.getUser().getFirstName().toLowerCase().contains(searchLower) ||
-                                                r.getUser().getLastName().toLowerCase().contains(searchLower) ||
-                                                r.getUser().getEmail().toLowerCase().contains(searchLower)))
-                    )
-                    .toList();
-        }
-
-        // Calculate statistics
-        long totalCount = refundRequestRepository.findAll().size();
-        long pendingCount = refundRequestRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending)
-                .count();
-        long approvedCount = refundRequestRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved)
-                .count();
-        long rejectedCount = refundRequestRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RefundRequest.RefundStatus.Rejected)
-                .count();
-        long urgentCount = refundRequestRepository.findAll().stream()
-                .filter(r -> r.isWithinTwoHours() && r.getStatus() == RefundRequest.RefundStatus.Pending)
-                .count();
-
-        // Calculate total pending amount
-        double totalPendingAmount = refundRequestRepository.findAll().stream()
-                .filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending)
-                .mapToDouble(r -> r.getRefundAmount().doubleValue())
-                .sum();
-
-        model.addAttribute("refundRequests", refundRequests);
-        model.addAttribute("totalCount", totalCount);
-        model.addAttribute("pendingCount", pendingCount);
-        model.addAttribute("approvedCount", approvedCount);
-        model.addAttribute("rejectedCount", rejectedCount);
-        model.addAttribute("urgentCount", urgentCount);
-        model.addAttribute("totalPendingAmount", totalPendingAmount);
-        model.addAttribute("currentStatus", status != null ? status : "All");
-        model.addAttribute("searchTerm", search != null ? search : "");
-
-        return "admin/refund-requests-list";
+    public String listRefundRequests() {
+        return "redirect:/admin?tab=refund-requests";
     }
 
     /**
@@ -141,7 +81,7 @@ public class RefundRequestController {
             redirectAttributes.addFlashAttribute("error", "Error approving refund request: " + e.getMessage());
         }
 
-        return "redirect:/admin/refund-requests";
+        return "redirect:/admin?tab=refund-requests";
     }
 
     /**
@@ -166,6 +106,46 @@ public class RefundRequestController {
             redirectAttributes.addFlashAttribute("error", "Error rejecting refund request: " + e.getMessage());
         }
 
-        return "redirect:/admin/refund-requests";
+        return "redirect:/admin?tab=refund-requests";
+    }
+
+    /**
+     * Update bank account for refund request
+     */
+    @PostMapping("/{id}/update-bank-account")
+    public String updateBankAccount(
+            @PathVariable String id,
+            @RequestParam String bankAccountId,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Optional<RefundRequest> refundRequestOpt = refundRequestRepository.findById(id);
+            if (refundRequestOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Refund request not found!");
+                return "redirect:/admin?tab=refund-requests";
+            }
+
+            Optional<BankAccount> bankAccountOpt = bankAccountRepository.findById(bankAccountId);
+            if (bankAccountOpt.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "Bank account not found!");
+                return "redirect:/admin?tab=refund-requests";
+            }
+
+            RefundRequest refundRequest = refundRequestOpt.get();
+            refundRequest.setBankAccount(bankAccountOpt.get());
+            refundRequestRepository.save(refundRequest);
+
+            redirectAttributes.addFlashAttribute("success", "Bank account updated successfully!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Error updating bank account: " + e.getMessage());
+        }
+
+        return "redirect:/admin?tab=refund-requests";
     }
 }
