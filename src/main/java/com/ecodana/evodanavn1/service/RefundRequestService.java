@@ -106,24 +106,37 @@ public class RefundRequestService {
     private BigDecimal calculateRefundAmount(Booking booking) {
         // Get all payments (Completed or Pending - both should be refunded)
         List<Payment> payments = paymentRepository.findByBookingId(booking.getBookingId());
+        System.out.println("DEBUG: Total payments found: " + payments.size());
+        for (Payment p : payments) {
+            System.out.println("  - Payment: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Status: " + p.getPaymentStatus() + ", Amount: " + p.getAmount());
+        }
+        
         List<Payment> refundablePayments = payments.stream()
                 .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
                             p.getPaymentStatus() == Payment.PaymentStatus.Pending)
                 .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
                             p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .toList();
+        
+        System.out.println("DEBUG: Refundable payments found: " + refundablePayments.size());
+        for (Payment p : refundablePayments) {
+            System.out.println("  - Refundable: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Amount: " + p.getAmount());
+        }
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime paymentTime = booking.getPaymentConfirmedAt();
 
         if (paymentTime == null) {
             // Fallback: sum all refundable payments
-            return refundablePayments.stream()
+            BigDecimal fallbackAmount = refundablePayments.stream()
                     .map(Payment::getAmount)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+            System.out.println("DEBUG: paymentTime is null, using fallback amount: " + fallbackAmount);
+            return fallbackAmount;
         }
 
         long hoursSincePayment = Duration.between(paymentTime, now).toHours();
+        System.out.println("DEBUG: Hours since payment: " + hoursSincePayment);
 
         BigDecimal totalRefundAmount = BigDecimal.ZERO;
 
@@ -141,8 +154,10 @@ public class RefundRequestService {
             }
 
             totalRefundAmount = totalRefundAmount.add(paymentRefundAmount);
+            System.out.println("DEBUG: Payment " + payment.getPaymentId() + " refund: " + paymentRefundAmount);
         }
 
+        System.out.println("DEBUG: Total refund amount: " + totalRefundAmount);
         return totalRefundAmount.max(BigDecimal.ZERO);
     }
 
@@ -204,6 +219,32 @@ public class RefundRequestService {
 
         refundRequestRepository.save(refundRequest);
 
+        // Notify customer that refund has been approved
+        notificationService.createNotification(
+            refundRequest.getUser().getId(),
+            "Yêu cầu hoàn tiền đã được duyệt! Admin sẽ chuyển tiền vào tài khoản của bạn trong 1-3 ngày làm việc.",
+            refundRequestId,
+            "REFUND_APPROVED"
+        );
+    }
+
+    @Transactional
+    public void markRefundTransferred(String refundRequestId, String transferProofImagePath) {
+        RefundRequest refundRequest = refundRequestRepository.findById(refundRequestId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu hoàn tiền"));
+
+        // Allow both Pending and Approved status
+        if (refundRequest.getStatus() != RefundRequest.RefundStatus.Pending && 
+            refundRequest.getStatus() != RefundRequest.RefundStatus.Approved) {
+            throw new IllegalStateException("Chỉ có thể chuyển tiền cho các yêu cầu đang chờ hoặc đã được duyệt");
+        }
+
+        // Set status to Approved (Đã duyệt) after upload
+        refundRequest.setStatus(RefundRequest.RefundStatus.Approved);
+        refundRequest.setTransferProofImagePath(transferProofImagePath);
+        refundRequest.setProcessedDate(LocalDateTime.now());
+        refundRequestRepository.save(refundRequest);
+
         // Create Payment record with Refunded status
         Booking booking = refundRequest.getBooking();
         Payment refundPayment = new Payment();
@@ -215,22 +256,31 @@ public class RefundRequestService {
         refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
         refundPayment.setPaymentType(Payment.PaymentType.Refund);
         refundPayment.setPaymentDate(LocalDateTime.now());
-        refundPayment.setNotes("Admin duyệt hoàn tiền: " + adminNotes);
+        refundPayment.setNotes("Admin chuyển tiền hoàn lại");
         paymentRepository.save(refundPayment);
 
         System.out.println("Payment record created for refund: " + refundPayment.getPaymentId());
 
-        // Update booking status
+        // Update booking status to Cancelled
         booking.setStatus(Booking.BookingStatus.Cancelled);
-        booking.setCancelReason("Admin đã duyệt yêu cầu hoàn tiền: " + adminNotes);
+        booking.setCancelReason("Admin đã chuyển tiền hoàn lại");
         bookingRepository.save(booking);
 
-        // Notify customer
+        // Notify customer that refund has been completed with amount and image
+        String message = String.format(
+            "✅ Yêu cầu hoàn tiền của bạn đã được xử lý thành công!\n\n" +
+            "Số tiền hoàn: %,.0f VNĐ\n" +
+            "Ảnh chứng minh chuyển khoản: %s\n\n" +
+            "Tiền sẽ được chuyển vào tài khoản ngân hàng của bạn trong 1-3 ngày làm việc.",
+            refundRequest.getRefundAmount(),
+            transferProofImagePath != null ? transferProofImagePath : "Không có"
+        );
+        
         notificationService.createNotification(
             refundRequest.getUser().getId(),
-            "Yêu cầu hoàn tiền đã được duyệt! Số tiền " + refundRequest.getRefundAmount() + " VNĐ sẽ được chuyển vào tài khoản của bạn trong 1-3 ngày làm việc.",
+            message,
             refundRequestId,
-            "REFUND_APPROVED"
+            "REFUND_COMPLETED"
         );
     }
 

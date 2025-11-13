@@ -589,24 +589,27 @@ public class BookingService {
             throw new IllegalStateException("Không thể hủy vì không tìm thấy thời điểm thanh toán. Vui lòng liên hệ CSKH.");
         }
 
-        // Tìm tất cả payment đã hoàn thành (Completed)
+        // Tìm tất cả payment (Completed hoặc Pending - cả hai đều có thể hoàn tiền)
         List<Payment> payments = paymentRepository.findByBookingId(bookingId);
-        List<Payment> completedPayments = payments.stream()
-                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+        List<Payment> refundablePayments = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
+                            p.getPaymentStatus() == Payment.PaymentStatus.Pending)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
+                            p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .toList();
 
         System.out.println("=== REFUND CALCULATION DEBUG ===");
         System.out.println("Booking ID: " + bookingId);
         System.out.println("Total payments found: " + payments.size());
-        System.out.println("Completed payments: " + completedPayments.size());
+        System.out.println("Refundable payments (Completed or Pending): " + refundablePayments.size());
         
-        for (Payment payment : completedPayments) {
+        for (Payment payment : refundablePayments) {
             System.out.println("Payment: " + payment.getPaymentId() + ", Amount: " + payment.getAmount() + 
                     ", Type: " + payment.getPaymentType() + ", Status: " + payment.getPaymentStatus());
         }
 
-        if (completedPayments.isEmpty()) {
-            System.out.println("WARNING: No completed payments found, but booking status is Confirmed");
+        if (refundablePayments.isEmpty()) {
+            System.out.println("WARNING: No refundable payments found, but booking status is Confirmed");
             
             // Fallback: Change to RefundPending for admin review
             booking.setStatus(Booking.BookingStatus.RefundPending);
@@ -639,7 +642,7 @@ public class BookingService {
         BigDecimal totalRefundAmount = BigDecimal.ZERO;
         StringBuilder refundMessageBuilder = new StringBuilder();
 
-        for (Payment payment : completedPayments) {
+        for (Payment payment : refundablePayments) {
             BigDecimal paymentRefundAmount = BigDecimal.ZERO;
             String paymentRefundMessage = "";
 

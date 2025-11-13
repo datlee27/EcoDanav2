@@ -4,6 +4,7 @@ import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.FavoriteService;
+import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
@@ -27,6 +28,9 @@ public class VehicleController {
 
     @Autowired
     private FavoriteService favoriteService;
+
+    @Autowired
+    private UserService userService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -104,6 +108,12 @@ public class VehicleController {
 
         // Add the API key to the model to pass it to the view
         model.addAttribute("googleApiKey", googleApiKey);
+
+        // Load vehicle owner information
+        if (vehicle.getOwnerId() != null) {
+            User owner = userService.findById(vehicle.getOwnerId());
+            model.addAttribute("vehicleOwner", owner);
+        }
 
         // Load feedbacks for this vehicle and compute average rating
         java.util.List<UserFeedback> feedbacks = userFeedbackService.getFeedbackByVehicle(vehicle);

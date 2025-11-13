@@ -18,6 +18,9 @@ public interface RefundRequestRepository extends JpaRepository<RefundRequest, St
     
     Optional<RefundRequest> findByBookingBookingId(String bookingId);
     
+    @Query("SELECT DISTINCT rr FROM RefundRequest rr LEFT JOIN FETCH rr.bankAccount LEFT JOIN FETCH rr.booking LEFT JOIN FETCH rr.user ORDER BY rr.createdDate DESC")
+    List<RefundRequest> findAllWithRelations();
+    
     @Query("SELECT rr FROM RefundRequest rr WHERE rr.status = com.ecodana.evodanavn1.model.RefundRequest$RefundStatus.Pending ORDER BY rr.createdDate DESC")
     List<RefundRequest> findPendingRequestsOrderByCreatedDate();
     

@@ -29,7 +29,8 @@ public class PayOSController {
     @PostMapping("/webhook")
     public ResponseEntity<Map<String, Object>> handleWebhook(@RequestBody String payload) {
         try {
-            logger.info("Received PayOS webhook: {}", payload);
+            logger.info("=== WEBHOOK RECEIVED ===");
+            logger.info("Payload: {}", payload);
             
             // Xác thực webhook
             if (!payOSService.verifyWebhook(payload)) {
@@ -44,8 +45,12 @@ public class PayOSController {
             String transactionId = data.get("transactionId") != null ? data.get("transactionId").asText() : "";
             String status = data.get("status").asText();
             
+            logger.info("Webhook Details - OrderCode: {}, Amount: {}, Status: {}, TransactionId: {}", 
+                    orderCode, amount, status, transactionId);
+            
             // Xử lý theo trạng thái thanh toán
             if ("PAID".equals(status)) {
+                logger.info("Processing PAID status for order: {}", orderCode);
                 payOSService.handlePaymentSuccess(orderCode, amount, transactionId);
                 logger.info("Payment successful for order: {}", orderCode);
             } else if ("CANCELLED".equals(status) || "FAILED".equals(status)) {
@@ -53,6 +58,7 @@ public class PayOSController {
                 logger.warn("Payment failed or cancelled for order: {}", orderCode);
             }
             
+            logger.info("=== WEBHOOK PROCESSED ===");
             return ResponseEntity.ok(createSuccessResponse("Webhook processed successfully"));
             
         } catch (Exception e) {

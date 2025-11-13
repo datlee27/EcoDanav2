@@ -468,21 +468,21 @@
         const hoursSincePayment = (now.getTime() - paymentTime.getTime()) / (1000 * 60 * 60);
         const daysBeforeTrip = (tripStartTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 
-        if (hoursSincePayment < 1) {
+        if (hoursSincePayment < 2) {
             // 1. Hoàn 100%
-            refundAmount = totalPaid;
-            policyText = "Hủy trong 1 giờ sau khi thanh toán: Hoàn 100%.";
+            refundAmount = bookingData.totalAmount;
+            policyText = "Hủy trong 2 giờ sau khi thanh toán: Hoàn 100%.";
 
         } else if (daysBeforeTrip >= 7) {
             // 2. Mất 10%
             const penalty = tripValue * 0.10;
-            refundAmount = totalPaid - penalty;
+            refundAmount = tripValue - penalty;
             policyText = `Hủy trước 7 ngày: Mất 10% giá trị chuyến (${formatCurrency(penalty)}).`;
 
         } else {
             // 3. Mất 40%
             const penalty = tripValue * 0.40;
-            refundAmount = totalPaid - penalty;
+            refundAmount = tripValue - penalty;
             policyText = `Hủy trong 7 ngày: Mất 40% giá trị chuyến (${formatCurrency(penalty)}).`;
         }
 

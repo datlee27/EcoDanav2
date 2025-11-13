@@ -7,9 +7,12 @@ import com.ecodana.evodanavn1.repository.RefundRequestRepository;
 import com.ecodana.evodanavn1.repository.BookingRepository;
 import com.ecodana.evodanavn1.service.RefundRequestService;
 import com.ecodana.evodanavn1.service.BankAccountService;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -37,6 +40,9 @@ public class RefundRequestApiController {
 
     @Autowired
     private com.ecodana.evodanavn1.repository.PaymentRepository paymentRepository;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     /**
      * Sync Payment refunds to RefundRequests
@@ -129,6 +135,7 @@ public class RefundRequestApiController {
                 data.put("createdDate", refund.getCreatedDate());
                 data.put("processedDate", refund.getProcessedDate());
                 data.put("isWithinTwoHours", refund.isWithinTwoHours());
+                data.put("transferProofImagePath", refund.getTransferProofImagePath());
                 
                 // Booking info
                 if (refund.getBooking() != null) {
@@ -234,6 +241,7 @@ public class RefundRequestApiController {
                     data.put("createdDate", refund.getCreatedDate());
                     data.put("processedDate", refund.getProcessedDate());
                     data.put("isWithinTwoHours", refund.isWithinTwoHours());
+                    data.put("transferProofImagePath", refund.getTransferProofImagePath());
                     
                     if (refund.getBooking() != null) {
                         data.put("bookingCode", refund.getBooking().getBookingCode());
@@ -487,6 +495,160 @@ public class RefundRequestApiController {
     }
 
     /**
+     * Mark refund as transferred (Đã chuyển tiền) with transfer proof image
+     * Handles both Pending and Approved status
+     */
+    @PostMapping("/{id}/mark-transferred")
+    public ResponseEntity<Map<String, Object>> markRefundTransferred(
+            @PathVariable String id,
+            @RequestParam(required = false) String transferProofImagePath) {
+        try {
+            RefundRequest refund = refundRequestRepository.findById(id)
+                    .orElse(null);
+            
+            if (refund == null) {
+                return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
+            }
+            
+            // Allow both Pending and Approved status to be marked as Transferred
+            if (refund.getStatus() != RefundRequest.RefundStatus.Pending && 
+                refund.getStatus() != RefundRequest.RefundStatus.Approved) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only pending or approved requests can be marked as transferred"));
+            }
+            
+            // If Pending, approve first then transfer
+            if (refund.getStatus() == RefundRequest.RefundStatus.Pending) {
+                refund.setStatus(RefundRequest.RefundStatus.Approved);
+                refundRequestRepository.save(refund);
+            }
+            
+            // Now mark as transferred
+            refundRequestService.markRefundTransferred(id, transferProofImagePath);
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "success", 
+                "message", "Refund marked as transferred successfully",
+                "refundRequestId", id
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(404).body(Map.of("status", "error", "message", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(400).body(Map.of("status", "error", "message", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to mark refund as transferred: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Mark refund as completed with transfer proof image and message
+     */
+    @PostMapping("/{id}/mark-completed")
+    public ResponseEntity<Map<String, Object>> markRefundCompleted(
+            @PathVariable String id,
+            @RequestParam(required = false) String transferProofImagePath,
+            @RequestParam(required = false) String transferMessage) {
+        try {
+            RefundRequest refund = refundRequestRepository.findById(id)
+                    .orElse(null);
+            
+            if (refund == null) {
+                return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
+            }
+            
+            if (refund.getStatus() != RefundRequest.RefundStatus.Approved) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only approved requests can be marked as completed"));
+            }
+            
+            // Update refund with transfer proof image
+            refund.setStatus(RefundRequest.RefundStatus.Completed);
+            refund.setTransferProofImagePath(transferProofImagePath);
+            refund.setProcessedDate(java.time.LocalDateTime.now());
+            
+            refundRequestRepository.save(refund);
+            
+            return ResponseEntity.ok(Map.of(
+                "status", "success", 
+                "message", "Refund marked as completed successfully",
+                "refundRequestId", id
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to mark refund as completed: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Upload transfer proof image for refund
+     */
+    @PostMapping("/upload-transfer-proof")
+    public ResponseEntity<Map<String, Object>> uploadTransferProof(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("refundRequestId") String refundRequestId) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "File is empty"));
+            }
+
+            // Upload to Cloudinary
+            @SuppressWarnings("unchecked")
+            Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                    "folder", "ecodana/refund-proofs",
+                    "resource_type", "auto"
+            ));
+
+            String imageUrl = (String) uploadResult.get("secure_url");
+
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "Transfer proof uploaded successfully",
+                    "imageUrl", imageUrl
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                    "status", "error",
+                    "message", "Failed to upload transfer proof: " + e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Update refund request status
+     */
+    @PostMapping("/{id}/update-status")
+    public ResponseEntity<Map<String, Object>> updateRefundStatus(
+            @PathVariable String id,
+            @RequestParam String status) {
+        try {
+            RefundRequest refund = refundRequestRepository.findById(id)
+                    .orElse(null);
+            
+            if (refund == null) {
+                return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
+            }
+            
+            // Update status
+            try {
+                RefundRequest.RefundStatus newStatus = RefundRequest.RefundStatus.valueOf(status);
+                refund.setStatus(newStatus);
+                refundRequestRepository.save(refund);
+                
+                return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "message", "Status updated successfully",
+                    "newStatus", newStatus.toString()
+                ));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Invalid status: " + status));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("status", "error", "message", "Failed to update status: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Get statistics for refund requests
      */
     @GetMapping("/statistics")
@@ -499,6 +661,7 @@ public class RefundRequestApiController {
             stats.put("pending", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending).count());
             stats.put("approved", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved).count());
             stats.put("rejected", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Rejected).count());
+            stats.put("transferred", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Transferred).count());
             stats.put("completed", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Completed).count());
             stats.put("urgent", refundRequestRepository.findUrgentPendingRequests().size());
             
