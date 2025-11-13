@@ -194,10 +194,21 @@
                       <i class="fas fa-check-circle mr-1"></i>Đã hoàn tiền
                     </p>
                   </div>
-                  <div class="md:col-span-2">
-                    <p class="text-xs text-green-700 mb-1">Lý do hủy</p>
-                    <p class="text-gray-800" th:text="${booking.cancelReason}">Lý do hủy chuyến</p>
+                </div>
+                <!-- Refund Proof Image -->
+                <div class="mt-4 pt-4 border-t border-green-200">
+                  <p class="text-xs text-green-700 mb-2">Ảnh chứng minh chuyển khoản</p>
+                  <div id="refundProofContainer" class="flex gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onclick="viewRefundProofImage(this)"
+                      th:attr="data-booking-id=${booking.bookingId}"
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium"
+                    >
+                      <i class="fas fa-image mr-1"></i>Xem ảnh
+                    </button>
                   </div>
+                  <p class="text-xs text-gray-500 mt-2">Đang tải ảnh...</p>
                 </div>
               </div>
 
@@ -742,6 +753,51 @@
           }
         });
       });
+
+      // View refund proof image
+      window.viewRefundProofImage = function(button) {
+        const bookingId = button.getAttribute('data-booking-id');
+        
+        // Fetch refund request for this booking
+        fetch('/admin/api/refund-requests/by-booking/' + bookingId)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Không tìm thấy thông tin hoàn tiền');
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.transferProofImagePath) {
+              // Open image in lightbox
+              const lightbox = document.createElement('div');
+              lightbox.className = 'fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4';
+              lightbox.onclick = function(e) {
+                if (e.target === this) {
+                  lightbox.remove();
+                }
+              };
+              
+              lightbox.innerHTML = `
+                <div class="max-w-2xl w-full">
+                  <div class="relative bg-white rounded-lg overflow-hidden">
+                    <button onclick="this.closest('.fixed').remove()" class="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full hover:bg-red-600 z-10">
+                      <i class="fas fa-times text-xl"></i>
+                    </button>
+                    <img src="${data.transferProofImagePath}" alt="Ảnh chứng minh chuyển khoản" class="w-full h-auto">
+                  </div>
+                </div>
+              `;
+              
+              document.body.appendChild(lightbox);
+            } else {
+              alert('Chưa có ảnh chứng minh chuyển khoản');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('Lỗi: ' + error.message);
+          });
+      };
     </script>
   </body>
 </html>
