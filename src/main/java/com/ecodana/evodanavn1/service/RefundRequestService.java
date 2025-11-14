@@ -324,6 +324,12 @@ public class RefundRequestService {
 
         refundRequestRepository.save(refundRequest);
 
+        // Update booking status to Cancelled (refund rejected)
+        Booking booking = refundRequest.getBooking();
+        booking.setStatus(Booking.BookingStatus.Cancelled);
+        booking.setCancelReason("Admin từ chối hoàn tiền: " + adminNotes);
+        bookingRepository.save(booking);
+
         // Notify customer
         notificationService.createNotification(
             refundRequest.getUser().getId(),

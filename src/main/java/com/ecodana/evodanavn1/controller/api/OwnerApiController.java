@@ -114,7 +114,7 @@ public class OwnerApiController {
                 //     String url = cloudinaryService.uploadFile(image);
                 //     imageUrls.add(url);
                 // }
-                booking.setReturnImageUrls(imageUrls);
+                booking.setReturnImageUrlsList(imageUrls); // Changed to setReturnImageUrlsList
                 logger.info("Đã lưu {} ảnh trả xe cho booking {}", imageUrls.size(), bookingId);
             }
 

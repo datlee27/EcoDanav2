@@ -3,7 +3,9 @@ package com.ecodana.evodanavn1.model;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -100,10 +102,8 @@ public class Booking {
     @Column(name = "return_notes", columnDefinition = "TEXT")
     private String returnNotes;
 
-    @ElementCollection
-    @CollectionTable(name = "booking_return_images", joinColumns = @JoinColumn(name = "booking_id"))
-    @Column(name = "image_url")
-    private List<String> returnImageUrls = new ArrayList<>();
+    @Column(name = "return_image_urls", columnDefinition = "TEXT")
+    private String returnImageUrls; // Changed to String to store comma-separated URLs
 
     @Transient
     private boolean hasFeedback = false;
@@ -139,13 +139,32 @@ public class Booking {
         this.returnNotes = returnNotes;
     }
 
-    public List<String> getReturnImageUrls() {
+    // Modified getter for returnImageUrls to return a List<String>
+    public List<String> getReturnImageUrlsList() {
+        if (this.returnImageUrls == null || this.returnImageUrls.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return Arrays.asList(this.returnImageUrls.split(","));
+    }
+
+    // Modified setter for returnImageUrls to accept a List<String> and store as a comma-separated String
+    public void setReturnImageUrlsList(List<String> returnImageUrlsList) {
+        if (returnImageUrlsList == null || returnImageUrlsList.isEmpty()) {
+            this.returnImageUrls = null;
+        } else {
+            this.returnImageUrls = returnImageUrlsList.stream().collect(Collectors.joining(","));
+        }
+    }
+
+    // Existing getter and setter for the String field (can be used internally or for direct DB interaction)
+    public String getReturnImageUrls() {
         return returnImageUrls;
     }
 
-    public void setReturnImageUrls(List<String> returnImageUrls) {
+    public void setReturnImageUrls(String returnImageUrls) {
         this.returnImageUrls = returnImageUrls;
     }
+
     public String getBookingId() { return bookingId; }
     public void setBookingId(String bookingId) { this.bookingId = bookingId; }
     public User getUser() { return user; }
