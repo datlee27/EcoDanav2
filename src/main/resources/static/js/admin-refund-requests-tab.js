@@ -60,6 +60,9 @@
         } else if (data.status === 'Completed') {
             statusBadge.classList.add('bg-blue-100', 'text-blue-800');
             statusBadge.innerHTML = '<i class="fas fa-check-double mr-1"></i> Đã hoàn thành';
+        } else if (data.status === 'Refunded') {
+            statusBadge.classList.add('bg-green-100', 'text-green-800');
+            statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Đã hoàn tiền';
         }
 
         // 3. Lưu refund ID để sử dụng sau
@@ -157,16 +160,30 @@
             // Lưu refund ID vào global variable
             window.currentRefundRequestId = data.refundId;
             
-            // Nút Đã Hoàn Thành (Upload Ảnh)
-            const completedButton = document.createElement('button');
-            completedButton.innerHTML = '<i class="fas fa-check-double mr-2"></i>Đã Hoàn Thành (Upload Ảnh)';
-            completedButton.className = 'px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700';
-            completedButton.type = 'button';
-            completedButton.onclick = function(e) {
-                e.preventDefault();
-                window.markRefundCompleted(window.currentRefundRequestId);
-            };
-            actionButtonsDiv.appendChild(completedButton);
+            // Kiểm tra nếu đã có ảnh chứng minh
+            if (data.transferProofImagePath) {
+                // Nút Xem Ảnh (đã upload rồi)
+                const viewImageButton = document.createElement('button');
+                viewImageButton.innerHTML = '<i class="fas fa-image mr-2"></i>Xem Ảnh Chứng Minh';
+                viewImageButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
+                viewImageButton.type = 'button';
+                viewImageButton.onclick = function(e) {
+                    e.preventDefault();
+                    window.showTransferProofImageModal(data.transferProofImagePath);
+                };
+                actionButtonsDiv.appendChild(viewImageButton);
+            } else {
+                // Nút Upload Ảnh (chưa upload)
+                const uploadButton = document.createElement('button');
+                uploadButton.innerHTML = '<i class="fas fa-cloud-upload-alt mr-2"></i>Upload Ảnh Chứng Minh';
+                uploadButton.className = 'px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700';
+                uploadButton.type = 'button';
+                uploadButton.onclick = function(e) {
+                    e.preventDefault();
+                    window.markRefundCompleted(window.currentRefundRequestId);
+                };
+                actionButtonsDiv.appendChild(uploadButton);
+            }
         } else if (data.status === 'Transferred') {
             // Nút Xem Ảnh Chuyển Khoản
             const viewTransferButton = document.createElement('button');
@@ -176,6 +193,17 @@
                 showTransferProofImage(data.transferProofImagePath);
             };
             actionButtonsDiv.appendChild(viewTransferButton);
+        } else if (data.status === 'Refunded') {
+            // Nút Xem Ảnh (đã hoàn tiền)
+            const viewImageButton = document.createElement('button');
+            viewImageButton.innerHTML = '<i class="fas fa-image mr-2"></i>Xem Ảnh Chứng Minh';
+            viewImageButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
+            viewImageButton.type = 'button';
+            viewImageButton.onclick = function(e) {
+                e.preventDefault();
+                window.showTransferProofImageModal(data.transferProofImagePath);
+            };
+            actionButtonsDiv.appendChild(viewImageButton);
         }
 
         // 6. Hiển thị modal
@@ -412,6 +440,17 @@
      * Xem ảnh chứng minh chuyển khoản
      */
     window.showTransferProofImage = function(imageSrc) {
+        if (!imageSrc) {
+            alert('Không có ảnh chứng minh chuyển khoản');
+            return;
+        }
+        openQRCodeLightbox(imageSrc);
+    };
+
+    /**
+     * Hiển thị ảnh chứng minh trong modal lightbox
+     */
+    window.showTransferProofImageModal = function(imageSrc) {
         if (!imageSrc) {
             alert('Không có ảnh chứng minh chuyển khoản');
             return;
