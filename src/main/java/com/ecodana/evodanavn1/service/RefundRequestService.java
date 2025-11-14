@@ -212,12 +212,46 @@ public class RefundRequestService {
         RefundRequest refundRequest = refundRequestRepository.findById(refundRequestId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu hoàn tiền"));
 
-        refundRequest.setStatus(RefundRequest.RefundStatus.Approved);
+        refundRequest.setStatus(RefundRequest.RefundStatus.Refunded);
         refundRequest.setProcessedBy(adminUserId);
         refundRequest.setProcessedDate(LocalDateTime.now());
         refundRequest.setAdminNotes(adminNotes);
 
         refundRequestRepository.save(refundRequest);
+
+        // Update all existing payments (Deposit/FinalPayment) to Refunded status
+        Booking booking = refundRequest.getBooking();
+        List<Payment> existingPayments = paymentRepository.findByBookingId(booking.getBookingId());
+        for (Payment payment : existingPayments) {
+            // Only update Completed payments (Deposit/FinalPayment)
+            if (payment.getPaymentStatus() == Payment.PaymentStatus.Completed && 
+                (payment.getPaymentType() == Payment.PaymentType.Deposit || 
+                 payment.getPaymentType() == Payment.PaymentType.FinalPayment)) {
+                payment.setPaymentStatus(Payment.PaymentStatus.Refunded);
+                payment.setNotes("Đã hoàn tiền - RefundRequest: " + refundRequestId);
+                paymentRepository.save(payment);
+                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded status");
+            }
+        }
+
+        // Create new Payment record with Refund type (negative amount)
+        Payment refundPayment = new Payment();
+        refundPayment.setPaymentId(UUID.randomUUID().toString());
+        refundPayment.setBooking(booking);
+        refundPayment.setUser(booking.getUser());
+        refundPayment.setAmount(refundRequest.getRefundAmount().negate()); // Số âm
+        refundPayment.setPaymentMethod("PayOS_Refund");
+        refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
+        refundPayment.setPaymentType(Payment.PaymentType.Refund);
+        refundPayment.setPaymentDate(LocalDateTime.now());
+        refundPayment.setNotes("Admin duyệt hoàn tiền: " + adminNotes);
+        paymentRepository.save(refundPayment);
+        System.out.println("Created refund payment: " + refundPayment.getPaymentId());
+
+        // Update booking status to Refunded
+        booking.setStatus(Booking.BookingStatus.Refunded);
+        booking.setCancelReason("Admin đã duyệt hoàn tiền");
+        bookingRepository.save(booking);
 
         // Notify customer that refund has been approved
         notificationService.createNotification(
@@ -233,10 +267,9 @@ public class RefundRequestService {
         RefundRequest refundRequest = refundRequestRepository.findById(refundRequestId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy yêu cầu hoàn tiền"));
 
-        // Allow both Pending and Approved status
-        if (refundRequest.getStatus() != RefundRequest.RefundStatus.Pending && 
-            refundRequest.getStatus() != RefundRequest.RefundStatus.Approved) {
-            throw new IllegalStateException("Chỉ có thể chuyển tiền cho các yêu cầu đang chờ hoặc đã được duyệt");
+        // Only allow Pending status
+        if (refundRequest.getStatus() != RefundRequest.RefundStatus.Pending) {
+            throw new IllegalStateException("Chỉ có thể chuyển tiền cho các yêu cầu đang chờ");
         }
 
         // Set status to Refunded (Đã hoàn tiền) after upload
@@ -245,8 +278,22 @@ public class RefundRequestService {
         refundRequest.setProcessedDate(LocalDateTime.now());
         refundRequestRepository.save(refundRequest);
 
-        // Create Payment record with Refunded status
+        // Update all existing payments (Deposit/FinalPayment) to Refunded status
         Booking booking = refundRequest.getBooking();
+        List<Payment> existingPayments = paymentRepository.findByBookingId(booking.getBookingId());
+        for (Payment payment : existingPayments) {
+            // Only update Completed payments (Deposit/FinalPayment)
+            if (payment.getPaymentStatus() == Payment.PaymentStatus.Completed && 
+                (payment.getPaymentType() == Payment.PaymentType.Deposit || 
+                 payment.getPaymentType() == Payment.PaymentType.FinalPayment)) {
+                payment.setPaymentStatus(Payment.PaymentStatus.Refunded);
+                payment.setNotes("Đã hoàn tiền - RefundRequest: " + refundRequestId);
+                paymentRepository.save(payment);
+                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded status");
+            }
+        }
+
+        // Create Payment record with Refunded status
         Payment refundPayment = new Payment();
         refundPayment.setPaymentId(UUID.randomUUID().toString());
         refundPayment.setBooking(booking);
@@ -261,8 +308,8 @@ public class RefundRequestService {
 
         System.out.println("Payment record created for refund: " + refundPayment.getPaymentId());
 
-        // Update booking status to Cancelled (đã hủy chuyến)
-        booking.setStatus(Booking.BookingStatus.Cancelled);
+        // Update booking status to Refunded (đã hoàn tiền)
+        booking.setStatus(Booking.BookingStatus.Refunded);
         booking.setCancelReason("Admin đã chuyển tiền hoàn lại");
         bookingRepository.save(booking);
 

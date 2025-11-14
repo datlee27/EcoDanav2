@@ -172,7 +172,7 @@ CREATE TABLE `Booking` (
                            `DepositAmountRequired` decimal(10,2) NOT NULL DEFAULT 0.00,
                            `RemainingAmount` decimal(10,2) NOT NULL DEFAULT 0.00,
                            `PaymentConfirmedAt` datetime DEFAULT NULL,
-                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
+                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'Refunded', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
                            `DiscountId` char(36) DEFAULT NULL,
                            `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            `CancelReason` varchar(500) DEFAULT NULL,
@@ -619,16 +619,13 @@ ALTER TABLE Booking
 ALTER TABLE RefundRequest
     MODIFY COLUMN Status ENUM(
     'Pending',
-    'Approved',
     'Rejected',
-    'Transferred',
-    'Completed',
     'Refunded'
     ) NOT NULL DEFAULT 'Pending';
 
 
--- Add Transferred status to RefundRequest Status ENUM
-ALTER TABLE RefundRequest MODIFY COLUMN Status ENUM('Pending', 'Approved', 'Rejected', 'Transferred', 'Completed', 'Refunded') NOT NULL;
+-- Updated RefundRequest Status ENUM - removed Approved, Transferred, Completed
+ALTER TABLE RefundRequest MODIFY COLUMN Status ENUM('Pending', 'Rejected', 'Refunded') NOT NULL;
 -- Add transfer proof image field to RefundRequest table
 ALTER TABLE RefundRequest ADD COLUMN TransferProofImagePath VARCHAR(500) NULL;
 

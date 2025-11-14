@@ -101,8 +101,8 @@
                 >0</span
               >)
             </button>
-            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Cancelled">
-              Đã hoàn tiền (<span id="count-refunded" th:text="${#lists.size(bookings.?[status.name() == 'Cancelled' && cancelReason != null])}"
+            <button class="filter-tab px-6 py-3 font-medium text-gray-600 hover:text-green-500" data-status="Refunded">
+              Đã hoàn tiền (<span id="count-refunded" th:text="${#lists.size(bookings.?[status.name() == 'Refunded'])}"
                 >0</span
               >)
             </button>
@@ -142,6 +142,7 @@
                                                        booking.status == 'Ongoing' ? 'bg-green-100 text-green-800' :
                                                        booking.status == 'Completed' ? 'bg-gray-100 text-gray-800' :
                                                        booking.status == 'RefundPending' ? 'bg-orange-100 text-orange-800' :
+                                                       booking.status == 'Refunded' ? 'bg-green-100 text-green-800' :
                                                        booking.status == 'Cancelled' ? 'bg-red-100 text-red-800' :
                                                        'bg-gray-100 text-gray-800'}"
                       th:text="${booking.status == 'Pending' ? 'Chờ duyệt' :
@@ -149,6 +150,7 @@
                                                booking.status == 'Ongoing' ? 'Đang thuê' :
                                                booking.status == 'Completed' ? 'Hoàn thành' :
                                                booking.status == 'RefundPending' ? 'Hủy chuyến' :
+                                               booking.status == 'Refunded' ? 'Đã hoàn tiền' :
                                                booking.status == 'Cancelled' ? 'Đã hủy' :
                                                booking.status}"
                     >
@@ -177,7 +179,7 @@
               </div>
 
               <!-- Refund Information (if refunded) -->
-              <div th:if="${booking.status == 'Cancelled' && booking.cancelReason != null}" class="p-4 bg-green-50 border-2 border-green-300 rounded-lg mb-4">
+              <div th:if="${booking.status == 'Refunded' || (booking.status == 'Cancelled' && booking.cancelReason != null)}" class="p-4 bg-green-50 border-2 border-green-300 rounded-lg mb-4">
                 <h4 class="font-semibold text-green-900 mb-3">
                   <i class="fas fa-check-circle text-green-600 mr-2"></i>Thông tin hoàn tiền
                 </h4>

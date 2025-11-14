@@ -194,6 +194,7 @@ public class Booking {
         Completed,        // Đã hoàn tất chuyến đi và thanh toán
         Cancelled,        // Đơn bị hủy
         RefundPending,    // Chờ hoàn tiền
+        Refunded,         // Đã hoàn tiền
         LatePickup,       // Quá thởi nhận xe
         NoShowReported    // Owner báo cáo customer không đến
     }

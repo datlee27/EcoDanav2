@@ -1,5 +1,5 @@
--- Fix Booking Status ENUM to include all 11 values
--- Run this script to update your existing database
+-- Migration to add Refunded status to Booking
+-- This allows Booking to have a dedicated "Refunded" status instead of just "Cancelled"
 
 ALTER TABLE `Booking` 
 MODIFY COLUMN `Status` ENUM(

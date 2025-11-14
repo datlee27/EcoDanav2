@@ -22,8 +22,8 @@
             <div class="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-lg">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600">Approved</p>
-                        <p class="text-2xl font-bold text-green-600" th:text="${approvedCount ?: 0}">0</p>
+                        <p class="text-sm text-gray-600">Refunded</p>
+                        <p class="text-2xl font-bold text-green-600" th:text="${refundedCount ?: 0}">0</p>
                     </div>
                     <i class="fas fa-check-circle text-3xl text-green-200"></i>
                 </div>
@@ -86,14 +86,8 @@
                             <span th:if="${refund.status.toString() == 'Pending'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                                 <i class="fas fa-clock mr-1"></i>Chờ duyệt
                             </span>
-                        <span th:if="${refund.status.toString() == 'Approved'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                <i class="fas fa-check mr-1"></i>Đã duyệt
-                            </span>
                         <span th:if="${refund.status.toString() == 'Rejected'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
                                 <i class="fas fa-times mr-1"></i>Từ chối
-                            </span>
-                        <span th:if="${refund.status.toString() == 'Completed'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">
-                                <i class="fas fa-check-double mr-1"></i>Đã hoàn thành
                             </span>
                         <span th:if="${refund.status.toString() == 'Refunded'}" class="px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                                 <i class="fas fa-check-circle mr-1"></i>Đã hoàn tiền
