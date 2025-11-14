@@ -335,7 +335,16 @@ public class BookingService {
             updateVehicleStatusOnBookingCompletionOrCancellation(vehicle);
         }
 
-        // 6. Lưu booking đã cập nhật
+        // 6. Cập nhật trạng thái Payment
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        for (Payment payment : payments) {
+            if (payment.getPaymentStatus() != Payment.PaymentStatus.Refunded) {
+                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+            }
+        }
+        paymentRepository.saveAll(payments);
+
+        // 7. Lưu booking đã cập nhật
         return bookingRepository.save(booking);
     }
 
