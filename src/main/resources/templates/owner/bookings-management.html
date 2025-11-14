@@ -58,6 +58,11 @@
 </div>
 
 <div th:fragment="booking-modals">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <div id="booking-detail-modal" class="modal hidden">
         <div class="modal-overlay" onclick="closeModal('booking-detail-modal')"></div>
@@ -69,6 +74,14 @@
                 </button>
             </div>
             <div class="modal-body" id="booking-detail-content">
+                <!-- Nội dung chi tiết sẽ được load vào đây -->
+            </div>
+            <!-- Map Container -->
+            <div id="pickup-location-map-container" class="hidden p-4">
+                <h4 class="text-lg font-semibold mb-2">Bản đồ vị trí giao xe</h4>
+                <div id="pickup-location-map" class="w-full h-64 bg-gray-200 rounded-lg">
+                    <!-- Bản đồ sẽ được khởi tạo ở đây -->
+                </div>
             </div>
         </div>
     </div>
@@ -326,7 +339,176 @@
 
         // Lưu bookingId đang được xử lý
         let currentNoShowBookingId = null;
+        let pickupMap = null;
+        let pickupMarker = null;
+
+        /**
+         * Khởi tạo bản đồ trong modal chi tiết booking.
+         * @param {number} lat - Vĩ độ
+         * @param {number} lng - Kinh độ
+         * @param {string} locationName - Tên địa điểm
+         */
+        function initPickupLocationMap(lat, lng, locationName) {
+            const mapContainer = document.getElementById('pickup-location-map-container');
+            const mapElement = document.getElementById('pickup-location-map');
+            if (!mapElement) return;
+
+            mapContainer.classList.remove('hidden');
+
+            // Nếu bản đồ đã được khởi tạo, chỉ cần cập nhật vị trí
+            if (pickupMap) {
+                pickupMap.setView([lat, lng], 15);
+            } else {
+                // Khởi tạo bản đồ mới
+                pickupMap = L.map(mapElement).setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(pickupMap);
+            }
+
+            // Xóa marker cũ nếu có
+            if (pickupMarker) {
+                pickupMarker.remove();
+            }
+
+            // Thêm marker mới
+            pickupMarker = L.marker([lat, lng]).addTo(pickupMap)
+                .bindPopup(`<b>Địa điểm giao xe:</b><br>${locationName}`)
+                .openPopup();
+
+            // Cần gọi invalidateSize để đảm bảo bản đồ hiển thị đúng trong modal
+            setTimeout(() => {
+                pickupMap.invalidateSize();
+            }, 100);
+        }
+
+        /**
+         * Chuyển đổi địa chỉ thành tọa độ và hiển thị bản đồ.
+         * @param {string} address - Địa chỉ cần tìm kiếm.
+         */
+        function showMapForAddress(address) {
+            // Sử dụng Nominatim (dịch vụ miễn phí của OpenStreetMap) để geocode
+            const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const { lat, lon } = data[0]; // Lấy kết quả đầu tiên
+                        initPickupLocationMap(parseFloat(lat), parseFloat(lon), address);
+                    } else {
+                        alert('Không tìm thấy tọa độ cho địa chỉ này.');
+                        document.getElementById('pickup-location-map-container').classList.add('hidden');
+                    }
+                })
+                .catch(error => console.error('Lỗi khi geocoding địa chỉ:', error));
+        }
         
+        /**
+         * Mở modal và hiển thị chi tiết booking.
+         * @param {string} bookingId - ID của booking cần xem.
+         */
+        function openBookingDetailModal(bookingId) {
+            const modal = document.getElementById('booking-detail-modal');
+            const contentDiv = document.getElementById('booking-detail-content');
+            const mapContainer = document.getElementById('pickup-location-map-container');
+
+            // Hiển thị loading
+            contentDiv.innerHTML = '<div class="text-center py-10"><i class="fas fa-spinner fa-spin text-4xl text-primary"></i><p class="mt-2">Đang tải dữ liệu...</p></div>';
+            mapContainer.classList.add('hidden'); // Ẩn bản đồ khi tải
+            openModal('booking-detail-modal');
+
+            // Lấy CSRF token
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            // Gọi API để lấy chi tiết booking
+            fetch(`/api/owner/bookings/${bookingId}`, {
+                headers: {
+                    'Accept': 'application/json',
+                    [csrfHeader]: csrfToken
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Không thể tải thông tin chi tiết booking.');
+                }
+                return response.json();
+            })
+            .then(booking => {
+                // Hàm format tiền tệ
+                const formatCurrency = (amount) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+
+                // **Tạo nút "Xem bản đồ"**
+                let locationHtml = `<p class="font-semibold text-gray-800">${booking.pickupLocation || 'Chưa cập nhật'}</p>`;
+                if (booking.pickupLocation) {
+                    // Dùng backtick và escape ký tự đặc biệt để truyền vào onclick
+                    const escapedLocation = booking.pickupLocation.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                    locationHtml += `
+                        <button onclick="showMapForAddress('${escapedLocation}')"
+                                class="mt-1 text-sm text-primary hover:underline font-semibold flex items-center gap-1">
+                            <i class="fas fa-map-marked-alt"></i>
+                            Xem bản đồ
+                        </button>
+                    `;
+                }
+
+                // Tạo nội dung HTML cho modal
+                contentDiv.innerHTML = `
+                    <div class="space-y-6">
+                        <!-- Thông tin khách hàng -->
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <h4 class="font-bold text-lg mb-3 text-gray-700">Thông tin khách hàng</h4>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                                <div class="flex items-center gap-2"><i class="fas fa-user text-gray-400 w-4"></i><strong>Khách hàng:</strong> ${booking.customerName}</div>
+                                <div class="flex items-center gap-2"><i class="fas fa-phone text-gray-400 w-4"></i><strong>Điện thoại:</strong> ${booking.customerPhone}</div>
+                                <div class="flex items-center gap-2 col-span-2"><i class="fas fa-envelope text-gray-400 w-4"></i><strong>Email:</strong> ${booking.customerEmail}</div>
+                            </div>
+                        </div>
+
+                        <!-- Thông tin chuyến đi -->
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <h4 class="font-bold text-lg mb-3 text-gray-700">Thông tin chuyến đi</h4>
+                            <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                                <div>
+                                    <p class="text-gray-500">Nhận xe</p>
+                                    <p class="font-semibold text-gray-800">${new Date(booking.pickupDateTime).toLocaleString('vi-VN')}</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-500">Trả xe</p>
+                                    <p class="font-semibold text-gray-800">${new Date(booking.returnDateTime).toLocaleString('vi-VN')}</p>
+                                </div>
+                                <div class="col-span-2">
+                                    <p class="text-gray-500">Địa điểm giao xe</p>
+                                    ${locationHtml}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chi tiết thanh toán -->
+                        <div class="p-4 bg-gray-50 rounded-lg border">
+                            <h4 class="font-bold text-lg mb-3 text-gray-700">Chi tiết thanh toán</h4>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex justify-between"><span>Tiền thuê xe:</span> <span class="font-semibold">${formatCurrency(booking.vehicleRentalFee)}</span></div>
+                                <div class="flex justify-between"><span>Phí nền tảng:</span> <span class="font-semibold">${formatCurrency(booking.platformFee)}</span></div>
+                                <div class="flex justify-between text-green-600"><span>Giảm giá:</span> <span class="font-semibold">-${formatCurrency(booking.discountAmount)}</span></div>
+                                <div class="flex justify-between border-t pt-2 mt-2">
+                                    <strong class="text-base">Tổng cộng:</strong>
+                                    <strong class="text-base text-primary">${formatCurrency(booking.totalAmount)}</strong>
+                                </div>
+                                <div class="flex justify-between text-blue-600"><span>Đã cọc (20%):</span> <span class="font-semibold">${formatCurrency(booking.depositAmountRequired)}</span></div>
+                                <div class="flex justify-between text-red-600"><span>Còn lại (thu khi giao xe):</span> <span class="font-semibold">${formatCurrency(booking.remainingAmount)}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error fetching booking details:', error);
+                contentDiv.innerHTML = `<div class="text-center py-10 text-red-500"><i class="fas fa-exclamation-triangle text-4xl"></i><p class="mt-2">${error.message}</p></div>`;
+            });
+        }
+
         function openCancelNoShowModal(bookingId) {
             currentNoShowBookingId = bookingId;
             openModal('cancel-no-show-modal');

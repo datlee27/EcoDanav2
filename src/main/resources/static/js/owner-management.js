@@ -420,8 +420,6 @@ function validateCompletionForm() {
 
 // 1. Mở modal chính và điều chỉnh UI
 async function openCompleteTripModal(bookingId) {
-
-
     // Reset form and UI elements first
     document.getElementById('complete-trip-form').reset();
     document.getElementById('return-images-error').classList.add('hidden');
@@ -489,11 +487,6 @@ async function openTransferPaymentModal() {
     const remainingAmount = parseFloat(document.getElementById('complete-remaining-amount').value) || 0;
 
     // Quy trình thanh toán QR cho số tiền còn lại
-    if (remainingAmount <= 0) {
-        closeModal('complete-trip-modal');
-        openModal('payment-success-modal'); // Modal này có các nút xác nhận cuối
-        return;
-    }
     const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(remainingAmount);
     document.getElementById('transfer-amount-display').textContent = formattedAmount;
 
