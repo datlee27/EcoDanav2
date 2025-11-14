@@ -255,4 +255,19 @@ public class NotificationService {
         );
         createNotificationForAllAdmins(message, booking.getBookingId(), "REFUND_REQUEST");
     }
+
+    /**
+     * Gửi thông báo cho Owner khi Customer hủy booking (chưa thanh toán)
+     */
+    public void notifyOwnerBookingCancelled(com.ecodana.evodanavn1.model.Booking booking, String reason) {
+        String ownerId = booking.getVehicle().getOwnerId();
+        if (ownerId != null) {
+            String message = String.format(
+                "Khách hàng đã hủy đơn đặt xe #%s. Lý do: %s",
+                booking.getBookingCode(),
+                reason != null ? reason : "Không có lý do cụ thể"
+            );
+            createNotification(ownerId, message, booking.getBookingId(), "BOOKING_CANCELLED_BY_CUSTOMER");
+        }
+    }
 }

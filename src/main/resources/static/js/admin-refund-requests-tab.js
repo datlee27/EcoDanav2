@@ -48,38 +48,17 @@
         if (data.status === 'Pending') {
             statusBadge.classList.add('bg-yellow-100', 'text-yellow-800');
             statusBadge.innerHTML = '<i class="fas fa-clock mr-1"></i> Chờ duyệt';
-        } else if (data.status === 'Approved') {
-            statusBadge.classList.add('bg-green-100', 'text-green-800');
-            statusBadge.innerHTML = '<i class="fas fa-check mr-1"></i> Đã duyệt';
-        } else if (data.status === 'Rejected') {
-            statusBadge.classList.add('bg-red-100', 'text-red-800');
-            statusBadge.innerHTML = '<i class="fas fa-times mr-1"></i> Từ chối';
-        } else if (data.status === 'Transferred') {
-            statusBadge.classList.add('bg-purple-100', 'text-purple-800');
-            statusBadge.innerHTML = '<i class="fas fa-money-bill-wave mr-1"></i> Đã chuyển tiền';
-        } else if (data.status === 'Completed') {
-            statusBadge.classList.add('bg-blue-100', 'text-blue-800');
-            statusBadge.innerHTML = '<i class="fas fa-check-double mr-1"></i> Đã hoàn thành';
         } else if (data.status === 'Refunded') {
             statusBadge.classList.add('bg-green-100', 'text-green-800');
             statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Đã hoàn tiền';
+        } else if (data.status === 'Rejected') {
+            statusBadge.classList.add('bg-red-100', 'text-red-800');
+            statusBadge.innerHTML = '<i class="fas fa-times mr-1"></i> Từ chối';
         }
 
         // 3. Lưu refund ID để sử dụng sau
         window.currentRefundRequestId = data.refundId;
         window.currentCustomerId = data.customerId;
-
-        // 3.5. Nếu status = "Transferred", cập nhật thành "Approved" để có thể xem lại
-        if (data.status === 'Transferred') {
-            fetch('/admin/api/refund-requests/' + data.refundId + '/update-status?status=Approved', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .catch(error => console.log('Status update (Transferred->Approved) completed or skipped'));
-        }
 
         // 4. Ẩn/hiện và điền Admin Notes
         const adminNotesSection = document.getElementById('adminNotesSection');
@@ -156,43 +135,6 @@
                 actionButtonsDiv.appendChild(cancelRejectButton);
             };
             actionButtonsDiv.appendChild(rejectButton);
-        } else if (data.status === 'Approved') {
-            // Lưu refund ID vào global variable
-            window.currentRefundRequestId = data.refundId;
-            
-            // Kiểm tra nếu đã có ảnh chứng minh
-            if (data.transferProofImagePath) {
-                // Nút Xem Ảnh (đã upload rồi)
-                const viewImageButton = document.createElement('button');
-                viewImageButton.innerHTML = '<i class="fas fa-image mr-2"></i>Xem Ảnh Chứng Minh';
-                viewImageButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
-                viewImageButton.type = 'button';
-                viewImageButton.onclick = function(e) {
-                    e.preventDefault();
-                    window.showTransferProofImageModal(data.transferProofImagePath);
-                };
-                actionButtonsDiv.appendChild(viewImageButton);
-            } else {
-                // Nút Upload Ảnh (chưa upload)
-                const uploadButton = document.createElement('button');
-                uploadButton.innerHTML = '<i class="fas fa-cloud-upload-alt mr-2"></i>Upload Ảnh Chứng Minh';
-                uploadButton.className = 'px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700';
-                uploadButton.type = 'button';
-                uploadButton.onclick = function(e) {
-                    e.preventDefault();
-                    window.markRefundCompleted(window.currentRefundRequestId);
-                };
-                actionButtonsDiv.appendChild(uploadButton);
-            }
-        } else if (data.status === 'Transferred') {
-            // Nút Xem Ảnh Chuyển Khoản
-            const viewTransferButton = document.createElement('button');
-            viewTransferButton.innerHTML = '<i class="fas fa-image mr-2"></i>Xem Ảnh Chuyển Khoản';
-            viewTransferButton.className = 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700';
-            viewTransferButton.onclick = function() {
-                showTransferProofImage(data.transferProofImagePath);
-            };
-            actionButtonsDiv.appendChild(viewTransferButton);
         } else if (data.status === 'Refunded') {
             // Nút Xem Ảnh (đã hoàn tiền)
             const viewImageButton = document.createElement('button');
@@ -253,7 +195,7 @@
                     // Cập nhật status badge trong modal
                     var statusBadge = document.getElementById('statusBadge');
                     statusBadge.className = 'px-4 py-2 rounded-full text-sm font-semibold inline-block bg-green-100 text-green-800';
-                    statusBadge.innerHTML = '<i class="fas fa-check mr-1"></i> Đã duyệt';
+                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Đã hoàn tiền';
                     
                     // Cập nhật admin notes nếu có
                     if (notes) {
@@ -266,21 +208,10 @@
                     var actionButtonsDiv = document.getElementById('actionButtons');
                     actionButtonsDiv.innerHTML = '';
                     
-                    // Nút Đã Hoàn Thành (upload ảnh)
-                    var completedButton = document.createElement('button');
-                    completedButton.innerHTML = '<i class="fas fa-check-double mr-2"></i>Đã Hoàn Thành (Upload Ảnh)';
-                    completedButton.className = 'px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700';
-                    completedButton.type = 'button';
-                    completedButton.onclick = function(e) {
-                        e.preventDefault();
-                        window.markRefundCompleted(refundRequestId);
-                    };
-                    actionButtonsDiv.appendChild(completedButton);
-                    
                     // Hiển thị thông báo thành công
                     var successMessage = document.createElement('div');
                     successMessage.className = 'bg-green-50 border-l-4 border-green-500 p-4 rounded mb-4';
-                    successMessage.innerHTML = '<p class="text-green-900"><i class="fas fa-check-circle mr-2 text-green-600"></i><strong>✅ Yêu cầu hoàn tiền đã được duyệt! Vui lòng upload ảnh chứng minh chuyển khoản.</strong></p>';
+                    successMessage.innerHTML = '<p class="text-green-900"><i class="fas fa-check-circle mr-2 text-green-600"></i><strong>✅ Yêu cầu hoàn tiền đã được duyệt và đánh dấu đã hoàn tiền!</strong></p>';
                     
                     // Chèn thông báo vào đầu nội dung modal
                     var modalContent = document.querySelector('#refundDetailModal .p-6');
@@ -589,10 +520,10 @@
             })
             .then(result => {
                 if (result.status === 'success') {
-                    // Cập nhật status badge thành Approved (Đã duyệt)
+                    // Cập nhật status badge thành Refunded (Đã hoàn tiền)
                     const statusBadge = document.getElementById('statusBadge');
                     statusBadge.className = 'px-4 py-2 rounded-full text-sm font-semibold inline-block bg-green-100 text-green-800';
-                    statusBadge.innerHTML = '<i class="fas fa-check mr-1"></i> Đã duyệt';
+                    statusBadge.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Đã hoàn tiền';
 
                     // Ẩn các nút hành động
                     const actionButtonsDiv = document.getElementById('actionButtons');
@@ -659,7 +590,7 @@
 
         console.log('Loading default bank account for modal, customer:', customerId);
         
-        fetch('/customer/bank-accounts/api/list-by-user/' + customerId)
+        fetch('/admin/api/refund-requests/customer-bank-accounts/' + customerId)
             .then(response => {
                 console.log('Response status:', response.status);
                 if (!response.ok) {
@@ -667,8 +598,8 @@
                 }
                 return response.json();
             })
-            .then(bankAccounts => {
-                console.log('Bank accounts loaded:', bankAccounts);
+            .then(data => {
+                console.log('Bank accounts response:', data);
                 const container = document.getElementById('bankAccountsList');
                 
                 if (!container) {
@@ -678,10 +609,13 @@
                 
                 container.innerHTML = '';
                 
+                // Get accounts from response
+                const bankAccounts = data.accounts || [];
+                
                 // Find default account
                 let defaultAccount = null;
                 if (bankAccounts && bankAccounts.length > 0) {
-                    defaultAccount = bankAccounts.find(acc => acc.isDefault === true);
+                    defaultAccount = bankAccounts.find(acc => acc.isDefault === true || acc.default === true);
                     // If no default, use first account
                     if (!defaultAccount) {
                         defaultAccount = bankAccounts[0];

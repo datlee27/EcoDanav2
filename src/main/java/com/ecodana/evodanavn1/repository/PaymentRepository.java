@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.Payment;
 
 @Repository
@@ -15,6 +16,9 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     @Query("SELECT p FROM Payment p WHERE p.booking.bookingId = :bookingId")
     List<Payment> findByBookingId(@Param("bookingId") String bookingId);
+
+    @Query("SELECT p FROM Payment p WHERE p.booking = :booking")
+    List<Payment> findByBooking(@Param("booking") Booking booking);
 
     @Query("SELECT p FROM Payment p WHERE p.user.id = :userId")
     List<Payment> findByUserId(@Param("userId") String userId);
