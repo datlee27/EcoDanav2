@@ -225,6 +225,32 @@ public class RefundRequestApiController {
     }
 
     /**
+     * Get refund request by booking ID
+     */
+    @GetMapping("/by-booking/{bookingId}")
+    public ResponseEntity<Map<String, Object>> getRefundRequestByBookingId(@PathVariable String bookingId) {
+        try {
+            Optional<RefundRequest> refundRequest = refundRequestRepository.findByBookingBookingId(bookingId);
+            
+            if (refundRequest.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
+            }
+            
+            RefundRequest refund = refundRequest.get();
+            Map<String, Object> data = new HashMap<>();
+            data.put("refundRequestId", refund.getRefundRequestId());
+            data.put("refundAmount", refund.getRefundAmount());
+            data.put("status", refund.getStatus().toString());
+            data.put("transferProofImagePath", refund.getTransferProofImagePath());
+            
+            return ResponseEntity.ok(data);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
      * Get refund request by ID with full details
      */
     @GetMapping("/{id}")
