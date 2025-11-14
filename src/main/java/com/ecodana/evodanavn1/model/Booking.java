@@ -193,7 +193,9 @@ public class Booking {
         Ongoing,          // Đang trong quá trình thuê (đã nhận xe)
         Completed,        // Đã hoàn tất chuyến đi và thanh toán
         Cancelled,        // Đơn bị hủy
-        RefundPending     // Chờ hoàn tiền
+        RefundPending,    // Chờ hoàn tiền
+        LatePickup,       // Quá thởi nhận xe
+        NoShowReported    // Owner báo cáo customer không đến
     }
 
     public enum RentalType {
