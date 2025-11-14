@@ -659,7 +659,7 @@
 
         console.log('Loading default bank account for modal, customer:', customerId);
         
-        fetch('/customer/bank-accounts/api/list-by-user/' + customerId)
+        fetch('/admin/api/refund-requests/customer-bank-accounts/' + customerId)
             .then(response => {
                 console.log('Response status:', response.status);
                 if (!response.ok) {
@@ -667,8 +667,8 @@
                 }
                 return response.json();
             })
-            .then(bankAccounts => {
-                console.log('Bank accounts loaded:', bankAccounts);
+            .then(data => {
+                console.log('Bank accounts response:', data);
                 const container = document.getElementById('bankAccountsList');
                 
                 if (!container) {
@@ -678,10 +678,13 @@
                 
                 container.innerHTML = '';
                 
+                // Get accounts from response
+                const bankAccounts = data.accounts || [];
+                
                 // Find default account
                 let defaultAccount = null;
                 if (bankAccounts && bankAccounts.length > 0) {
-                    defaultAccount = bankAccounts.find(acc => acc.isDefault === true);
+                    defaultAccount = bankAccounts.find(acc => acc.isDefault === true || acc.default === true);
                     // If no default, use first account
                     if (!defaultAccount) {
                         defaultAccount = bankAccounts[0];

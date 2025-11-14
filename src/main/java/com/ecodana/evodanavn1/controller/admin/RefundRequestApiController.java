@@ -704,4 +704,35 @@ public class RefundRequestApiController {
             return ResponseEntity.status(500).build();
         }
     }
+
+    /**
+     * API endpoint for admin to get customer's bank accounts by user ID
+     * Used by admin refund detail modal to display customer bank account information
+     */
+    @GetMapping("/customer-bank-accounts/{userId}")
+    public ResponseEntity<?> getCustomerBankAccounts(@PathVariable String userId) {
+        try {
+            if (userId == null || userId.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "User ID is required"
+                ));
+            }
+
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(userId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("accounts", bankAccounts);
+            response.put("count", bankAccounts.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Error fetching bank accounts: " + e.getMessage()
+            ));
+        }
+    }
 }
