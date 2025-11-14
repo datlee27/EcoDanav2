@@ -165,7 +165,7 @@ CREATE TABLE `Booking` (
                            `PickupDateTime` datetime NOT NULL,
                            `ReturnDateTime` datetime NOT NULL,
                            `TotalAmount` decimal(10,2) NOT NULL,
-                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
+                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'LatePickup', 'NoShow') NOT NULL DEFAULT 'Pending',
                            `DiscountId` char(36) DEFAULT NULL,
                            `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            `CancelReason` varchar(500) DEFAULT NULL,

@@ -167,10 +167,7 @@ public class RefundRequest {
 
     public enum RefundStatus {
         Pending,    // Chờ admin duyệt
-        Approved,   // Admin đã duyệt
         Rejected,   // Admin từ chối
-        Transferred, // Đã chuyển tiền
-        Completed,   // Đã hoàn tiền thành công
         Refunded    // Đã hoàn tiền (status cuối cùng)
     }
 }

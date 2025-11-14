@@ -140,7 +140,7 @@ public class AdminController {
             List<RefundRequest> allRefundRequests = refundRequestRepository.findAllWithRelations();
             long totalRefundCount = allRefundRequests.size();
             long pendingRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending).count();
-            long approvedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved).count();
+            long refundedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Refunded).count();
             long rejectedRefundCount = allRefundRequests.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Rejected).count();
             long urgentRefundCount = allRefundRequests.stream().filter(r -> r.isWithinTwoHours() && r.getStatus() == RefundRequest.RefundStatus.Pending).count();
             BigDecimal totalPendingAmount = allRefundRequests.stream()
@@ -151,7 +151,7 @@ public class AdminController {
             model.addAttribute("refundRequests", allRefundRequests);
             model.addAttribute("totalCount", totalRefundCount);
             model.addAttribute("pendingCount", pendingRefundCount);
-            model.addAttribute("approvedCount", approvedRefundCount);
+            model.addAttribute("refundedCount", refundedRefundCount);
             model.addAttribute("rejectedCount", rejectedRefundCount);
             model.addAttribute("urgentCount", urgentRefundCount);
             model.addAttribute("totalPendingAmount", totalPendingAmount);

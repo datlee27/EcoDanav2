@@ -81,18 +81,23 @@ public class PayOSService {
                 Payment payment = new Payment();
                 payment.setPaymentId(UUID.randomUUID().toString());
                 payment.setOrderCode(orderCode);
-                // Số tiền từ PayOS là VND (long). Lưu trực tiếp theo VND.
-                // VD: PayOS trả về 600000 VND -> lưu 600000.00 trong DB
-                payment.setAmount(BigDecimal.valueOf(amount));
-                payment.setPaymentMethod("PayOS");
-                payment.setPaymentStatus(Payment.PaymentStatus.Pending);
-                payment.setCreatedDate(LocalDateTime.now());
+                
                 // Gán booking và user
                 Booking booking = bookingRepository.findById(bookingId)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt xe: " + bookingId));
+                
+                // Lưu Payment với amount tạm thời (sẽ được cập nhật trong handlePaymentSuccess)
+                // KHÔNG set PaymentType ở đây - sẽ set trong webhook
+                payment.setAmount(booking.getDepositAmountRequired()); // Tạm thời lưu Deposit amount
+                payment.setPaymentMethod("PayOS");
+                payment.setPaymentStatus(Payment.PaymentStatus.Pending);
+                // KHÔNG set PaymentType ở đây
+                payment.setCreatedDate(LocalDateTime.now());
                 payment.setBooking(booking);
                 payment.setUser(booking.getUser());
                 paymentRepository.save(payment);
+                
+                logger.info("Created Pending payment (amount will be updated in webhook)");
                 
                 return paymentUrl;
             } else {
@@ -221,33 +226,30 @@ public class PayOSService {
             
             // Xác định loại payment dựa trên số tiền thanh toán
             if (paidAmount.compareTo(booking.getTotalAmount()) >= 0) {
-                // Thanh toán toàn bộ (100%) - tạo cả Deposit và FinalPayment
-                logger.info("Full payment detected - creating Deposit and FinalPayment records");
+                // Thanh toán toàn bộ (100%) - XÓA payment cũ và tạo mới với TotalAmount
+                logger.info("Full payment detected - deleting old payment and creating new FinalPayment");
                 
-                // Cập nhật payment hiện tại thành Deposit
-                payment.setPaymentType(Payment.PaymentType.Deposit);
-                payment.setAmount(booking.getDepositAmountRequired());
-                payment.setTransactionId(transactionId);
-                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
-                payment.setPaymentDate(LocalDateTime.now());
-                paymentRepository.save(payment);
+                // Xóa payment cũ
+                String oldPaymentId = payment.getPaymentId();
+                paymentRepository.delete(payment);
+                logger.info("Deleted old payment: {}", oldPaymentId);
                 
-                // Tạo FinalPayment record
-                Payment finalPayment = new Payment();
-                finalPayment.setPaymentId(UUID.randomUUID().toString());
-                finalPayment.setOrderCode(orderCode + "_FINAL");
-                finalPayment.setAmount(booking.getRemainingAmount());
-                finalPayment.setPaymentMethod("PayOS");
-                finalPayment.setPaymentStatus(Payment.PaymentStatus.Completed);
-                finalPayment.setPaymentType(Payment.PaymentType.FinalPayment);
-                finalPayment.setTransactionId(transactionId + "_FINAL");
-                finalPayment.setCreatedDate(LocalDateTime.now());
-                finalPayment.setPaymentDate(LocalDateTime.now());
-                finalPayment.setBooking(booking);
-                finalPayment.setUser(booking.getUser());
-                paymentRepository.save(finalPayment);
+                // Tạo payment mới với TotalAmount
+                Payment newPayment = new Payment();
+                newPayment.setPaymentId(UUID.randomUUID().toString());
+                newPayment.setOrderCode(orderCode);
+                newPayment.setAmount(booking.getTotalAmount());
+                newPayment.setPaymentMethod("PayOS");
+                newPayment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                newPayment.setPaymentType(Payment.PaymentType.FinalPayment);
+                newPayment.setTransactionId(transactionId);
+                newPayment.setCreatedDate(LocalDateTime.now());
+                newPayment.setPaymentDate(LocalDateTime.now());
+                newPayment.setBooking(booking);
+                newPayment.setUser(booking.getUser());
+                paymentRepository.save(newPayment);
                 
-                logger.info("Created Deposit: {} and FinalPayment: {}", booking.getDepositAmountRequired(), booking.getRemainingAmount());
+                logger.info("Created new FinalPayment with amount: {}", booking.getTotalAmount());
                 
             } else if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
                 // Thanh toán cọc (20%) - chỉ tạo Deposit

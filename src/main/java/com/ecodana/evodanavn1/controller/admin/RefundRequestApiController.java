@@ -536,16 +536,9 @@ public class RefundRequestApiController {
                 return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
             }
             
-            // Allow both Pending and Approved status to be marked as Transferred
-            if (refund.getStatus() != RefundRequest.RefundStatus.Pending && 
-                refund.getStatus() != RefundRequest.RefundStatus.Approved) {
-                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only pending or approved requests can be marked as transferred"));
-            }
-            
-            // If Pending, approve first then transfer
-            if (refund.getStatus() == RefundRequest.RefundStatus.Pending) {
-                refund.setStatus(RefundRequest.RefundStatus.Approved);
-                refundRequestRepository.save(refund);
+            // Only allow Pending status
+            if (refund.getStatus() != RefundRequest.RefundStatus.Pending) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only pending requests can be marked as transferred"));
             }
             
             // Now mark as transferred
@@ -582,12 +575,12 @@ public class RefundRequestApiController {
                 return ResponseEntity.status(404).body(Map.of("status", "error", "message", "Refund request not found"));
             }
             
-            if (refund.getStatus() != RefundRequest.RefundStatus.Approved) {
-                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only approved requests can be marked as completed"));
+            if (refund.getStatus() != RefundRequest.RefundStatus.Pending) {
+                return ResponseEntity.status(400).body(Map.of("status", "error", "message", "Only pending requests can be marked as completed"));
             }
             
             // Update refund with transfer proof image
-            refund.setStatus(RefundRequest.RefundStatus.Completed);
+            refund.setStatus(RefundRequest.RefundStatus.Refunded);
             refund.setTransferProofImagePath(transferProofImagePath);
             refund.setProcessedDate(java.time.LocalDateTime.now());
             
@@ -685,10 +678,8 @@ public class RefundRequestApiController {
             Map<String, Object> stats = new HashMap<>();
             stats.put("total", allRefunds.size());
             stats.put("pending", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Pending).count());
-            stats.put("approved", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Approved).count());
+            stats.put("refunded", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Refunded).count());
             stats.put("rejected", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Rejected).count());
-            stats.put("transferred", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Transferred).count());
-            stats.put("completed", allRefunds.stream().filter(r -> r.getStatus() == RefundRequest.RefundStatus.Completed).count());
             stats.put("urgent", refundRequestRepository.findUrgentPendingRequests().size());
             
             // Calculate total refund amount for pending requests
@@ -702,6 +693,37 @@ public class RefundRequestApiController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).build();
+        }
+    }
+
+    /**
+     * API endpoint for admin to get customer's bank accounts by user ID
+     * Used by admin refund detail modal to display customer bank account information
+     */
+    @GetMapping("/customer-bank-accounts/{userId}")
+    public ResponseEntity<?> getCustomerBankAccounts(@PathVariable String userId) {
+        try {
+            if (userId == null || userId.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "User ID is required"
+                ));
+            }
+
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(userId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("accounts", bankAccounts);
+            response.put("count", bankAccounts.size());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Error fetching bank accounts: " + e.getMessage()
+            ));
         }
     }
 }
