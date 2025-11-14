@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.util.UUID;
 
 import com.ecodana.evodanavn1.model.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken; // Import mới
-import org.springframework.security.crypto.password.PasswordEncoder; // Import mới
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -24,131 +26,128 @@ import jakarta.servlet.http.HttpSession;
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    // === BẮT ĐẦU SỬA LỖI ===
-    // 1. Xóa @Autowired khỏi các trường và khai báo là 'final'
+    private static final Logger logger = LoggerFactory.getLogger(OAuth2LoginSuccessHandler.class);
+
     private final UserService userService;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
-    // 2. Thêm Constructor Injection
     @Autowired
     public OAuth2LoginSuccessHandler(UserService userService, RoleService roleService, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
     }
-    // === KẾT THÚC SỬA LỖI ===
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication) throws IOException, ServletException {
         try {
-            Object principal = authentication.getPrincipal();
-            User user; // User từ DB
-
-            // Lấy thông tin OIDC
             String loginProvider = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+            Object principal = authentication.getPrincipal();
             OAuth2User oauth2User;
+            User user = null; // The user from our database
 
             if (principal instanceof CustomOidcUser customOidcUser) {
-                user = customOidcUser.getUser(); // Có thể là null nếu user mới/chưa liên kết
-                oauth2User = customOidcUser; // CustomOidcUser cũng là một OAuth2User
+                oauth2User = customOidcUser;
+                user = customOidcUser.getUser(); // This might be a user found via email, but not yet linked
             } else if (principal instanceof OAuth2User) {
-                // Luồng dự phòng (ít khi xảy ra nếu CustomOAuth2UserService đã chạy)
                 oauth2User = (OAuth2User) principal;
-                String providerKey = oauth2User.getName(); // Lấy providerKey (subject)
-                user = userService.findUserByLogin(loginProvider, providerKey).orElse(null);
+                // Fallback if not using CustomOidcUser: find by provider key
+                user = userService.findUserByLogin(loginProvider, oauth2User.getName()).orElse(null);
             } else {
+                logger.error("Invalid principal type in OAuth2LoginSuccessHandler: {}", principal.getClass().getName());
                 response.sendRedirect("/login?error=invalid_principal");
                 return;
             }
 
-            // === SỬA LỖI LOGIC (NullPointerException) ===
-            // Nếu 'user' là null (tức là user mới hoặc chưa liên kết),
-            // chúng ta phải tạo mới hoặc liên kết ngay tại đây.
+            String email = oauth2User.getAttribute("email");
+            if (email == null || email.isEmpty()) {
+                logger.warn("OAuth2 login attempt without email from provider: {}", loginProvider);
+                response.sendRedirect("/login?error=no_email");
+                return;
+            }
+
+            // If user from principal is null, try to find an existing user by email.
+            // This covers cases where a user signed up with a password first.
             if (user == null) {
-                String email = oauth2User.getAttribute("email");
+                user = userService.findByEmail(email);
+            }
+
+            String providerKey = oauth2User.getName();
+
+            // Case 1: User does not exist at all. Create a new user account.
+            if (user == null) {
+                logger.info("Creating new user for email {} from provider {}", email, loginProvider);
+                user = new User();
+                user.setId(UUID.randomUUID().toString());
+                user.setEmail(email);
+                user.setPassword(passwordEncoder.encode("OAUTH_USER_" + UUID.randomUUID().toString()));
+                user.setPhoneNumber(""); // Set a default empty value if required
+                user.setStatus(User.UserStatus.Active);
+
                 String name = oauth2User.getAttribute("name");
                 String avatarUrl = oauth2User.getAttribute("picture");
-                String providerKey = oauth2User.getName(); // ID duy nhất từ Google (subject)
 
-                if (email == null || email.isEmpty()) {
-                    response.sendRedirect("/login?error=no_email");
-                    return;
-                }
-
-                // Kiểm tra xem email đã tồn tại (đăng ký bằng password) chưa
-                User existingUser = userService.findByEmail(email);
-
-                if (existingUser != null) {
-                    // 1. LIÊN KẾT TÀI KHOẢN
-                    user = existingUser;
-                    userService.linkOAuthAccount(user, loginProvider, providerKey, email);
-                    System.out.println("OAuthSuccessHandler: Đã liên kết " + loginProvider + " với người dùng (email): " + email);
+                if (name != null && !name.isEmpty()) {
+                    String[] nameParts = name.split(" ", 2);
+                    user.setFirstName(nameParts.length > 0 ? nameParts[0] : name);
+                    user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
                 } else {
-                    // 2. TẠO TÀI KHOẢN MỚI
-                    user = new User();
-                    user.setId(UUID.randomUUID().toString());
-                    user.setEmail(email);
-                    // Mã hóa một mật khẩu ngẫu nhiên an toàn cho tài khoản chỉ dùng OAuth
-                    user.setPassword(passwordEncoder.encode("OAUTH_USER_" + UUID.randomUUID().toString()));
-                    user.setPhoneNumber(""); // Bắt buộc (theo logic cũ)
-                    user.setStatus(User.UserStatus.Active);
-
-                    if (name != null && !name.isEmpty()) {
-                        String[] nameParts = name.split(" ", 2);
-                        user.setFirstName(nameParts.length > 0 ? nameParts[0] : name);
-                        user.setLastName(nameParts.length > 1 ? nameParts[1] : "");
-                    } else {
-                        user.setFirstName(email.split("@")[0]);
-                        user.setLastName("");
-                    }
-
-                    // Tạo username từ email + timestamp để đảm bảo duy nhất
-                    user.setUsername(email.split("@")[0] + "_" + System.currentTimeMillis());
-                    user.setAvatarUrl(avatarUrl); // Đặt ảnh đại diện
-
-                    String assignedRoleId = getAssignedRoleForEmail(email);
-                    user.setRoleId(assignedRoleId != null ? assignedRoleId : roleService.getDefaultCustomerRoleId());
-
-                    // Các trường bắt buộc khác
-                    user.setNormalizedUserName(user.getUsername().toUpperCase());
-                    user.setNormalizedEmail(user.getEmail().toUpperCase());
-                    user.setSecurityStamp(UUID.randomUUID().toString());
-                    user.setConcurrencyStamp(UUID.randomUUID().toString());
-                    user.setEmailVerifed(true); // Email từ Google/OIDC được coi là đã xác thực
-                    user.setCreatedDate(java.time.LocalDateTime.now());
-
-                    // Lưu User mới (Dùng save() thay vì register() để tránh mã hóa kép)
-                    user = userService.save(user);
-
-                    // Liên kết tài khoản OAuth
-                    userService.linkOAuthAccount(user, loginProvider, providerKey, email);
-                    System.out.println("OAuthSuccessHandler: Đã tạo người dùng mới bằng " + loginProvider + ": " + email);
+                    user.setFirstName(email.split("@")[0]);
+                    user.setLastName("");
                 }
-            }
-            // === KẾT THÚC SỬA LỖI LOGIC ===
 
-            // Check if user is banned or inactive
+                user.setUsername(email.split("@")[0] + "_" + System.currentTimeMillis());
+                user.setAvatarUrl(avatarUrl);
+
+                String assignedRoleId = getAssignedRoleForEmail(email);
+                user.setRoleId(assignedRoleId != null ? assignedRoleId : roleService.getDefaultCustomerRoleId());
+
+                user.setNormalizedUserName(user.getUsername().toUpperCase());
+                user.setNormalizedEmail(user.getEmail().toUpperCase());
+                user.setSecurityStamp(UUID.randomUUID().toString());
+                user.setConcurrencyStamp(UUID.randomUUID().toString());
+                user.setEmailVerifed(true); // Email from provider is considered verified
+                user.setCreatedDate(java.time.LocalDateTime.now());
+
+                user = userService.save(user);
+                userService.linkOAuthAccount(user, loginProvider, providerKey, email);
+                logger.info("Successfully created and linked new user {}", email);
+            }
+            // Case 2: User exists, but the link to this specific OAuth provider doesn't.
+            else if (!userService.isProviderLinked(user.getId(), loginProvider)) {
+                logger.info("Linking existing user {} with provider {}", email, loginProvider);
+                userService.linkOAuthAccount(user, loginProvider, providerKey, email);
+            }
+            // Case 3: User exists and is already linked. No action needed.
+            else {
+                logger.info("User {} already linked with provider {}. Proceeding to login.", email, loginProvider);
+            }
+
+            // Final checks and redirection
             if (user.getStatus() == User.UserStatus.Banned) {
+                logger.warn("Banned user login attempt: {}", user.getEmail());
                 response.sendRedirect("/login?error=account_banned");
                 return;
             }
 
             if (user.getStatus() == User.UserStatus.Inactive) {
+                logger.warn("Inactive user login attempt: {}", user.getEmail());
                 response.sendRedirect("/login?error=account_inactive");
                 return;
             }
 
             HttpSession session = request.getSession(true);
 
-            // Tải lại user với thông tin Role đầy đủ (quan trọng)
             User userWithRole = userService.findByIdWithRole(user.getId());
             session.setAttribute("currentUser", userWithRole);
 
             String roleName = userWithRole.getRoleName();
-            String displayName = userWithRole.getFirstName() != null ? userWithRole.getFirstName() : userWithRole.getUsername();
+            String displayName = userWithRole.getFirstName() != null && !userWithRole.getFirstName().isEmpty() ? userWithRole.getFirstName() : userWithRole.getUsername();
+
+            logger.info("User {} logged in successfully with role {}", user.getEmail(), roleName);
 
             if ("Admin".equalsIgnoreCase(roleName)) {
                 session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng Admin " + displayName + "!");
@@ -163,7 +162,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
                 session.setAttribute("flash_success", "🎉 Đăng nhập thành công! Chào mừng " + displayName + "!");
                 response.sendRedirect("/");
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
+            logger.error("Critical error in OAuth2LoginSuccessHandler", e);
             response.sendRedirect("/login?error=oauth_error");
         }
     }
@@ -179,6 +179,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             if (isOwnerEmail(email)) return roleService.getDefaultOwnerRoleId();
             return null;
         } catch (Exception e) {
+            logger.error("Error in getAssignedRoleForEmail for email: {}", email, e);
             return null;
         }
     }

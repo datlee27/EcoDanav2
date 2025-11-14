@@ -2,10 +2,7 @@ package com.ecodana.evodanavn1.controller.owner;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
-import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.UserFeedback; // Thêm import
-import com.ecodana.evodanavn1.model.Vehicle;
+import com.ecodana.evodanavn1.model.*;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
 import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
 import com.ecodana.evodanavn1.service.*;
@@ -22,10 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
@@ -51,6 +45,12 @@ public class OwnerController {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private BankAccountService bankAccountService;
+
+    @Autowired
+    private Cloudinary cloudinary;
 
     // Các biến @Value để đọc cấu hình Cloudinary (Giữ nguyên như file của bạn)
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
@@ -108,8 +108,8 @@ public class OwnerController {
         User currentUser = (User) session.getAttribute("currentUser");
         String ownerId = currentUser.getId();
 
-        // Đặt currentPage dựa trên tab
-        model.addAttribute("currentPage", tab);
+        String page = (tab != null && !tab.isEmpty()) ? tab : "dashboard";
+        model.addAttribute("currentPage", page);
 
         // Tải dữ liệu thông báo chung (cho chuông)
         List<Booking> allOwnerBookings = bookingService.getBookingsByOwnerId(ownerId);
@@ -176,6 +176,7 @@ public class OwnerController {
                     map.put("returnDateTime", booking.getReturnDateTime() != null ? booking.getReturnDateTime().toString() : null);
                     map.put("createdDate", booking.getCreatedDate() != null ? booking.getCreatedDate().toString() : null);
                     map.put("totalAmount", booking.getTotalAmount());
+                    map.put("remainingAmount", booking.getRemainingAmount()); // Add remainingAmount
                     if (booking.getUser() != null) {
                         Map<String, Object> userMap = new HashMap<>();
                         userMap.put("firstName", booking.getUser().getFirstName());
@@ -237,7 +238,6 @@ public class OwnerController {
 
             default:
                 // Mặc định quay về tab 'dashboard'
-                model.addAttribute("currentPage", "dashboard");
                 // Tải lại dữ liệu cho dashboard
                 List<Vehicle> ov = vehicleService.getVehiclesByOwnerId(ownerId);
                 model.addAttribute("totalVehicles", ov.size());
@@ -1047,6 +1047,177 @@ public class OwnerController {
             e.printStackTrace();
             redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi giao xe: " + e.getMessage());
             return "redirect:/owner/dashboard?tab=bookings"; // Sửa thành dashboard?tab=bookings
+        }
+    }
+
+    /**
+     * API (AJAX) để tải danh sách tài khoản ngân hàng cho Owner
+     */
+    @GetMapping("/bank-accounts/list-ajax")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getBankAccountsAjax(HttpSession session) {
+        User user = (User) session.getAttribute("currentUser"); // Lấy owner hiện tại
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        try {
+            // Dùng service đã @Autowired
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
+
+            List<Map<String, Object>> accountsDto = bankAccounts.stream().map(acc -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("bankAccountId", acc.getBankAccountId());
+                map.put("bankName", acc.getBankName());
+                map.put("accountNumber", acc.getAccountNumber());
+                map.put("accountHolderName", acc.getAccountHolderName());
+                map.put("isDefault", acc.isDefault());
+                map.put("qrCodeImagePath", acc.getQrCodeImagePath());
+                map.put("bankCode", acc.getBankCode());
+                return map;
+            }).collect(Collectors.toList());
+
+            return ResponseEntity.ok(Map.of("success", true, "accounts", accountsDto));
+        } catch (Exception e) {
+            logger.error("Error fetching owner bank accounts via AJAX", e);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * Xử lý lưu (thêm mới hoặc cập nhật) tài khoản ngân hàng cho Owner
+     */
+    @PostMapping("/bank-accounts/save")
+    public String saveBankAccount(
+            @ModelAttribute BankAccount bankAccount,
+            @RequestParam(value = "qrCodeFile", required = false) MultipartFile qrCodeFile,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        User user = (User) session.getAttribute("currentUser"); // Lấy owner hiện tại
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            // Set user nếu là tài khoản mới
+            if (bankAccount.getBankAccountId() == null || bankAccount.getBankAccountId().isEmpty()) {
+                bankAccount.setBankAccountId(UUID.randomUUID().toString());
+                bankAccount.setUser(user);
+            } else {
+                // Xác thực quyền sở hữu nếu là tài khoản cũ
+                BankAccount existing = bankAccountService.getBankAccountById(bankAccount.getBankAccountId()).orElse(null);
+                if (existing == null || !existing.getUser().getId().equals(user.getId())) {
+                    redirectAttributes.addFlashAttribute("bank_error", "Không có quyền chỉnh sửa tài khoản này!");
+                    return "redirect:/owner/dashboard?tab=bank-accounts"; // Sửa redirect
+                }
+                bankAccount.setUser(user);
+            }
+
+            bankAccountService.saveBankAccount(bankAccount, qrCodeFile);
+            redirectAttributes.addFlashAttribute("bank_success", "Cập nhật tài khoản ngân hàng thành công!");
+
+        } catch (Exception e) {
+            logger.error("Error saving owner bank account", e);
+            redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
+        }
+
+        // Redirect về đúng tab
+        return "redirect:/owner/dashboard?tab=bank-accounts";
+    }
+
+    @PostMapping("/bank-accounts/set-default/{id}")
+    public String setAsDefault(@PathVariable String id, HttpSession session, RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        try {
+            bankAccountService.setAsDefault(id, user.getId());
+            redirectAttributes.addFlashAttribute("bank_success", "Đã đặt làm tài khoản mặc định!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("bank_error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/owner/dashboard?tab=bank-accounts";
+    }
+
+    @PostMapping("/bank-accounts/unset-default/{id}")
+    public String unsetAsDefault(@PathVariable String id, HttpSession session, RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        try {
+            bankAccountService.unsetAsDefault(id, user.getId());
+            redirectAttributes.addFlashAttribute("bank_success", "Đã gỡ trạng thái mặc định!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("bank_error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/owner/dashboard?tab=bank-accounts";
+    }
+
+    @PostMapping("/bank-accounts/delete/{id}")
+    public String deleteBankAccount(@PathVariable String id, HttpSession session, RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+        try {
+            bankAccountService.deleteBankAccount(id, user.getId());
+            redirectAttributes.addFlashAttribute("bank_success", "Xóa tài khoản thành công!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("bank_error", "Lỗi: " + e.getMessage());
+        }
+        return "redirect:/owner/dashboard?tab=bank-accounts";
+    }
+
+
+    @PostMapping("/handover")
+    public String handoverVehicle(@RequestParam("bookingId") String bookingId,
+                                  @RequestParam("odometer") int odometer,
+                                  @RequestParam(value = "notes", required = false) String notes,
+                                  @RequestParam(value = "images", required = false) List<MultipartFile> images,
+                                  HttpSession session,
+                                  RedirectAttributes redirectAttributes) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            List<String> imageUrls = new ArrayList<>();
+            if (images != null && !images.isEmpty()) {
+                for (MultipartFile image : images) {
+                    if (image != null && !image.isEmpty()) {
+                        Map uploadResult = cloudinary.uploader().upload(
+                                image.getBytes(),
+                                ObjectUtils.asMap(
+                                        "folder", "ecodana/vehicle_conditions/" + bookingId,
+                                        "resource_type", "image"
+                                )
+                        );
+                        imageUrls.add(uploadResult.get("secure_url").toString());
+                    }
+                }
+            }
+
+            if (imageUrls.isEmpty()) {
+                throw new IllegalArgumentException("Bạn phải đính kèm ít nhất một ảnh lúc giao xe.");
+            }
+
+            bookingService.handoverVehicle(bookingId, currentUser, imageUrls, odometer, notes);
+
+            redirectAttributes.addFlashAttribute("success", "Đã giao xe thành công! Chuyến đi đã bắt đầu.");
+            return "redirect:/owner/dashboard?tab=bookings";
+
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("error", "Lỗi: " + e.getMessage());
+            return "redirect:/owner/dashboard?tab=bookings";
+        } catch (Exception e) {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("error", "Lỗi hệ thống khi giao xe: " + e.getMessage());
+            return "redirect:/owner/dashboard?tab=bookings";
         }
     }
 }

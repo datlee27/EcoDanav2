@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/owner-management.css}" />
     <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/ddwt6nl7s/image/upload/v1761906428/favicon_jlbemj.ico">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" th:href="@{/css/bank-account-management.css(v=1.1)}" />
     <style>
         /* ... (style của bạn không đổi) ... */
         .chart-tab {
@@ -268,6 +269,13 @@
                 <div id="profile-content" class="main-tab-content" th:classappend="${currentPage == 'profile' ? 'active' : ''}">
                     <div th:if="${currentPage == 'profile'}" th:replace="~{owner/profile-management :: profile-content}"></div>
                 </div>
+                <div id="bank-accounts-content" class="main-tab-content" th:classappend="${currentPage == 'bank-accounts' ? 'active' : ''}">
+
+                    <div th:if="${currentPage == 'bank-accounts'}"
+                         th:replace="~{auth/bank-account-management :: bank-account-fragment(saveActionUrl=@{/owner/bank-accounts/save})}">
+                    </div>
+
+                </div>
 
             </div>
         </main>
@@ -276,6 +284,7 @@
 
 <script th:src="@{/js/sidebar-common.js}"></script>
 <script th:src="@{/js/owner-dashboard.js}"></script>
+<script th:src="@{/js/bank-account-management.js}"></script>
 
 <div th:replace="~{owner/bookings-management :: booking-modals}"></div>
 <div th:replace="~{owner/cars-management :: car-modals}"></div>
@@ -342,7 +351,7 @@
 
     // Lấy CSRF token (dùng chung cho các modal)
     const csrfToken = /*[[${_csrf?.token}]]*/ null;
-    const csrfHeaderName = /*[[${_csrf?.headerName}]]*/ null;
+    const csrfParameterName = /*[[${_csrf?.parameterName}]]*/ null;
 
     // Lấy currentPage
     const currentPage = /*[[${currentPage}]]*/ 'dashboard';
@@ -453,6 +462,24 @@
 
     // Khởi tạo chung khi DOM tải xong
     document.addEventListener('DOMContentLoaded', function() {
+        if (currentPage === 'bank-accounts') {
+            initializeBankAccountManagement({
+                ajaxListUrl: '/owner/bank-accounts/list-ajax',
+                deleteUrlPrefix: '/owner/bank-accounts/delete',
+                setDefaultUrlPrefix: '/owner/bank-accounts/set-default',
+                unsetDefaultUrlPrefix: '/owner/bank-accounts/unset-default',
+                csrfToken: csrfToken,
+                csrfParameterName: csrfParameterName
+            });
+             // --- Tự động mở form nếu có lỗi validation (từ RedirectAttributes) ---
+            if (/*[[${bank_error} != null]]*/ false) {
+                const bankAccountFormContainer = document.getElementById('bank-account-form-container');
+                const addBankBtn = document.getElementById('add-bank-btn');
+                if(bankAccountFormContainer) bankAccountFormContainer.style.display = 'block';
+                if(addBankBtn) addBankBtn.style.display = 'none';
+            }
+        }
+
         if (currentPage && typeof highlightOwnerSidebarLink === 'function') {
             highlightOwnerSidebarLink(currentPage);
         }

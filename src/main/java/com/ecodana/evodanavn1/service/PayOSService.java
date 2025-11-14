@@ -17,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -31,10 +34,13 @@ public class PayOSService {
     
     @Autowired
     private BookingRepository bookingRepository;
-    
+
     @Value("${app.base-url}")
     private String baseUrl;
-    
+
+    @Value("${payos.return-url}")
+    private String returnUrl;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     
     private static final String PAYMENT_SUCCESS_STATUS = "PAID";
@@ -98,6 +104,78 @@ public class PayOSService {
             throw new RuntimeException("Không thể tạo liên kết thanh toán: " + e.getMessage());
         }
     }
+
+    /**
+     * Tạo link thanh toán bổ sung (Hoàn tất chuyến đi - gọi từ modal Owner)
+     * Trả về Map chứa qrCode và orderCode để hiển thị popup
+     */
+    @Transactional
+    public Map<String, Object> createCompletionPaymentLink(String bookingId, long amount, String description) {
+        try {
+            if (amount <= 0) {
+                throw new RuntimeException("Số tiền cần thanh toán phải lớn hơn 0.");
+            }
+
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+            long orderCodeNumber = System.currentTimeMillis();
+            String orderCode = String.valueOf(orderCodeNumber);
+
+            String successUrl = this.returnUrl;
+            String cancelUrlStr = this.returnUrl.replace("success", "cancel");
+
+            String fullDescription = "TT bổ sung Booking: " + bookingId + " - " + description;
+
+            String responseBody = payOSClient.createPaymentLink(
+                    amount,
+                    orderCode,
+                    fullDescription,
+                    successUrl,
+                    cancelUrlStr
+            );
+
+            JsonNode jsonNode = objectMapper.readTree(responseBody);
+
+            if (jsonNode.has("code") && "00".equals(jsonNode.get("code").asText()) && jsonNode.has("data")) {
+                JsonNode dataNode = jsonNode.get("data");
+
+                savePaymentRecord(orderCode, amount, bookingId, "Pending_Completion");
+
+                Map<String, Object> result = new HashMap<>();
+                result.put("success", true); // FIX: Add success flag
+                result.put("qrCode", dataNode.has("qrCode") ? dataNode.get("qrCode").asText() : "");
+                result.put("checkoutUrl", dataNode.has("checkoutUrl") ? dataNode.get("checkoutUrl").asText() : "");
+                result.put("orderCode", orderCode);
+                return result;
+            } else {
+                String payosDesc = jsonNode.has("desc") ? jsonNode.get("desc").asText() : "Unknown PayOS error.";
+                throw new RuntimeException("Failed to create completion link (PayOS says: " + payosDesc + "): " + responseBody);
+            }
+
+        } catch (Exception e) {
+            logger.error("Error creating completion payment link", e);
+            throw new RuntimeException("Lỗi tạo mã thanh toán bổ sung: " + e.getMessage());
+        }
+    }
+
+    // Hàm hỗ trợ lưu payment vào DB để tránh lặp code
+    private void savePaymentRecord(String orderCode, long amount, String bookingId, String statusNote) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking != null) {
+            Payment payment = new Payment();
+            payment.setPaymentId(UUID.randomUUID().toString());
+            payment.setOrderCode(orderCode);
+            payment.setAmount(BigDecimal.valueOf(amount));
+            payment.setPaymentMethod("PayOS");
+            payment.setPaymentStatus(Payment.PaymentStatus.Pending);
+            payment.setCreatedDate(LocalDateTime.now());
+            payment.setBooking(booking);
+            payment.setUser(booking.getUser());
+            paymentRepository.save(payment);
+        }
+    }
+
 
     public boolean verifyWebhook(String webhookData) {
         try {
@@ -216,6 +294,25 @@ public class PayOSService {
         } catch (Exception e) {
             logger.error("Error canceling payment link", e);
             throw new RuntimeException("Failed to cancel payment link: " + e.getMessage());
+        }
+    }
+
+
+    /**
+     * Lấy trạng thái thanh toán rút gọn (PAID/PENDING/CANCELLED)
+     */
+    public String getPaymentStatus(String orderCode) {
+        try {
+            String responseBody = payOSClient.getPaymentLinkInfo(orderCode);
+            JsonNode jsonNode = objectMapper.readTree(responseBody);
+
+            if (jsonNode.has("code") && "00".equals(jsonNode.get("code").asText()) && jsonNode.has("data")) {
+                return jsonNode.get("data").get("status").asText(); // Trả về "PAID", "PENDING", "CANCELLED"
+            }
+            return "UNKNOWN";
+        } catch (Exception e) {
+            logger.error("Error checking payment status for order: {}", orderCode);
+            return "ERROR";
         }
     }
 }

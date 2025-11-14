@@ -2,6 +2,8 @@ package com.ecodana.evodanavn1.model;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
@@ -91,6 +93,14 @@ public class Booking {
     @Column(name = "TermsVersion", length = 10)
     private String termsVersion = "v1.0";
 
+    @Column(name = "return_notes", columnDefinition = "TEXT")
+    private String returnNotes;
+
+    @ElementCollection
+    @CollectionTable(name = "booking_return_images", joinColumns = @JoinColumn(name = "booking_id"))
+    @Column(name = "image_url")
+    private List<String> returnImageUrls = new ArrayList<>();
+
     @Transient
     private boolean hasFeedback = false;
 
@@ -106,6 +116,21 @@ public class Booking {
     }
 
     // Getters and Setters
+    public String getReturnNotes() {
+        return returnNotes;
+    }
+
+    public void setReturnNotes(String returnNotes) {
+        this.returnNotes = returnNotes;
+    }
+
+    public List<String> getReturnImageUrls() {
+        return returnImageUrls;
+    }
+
+    public void setReturnImageUrls(List<String> returnImageUrls) {
+        this.returnImageUrls = returnImageUrls;
+    }
     public String getBookingId() { return bookingId; }
     public void setBookingId(String bookingId) { this.bookingId = bookingId; }
     public User getUser() { return user; }

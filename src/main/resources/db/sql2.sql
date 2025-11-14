@@ -618,3 +618,17 @@ ALTER TABLE RefundRequest
     'Completed',
     'Refunded'
     ) NOT NULL DEFAULT 'Pending';
+
+
+-- Add Transferred status to RefundRequest Status ENUM
+ALTER TABLE RefundRequest MODIFY COLUMN Status ENUM('Pending', 'Approved', 'Rejected', 'Transferred', 'Completed', 'Refunded') NOT NULL;
+-- Add transfer proof image field to RefundRequest table
+ALTER TABLE RefundRequest ADD COLUMN TransferProofImagePath VARCHAR(500) NULL;
+
+
+ALTER TABLE Booking
+    ADD COLUMN return_notes VARCHAR(255) NULL;
+
+ALTER TABLE Booking
+    ADD COLUMN return_image_urls TEXT NULL;
+

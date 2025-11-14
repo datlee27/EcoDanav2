@@ -18,21 +18,23 @@
                     ><i class="fa-solid fa-user"></i> Tài khoản của tôi</a
                     >
                 </li>
-                <li>
-                    <a href="#"><i class="fa-solid fa-route"></i> Chuyến của tôi</a>
-                </li>
+<!--                <li>-->
+<!--                    <a href="#"><i class="fa-solid fa-route"></i> Chuyến của tôi</a>-->
+<!--                </li>-->
                 <li>
                     <a href="#documents-section" id="documents-link"><i class="fa-solid fa-id-card"></i> Giấy tờ của tôi</a>
                 </li>
                 <li>
-                    <a href="#bank-accounts-section" id="bank-accounts-link"><i class="fa-solid fa-university"></i> Ngân hàng</a>
+                    <a href="#bank-accounts-section" id="bank-accounts-link">
+                        <i class="fa-solid fa-university"></i> Tài khoản ngân hàng
+                    </a>
                 </li>
-                <li>
-                    <a href="#"><i class="fa-solid fa-gift"></i> Quà tặng</a>
-                </li>
-                <li>
-                    <a href="#"><i class="fa-solid fa-location-dot"></i> Địa chỉ của tôi</a>
-                </li>
+<!--                <li>-->
+<!--                    <a href="#"><i class="fa-solid fa-gift"></i> Quà tặng</a>-->
+<!--                </li>-->
+<!--                <li>-->
+<!--                    <a href="#"><i class="fa-solid fa-location-dot"></i> Địa chỉ của tôi</a>-->
+<!--                </li>-->
                 <li>
                     <a href="#change-password-form" id="change-password-link"><i class="fa-solid fa-key"></i> Đổi mật khẩu</a>
                 </li>
@@ -259,69 +261,7 @@
         </div>
 
         <div id="bank-accounts-section" style="display: none">
-            <div class="content-header">
-                <h2>Quản lý tài khoản ngân hàng</h2>
-                <p style="color: #666; font-size: 14px; margin-top: 8px">
-                    Thêm tài khoản ngân hàng để nhận hoàn tiền khi hủy xe. Bạn có thể tải lên mã QR thanh toán.
-                </p>
-                <button type="button" id="add-bank-btn" class="edit-link" style="margin-top: 8px;">
-                    <i class="fa-solid fa-plus"></i> Thêm tài khoản mới
-                </button>
-            </div>
-
-            <div th:if="${bank_success}" class="alert alert-success" th:text="${bank_success}"></div>
-            <div th:if="${bank_error}" class="alert alert-danger" th:text="${bank_error}"></div>
-
-            <!-- Add Bank Account Form (Hidden by default) -->
-            <div class="document-card" id="bank-account-form-container" style="margin-bottom: 24px; display: none;">
-                <h3><i class="fa-solid fa-plus"></i> Thêm tài khoản ngân hàng mới</h3>
-                <form th:action="@{/customer/bank-accounts/save}" method="post" enctype="multipart/form-data" id="bank-account-form">
-                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-                    
-                    <div class="upload-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                        <div>
-                            <label class="upload-label">Ngân hàng <span style="color: red">*</span></label>
-                            <input type="text" name="bankName" id="bankName" class="upload-placeholder" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="VD: Vietcombank, Techcombank..." required />
-                        </div>
-                        <div>
-                            <label class="upload-label">Mã ngân hàng</label>
-                            <input type="text" name="bankCode" id="bankCode" class="upload-placeholder" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="VD: VCB, TCB..." />
-                        </div>
-                        <div>
-                            <label class="upload-label">Số tài khoản <span style="color: red">*</span></label>
-                            <input type="text" name="accountNumber" id="accountNumber" class="upload-placeholder" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Nhập số tài khoản" required />
-                        </div>
-                        <div>
-                            <label class="upload-label">Tên chủ tài khoản <span style="color: red">*</span></label>
-                            <input type="text" name="accountHolderName" id="accountHolderName" class="upload-placeholder" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Nhập tên chủ tài khoản" required />
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 16px;">
-                        <label class="upload-label">Mã QR thanh toán</label>
-                        <div style="display: flex; align-items: center; gap: 16px;">
-                            <input type="file" name="qrCodeFile" id="qrCodeFile" accept="image/*" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" />
-                            <img id="qr-preview" style="display: none; width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />
-                        </div>
-                        <p style="color: #666; font-size: 12px; margin-top: 8px;">Tải lên mã QR để dễ dàng nhận tiền hoàn (JPG, PNG, tối đa 10MB)</p>
-                    </div>
-
-                    <div style="margin-top: 16px; display: flex; gap: 8px;">
-                        <button type="submit" class="upload-button" style="background-color: #10b981; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
-                            <i class="fa-solid fa-save"></i> Thêm tài khoản
-                        </button>
-                        <button type="button" id="cancel-bank-btn" class="cancel-button" style="background-color: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
-                            <i class="fa-solid fa-times"></i> Hủy
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Bank Accounts List -->
-            <div id="bank-accounts-list">
-                <h3 style="margin-bottom: 16px;"><i class="fa-solid fa-list"></i> Tài khoản ngân hàng của bạn</h3>
-                <div id="accounts-container"></div>
-            </div>
+            <div th:replace="~{auth/bank-account-management :: bank-account-fragment(saveActionUrl=@{/customer/bank-accounts/save})}"></div>
         </div>
 
         <form th:action="@{/profile/change-password}" method="post" id="change-password-form" style="display: none">
@@ -358,82 +298,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://npmcdn.com/flatpickr/dist/l10n/vn.js"></script>
+<script th:src="@{/js/bank-account-management.js}"></script>
 
-<script>
-    // Get CSRF token helper function (global)
-    function getCsrfToken() {
-        // Try to get from meta tags first
-        let token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
-        if (token) return token;
-        
-        // Try to get from input fields
-        token = document.querySelector('input[name="_csrf"]')?.value;
-        if (token) return token;
-        
-        // Fallback to Thymeleaf expression
-        return '[[${_csrf.token}]]';
-    }
-
-    // Edit bank account function (global)
-    function editBankAccount(accountId) {
-        console.log("Editing account:", accountId);
-        
-        // Find the account data from the displayed list
-        const account = document.querySelector(`[data-account-id="${accountId}"]`);
-        if (!account) {
-            console.error("Account not found with ID:", accountId);
-            alert("Không tìm thấy tài khoản");
-            return;
-        }
-
-        // Extract data from the account card
-        const bankName = account.querySelector('[data-field="bankName"]')?.textContent?.trim() || '';
-        const bankCode = account.querySelector('[data-field="bankCode"]')?.textContent?.trim() || '';
-        const accountNumber = account.querySelector('[data-field="accountNumber"]')?.textContent?.trim() || '';
-        const accountHolderName = account.querySelector('[data-field="accountHolderName"]')?.textContent?.trim() || '';
-
-        console.log("Extracted data:", { bankName, bankCode, accountNumber, accountHolderName });
-
-        // Populate the form with existing data
-        const bankNameInput = document.getElementById("bankName");
-        const bankCodeInput = document.getElementById("bankCode");
-        const accountNumberInput = document.getElementById("accountNumber");
-        const accountHolderNameInput = document.getElementById("accountHolderName");
-        
-        if (!bankNameInput || !accountNumberInput || !accountHolderNameInput) {
-            console.error("Form inputs not found!");
-            alert("Lỗi: Không tìm thấy form");
-            return;
-        }
-        
-        bankNameInput.value = bankName;
-        bankCodeInput.value = bankCode;
-        accountNumberInput.value = accountNumber;
-        accountHolderNameInput.value = accountHolderName;
-
-        // Add hidden field for account ID
-        let accountIdField = document.getElementById("bankAccountId");
-        if (!accountIdField) {
-            accountIdField = document.createElement("input");
-            accountIdField.type = "hidden";
-            accountIdField.id = "bankAccountId";
-            accountIdField.name = "bankAccountId";
-            document.getElementById("bank-account-form").appendChild(accountIdField);
-        }
-        accountIdField.value = accountId;
-
-        // Update button text
-        const submitBtn = document.querySelector("#bank-account-form button[type='submit']");
-        submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Cập nhật tài khoản';
-
-        // Show form and hide add button
-        document.getElementById("bank-account-form-container").style.display = "block";
-        document.getElementById("add-bank-btn").style.display = "none";
-
-        // Scroll to form
-        document.getElementById("bank-account-form-container").scrollIntoView({ behavior: 'smooth' });
-    }
-
+<script th:inline="javascript">
+    /*<![CDATA[*/
     document.addEventListener("DOMContentLoaded", function () {
         const profileForm = document.getElementById("profile-form");
         const changePasswordForm = document.getElementById("change-password-form");
@@ -480,68 +348,46 @@
             setActiveLink(changePasswordLink);
         });
 
-        bankAccountsLink.addEventListener("click", function (e) {
-            e.preventDefault();
-            profileForm.style.display = "none";
-            changePasswordForm.style.display = "none";
-            documentsSection.style.display = "none";
-            bankAccountsSection.style.display = "block";
-            setActiveLink(bankAccountsLink);
-            loadBankAccounts();
-        });
+        if (bankAccountsLink && bankAccountsSection) {
+            bankAccountsLink.addEventListener("click", function (e) {
+                e.preventDefault();
+                profileForm.style.display = "none";
+                changePasswordForm.style.display = "none";
+                documentsSection.style.display = "none";
+                bankAccountsSection.style.display = "block"; // Hiển thị section
+                setActiveLink(bankAccountsLink);
+                // Khởi tạo logic quản lý tài khoản ngân hàng
+                initializeBankAccountManagement({
+                    ajaxListUrl: '/customer/bank-accounts/list-ajax',
+                    deleteUrlPrefix: '/customer/bank-accounts/delete',
+                    setDefaultUrlPrefix: '/customer/bank-accounts/set-default',
+                    unsetDefaultUrlPrefix: '/customer/bank-accounts/unset-default',
+                    csrfToken: /*[[${_csrf.token}]]*/ '',
+                    csrfParameterName: /*[[${_csrf.parameterName}]]*/ ''
+                });
+            });
+        }
 
         // Show the correct form based on hash or flash attributes
         const hash = window.location.hash;
         if (hash === "#documents" || hash === "#documents-section") {
-            profileForm.style.display = "none";
-            changePasswordForm.style.display = "none";
-            documentsSection.style.display = "block";
-            bankAccountsSection.style.display = "none";
-            setActiveLink(documentsLink);
-            loadDocuments();
-        } else if (hash === "#bank-accounts-section" || 
+            documentsLink.click();
+        } else if (hash === "#bank-accounts-section" ||
             document.querySelector("#bank-accounts-section .alert-success") ||
             document.querySelector("#bank-accounts-section .alert-danger")) {
-            profileForm.style.display = "none";
-            changePasswordForm.style.display = "none";
-            documentsSection.style.display = "none";
-            bankAccountsSection.style.display = "block";
-            setActiveLink(bankAccountsLink);
-            loadBankAccounts();
+            bankAccountsLink.click();
         } else if (
             document.querySelector("#change-password-form .alert-danger") ||
             document.querySelector("#change-password-form .alert-success")
         ) {
-            profileForm.style.display = "none";
-            changePasswordForm.style.display = "block";
-            documentsSection.style.display = "none";
-            bankAccountsSection.style.display = "none";
-            setActiveLink(changePasswordLink);
+            changePasswordLink.click();
         } else if (
             document.querySelector("#documents-section .alert-danger") ||
             document.querySelector("#documents-section .alert-success")
         ) {
-            profileForm.style.display = "none";
-            changePasswordForm.style.display = "none";
-            documentsSection.style.display = "block";
-            bankAccountsSection.style.display = "none";
-            setActiveLink(documentsLink);
-            loadDocuments();
+            documentsLink.click();
         } else {
-            // Hiển thị tab chính xác nếu có lỗi validation trên profile form
-            if (document.querySelector("#profile-form .alert-danger")) {
-                profileForm.style.display = "block";
-                changePasswordForm.style.display = "none";
-                documentsSection.style.display = "none";
-                bankAccountsSection.style.display = "none";
-                setActiveLink(profileLink);
-            } else {
-                profileForm.style.display = "block";
-                changePasswordForm.style.display = "none";
-                documentsSection.style.display = "none";
-                bankAccountsSection.style.display = "none";
-                setActiveLink(profileLink);
-            }
+            profileLink.click();
         }
 
         // --- Profile Edit/Cancel Logic ---
@@ -599,9 +445,6 @@
             document.querySelectorAll('.alert-danger').forEach(el => el.style.display = 'none');
         });
 
-        // Không cần submit bằng JS nữa, để form tự submit
-        // form.addEventListener("submit", function (e) { ... });
-
         // Tự động bật chế độ "edit" nếu có lỗi validation
         if (document.querySelector("#profile-form .alert-danger")) {
             setFormEditable(true);
@@ -619,20 +462,16 @@
             input.addEventListener("change", function (e) {
                 const file = e.target.files[0];
                 if (file) {
-                    // Validate file size (10MB)
                     if (file.size > 10 * 1024 * 1024) {
                         alert("Kích thước file không được vượt quá 10MB!");
                         input.value = "";
                         return;
                     }
-
-                    // Validate file type
                     if (!file.type.startsWith("image/")) {
                         alert("Vui lòng chọn file ảnh (JPG, PNG)!");
                         input.value = "";
                         return;
                     }
-
                     const reader = new FileReader();
                     reader.onload = function (event) {
                         preview.src = event.target.result;
@@ -644,13 +483,11 @@
             });
         }
 
-        // Setup image previews for all upload inputs
         setupImagePreview("cccd-front", "cccd-front-preview", "cccd-front-box");
         setupImagePreview("cccd-back", "cccd-back-preview", "cccd-back-box");
         setupImagePreview("gplx-front", "gplx-front-preview", "gplx-front-box");
         setupImagePreview("gplx-back", "gplx-back-preview", "gplx-back-box");
 
-        // Load user's documents
         function loadDocuments() {
             fetch("/documents/type/CitizenId")
                 .then((response) => response.json())
@@ -805,169 +642,6 @@
                 .catch((error) => console.error("Error loading GPLX:", error));
         }
 
-        // Bank account form toggle
-        const addBankBtn = document.getElementById("add-bank-btn");
-        const cancelBankBtn = document.getElementById("cancel-bank-btn");
-        const bankFormContainer = document.getElementById("bank-account-form-container");
-        const bankForm = document.getElementById("bank-account-form");
-
-        if (addBankBtn) {
-            addBankBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                bankFormContainer.style.display = "block";
-                addBankBtn.style.display = "none";
-            });
-        }
-
-        if (cancelBankBtn) {
-            cancelBankBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-                bankFormContainer.style.display = "none";
-                addBankBtn.style.display = "inline-block";
-                // Reset form
-                bankForm.reset();
-                document.getElementById("qr-preview").style.display = "none";
-                
-                // Remove account ID field if exists
-                const accountIdField = document.getElementById("bankAccountId");
-                if (accountIdField) {
-                    accountIdField.remove();
-                }
-                
-                // Reset button text
-                const submitBtn = bankForm.querySelector('button[type="submit"]');
-                submitBtn.innerHTML = '<i class="fa-solid fa-save"></i> Thêm tài khoản';
-            });
-        }
-
-        // Handle form submission success
-        if (bankForm) {
-            bankForm.addEventListener("submit", function(e) {
-                // Add loading state
-                const submitBtn = bankForm.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang lưu...';
-                }
-            });
-        }
-
-        // Auto-hide form and reload list if there's a success message
-        if (document.querySelector("#bank-accounts-section .alert-success")) {
-            bankFormContainer.style.display = "none";
-            addBankBtn.style.display = "inline-block";
-            bankForm.reset();
-            document.getElementById("qr-preview").style.display = "none";
-            // Reload the bank accounts list
-            setTimeout(() => {
-                loadBankAccounts();
-            }, 100);
-        }
-
-        // QR Code preview for bank account
-        const qrCodeInput = document.getElementById("qrCodeFile");
-        if (qrCodeInput) {
-            qrCodeInput.addEventListener("change", function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    if (file.size > 10 * 1024 * 1024) {
-                        alert("Kích thước file không được vượt quá 10MB!");
-                        qrCodeInput.value = "";
-                        return;
-                    }
-                    if (!file.type.startsWith("image/")) {
-                        alert("Vui lòng chọn file ảnh (JPG, PNG)!");
-                        qrCodeInput.value = "";
-                        return;
-                    }
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        const preview = document.getElementById("qr-preview");
-                        preview.src = event.target.result;
-                        preview.style.display = "block";
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // Load bank accounts
-        function loadBankAccounts() {
-            console.log("Loading bank accounts...");
-            fetch("/customer/bank-accounts/api/list")
-                .then((response) => response.json())
-                .then((data) => {
-                    console.log("Bank accounts response:", data);
-                    const container = document.getElementById("accounts-container");
-                    const csrfToken = getCsrfToken();
-                    
-                    if (data.success && data.bankAccounts && data.bankAccounts.length > 0) {
-                        let html = '';
-                        data.bankAccounts.forEach((account) => {
-                            html += `
-                                <div data-account-id="${account.bankAccountId}" style="background-color: white; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                                        <div style="flex: 1;">
-                                            <div style="display: flex; align-items: center; margin-bottom: 12px;">
-                                                <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #333;" data-field="bankName">${account.bankName}</h3>
-                                                ${(account.default || account.isDefault) ? '<span style="margin-left: 12px; background-color: #d1fae5; color: #065f46; font-size: 12px; font-weight: 500; padding: 4px 8px; border-radius: 4px;">Mặc định</span>' : ''}
-                                            </div>
-                                            
-                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                                                <div>
-                                                    <p style="font-size: 12px; color: #666; margin: 0 0 4px 0;">Số tài khoản</p>
-                                                    <p style="font-weight: 500; margin: 0; color: #333;" data-field="accountNumber">${account.accountNumber}</p>
-                                                </div>
-                                                <div>
-                                                    <p style="font-size: 12px; color: #666; margin: 0 0 4px 0;">Chủ tài khoản</p>
-                                                    <p style="font-weight: 500; margin: 0; color: #333;" data-field="accountHolderName">${account.accountHolderName}</p>
-                                                </div>
-                                            </div>
-                                            
-                                            <div style="display: none;" data-field="bankCode">${account.bankCode || ''}</div>
-                                            
-                                            ${account.qrCodeImagePath ? `
-                                                <div style="margin-top: 12px;">
-                                                    <p style="font-size: 12px; color: #666; margin: 0 0 8px 0;">Mã QR</p>
-                                                    <img src="${account.qrCodeImagePath}" alt="QR Code" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;" />
-                                                </div>
-                                            ` : ''}
-                                        </div>
-                                        
-                                        <div style="display: flex; flex-direction: column; gap: 8px; margin-left: 16px;">
-                                            <button onclick="editBankAccount('${account.bankAccountId}')" style="background-color: #3b82f6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                                <i class="fa-solid fa-edit"></i> Sửa
-                                            </button>
-                                            ${!(account.default || account.isDefault) ? `
-                                                <form action="/customer/bank-accounts/set-default/${account.bankAccountId}" method="post" style="margin: 0;">
-                                                    <input type="hidden" name="_csrf" value="${csrfToken}" />
-                                                    <button type="submit" style="width: 100%; background-color: #10b981; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                                        <i class="fa-solid fa-star"></i> Mặc định
-                                                    </button>
-                                                </form>
-                                            ` : ''}
-                                            <form action="/customer/bank-accounts/delete/${account.bankAccountId}" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa tài khoản này?')" style="margin: 0;">
-                                                <input type="hidden" name="_csrf" value="${csrfToken}" />
-                                                <button type="submit" style="width: 100%; background-color: #ef4444; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                                    <i class="fa-solid fa-trash"></i> Xóa
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        container.innerHTML = html;
-                    } else {
-                        container.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">Chưa có tài khoản ngân hàng nào. Thêm tài khoản mới để bắt đầu.</p>';
-                    }
-                })
-                .catch((error) => {
-                    console.error("Error loading bank accounts:", error);
-                    document.getElementById("accounts-container").innerHTML = '<p style="color: red;">Có lỗi xảy ra khi tải danh sách tài khoản</p>';
-                });
-        }
-
         // Add loading state to upload buttons
         document.getElementById("cccd-form").addEventListener("submit", function () {
             const btn = document.getElementById("cccd-upload-btn");
@@ -982,7 +656,6 @@
         });
     });
 
-    // Function to update document information
     function updateDocumentInfo(documentId, docType) {
         const prefix = docType === "cccd" ? "cccd" : "gplx";
 
@@ -1016,6 +689,7 @@
                 alert("Có lỗi xảy ra khi cập nhật thông tin");
             });
     }
+
 </script>
 </body>
 </html>
