@@ -13,6 +13,5 @@ MODIFY COLUMN `Status` ENUM(
     'Confirmed', 
     'RefundPending', 
     'Refunded',
-    'LatePickup', 
-    'NoShowReported'
+    'LatePickup'
 ) NOT NULL DEFAULT 'Pending';

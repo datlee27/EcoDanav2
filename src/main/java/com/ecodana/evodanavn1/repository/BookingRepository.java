@@ -15,6 +15,9 @@ import com.ecodana.evodanavn1.model.Booking;
 @Repository
 public interface BookingRepository extends JpaRepository<Booking, String> {
 
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.payments WHERE b.bookingId = :bookingId")
+    Optional<Booking> findByIdWithPayments(@Param("bookingId") String bookingId);
+
     @Query("SELECT b FROM Booking b WHERE b.user.id = :userId")
     List<Booking> findByUserId(@Param("userId") String userId);
 
@@ -43,7 +46,7 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     @Query("SELECT b FROM Booking b WHERE b.status = com.ecodana.evodanavn1.model.Booking$BookingStatus.Pending AND b.createdDate < :threshold")
     List<Booking> findPendingBookingsOlderThan(@Param("threshold") LocalDateTime threshold);
 
-    @Query("SELECT b FROM Booking b WHERE b.vehicle.ownerId = :ownerId")
+    @Query("SELECT b FROM Booking b LEFT JOIN FETCH b.payments WHERE b.vehicle.ownerId = :ownerId")
     List<Booking> findByVehicleOwnerId(@Param("ownerId") String ownerId);
 
     Optional<Booking> findByBookingCode(String bookingCode);
@@ -79,27 +82,33 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
     /**
      * Lấy tổng doanh thu mỗi ngày (trong 7 ngày qua) cho một owner
      */
-    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m-%d') as period, SUM(b.TotalAmount) as revenue " +
+    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m-%d') as period, SUM(b.TotalAmount) as revenue " + // Đảm bảo là TotalAmount
             "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
-            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing', 'NoShow') AND b.CreatedDate >= :startDate " + // Đảm bảo đã thêm NoShow
             "GROUP BY DATE_FORMAT(b.CreatedDate, '%Y-%m-%d') ORDER BY period ASC", nativeQuery = true)
     List<Map<String, Object>> findDailyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
-
     /**
      * Lấy tổng doanh thu mỗi tháng (trong 12 tháng qua) cho một owner
      */
-    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m') as period, SUM(b.TotalAmount) as revenue " +
+    @Query(value = "SELECT DATE_FORMAT(b.CreatedDate, '%Y-%m') as period, SUM(b.TotalAmount) as revenue " + // Đã xác nhận dùng TotalAmount
             "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
-            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing', 'NoShow') AND b.CreatedDate >= :startDate " + // Đã cập nhật Status
             "GROUP BY DATE_FORMAT(b.CreatedDate, '%Y-%m') ORDER BY period ASC", nativeQuery = true)
     List<Map<String, Object>> findMonthlyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
-
     /**
      * Lấy tổng doanh thu mỗi năm (trong 5 năm qua) cho một owner
      */
-    @Query(value = "SELECT YEAR(b.CreatedDate) as period, SUM(b.TotalAmount) as revenue " +
+    @Query(value = "SELECT YEAR(b.CreatedDate) as period, SUM(b.TotalAmount) as revenue " + // Đã xác nhận dùng TotalAmount
             "FROM Booking b JOIN Vehicle v ON b.VehicleId = v.VehicleId " +
-            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing') AND b.CreatedDate >= :startDate " +
+            "WHERE v.OwnerId = :ownerId AND b.Status IN ('Completed', 'Confirmed', 'Ongoing', 'NoShow') AND b.CreatedDate >= :startDate " + // Đã cập nhật Status
             "GROUP BY YEAR(b.CreatedDate) ORDER BY period ASC", nativeQuery = true)
     List<Map<String, Object>> findYearlyRevenueForOwner(@Param("ownerId") String ownerId, @Param("startDate") LocalDateTime startDate);
+    /**
+     * Tìm các booking theo trạng thái và có thời gian nhận xe trước một mốc thời gian cụ thể.
+     * Phương thức này rất quan trọng cho tác vụ tự động xử lý các đơn hàng No-Show.
+     * @param status Trạng thái booking cần tìm (ví dụ: Confirmed).
+     * @param deadline Mốc thời gian giới hạn (ví dụ: now - 3 giờ).
+     * @return Danh sách các booking thỏa mãn điều kiện.
+     */
+    List<Booking> findByStatusAndPickupDateTimeBefore(Booking.BookingStatus status, LocalDateTime deadline);
 }

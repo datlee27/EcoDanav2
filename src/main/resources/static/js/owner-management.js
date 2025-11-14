@@ -17,7 +17,7 @@ function renderBookingItem(booking) {
         'completed': { text: 'Hoàn thành', class: 'status-completed', icon: 'fa-flag-checkered text-gray-500' },
         'rejected': { text: 'Từ chối', class: 'status-rejected', icon: 'fa-ban text-red-500' },
         'cancelled': { text: 'Đã hủy', class: 'status-cancelled', icon: 'fa-times-circle text-red-500' },
-        'unknown': { text: 'Không xác định', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' }
+        'noshow': { text: 'Không Đến', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' }
     };
     const statusInfo = statusMap[statusLower] || statusMap['unknown'];
 
@@ -60,7 +60,7 @@ function renderBookingItem(booking) {
 
     if (statusLower === 'ongoing') {
         actionsHtml += `
-            <button onclick="showCompleteTripModal('${booking.bookingId}', ${booking.remainingAmount || 0})"
+            <button onclick="openCompleteTripModal('${booking.bookingId}')"
                     class="text-blue-600 hover:text-blue-800 transition-colors ml-3" title="Hoàn thành chuyến đi">
                 <i class="fas fa-flag-checkered text-lg"></i>
             </button>
@@ -418,19 +418,51 @@ function validateCompletionForm() {
     return true;
 }
 
-// 1. Mở modal chính để nhập Ghi chú và Ảnh
-function showCompleteTripModal(bookingId, remainingAmount) {
-    // Lưu thông tin vào các trường ẩn
-    document.getElementById('complete-booking-id').value = bookingId;
-    document.getElementById('complete-remaining-amount').value = parseFloat(remainingAmount) || 0;
-
-    // Reset lại form
+// 1. Mở modal chính và điều chỉnh UI
+async function openCompleteTripModal(bookingId) {
+    // Reset form and UI elements first
     document.getElementById('complete-trip-form').reset();
     document.getElementById('return-images-error').classList.add('hidden');
+    document.getElementById('complete-booking-id').value = bookingId;
 
-    // Mở modal. Các nút trong modal này là cố định trong HTML.
-    openModal('complete-trip-modal');
+    const remainingAmountSection = document.getElementById('remaining-amount-section');
+    const remainingAmountDisplay = document.getElementById('remaining-amount-display');
+    const paymentButtons = document.getElementById('payment-buttons');
+    const confirmationButtons = document.getElementById('confirmation-buttons');
+
+    // Hide all conditional UI elements initially
+    remainingAmountSection.classList.add('hidden');
+    paymentButtons.classList.add('hidden');
+    confirmationButtons.classList.add('hidden');
+
+    try {
+        const response = await fetch(`/booking/${bookingId}/remaining-amount`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || 'Could not fetch remaining amount.');
+        }
+
+        const remainingAmount = parseFloat(data.remainingAmount) || 0;
+        document.getElementById('complete-remaining-amount').value = remainingAmount;
+
+        // Logic to show/hide buttons based on remaining amount
+        if (remainingAmount > 0) {
+            const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(remainingAmount);
+            remainingAmountDisplay.textContent = formattedAmount;
+            remainingAmountSection.classList.remove('hidden');
+            paymentButtons.classList.remove('hidden');
+        } else {
+            confirmationButtons.classList.remove('hidden');
+        }
+
+        openModal('complete-trip-modal');
+
+    } catch (error) {
+        showNotification(false, `Lỗi: ${error.message}`);
+    }
 }
+
 
 // 2. Xử lý khi nhấn nút "Tiền mặt"
 function openCashPaymentModal() {
@@ -451,18 +483,10 @@ async function openTransferPaymentModal() {
     // Kiểm tra ảnh và ghi chú trước
     if (!validateCompletionForm()) return;
 
-    // FIX: Read the ID and amount from the persistent hidden inputs
     const bookingId = document.getElementById('complete-booking-id').value;
     const remainingAmount = parseFloat(document.getElementById('complete-remaining-amount').value) || 0;
 
-    // Nếu không còn tiền phải trả, đi thẳng đến bước xác nhận cuối cùng
-    if (remainingAmount <= 0) {
-        closeModal('complete-trip-modal');
-        openModal('payment-success-modal'); // Modal này có các nút xác nhận cuối
-        return;
-    }
-
-    // Nếu còn tiền, tiếp tục quy trình thanh toán QR
+    // Quy trình thanh toán QR cho số tiền còn lại
     const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(remainingAmount);
     document.getElementById('transfer-amount-display').textContent = formattedAmount;
 
@@ -477,7 +501,7 @@ async function openTransferPaymentModal() {
             method: 'POST',
             headers: getCsrfHeaders(),
             body: JSON.stringify({
-                bookingId: bookingId, // Use the ID from the hidden input
+                bookingId: bookingId,
                 amount: remainingAmount
             })
         });
@@ -488,7 +512,6 @@ async function openTransferPaymentModal() {
             throw new Error(data.message || 'Lỗi không xác định từ Backend');
         }
 
-        // FIX: Use QRCode.js to render the QR code
         qrContainer.innerHTML = ''; // Clear the spinner
         new QRCode(qrContainer, {
             text: data.qrCode,
@@ -540,14 +563,14 @@ function stopPaymentPolling() {
 
 // 6. Xử lý hoàn tất (gọi API cuối cùng)
 async function processTripCompletion(finalStatus) {
-    // FIX: Read the bookingId from the persistent hidden input field
+    // Đọc bookingId từ trường ẩn trong modal chính
     const bookingId = document.getElementById('complete-booking-id').value;
     if (!bookingId) {
         showNotification(false, 'Lỗi: Không tìm thấy mã booking.');
         return;
     }
 
-    // Lấy dữ liệu từ form Ghi chú/Ảnh (đang bị ẩn)
+    // Lấy dữ liệu từ form Ghi chú/Ảnh (chỉ có ý nghĩa nếu là TH trả 20%)
     const notes = document.getElementById('return-notes').value;
     const images = document.getElementById('return-images').files;
 
@@ -577,6 +600,7 @@ async function processTripCompletion(finalStatus) {
             closeModal('cash-payment-modal');
             closeModal('payment-success-modal');
             closeModal('complete-trip-modal');
+            closeModal('complete-confirmation-modal'); // Đóng cả modal xác nhận
             location.reload(); // Tải lại trang để cập nhật danh sách
         } else {
             throw new Error(result.message || 'Lỗi không xác định');

@@ -26,7 +26,7 @@
 <!-- Main Content -->
 <main class="pt-20 pb-16">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         <!-- Progress Steps -->
         <div class="mb-8">
             <div class="flex items-center justify-center">
@@ -54,19 +54,19 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Left Column - Main Content -->
             <div class="lg:col-span-2 space-y-6">
-                
+
                 <!-- Vehicle Information -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-bold mb-4 flex items-center">
                         <i class="fas fa-car text-green-500 mr-2"></i>
                         Thông tin xe
                     </h2>
-                    
+
                     <div class="flex gap-4">
-                        <img th:src="@{'/images/vehicles/' + ${#strings.toLowerCase(vehicle.vehicleModel).replace(' ', '-')} + '.jpg'}"
+                        <img th:src="${vehicle.mainImageUrl ?: 'https://via.placeholder.com/128x128?text=No+Image'}"
                              th:alt="${vehicle.vehicleModel}"
-                             class="w-32 h-32 object-cover rounded-lg">
-                        
+                             class="w-32 h-32 object-cover rounded-lg" />
+
                         <div class="flex-1">
                             <h3 class="text-lg font-bold text-gray-900 mb-2" th:text="${vehicle.vehicleModel}">VinFast VF8</h3>
                             <div class="grid grid-cols-2 gap-2 text-sm">
@@ -103,7 +103,7 @@
                             <span id="editTimeText">Chỉnh sửa</span>
                         </button>
                     </div>
-                    
+
                     <!-- Display Mode -->
                     <div id="timeDisplayMode">
                         <div class="grid grid-cols-2 gap-4">
@@ -116,7 +116,7 @@
                                 <p class="font-bold text-gray-900" id="displayReturnTime" th:text="${returnDateTime}">05/01/2025 20:00</p>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                             <div class="flex items-center">
                                 <i class="fas fa-clock text-blue-500 mr-2"></i>
@@ -133,7 +133,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Edit Mode (Hidden by default) -->
                     <div id="timeEditMode" class="hidden">
                         <div class="grid grid-cols-2 gap-4 mb-4">
@@ -148,7 +148,7 @@
                                 <input type="time" id="editReturnTime" th:value="${returnTime}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                             </div>
                         </div>
-                        
+
                         <div class="flex gap-2">
                             <button type="button" onclick="saveTimeChanges()" class="flex-1 bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 font-semibold">
                                 <i class="fas fa-check mr-1"></i> Lưu thay đổi
@@ -168,34 +168,31 @@
                             Mã giảm giá
                         </h2>
                     </div>
-                    
-                    <!-- Show applied discount info if exists -->
-                    <div th:if="${discountCode != null}" id="discountApplied" class="p-4 bg-green-50 border border-green-200 rounded-lg mb-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center">
-                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                <span class="font-semibold text-green-700">Đã áp dụng: <span th:text="${discountCode}">SUMMER2025</span></span>
+
+                    <!-- NEW: Discount Selection Dropdown -->
+                    <div id="discountForm" class="space-y-2">
+                        <select id="discountSelect"
+                                name="discountId"
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                onchange="applySelectedDiscount()">
+                            <option value="">Chọn hoặc bỏ mã giảm giá</option>
+                            <option th:each="discount : ${availableDiscounts}"
+                                    th:value="${discount.voucherCode}"
+                                    th:text="${discount.discountName + ' (' + (discount.discountType == 'Percentage' ? #numbers.formatDecimal(discount.discountValue, 0, 'COMMA', 0, 'POINT') + '%' : #numbers.formatDecimal(discount.discountValue, 0, 'COMMA', 0, 'POINT') + ' VND') + ')'}"
+                                    th:selected="${discount.voucherCode == discountCode}">
+                                VOUCHER (Details)
+                            </option>
+                        </select>
+                        <div id="checkoutDiscountMessage" class="text-sm">
+                            <div th:if="${discountCode != null}" class="text-green-600 font-medium">
+                                <i class="fas fa-check-circle"></i>
+                                Đã áp dụng mã: <span th:text="${discountCode}"></span>
                             </div>
-                            <button type="button" onclick="removeDiscount()" class="text-red-600 hover:text-red-700 text-sm font-semibold">
-                                <i class="fas fa-times mr-1"></i> Xóa
-                            </button>
+                            <div th:if="${discountMessage != null}" class="text-red-600 font-medium">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span th:text="${discountMessage}"></span>
+                            </div>
                         </div>
-                        <p class="text-sm text-gray-600">Giảm <span class="font-bold text-green-600" th:text="${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">500.000 ₫</span></p>
-                    </div>
-                    
-                    <!-- Input form - auto-filled if discount exists -->
-                    <div id="discountForm">
-                        <div class="flex gap-2">
-                            <input type="text" id="checkoutDiscountCode" 
-                                   th:value="${discountId != null ? discountId : ''}"
-                                   placeholder="Nhập mã giảm giá"
-                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
-                            <button type="button" onclick="applyCheckoutDiscount()" 
-                                    class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold">
-                                Áp dụng
-                            </button>
-                        </div>
-                        <div id="checkoutDiscountMessage" class="mt-2 text-sm hidden"></div>
                     </div>
                 </div>
 
@@ -210,42 +207,42 @@
                         <input type="hidden" name="returnTime" th:value="${returnTime}">
                         <input type="hidden" name="pickupLocation" th:value="${pickupLocation}">
                         <input type="hidden" name="vehicleRentalFee" th:value="${rentalPrice}"> <input type="hidden" name="totalAmount" th:value="${totalAmount}"> <input type="hidden" name="rentalDays" th:value="${rentalDays}">
-                        <input type="hidden" name="discountId" th:value="${discountId}">
+                        <input type="hidden" name="discountCode" id="discountCodeInput" th:value="${discountCode}">
                         <input type="hidden" name="discountAmount" th:value="${discountAmount}">
                         <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="Cash">
-                    <h2 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fas fa-file-contract text-green-500 mr-2"></i>
-                        Điều khoản & Điều kiện
-                    </h2>
-                    
-                    <div class="space-y-3 text-sm text-gray-700">
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                            <span>Sử dụng xe đúng mục đích, không vi phạm pháp luật</span>
+                        <h2 class="text-xl font-bold mb-4 flex items-center">
+                            <i class="fas fa-file-contract text-green-500 mr-2"></i>
+                            Điều khoản & Điều kiện
+                        </h2>
+
+                        <div class="space-y-3 text-sm text-gray-700">
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>Sử dụng xe đúng mục đích, không vi phạm pháp luật</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>Không sử dụng xe để cầm cố, thế chấp</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>Giữ gìn xe sạch sẽ, không hút thuốc trong xe</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                                <span>Trả xe đúng thời gian đã thỏa thuận</span>
+                            </div>
                         </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                            <span>Không sử dụng xe để cầm cố, thế chấp</span>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                            <span>Giữ gìn xe sạch sẽ, không hút thuốc trong xe</span>
-                        </div>
-                        <div class="flex items-start">
-                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                            <span>Trả xe đúng thời gian đã thỏa thuận</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <label class="flex items-start cursor-pointer">
-                            <input type="checkbox" id="agreeTerms" class="mt-1 mr-3 w-5 h-5 text-green-500 rounded focus:ring-green-500" required>
-                            <span class="text-sm text-gray-700">
-                                Tôi đã đọc và đồng ý với <a href="#" class="text-green-600 hover:underline font-semibold">Điều khoản sử dụng</a> 
+
+                        <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <label class="flex items-start cursor-pointer">
+                                <input type="checkbox" id="agreeTerms" class="mt-1 mr-3 w-5 h-5 text-green-500 rounded focus:ring-green-500" required>
+                                <span class="text-sm text-gray-700">
+                                Tôi đã đọc và đồng ý với <a href="#" class="text-green-600 hover:underline font-semibold">Điều khoản sử dụng</a>
                                 và <a href="#" class="text-green-600 hover:underline font-semibold">Chính sách bảo mật</a> của EcoDana
                             </span>
-                        </label>
-                    </div>
+                            </label>
+                        </div>
                 </div>
             </div>
 
@@ -253,7 +250,7 @@
             <div class="lg:col-span-1">
                 <div class="bg-white rounded-lg shadow-md p-6 sticky top-24">
                     <h2 class="text-xl font-bold mb-4">Tóm tắt đơn hàng</h2>
-                    
+
                     <!-- Price Breakdown -->
                     <div class="space-y-3 text-sm mb-4" id="priceBreakdown">
                         <div>
@@ -266,38 +263,38 @@
                                 • <span th:text="${remainingHours}">2</span> giờ × <span th:text="${#numbers.formatDecimal(hourlyPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">50.000 ₫</span>
                             </div>
                         </div>
-                        
-                        <div th:if="${discountCode != null and discountCode != ''}" class="flex justify-between text-green-600">
+
+                        <div id="summaryDiscountRow" th:if="${discountCode != null and discountCode != ''}" class="flex justify-between text-green-600">
                             <span class="font-medium">
                                 <i class="fas fa-tag mr-1"></i>
-                                Giảm giá (<span th:text="${discountCode}">SUMMER2025</span>)
+                                Giảm giá (<span id="summaryDiscountCode" th:text="${discountCode}">SUMMER2025</span>)
                             </span>
-                            <span class="font-semibold" th:text="'-' + ${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">-500.000 ₫</span>
+                            <span id="summaryDiscountAmount" class="font-semibold" th:text="'-' + ${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">-500.000 ₫</span>
                         </div>
                     </div>
-                    
+
                     <div class="border-t-2 border-gray-300 pt-4 mb-6">
                         <div class="flex justify-between items-center">
                             <span class="text-lg font-bold text-gray-900">Tổng cộng</span>
-                            <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">4.860.401 ₫</span>
+                            <span id="summaryTotalAmount" class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">4.860.401 ₫</span>
                         </div>
                     </div>
-                    
+
                     <!-- Action Buttons -->
                     <div class="space-y-3">
-                        <button type="button" onclick="confirmBooking()" 
+                        <button type="button" onclick="confirmBooking()"
                                 class="w-full bg-green-500 text-white font-semibold py-3 px-6 rounded-lg hover:bg-green-600 transition-all shadow-md hover:shadow-lg">
                             <i class="fas fa-check-circle mr-2"></i>
                             Xác nhận đặt xe
                         </button>
-                        
-                        <a th:href="@{'/vehicles/' + ${vehicleId}}" 
+
+                        <a th:href="@{'/vehicles/' + ${vehicleId}}"
                            class="block w-full text-center border-2 border-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg hover:bg-gray-50 transition-all">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Quay lại
                         </a>
                     </div>
-                    
+
                     <!-- Security Badge -->
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <div class="flex items-center justify-center text-sm text-gray-600">
@@ -324,8 +321,8 @@
         returnTime: /*[[${returnTime}]]*/ '',
         rentalDays: /*[[${rentalDays}]]*/ 0,
         dailyPrice: /*[[${vehicle.getDailyPriceFromJson()}]]*/ 0,
-        discountId: /*[[${discountId}]]*/ '',
-        discountAmount: /*[[${discountAmount}]]*/ 0
+        rentalPrice: /*[[${rentalPrice}]]*/ 0,
+        allAvailableDiscounts: /*[[${availableDiscounts}]]*/ []
     };
 
     // Toggle edit time mode
@@ -333,7 +330,7 @@
         const displayMode = document.getElementById('timeDisplayMode');
         const editMode = document.getElementById('timeEditMode');
         const editText = document.getElementById('editTimeText');
-        
+
         if (editMode.classList.contains('hidden')) {
             // Show edit mode
             displayMode.classList.add('hidden');
@@ -345,36 +342,36 @@
             cancelTimeEdit();
         }
     }
-    
+
     function cancelTimeEdit() {
         document.getElementById('timeDisplayMode').classList.remove('hidden');
         document.getElementById('timeEditMode').classList.add('hidden');
         document.getElementById('editTimeText').textContent = 'Chỉnh sửa';
     }
-    
+
     function saveTimeChanges() {
         const pickupDate = document.getElementById('editPickupDate').value;
         const pickupTime = document.getElementById('editPickupTime').value;
         const returnDate = document.getElementById('editReturnDate').value;
         const returnTime = document.getElementById('editReturnTime').value;
-        
+
         if (!pickupDate || !pickupTime || !returnDate || !returnTime) {
             alert('Vui lòng điền đầy đủ thông tin!');
             return;
         }
-        
+
         // Calculate new rental days (same logic as vehicle-detail)
         const pickupDateTime = new Date(`${pickupDate}T${pickupTime}`);
         const returnDateTime = new Date(`${returnDate}T${returnTime}`);
-        
+
         if (returnDateTime <= pickupDateTime) {
             alert('Ngày trả xe phải sau ngày nhận xe!');
             return;
         }
-        
+
         const diffMilliseconds = returnDateTime - pickupDateTime;
         const totalHours = diffMilliseconds / (1000 * 60 * 60);
-        
+
         let diffDays = 0;
         if (totalHours > 0) {
             diffDays = Math.ceil(totalHours / 24);
@@ -384,152 +381,199 @@
         } else {
             diffDays = 1;
         }
-        
+
         // Update display
         const formatDate = (date, time) => {
             const d = new Date(date);
             return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()} ${time}`;
         };
-        
+
         document.getElementById('displayPickupTime').textContent = formatDate(pickupDate, pickupTime);
         document.getElementById('displayReturnTime').textContent = formatDate(returnDate, returnTime);
         document.getElementById('displayRentalDays').textContent = diffDays + ' ngày';
-        
+
         // Update hidden form inputs
         document.querySelector('input[name="pickupDate"]').value = pickupDate;
         document.querySelector('input[name="pickupTime"]').value = pickupTime;
         document.querySelector('input[name="returnDate"]').value = returnDate;
         document.querySelector('input[name="returnTime"]').value = returnTime;
         document.querySelector('input[name="rentalDays"]').value = diffDays;
-        
+
         // Recalculate prices
         recalculatePrices(diffDays);
-        
+
         // Update initial data
         initialData.pickupDate = pickupDate;
         initialData.pickupTime = pickupTime;
         initialData.returnDate = returnDate;
         initialData.returnTime = returnTime;
         initialData.rentalDays = diffDays;
-        
+
         cancelTimeEdit();
     }
-    
+
     function recalculatePrices(days) {
         // Submit form to reload with new dates
         const form = document.getElementById('checkoutForm');
-        
+
         // Change form action to checkout (not create)
         form.action = '/booking/checkout';
-        
+
         // Submit to reload with new data
         form.submit();
     }
-    
-    // Apply discount on checkout page
-    async function applyCheckoutDiscount() {
-        const discountCode = document.getElementById('checkoutDiscountCode').value.trim();
-        const rentalPrice = parseFloat(document.getElementById('summaryRentalPrice').textContent.replace(/[^\d]/g, ''));
-        
-        if (!discountCode) {
-            showCheckoutDiscountMessage('Vui lòng nhập mã giảm giá!', 'error');
+
+    // --- START: NEW DISCOUNT LOGIC ---
+    let appliedDiscount = null;
+
+    // Find the initially applied discount from the list
+    const initialDiscountCode = /*[[${discountCode}]]*/ null;
+    if (initialDiscountCode) {
+        appliedDiscount = initialData.allAvailableDiscounts.find(d => d.voucherCode === initialDiscountCode);
+    }
+
+    const formatCurrency = (amount) => {
+        if (isNaN(amount) || amount === null) return "0 ₫";
+        const roundedAmount = Math.round(amount);
+        return new Intl.NumberFormat("vi-VN").format(roundedAmount) + " ₫";
+    };
+
+    function applySelectedDiscount() {
+        const selectedVoucherCode = document.getElementById('discountSelect').value;
+
+        if (!selectedVoucherCode) {
+            appliedDiscount = null;
+            showCheckoutDiscountMessage("Đã bỏ chọn mã giảm giá.", "info");
+            updateSummary();
             return;
         }
-        
-        try {
-            const response = await fetch(`/api/discounts/validate?code=${encodeURIComponent(discountCode)}&amount=${rentalPrice}`);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.valid) {
-                // Update hidden inputs
-                document.querySelector('input[name="discountId"]').value = data.discount.voucherCode;
-                document.querySelector('input[name="discountAmount"]').value = data.calculatedAmount;
-                
-                // Submit form to reload with discount
-                const form = document.getElementById('checkoutForm');
-                form.action = '/booking/checkout';
-                form.submit();
-            } else {
-                showCheckoutDiscountMessage(data.message || 'Mã giảm giá không hợp lệ!', 'error');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            showCheckoutDiscountMessage('Có lỗi xảy ra khi áp dụng mã giảm giá!', 'error');
+
+        const selectedDiscount = initialData.allAvailableDiscounts.find(d => d.voucherCode === selectedVoucherCode);
+
+        if (!selectedDiscount) {
+            appliedDiscount = null;
+            showCheckoutDiscountMessage("Mã giảm giá không hợp lệ.", "error");
+            updateSummary();
+            return;
         }
+
+        const rentalPrice = parseFloat(document.querySelector('input[name="vehicleRentalFee"]').value) || 0;
+
+        if (rentalPrice < selectedDiscount.minOrderAmount) {
+            appliedDiscount = null;
+            // Deselect from dropdown
+            document.getElementById('discountSelect').value = "";
+            showCheckoutDiscountMessage(`Đơn hàng chưa đủ ${formatCurrency(selectedDiscount.minOrderAmount)} để áp dụng mã này.`, "error");
+            updateSummary();
+            return;
+        }
+
+        appliedDiscount = selectedDiscount;
+        showCheckoutDiscountMessage(`Đã áp dụng mã: ${selectedDiscount.voucherCode}`, "success");
+        updateSummary();
     }
-    
+
+    function updateSummary() {
+        const rentalPrice = parseFloat(document.querySelector('input[name="vehicleRentalFee"]').value) || 0;
+        let finalDiscountAmount = 0;
+
+        if (appliedDiscount) {
+            if (appliedDiscount.discountType === 'Percentage') {
+                finalDiscountAmount = rentalPrice * (appliedDiscount.discountValue / 100);
+            } else {
+                finalDiscountAmount = appliedDiscount.discountValue;
+            }
+
+            if (appliedDiscount.maxDiscountAmount != null && finalDiscountAmount > appliedDiscount.maxDiscountAmount) {
+                finalDiscountAmount = appliedDiscount.maxDiscountAmount;
+            }
+        }
+
+        const totalAmount = Math.max(0, rentalPrice - finalDiscountAmount);
+
+        // Update summary display
+        document.getElementById('summaryTotalAmount').textContent = formatCurrency(totalAmount);
+        const discountRow = document.getElementById('summaryDiscountRow');
+        if (finalDiscountAmount > 0 && appliedDiscount) {
+            document.getElementById('summaryDiscountCode').textContent = appliedDiscount.voucherCode;
+            document.getElementById('summaryDiscountAmount').textContent = '-' + formatCurrency(finalDiscountAmount);
+            discountRow.style.display = 'flex';
+        } else {
+            discountRow.style.display = 'none';
+        }
+
+        // Update hidden form inputs
+        document.querySelector('input[name="discountCode"]').value = appliedDiscount ? appliedDiscount.voucherCode : '';
+        document.querySelector('input[name="discountAmount"]').value = finalDiscountAmount;
+        document.querySelector('input[name="totalAmount"]').value = totalAmount;
+    }
+
     function showCheckoutDiscountMessage(message, type) {
         const messageEl = document.getElementById('checkoutDiscountMessage');
         messageEl.textContent = message;
         messageEl.className = 'mt-2 text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
         messageEl.classList.remove('hidden');
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+            const currentMessage = document.getElementById('checkoutDiscountMessage');
+            if (currentMessage.textContent === message) {
+                 // Only hide if the message hasn't changed
+                 currentMessage.classList.add('hidden');
+            }
+        }, 3000);
     }
-    
-    function removeDiscount() {
-        if (confirm('Bạn có chắc muốn xóa mã giảm giá?')) {
-            document.querySelector('input[name="discountId"]').value = '';
-            document.querySelector('input[name="discountAmount"]').value = '0';
-            
-            // Submit form to reload without discount
-            const form = document.getElementById('checkoutForm');
-            form.action = '/booking/checkout';
-            form.submit();
-        }
-    }
-    
-    function selectPaymentMethod(method) {
+
+    // --- END: NEW DISCOUNT LOGIC ---
+
+     function selectPaymentMethod(method) {
         // Remove selected class from all
         document.querySelectorAll('.payment-method').forEach(el => {
             el.classList.remove('selected', 'border-green-500', 'bg-green-50');
             el.classList.add('border-gray-200');
         });
-        
+
         // Add selected class to clicked
         const selected = document.querySelector(`[data-method="${method}"]`);
         selected.classList.add('selected', 'border-green-500');
         selected.classList.remove('border-gray-200');
-        
+
         // Update hidden input
         document.getElementById('paymentMethodInput').value = method;
-        
+
         // Show/hide payment info
         document.getElementById('bankTransferInfo').classList.add('hidden');
         document.getElementById('creditCardInfo').classList.add('hidden');
-        
+
         if (method === 'BankTransfer') {
             document.getElementById('bankTransferInfo').classList.remove('hidden');
         } else if (method === 'CreditCard') {
             document.getElementById('creditCardInfo').classList.remove('hidden');
         }
     }
-    
+
     function confirmBooking() {
         const agreeTerms = document.getElementById('agreeTerms');
-        
+
         if (!agreeTerms.checked) {
             alert('Vui lòng đồng ý với điều khoản và điều kiện!');
             agreeTerms.focus();
             return;
         }
-        
+
         // Submit form
         document.getElementById('checkoutForm').submit();
     }
-    
+
     // Set minimum date for date inputs on page load
     document.addEventListener('DOMContentLoaded', function() {
         const today = new Date().toISOString().split('T')[0];
         const pickupDateInput = document.getElementById('editPickupDate');
         const returnDateInput = document.getElementById('editReturnDate');
-        
+
         pickupDateInput.min = today;
         returnDateInput.min = today;
-        
+
         // When pickup date changes, update return date minimum
         pickupDateInput.addEventListener('change', function() {
             returnDateInput.min = this.value;
@@ -537,12 +581,10 @@
                 returnDateInput.value = this.value;
             }
         });
-        
-        // Auto-focus discount input if it has value (came from previous page)
-        const discountInput = document.getElementById('checkoutDiscountCode');
-        if (discountInput && discountInput.value) {
-            console.log('Discount code pre-filled:', discountInput.value);
-        }
+
+        // Initial update of summary in case a discount is pre-selected
+        updateSummary();
+
     });
 </script>
 

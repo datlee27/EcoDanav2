@@ -64,4 +64,12 @@ public interface DiscountRepository extends JpaRepository<Discount, String> {
      */
     @Query("SELECT d FROM Discount d WHERE d.minOrderAmount <= :minOrderAmount AND d.isActive = true")
     List<Discount> findApplicableDiscounts(@Param("minOrderAmount") java.math.BigDecimal minOrderAmount);
+
+    /**
+     * Find available discounts for customers (active, within date range, not exceeded usage limit)
+     * @param currentDate the current date
+     * @return list of available discounts
+     */
+    @Query("SELECT d FROM Discount d WHERE d.isActive = true AND d.startDate <= :currentDate AND d.endDate >= :currentDate AND (d.usageLimit IS NULL OR d.usedCount < d.usageLimit)")
+    List<Discount> findAvailableDiscountsForCustomer(@Param("currentDate") LocalDate currentDate);
 }

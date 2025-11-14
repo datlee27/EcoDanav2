@@ -54,8 +54,12 @@ public class Booking {
     @Column(name = "DepositAmountRequired", precision = 10, scale = 2, nullable = false)
     private BigDecimal depositAmountRequired = BigDecimal.ZERO;
 
-    @Column(name = "RemainingAmount", precision = 10, scale = 2, nullable = false)
-    private BigDecimal remainingAmount = BigDecimal.ZERO;
+    @Column(name = "PaymentOption", length = 20) // "DEPOSIT" or "FULL"
+    private String paymentOption;
+
+    @OneToMany(mappedBy = "booking", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Payment> payments = new ArrayList<>();
+
 
     @Column(name = "PaymentConfirmedAt")
     private LocalDateTime paymentConfirmedAt;
@@ -107,6 +111,9 @@ public class Booking {
     @Transient
     private boolean canReview = false;
 
+    @Transient
+    private BigDecimal remainingAmount;
+
     // Constructors
     public Booking() {
         this.createdDate = LocalDateTime.now();
@@ -116,6 +123,14 @@ public class Booking {
     }
 
     // Getters and Setters
+    public BigDecimal getRemainingAmount() {
+        return remainingAmount;
+    }
+
+    public void setRemainingAmount(BigDecimal remainingAmount) {
+        this.remainingAmount = remainingAmount;
+    }
+
     public String getReturnNotes() {
         return returnNotes;
     }
@@ -149,8 +164,6 @@ public class Booking {
     public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
     public BigDecimal getDepositAmountRequired() { return depositAmountRequired; }
     public void setDepositAmountRequired(BigDecimal depositAmountRequired) { this.depositAmountRequired = depositAmountRequired; }
-    public BigDecimal getRemainingAmount() { return remainingAmount; }
-    public void setRemainingAmount(BigDecimal remainingAmount) { this.remainingAmount = remainingAmount; }
     public BookingStatus getStatus() { return status; }
     public void setStatus(BookingStatus status) { this.status = status; }
     public Discount getDiscount() { return discount; }
@@ -183,6 +196,11 @@ public class Booking {
     public void setOwnerPayout(BigDecimal ownerPayout) { this.ownerPayout = ownerPayout; }
     public LocalDateTime getPaymentConfirmedAt() { return paymentConfirmedAt; }
     public void setPaymentConfirmedAt(LocalDateTime paymentConfirmedAt) { this.paymentConfirmedAt = paymentConfirmedAt; }
+    public String getPaymentOption() { return paymentOption; }
+    public void setPaymentOption(String paymentOption) { this.paymentOption = paymentOption; }
+    public List<Payment> getPayments() { return payments; }
+    public void setPayments(List<Payment> payments) { this.payments = payments; }
+
 
     public enum BookingStatus {
         Pending,          // Khách vừa tạo, chờ chủ xe duyệt
@@ -196,7 +214,8 @@ public class Booking {
         RefundPending,    // Chờ hoàn tiền
         Refunded,         // Đã hoàn tiền
         LatePickup,       // Quá thởi nhận xe
-        NoShowReported    // Owner báo cáo customer không đến
+        NoShow
+        // Owner báo cáo customer không đến
     }
 
     public enum RentalType {
