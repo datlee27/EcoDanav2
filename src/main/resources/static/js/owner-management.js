@@ -27,7 +27,7 @@ function renderBookingItem(booking) {
     const returnDate = booking.returnDateTime ? new Date(booking.returnDateTime).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A';
     const created = booking.createdDate ? new Date(booking.createdDate).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'N/A';
     const amount = booking.totalAmount ? booking.totalAmount.toLocaleString('vi-VN') + ' VND' : 'N/A';
-    const pickupLocation =booking.pickupLocation?.pickupLocation || +'('+booking.pickupLocation||'N/A'+')';
+    const pickupLocation = booking.pickupLocation || 'Chưa xác định';
 
     // --- Actions (Nút bấm) ---
     let actionsHtml = `
