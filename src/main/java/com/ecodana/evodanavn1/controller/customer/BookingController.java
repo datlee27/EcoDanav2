@@ -853,6 +853,58 @@ public class BookingController {
     }
 
     /**
+     * Simple cancel for Pending bookings (chưa thanh toán)
+     */
+    @PostMapping("/cancel-pending/{bookingId}")
+    public String cancelPendingBooking(
+            @PathVariable String bookingId,
+            @RequestParam(required = false) String cancelReason,
+            HttpSession session,
+            RedirectAttributes redirectAttributes) {
+
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check ownership
+            if (!booking.getUser().getId().equals(user.getId())) {
+                redirectAttributes.addFlashAttribute("error", "Không có quyền hủy booking này!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Only allow cancellation for Pending, Approved, or AwaitingDeposit bookings (chưa thanh toán)
+            if (booking.getStatus() != Booking.BookingStatus.Pending && 
+                booking.getStatus() != Booking.BookingStatus.Approved &&
+                booking.getStatus() != Booking.BookingStatus.AwaitingDeposit) {
+                redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking chưa thanh toán!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            String finalReason = cancelReason != null ? cancelReason : "Khách hàng hủy đơn";
+            Booking cancelledBooking = bookingService.cancelBooking(bookingId, finalReason);
+            
+            if (cancelledBooking != null) {
+                redirectAttributes.addFlashAttribute("success", "Đã hủy đơn đặt xe thành công!");
+            } else {
+                redirectAttributes.addFlashAttribute("error", "Không thể hủy đơn đặt xe!");
+            }
+            
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+        }
+        
+        return "redirect:/booking/my-bookings";
+    }
+
+    /**
      * Cancel car (for confirmed bookings - đã thanh toán)
      */
     @PostMapping("/cancel-car/{bookingId}")

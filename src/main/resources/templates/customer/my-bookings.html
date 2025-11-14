@@ -452,7 +452,8 @@
       function cancelBooking(button) {
         const bookingId = button.getAttribute("data-booking-id");
         const form = document.getElementById("cancelForm");
-        form.action = "/booking/cancel/" + bookingId;
+        // Use cancel-pending endpoint for Pending/AwaitingDeposit bookings
+        form.action = "/booking/cancel-pending/" + bookingId;
         document.getElementById("cancelModal").classList.remove("hidden");
       }
 
