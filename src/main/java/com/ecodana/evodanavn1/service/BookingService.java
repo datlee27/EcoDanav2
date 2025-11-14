@@ -335,7 +335,16 @@ public class BookingService {
             updateVehicleStatusOnBookingCompletionOrCancellation(vehicle);
         }
 
-        // 6. Lưu booking đã cập nhật
+        // 6. Cập nhật trạng thái Payment
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        for (Payment payment : payments) {
+            if (payment.getPaymentStatus() != Payment.PaymentStatus.Refunded) {
+                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+            }
+        }
+        paymentRepository.saveAll(payments);
+
+        // 7. Lưu booking đã cập nhật
         return bookingRepository.save(booking);
     }
 
@@ -878,5 +887,49 @@ public class BookingService {
      */
     public Payment updatePayment(Payment payment) {
         return paymentRepository.save(payment);
+    }
+
+    /**
+     * Tự động xử lý và chuyển các đơn hàng trễ hẹn sang trạng thái NoShow.
+     * Phương thức này được gọi bởi BookingScheduler.
+     *
+     * @param gracePeriodInMinutes Khoảng thời gian cho phép trễ (tính bằng phút).
+     */
+    @Transactional
+    public void processNoShowBookings(int gracePeriodInMinutes) {
+        // 1. Xác định mốc thời gian giới hạn
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(gracePeriodInMinutes);
+
+        // 2. Tìm các đơn hàng 'Confirmed' có thời gian nhận xe đã qua mốc giới hạn
+        List<Booking> lateBookings = bookingRepository.findByStatusAndPickupDateTimeBefore(Booking.BookingStatus.Confirmed, threshold);
+
+        if (lateBookings.isEmpty()) {
+            return; // Không có đơn hàng nào cần xử lý
+        }
+
+        logger.info("Tìm thấy {} đơn hàng trễ hẹn (No-Show). Bắt đầu xử lý...", lateBookings.size());
+
+        for (Booking booking : lateBookings) {
+            try {
+                // 3. Cập nhật trạng thái đơn hàng
+                booking.setStatus(Booking.BookingStatus.NoShow);
+                booking.setCancelReason("Tự động hủy do khách không đến nhận xe sau " + gracePeriodInMinutes + " phút.");
+
+                // 4. Mở lại xe cho người khác đặt
+                updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
+
+                // 5. Gửi thông báo (tùy chọn)
+                notificationService.createNotification(booking.getUser().getId(), "Đơn hàng #" + booking.getBookingCode() + " đã bị hủy do bạn không đến nhận xe.", booking.getBookingId(), "BOOKING_NOSHOW");
+                if (booking.getVehicle().getOwnerId() != null) {
+                    notificationService.createNotification(booking.getVehicle().getOwnerId(), "Đơn hàng #" + booking.getBookingCode() + " đã được chuyển sang trạng thái 'Không đến'.", booking.getBookingId(), "BOOKING_NOSHOW");
+                }
+
+                logger.info("Đã chuyển đơn hàng {} sang trạng thái NoShow.", booking.getBookingCode());
+            } catch (Exception e) {
+                logger.error("Lỗi khi xử lý No-Show cho booking {}: {}", booking.getBookingId(), e.getMessage(), e);
+            }
+        }
+        bookingRepository.saveAll(lateBookings);
+        logger.info("Hoàn tất xử lý {} đơn hàng No-Show.", lateBookings.size());
     }
 }

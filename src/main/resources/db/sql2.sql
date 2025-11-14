@@ -606,7 +606,8 @@ ALTER TABLE Booking
     'Rejected',
     'Ongoing',
     'Completed',
-    'Cancelled'
+    'Cancelled',
+    'NoShow'
     ) NOT NULL DEFAULT 'Pending';
 
 ALTER TABLE RefundRequest
