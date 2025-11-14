@@ -633,3 +633,5 @@ ALTER TABLE Booking
 ALTER TABLE Booking
     ADD COLUMN return_image_urls TEXT NULL;
 
+ALTER TABLE Booking
+    ADD COLUMN PaymentOption VARCHAR(20) NULL;

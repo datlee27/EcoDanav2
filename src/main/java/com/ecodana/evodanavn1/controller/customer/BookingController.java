@@ -14,13 +14,7 @@ import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -79,6 +73,17 @@ public class BookingController {
     private com.ecodana.evodanavn1.service.EmailService emailService;
 
     private static final BigDecimal PLATFORM_FEE_RATE = new BigDecimal("0.2");
+
+    @GetMapping("/{id}/remaining-amount")
+    @ResponseBody
+    public ResponseEntity<?> getRemainingAmount(@PathVariable String id) {
+        Booking booking = bookingService.findById(id)
+                .orElse(null);
+        if (booking == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Booking not found"));
+        }
+        return ResponseEntity.ok(Map.of("remainingAmount", booking.getRemainingAmount()));
+    }
 
     /**
      * Show checkout page
@@ -318,18 +323,14 @@ public class BookingController {
 
             // Tổng tiền khách trả (đã bao gồm discount)
             BigDecimal totalAmount = bookingRequest.getTotalAmount();
-            // Tính tiền cọc (20% của tổng tiền khách trả)
-            BigDecimal depositAmount = totalAmount.multiply(new BigDecimal("0.2")).setScale(2, RoundingMode.HALF_UP);
-            // Tiền còn lại
-            BigDecimal remainingAmount = totalAmount.subtract(depositAmount);
+            
+            booking.setPaymentOption(bookingRequest.getPaymentMethod());
 
             // Set các giá trị phí vào booking
             booking.setVehicleRentalFee(vehicleRentalFee);
             booking.setPlatformFee(platformFee);
             booking.setOwnerPayout(ownerPayout);
             booking.setTotalAmount(totalAmount);
-            booking.setDepositAmountRequired(depositAmount);
-            booking.setRemainingAmount(remainingAmount);
             booking.setStatus(Booking.BookingStatus.Pending); // Trạng thái chờ Owner duyệt
             booking.setBookingCode("BK" + System.currentTimeMillis());
             booking.setRentalType(Booking.RentalType.daily);
@@ -339,10 +340,6 @@ public class BookingController {
             booking.setTermsAgreedAt(LocalDateTime.now());
             booking.setExpectedPaymentMethod(bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod() : "Cash");
             booking.setDiscount(discount);
-
-            booking.setDepositAmountRequired(depositAmount);
-            booking.setRemainingAmount(remainingAmount);
-
 
             bookingService.addBooking(booking);
 
@@ -439,17 +436,15 @@ public class BookingController {
         // Tính toán số tiền cọc 20% và số tiền còn lại 80%
         BigDecimal totalAmount = booking.getTotalAmount();
         BigDecimal depositAmount = booking.getDepositAmountRequired();
-        BigDecimal remainingAmount = booking.getRemainingAmount();
 
         // Tính toán lại nếu chưa có
         if (depositAmount == null || depositAmount.compareTo(BigDecimal.ZERO) == 0) {
             depositAmount = totalAmount.multiply(new BigDecimal("0.2")); // 20%
-            remainingAmount = totalAmount.subtract(depositAmount); // 80%
 
             booking.setDepositAmountRequired(depositAmount);
-            booking.setRemainingAmount(remainingAmount);
             bookingService.updateBooking(booking);
         }
+        BigDecimal remainingAmount = totalAmount.subtract(depositAmount);
 
 
         model.addAttribute("booking", booking);
@@ -528,6 +523,7 @@ public class BookingController {
      * PayOS payment return handler
      */
     @GetMapping("/payment/payos-return")
+    @Transactional
     public String payosReturn(
             @RequestParam(required = false) String code,
             @RequestParam(required = false) String id,
@@ -555,6 +551,16 @@ public class BookingController {
                 model.addAttribute("success", true);
                 model.addAttribute("message", "Thanh toán thành công! Đơn đặt xe của bạn đã được xác nhận.");
                 
+                if (orderCode != null) {
+                    paymentRepository.findByOrderCode(orderCode).ifPresent(payment -> {
+                        if (payment.getPaymentStatus() != Payment.PaymentStatus.Completed) {
+                            payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                            paymentRepository.save(payment);
+                            System.out.println("Payment " + payment.getPaymentId() + " status updated to Completed.");
+                        }
+                    });
+                }
+
                 if (bookingId != null) {
                     Booking booking = bookingService.findById(bookingId).orElse(null);
                     if (booking != null) {
@@ -562,16 +568,6 @@ public class BookingController {
                         if (booking.getStatus() != Booking.BookingStatus.Confirmed) {
                             System.out.println("=== FALLBACK: Updating booking status ===");
                             System.out.println("Current booking status: " + booking.getStatus());
-                            
-                            // Verify payment with PayOS API before updating
-                            try {
-                                if (orderCode != null) {
-                                    String paymentInfo = payOSService.getPaymentInfo(orderCode);
-                                    System.out.println("PayOS payment info: " + paymentInfo);
-                                }
-                            } catch (Exception e) {
-                                System.out.println("Could not verify payment with PayOS: " + e.getMessage());
-                            }
                             
                             booking.setStatus(Booking.BookingStatus.Confirmed);
                             booking.setPaymentConfirmedAt(LocalDateTime.now());

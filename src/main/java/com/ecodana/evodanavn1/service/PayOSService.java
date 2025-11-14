@@ -50,8 +50,8 @@ public class PayOSService {
     @Transactional
     public String createPaymentLink(long amount, String orderInfo, String bookingId, HttpServletRequest request) {
         try {
-            // Tạo mã đơn hàng duy nhất (timestamp in seconds)
-            long orderCodeNumber = System.currentTimeMillis() / 1000;
+            // Tạo mã đơn hàng duy nhất
+            long orderCodeNumber = new Date().getTime();
             String orderCode = String.valueOf(orderCodeNumber);
             
             // Tạo URL callback và return
@@ -61,6 +61,21 @@ public class PayOSService {
             logger.info("Creating PayOS payment link - Amount: {}, OrderCode: {}, BookingId: {}", amount, orderCode, bookingId);
             logger.info("Return URL: {}, Cancel URL: {}", returnUrl, cancelUrl);
             
+            // Trước khi gọi API, tạo và lưu record Payment để có orderCode
+            Booking booking = bookingRepository.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt xe: " + bookingId));
+
+            Payment payment = new Payment();
+            payment.setPaymentId(UUID.randomUUID().toString());
+            payment.setOrderCode(orderCode);
+            payment.setAmount(BigDecimal.valueOf(amount));
+            payment.setPaymentMethod("PayOS");
+            payment.setPaymentStatus(Payment.PaymentStatus.Pending);
+            payment.setCreatedDate(LocalDateTime.now());
+            payment.setBooking(booking);
+            payment.setUser(booking.getUser());
+            paymentRepository.save(payment); // LƯU NGAY LẬP TỨC
+
             // Gọi API tạo payment link
             String response = payOSClient.createPaymentLink(
                 amount, 
@@ -72,29 +87,10 @@ public class PayOSService {
             
             logger.info("PayOS API Response: {}", response);
             
-            // Parse response để lấy thông tin thanh toán
+            // Parse response để lấy URL thanh toán
             JsonNode jsonNode = objectMapper.readTree(response);
             if (jsonNode.has("data") && jsonNode.get("data").has("checkoutUrl")) {
-                String paymentUrl = jsonNode.get("data").get("checkoutUrl").asText();
-                
-                // Lưu thông tin thanh toán tạm thời
-                Payment payment = new Payment();
-                payment.setPaymentId(UUID.randomUUID().toString());
-                payment.setOrderCode(orderCode);
-                // Số tiền từ PayOS là VND (long). Lưu trực tiếp theo VND.
-                // VD: PayOS trả về 600000 VND -> lưu 600000.00 trong DB
-                payment.setAmount(BigDecimal.valueOf(amount));
-                payment.setPaymentMethod("PayOS");
-                payment.setPaymentStatus(Payment.PaymentStatus.Pending);
-                payment.setCreatedDate(LocalDateTime.now());
-                // Gán booking và user
-                Booking booking = bookingRepository.findById(bookingId)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt xe: " + bookingId));
-                payment.setBooking(booking);
-                payment.setUser(booking.getUser());
-                paymentRepository.save(payment);
-                
-                return paymentUrl;
+                return jsonNode.get("data").get("checkoutUrl").asText();
             } else {
                 throw new RuntimeException("Failed to create payment link: " + response);
             }
@@ -127,6 +123,9 @@ public class PayOSService {
 
             String fullDescription = "TT bổ sung Booking: " + bookingId + " - " + description;
 
+            // Lưu record payment trước khi tạo link
+            savePaymentRecord(orderCode, amount, bookingId, "Pending_Completion");
+
             String responseBody = payOSClient.createPaymentLink(
                     amount,
                     orderCode,
@@ -139,8 +138,6 @@ public class PayOSService {
 
             if (jsonNode.has("code") && "00".equals(jsonNode.get("code").asText()) && jsonNode.has("data")) {
                 JsonNode dataNode = jsonNode.get("data");
-
-                savePaymentRecord(orderCode, amount, bookingId, "Pending_Completion");
 
                 Map<String, Object> result = new HashMap<>();
                 result.put("success", true); // FIX: Add success flag
@@ -221,33 +218,14 @@ public class PayOSService {
             
             // Xác định loại payment dựa trên số tiền thanh toán
             if (paidAmount.compareTo(booking.getTotalAmount()) >= 0) {
-                // Thanh toán toàn bộ (100%) - tạo cả Deposit và FinalPayment
-                logger.info("Full payment detected - creating Deposit and FinalPayment records");
-                
-                // Cập nhật payment hiện tại thành Deposit
+                // Thanh toán toàn bộ (100%)
+                logger.info("Full payment detected");
                 payment.setPaymentType(Payment.PaymentType.Deposit);
-                payment.setAmount(booking.getDepositAmountRequired());
+                payment.setAmount(paidAmount); // Ghi nhận toàn bộ số tiền đã trả
                 payment.setTransactionId(transactionId);
                 payment.setPaymentStatus(Payment.PaymentStatus.Completed);
                 payment.setPaymentDate(LocalDateTime.now());
                 paymentRepository.save(payment);
-                
-                // Tạo FinalPayment record
-                Payment finalPayment = new Payment();
-                finalPayment.setPaymentId(UUID.randomUUID().toString());
-                finalPayment.setOrderCode(orderCode + "_FINAL");
-                finalPayment.setAmount(booking.getRemainingAmount());
-                finalPayment.setPaymentMethod("PayOS");
-                finalPayment.setPaymentStatus(Payment.PaymentStatus.Completed);
-                finalPayment.setPaymentType(Payment.PaymentType.FinalPayment);
-                finalPayment.setTransactionId(transactionId + "_FINAL");
-                finalPayment.setCreatedDate(LocalDateTime.now());
-                finalPayment.setPaymentDate(LocalDateTime.now());
-                finalPayment.setBooking(booking);
-                finalPayment.setUser(booking.getUser());
-                paymentRepository.save(finalPayment);
-                
-                logger.info("Created Deposit: {} and FinalPayment: {}", booking.getDepositAmountRequired(), booking.getRemainingAmount());
                 
             } else if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
                 // Thanh toán cọc (20%) - chỉ tạo Deposit

@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
@@ -125,8 +126,28 @@ public class BookingService {
         return List.of();
     }
 
-    public java.util.Optional<Booking> findById(String bookingId) {
-        return bookingRepository.findById(bookingId);
+    @Transactional
+    public Optional<Booking> findById(String bookingId) {
+        Optional<Booking> bookingOpt = bookingRepository.findByIdWithPayments(bookingId);
+        bookingOpt.ifPresent(this::calculateAndSetRemainingAmount);
+        return bookingOpt;
+    }
+
+    private void calculateAndSetRemainingAmount(Booking booking) {
+        if (booking == null || booking.getTotalAmount() == null) {
+            if (booking != null) {
+                booking.setRemainingAmount(BigDecimal.ZERO);
+            }
+            return;
+        }
+
+        BigDecimal paidAmount = booking.getPayments().stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal remainingAmount = booking.getTotalAmount().subtract(paidAmount);
+        booking.setRemainingAmount(remainingAmount);
     }
 
     public Booking getBookingById(String bookingId) {
@@ -236,21 +257,26 @@ public class BookingService {
     public Booking approveBooking(String bookingId, User approver) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
-                    // 1. Cập nhật trạng thái Booking
                     booking.setStatus(Booking.BookingStatus.AwaitingDeposit);
                     booking.setHandledBy(approver);
-                    // booking.setApprovedAt(LocalDateTime.now()); // <-- Chúng ta KHÔNG dùng cách này
 
-                    // 2. THÊM MỚI: Tạo log duyệt đơn (BookingApproval)
-                    // Đây là cách chúng ta lưu thời điểm duyệt mà không cần sửa bảng Booking
+                    // Determine deposit amount based on payment option
+                    String paymentOption = booking.getPaymentOption();
+                    if ("FULL".equals(paymentOption)) {
+                        booking.setDepositAmountRequired(booking.getTotalAmount());
+                    } else { // Default to DEPOSIT (20%)
+                        BigDecimal deposit = booking.getTotalAmount().multiply(new BigDecimal("0.2")).setScale(2, RoundingMode.HALF_UP);
+                        booking.setDepositAmountRequired(deposit);
+                    }
+
                     BookingApproval approval = new BookingApproval();
                     approval.setApprovalId(UUID.randomUUID().toString());
                     approval.setBooking(booking);
                     approval.setStaff(approver);
-                    approval.setApprovalStatus("Approved"); // Đánh dấu là đã duyệt
-                    approval.setApprovalDate(LocalDateTime.now()); // Đây chính là mốc thời gian
+                    approval.setApprovalStatus("Approved");
+                    approval.setApprovalDate(LocalDateTime.now());
                     approval.setNote("Owner approved.");
-                    bookingApprovalRepository.save(approval); // Lưu log
+                    bookingApprovalRepository.save(approval);
 
                     return bookingRepository.save(booking);
                 })
@@ -338,13 +364,39 @@ public class BookingService {
         // 6. Cập nhật trạng thái Payment
         List<Payment> payments = paymentRepository.findByBookingId(bookingId);
         for (Payment payment : payments) {
-            if (payment.getPaymentStatus() != Payment.PaymentStatus.Refunded) {
+            if (payment.getPaymentStatus() != Payment.PaymentStatus.Refunded && payment.getPaymentStatus() != Payment.PaymentStatus.Completed) {
+                // Mark any pending payments as completed upon booking completion
                 payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                payment.setPaymentDate(LocalDateTime.now());
             }
         }
         paymentRepository.saveAll(payments);
 
-        // 7. Lưu booking đã cập nhật
+        // 7. Recalculate RemainingAmount and DepositAmountRequired based on all completed payments
+        BigDecimal totalPaid = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal remainingAmount = booking.getTotalAmount().subtract(totalPaid);
+        booking.setRemainingAmount(remainingAmount);
+
+        // If the booking is fully paid (remaining amount is zero or less due to rounding/overpayment)
+        if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            // If 100% of the total amount has been paid, set DepositAmountRequired to totalAmount
+            // and ensure RemainingAmount is zero.
+            booking.setDepositAmountRequired(booking.getTotalAmount());
+            booking.setRemainingAmount(BigDecimal.ZERO);
+        } else {
+            // If there's still a remaining amount after completion, it indicates an unhandled payment
+            // or a partial payment scenario. In this case, DepositAmountRequired should retain its
+            // original value (e.g., the initial 20% deposit), and RemainingAmount reflects the unpaid balance.
+            logger.warn("Booking {} completed with remaining amount: {}. This indicates an unhandled payment or partial payment.", bookingId, remainingAmount);
+            // DepositAmountRequired is not changed here, it keeps its value set during approval.
+            // RemainingAmount is already set to totalAmount - totalPaid.
+        }
+
+        // 8. Lưu booking đã cập nhật
         return bookingRepository.save(booking);
     }
 
@@ -433,6 +485,7 @@ public class BookingService {
                 logger.error("Lỗi khi tự động hủy booking {}: {}", booking.getBookingId(), e.getMessage(), e);
             }
         }
+        bookingRepository.saveAll(expiredBookings); // Save all changes at once
         logger.info("Hoàn tất tác vụ tự động hủy booking.");
     }
 
@@ -498,6 +551,7 @@ public class BookingService {
                 logger.error("Lỗi khi tự động HỦY (Cancelled) booking {}: {}", booking.getBookingId(), e.getMessage(), e);
             }
         }
+        bookingRepository.saveAll(expiredBookings); // Save all changes at once
         logger.info("Hoàn tất tác vụ tự động HỦY (Cancelled) booking.");
     }
 
@@ -599,7 +653,7 @@ public class BookingService {
         }
 
         // Tìm tất cả payment (Completed hoặc Pending - cả hai đều có thể hoàn tiền)
-        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId); // Dòng này đã được thêm vào
         List<Payment> refundablePayments = payments.stream()
                 .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
                             p.getPaymentStatus() == Payment.PaymentStatus.Pending)
@@ -799,49 +853,67 @@ public class BookingService {
      * @param ownerId ID của chủ xe
      * @return Map chứa revenueToday, revenueThisMonth, revenueThisYear, totalRevenueAllTime
      */
+    /**
+     * Lấy phân tích doanh thu chi tiết cho một chủ xe cụ thể.
+     * Trả về cả Doanh thu Gốc (totalAmount) và Thực nhận (ownerPayout).
+     * @param ownerId ID của chủ xe
+     * @return Map chứa revenue... (tính theo TotalAmount) và totalPayoutAllTime (tính theo OwnerPayout)
+     */
     public Map<String, Object> getOwnerRevenueAnalytics(String ownerId) {
         Map<String, Object> analytics = new HashMap<>();
         LocalDateTime now = LocalDateTime.now();
 
-        // Xác định các mốc thời gian
         LocalDateTime startOfToday = now.toLocalDate().atStartOfDay();
         LocalDateTime startOfMonth = now.withDayOfMonth(1).toLocalDate().atStartOfDay();
         LocalDateTime startOfYear = now.withDayOfYear(1).toLocalDate().atStartOfDay();
 
-        // 1. Lấy TẤT CẢ booking của owner đó
         List<Booking> ownerBookings = bookingRepository.findByVehicleOwnerId(ownerId);
 
-        // 2. Lọc các booking đã mang lại doanh thu (Hoàn thành hoặc Đã xác nhận/đã cọc)
+        // 1. Lọc tất cả các booking phát sinh doanh thu/payout
+        // (Bao gồm cả NoShow vì chủ xe vẫn hưởng 1 phần)
         List<Booking> revenueBookings = ownerBookings.stream()
-                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed || b.getStatus() == Booking.BookingStatus.Confirmed)
+                .filter(b -> b.getStatus() == Booking.BookingStatus.Completed ||
+                        b.getStatus() == Booking.BookingStatus.Confirmed ||
+                        b.getStatus() == Booking.BookingStatus.Ongoing ||
+                        b.getStatus() == Booking.BookingStatus.NoShow)
                 .collect(Collectors.toList());
 
-        // 3. Tính toán doanh thu dựa trên *ngày booking được tạo*
-        // (Lưu ý: Bạn có thể thay đổi logic này để dựa trên ngày hoàn thành (CompletedDate) nếu cần)
-
+        // 2. Tính toán DOANH THU GỐC (TotalAmount - theo ý của bạn)
         BigDecimal revenueToday = revenueBookings.stream()
                 .filter(b -> b.getCreatedDate().isAfter(startOfToday))
-                .map(Booking::getTotalAmount)
+                .map(Booking::getTotalAmount) // Dùng Tổng tiền gộp
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal revenueThisMonth = revenueBookings.stream()
                 .filter(b -> b.getCreatedDate().isAfter(startOfMonth))
-                .map(Booking::getTotalAmount)
+                .map(Booking::getTotalAmount) // Dùng Tổng tiền gộp
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal revenueThisYear = revenueBookings.stream()
                 .filter(b -> b.getCreatedDate().isAfter(startOfYear))
-                .map(Booking::getTotalAmount)
+                .map(Booking::getTotalAmount) // Dùng Tổng tiền gộp
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalRevenueAllTime = revenueBookings.stream()
-                .map(Booking::getTotalAmount)
+                .map(Booking::getTotalAmount) // Dùng Tổng tiền gộp
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // 3. Tính toán TIỀN THỰC NHẬN (OwnerPayout)
+        BigDecimal totalPayoutAllTime = revenueBookings.stream()
+                .map(Booking::getOwnerPayout) // Dùng Thực nhận
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 4. Trả về kết quả
+        // Các giá trị này (Today, Month, Year) là DOANH THU GỐC (TotalAmount)
         analytics.put("revenueToday", revenueToday != null ? revenueToday : BigDecimal.ZERO);
         analytics.put("revenueThisMonth", revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO);
         analytics.put("revenueThisYear", revenueThisYear != null ? revenueThisYear : BigDecimal.ZERO);
+
+        // "totalRevenueAllTime" là Doanh Thu Gốc (TotalAmount)
         analytics.put("totalRevenueAllTime", totalRevenueAllTime != null ? totalRevenueAllTime : BigDecimal.ZERO);
+
+        // "totalPayoutAllTime" là Tiền Thực Nhận (OwnerPayout)
+        analytics.put("totalPayoutAllTime", totalPayoutAllTime != null ? totalPayoutAllTime : BigDecimal.ZERO);
 
         return analytics;
     }
