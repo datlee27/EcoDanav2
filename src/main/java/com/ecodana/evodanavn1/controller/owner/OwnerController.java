@@ -33,28 +33,13 @@ public class OwnerController {
     private final TransmissionTypeRepository transmissionTypeRepository;
     private final VehicleCategoriesRepository vehicleCategoriesRepository;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final NotificationService notificationService;
+    private final UserFeedbackService userFeedbackService;
+    private final EmailService emailService;
+    private final BankAccountService bankAccountService;
+    private final PaymentService paymentService;
+    private final Cloudinary cloudinary;
 
-
-    @Autowired
-    private NotificationService notificationService;
-
-    @Autowired
-    private RoleService roleService;
-
-    @Autowired // Thêm service feedback
-    private UserFeedbackService userFeedbackService;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private BankAccountService bankAccountService;
-
-    @Autowired
-    private PaymentService paymentService;
-
-    @Autowired
-    private Cloudinary cloudinary;
 
     // Các biến @Value để đọc cấu hình Cloudinary (Giữ nguyên như file của bạn)
     @org.springframework.beans.factory.annotation.Value("${cloudinary.cloud_name:}")
@@ -67,16 +52,21 @@ public class OwnerController {
     private String cloudApiSecret;
 
     @Autowired
-    public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService, TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository,NotificationService notificationService,
-                           RoleService roleService, UserFeedbackService userFeedbackService) { // Thêm UserFeedbackService
+    public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService,
+                           TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository,
+                           NotificationService notificationService, UserFeedbackService userFeedbackService,
+                           EmailService emailService, BankAccountService bankAccountService, PaymentService paymentService, Cloudinary cloudinary) {
         this.userService = userService;
         this.vehicleService = vehicleService;
         this.bookingService = bookingService;
         this.transmissionTypeRepository = transmissionTypeRepository;
         this.vehicleCategoriesRepository = vehicleCategoriesRepository;
         this.notificationService = notificationService;
-        this.roleService = roleService;
-        this.userFeedbackService = userFeedbackService; // Khởi tạo
+        this.userFeedbackService = userFeedbackService;
+        this.emailService = emailService;
+        this.bankAccountService = bankAccountService;
+        this.paymentService = paymentService;
+        this.cloudinary = cloudinary;
     }
 
     private String checkAuthentication(HttpSession session, RedirectAttributes redirectAttributes, Model model) {
@@ -121,6 +111,7 @@ public class OwnerController {
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending)
                 .count();
         model.addAttribute("pendingBookings", pendingBookingsCount);
+        Map<String, Object> revenueAnalytics = bookingService.getOwnerRevenueAnalytics(ownerId);
 
         // Tải dữ liệu dựa trên tab được yêu cầu
         switch (tab) {
@@ -141,7 +132,6 @@ public class OwnerController {
                 // pendingBookingsCount đã được thêm ở trên
 
                 // === Dữ liệu doanh thu (Thẻ + Biểu đồ) ===
-                Map<String, Object> revenueAnalytics = bookingService.getOwnerRevenueAnalytics(ownerId);
                 model.addAttribute("totalRevenueAllTime", revenueAnalytics.get("totalRevenueAllTime"));
                 Map<String, Object> chartData = bookingService.getOwnerRevenueChartData(ownerId);
                 model.addAttribute("revenueChartData", chartData);
@@ -213,29 +203,48 @@ public class OwnerController {
             case "payments":
                 // Tải dữ liệu cho tab payments
                 List<Payment> allOwnerPayments = paymentService.getPaymentsForOwner(ownerId);
-                model.addAttribute("payments", allOwnerPayments);
 
-                // Đếm số lượng cho các tab trạng thái
+                // Lọc danh sách thanh toán để chỉ bao gồm các trạng thái mong muốn
+                List<Payment> filteredPayments = allOwnerPayments.stream()
+                        .filter(p -> {
+                            String status = p.getPaymentStatus() == Payment.PaymentStatus.Refunded ? "Refunded"
+                                    : (p.getBooking() != null ? p.getBooking().getStatus().name() : "Unknown");
+                            return "Completed".equals(status) || "Refunded".equals(status) || "NoShow".equals(status);
+                        })
+                        .collect(Collectors.toList());
+
+                model.addAttribute("payments", filteredPayments);
+
+                // Đếm số lượng cho các tab trạng thái từ danh sách đã lọc
                 long completedCount = 0;
                 long refundedCount = 0;
                 long noShowCount = 0;
 
-                for (Payment p : allOwnerPayments) {
+                for (Payment p : filteredPayments) {
                     String status = p.getPaymentStatus() == Payment.PaymentStatus.Refunded ? "Refunded" : (p.getBooking() != null ? p.getBooking().getStatus().name() : "Unknown");
                     if ("Completed".equals(status)) completedCount++;
                     if ("Refunded".equals(status)) refundedCount++;
                     if ("NoShow".equals(status)) noShowCount++;
                 }
 
-                model.addAttribute("countAll", completedCount + refundedCount + noShowCount);
+                model.addAttribute("countAll", filteredPayments.size());
                 model.addAttribute("countCompleted", completedCount);
                 model.addAttribute("countRefunded", refundedCount);
                 model.addAttribute("countNoShow", noShowCount);
 
-                // Tính toán doanh thu
-                Map<String, BigDecimal> revenueStats = paymentService.getOwnerPaymentStatistics(ownerId);
-                model.addAttribute("totalRevenue", revenueStats.getOrDefault("totalRevenue", BigDecimal.ZERO));
-                model.addAttribute("netRevenue", revenueStats.getOrDefault("netRevenue", BigDecimal.ZERO));
+                Object rawTotalRevenue = revenueAnalytics.get("totalRevenueAllTime");
+                BigDecimal totalRevenue = BigDecimal.ZERO;
+                if (rawTotalRevenue instanceof BigDecimal) {
+                    totalRevenue = (BigDecimal) rawTotalRevenue;
+                }
+
+                Object rawNetRevenue = revenueAnalytics.get("totalPayoutAllTime");
+                BigDecimal netRevenue = BigDecimal.ZERO;
+                if (rawNetRevenue instanceof BigDecimal) {
+                    netRevenue = (BigDecimal) rawNetRevenue;
+                }
+                model.addAttribute("totalRevenue", totalRevenue); // Gán Doanh Thu Gốc
+                model.addAttribute("netRevenue", netRevenue);   // Gán Doanh Thu Thực Nhận
 
                 break;
 
@@ -263,7 +272,7 @@ public class OwnerController {
                 model.addAttribute("availableVehicles", ov.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Available).count());
                 model.addAttribute("rentedVehicles", ov.stream().filter(v -> v.getStatus() == Vehicle.VehicleStatus.Rented).count());
                 Map<String, Object> ra = bookingService.getOwnerRevenueAnalytics(ownerId);
-                model.addAttribute("totalRevenueAllTime", ra.get("totalRevenueAllTime"));
+                model.addAttribute("totalRevenueAllTime", revenueAnalytics.get("totalRevenueAllTime"));
                 model.addAttribute("revenueChartData", bookingService.getOwnerRevenueChartData(ownerId));
                 break;
         }

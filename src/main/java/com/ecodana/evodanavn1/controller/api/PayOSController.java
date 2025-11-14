@@ -1,5 +1,7 @@
 package com.ecodana.evodanavn1.controller.api;
 
+import com.ecodana.evodanavn1.model.Payment;
+import com.ecodana.evodanavn1.repository.PaymentRepository;
 import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.PayOSService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import com.ecodana.evodanavn1.client.PayOSClient;
 import com.ecodana.evodanavn1.config.PayOSConfig;
@@ -31,6 +34,9 @@ public class PayOSController {
 
     @Autowired
     private PayOSClient payOSClient;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -211,9 +217,21 @@ public class PayOSController {
      */
     @GetMapping("/check-payment-status/{orderCode}")
     @ResponseBody
+    @Transactional
     public ResponseEntity<?> checkPaymentStatus(@PathVariable String orderCode) {
         try {
             String status = payOSService.getPaymentStatus(orderCode); // Trả về PAID, PENDING, v.v.
+
+            if ("PAID".equals(status)) {
+                paymentRepository.findByOrderCode(orderCode).ifPresent(payment -> {
+                    if (payment.getPaymentStatus() != Payment.PaymentStatus.Completed) {
+                        payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+                        paymentRepository.save(payment);
+                        logger.info("Payment status for order code {} updated to COMPLETED via polling.", orderCode);
+                    }
+                });
+            }
+
             return ResponseEntity.ok(Map.of("status", status));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

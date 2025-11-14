@@ -116,7 +116,6 @@
                             <span th:case="'Cancelled'">Đã hủy</span>
                             <span th:case="'Pending'">Chờ duyệt</span>
                             <span th:case="'AwaitingDeposit'">Chờ cọc</span>
-                            <span th:case="'Confirmed'">Chờ nhận xe</span>
                             <span th:case="*">[[${displayStatus}]]</span>
                         </span>
                     </td>
@@ -125,7 +124,7 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${#temporals.format(payment.createdDate, 'dd/MM/yyyy HH:mm')}"></td>
                 </tr>
-                <tr th:if="${payments == null or #lists.isEmpty(payments)}">
+                <tr id="no-payments-row" style="display: none;">
                     <td colspan="7" class="text-center py-12">
                         <div class="text-center text-gray-500">
                             <i class="fas fa-file-invoice-dollar text-6xl text-gray-300 mb-4"></i>
@@ -138,6 +137,71 @@
         </div>
     </div>
 </div>
-<!-- Tách JavaScript ra file riêng để dễ quản lý -->
-<script th:src="@{/js/owner-payment-management.js}"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    document.addEventListener('DOMContentLoaded', function () {
+        filterAndSortPayments();
+    });
+
+    function changeStatusTab(tabElement) {
+        document.querySelectorAll('.status-tab').forEach(tab => tab.classList.remove('active'));
+        tabElement.classList.add('active');
+        filterAndSortPayments();
+    }
+
+    function filterAndSortPayments() {
+        const statusFilter = document.querySelector('.status-tab.active').dataset.status;
+        const searchInput = document.getElementById('search-input').value.toLowerCase();
+        const sortValue = document.getElementById('sort-select').value;
+        const paymentListBody = document.getElementById('payment-list-body');
+        const rows = Array.from(paymentListBody.querySelectorAll('tr[data-display-status]'));
+        const noPaymentsRow = document.getElementById('no-payments-row');
+
+        let visibleRows = 0;
+
+        rows.forEach(row => {
+            const displayStatus = row.dataset.displayStatus;
+            const searchInfo = row.dataset.searchInfo;
+
+            const statusMatch = !statusFilter || statusFilter.split(',').includes(displayStatus);
+            const searchMatch = searchInfo.includes(searchInput);
+
+            if (statusMatch && searchMatch) {
+                row.style.display = '';
+                visibleRows++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        rows.sort((a, b) => {
+            const aDate = new Date(a.dataset.createdDate);
+            const bDate = new Date(b.dataset.createdDate);
+            const aAmount = parseFloat(a.dataset.amount);
+            const bAmount = parseFloat(b.dataset.amount);
+
+            switch (sortValue) {
+                case 'newest':
+                    return bDate - aDate;
+                case 'oldest':
+                    return aDate - bDate;
+                case 'amount-high':
+                    return bAmount - aAmount;
+                case 'amount-low':
+                    return aAmount - bAmount;
+                default:
+                    return 0;
+            }
+        });
+
+        rows.forEach(row => paymentListBody.appendChild(row));
+
+        if (visibleRows === 0) {
+            noPaymentsRow.style.display = '';
+        } else {
+            noPaymentsRow.style.display = 'none';
+        }
+    }
+    /*]]>*/
+</script>
 </html>
