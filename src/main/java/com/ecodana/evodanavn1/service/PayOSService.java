@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -28,10 +27,10 @@ public class PayOSService {
 
     @Autowired
     private PayOSClient payOSClient;
-    
+
     @Autowired
     private PaymentRepository paymentRepository;
-    
+
     @Autowired
     private BookingRepository bookingRepository;
 
@@ -42,71 +41,66 @@ public class PayOSService {
     private String returnUrl;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
-    private static final String PAYMENT_SUCCESS_STATUS = "PAID";
-    private static final String PAYMENT_CANCELLED_STATUS = "CANCELLED";
-    private static final String PAYMENT_FAILED_STATUS = "FAILED";
 
     @Transactional
-    public String createPaymentLink(long amount, String orderInfo, String bookingId, HttpServletRequest request) {
+    public String createPaymentLink(long amount, String orderInfo, String bookingId, String paymentType, HttpServletRequest request) {
         try {
             // Tạo mã đơn hàng duy nhất (timestamp in seconds)
             long orderCodeNumber = System.currentTimeMillis() / 1000;
             String orderCode = String.valueOf(orderCodeNumber);
-            
+
             // Tạo URL callback và return
-            String returnUrl = baseUrl + "/booking/payment/payos-return?bookingId=" + bookingId;
+            String localReturnUrl = baseUrl + "/booking/payment/payos-return?bookingId=" + bookingId;
             String cancelUrl = baseUrl + "/booking/payment/cancel?bookingId=" + bookingId;
-            
-            logger.info("Creating PayOS payment link - Amount: {}, OrderCode: {}, BookingId: {}", amount, orderCode, bookingId);
-            logger.info("Return URL: {}, Cancel URL: {}", returnUrl, cancelUrl);
-            
+
+            logger.info("Creating PayOS payment link - Amount: {}, OrderCode: {}, BookingId: {}, PaymentType: {}", amount, orderCode, bookingId, paymentType);
+            logger.info("Return URL: {}, Cancel URL: {}", localReturnUrl, cancelUrl);
+
             // Gọi API tạo payment link
             String response = payOSClient.createPaymentLink(
-                amount, 
-                orderCode, 
-                orderInfo, 
-                returnUrl, 
-                cancelUrl
+                    amount,
+                    orderCode,
+                    orderInfo,
+                    localReturnUrl,
+                    cancelUrl
             );
-            
+
             logger.info("PayOS API Response: {}", response);
-            
+
             // Parse response để lấy thông tin thanh toán
             JsonNode jsonNode = objectMapper.readTree(response);
             if (jsonNode.has("data") && jsonNode.get("data").has("checkoutUrl")) {
                 String paymentUrl = jsonNode.get("data").get("checkoutUrl").asText();
-                
+
                 // Lưu thông tin thanh toán tạm thời
                 Payment payment = new Payment();
                 payment.setPaymentId(UUID.randomUUID().toString());
                 payment.setOrderCode(orderCode);
-                
+
                 // Gán booking và user
                 Booking booking = bookingRepository.findById(bookingId)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn đặt xe: " + bookingId));
-                
-                // Lưu Payment với amount tạm thời (sẽ được cập nhật trong handlePaymentSuccess)
-                // KHÔNG set PaymentType ở đây - sẽ set trong webhook
-                payment.setAmount(booking.getDepositAmountRequired()); // Tạm thời lưu Deposit amount
+                        .orElseThrow(() -> new RuntimeException("Booking not found with id: " + bookingId));
+
+                // Lưu Payment với amount và type chính xác
+                payment.setAmount(BigDecimal.valueOf(amount)); // Store the actual amount being paid
                 payment.setPaymentMethod("PayOS");
                 payment.setPaymentStatus(Payment.PaymentStatus.Pending);
-                // KHÔNG set PaymentType ở đây
+                payment.setPaymentType("deposit".equals(paymentType) ? Payment.PaymentType.Deposit : Payment.PaymentType.FinalPayment); // Set payment type
                 payment.setCreatedDate(LocalDateTime.now());
                 payment.setBooking(booking);
                 payment.setUser(booking.getUser());
                 paymentRepository.save(payment);
-                
-                logger.info("Created Pending payment (amount will be updated in webhook)");
-                
+
+                logger.info("Created Pending payment with amount: {} and type: {}", amount, payment.getPaymentType());
+
                 return paymentUrl;
             } else {
-                throw new RuntimeException("Failed to create payment link: " + response);
+                throw new RuntimeException("Failed to create payment link for booking " + bookingId + ": " + response);
             }
-            
+
         } catch (Exception e) {
-            logger.error("Error creating PayOS payment link", e);
-            throw new RuntimeException("Không thể tạo liên kết thanh toán: " + e.getMessage());
+            logger.error("Error creating PayOS payment link for booking {}", bookingId, e);
+            throw new RuntimeException("Không thể tạo liên kết thanh toán cho đơn đặt xe " + bookingId + ": " + e.getMessage());
         }
     }
 
@@ -118,7 +112,7 @@ public class PayOSService {
     public Map<String, Object> createCompletionPaymentLink(String bookingId, long amount, String description) {
         try {
             if (amount <= 0) {
-                throw new RuntimeException("Số tiền cần thanh toán phải lớn hơn 0.");
+                throw new IllegalArgumentException("Số tiền cần thanh toán phải lớn hơn 0.");
             }
 
             Booking booking = bookingRepository.findById(bookingId)
@@ -145,8 +139,8 @@ public class PayOSService {
             if (jsonNode.has("code") && "00".equals(jsonNode.get("code").asText()) && jsonNode.has("data")) {
                 JsonNode dataNode = jsonNode.get("data");
 
-                savePaymentRecord(orderCode, amount, bookingId, "Pending_Completion");
-
+                savePaymentRecord(orderCode, amount, bookingId, Payment.PaymentType.FinalPayment);
+                
                 Map<String, Object> result = new HashMap<>();
                 result.put("success", true); // FIX: Add success flag
                 result.put("qrCode", dataNode.has("qrCode") ? dataNode.get("qrCode").asText() : "");
@@ -159,13 +153,13 @@ public class PayOSService {
             }
 
         } catch (Exception e) {
-            logger.error("Error creating completion payment link", e);
-            throw new RuntimeException("Lỗi tạo mã thanh toán bổ sung: " + e.getMessage());
+            logger.error("Error creating completion payment link for booking {}", bookingId, e);
+            throw new RuntimeException("Lỗi tạo mã thanh toán bổ sung cho đơn đặt xe " + bookingId + ": " + e.getMessage());
         }
     }
 
     // Hàm hỗ trợ lưu payment vào DB để tránh lặp code
-    private void savePaymentRecord(String orderCode, long amount, String bookingId, String statusNote) {
+    private void savePaymentRecord(String orderCode, long amount, String bookingId, Payment.PaymentType paymentType) {
         Booking booking = bookingRepository.findById(bookingId).orElse(null);
         if (booking != null) {
             Payment payment = new Payment();
@@ -177,6 +171,7 @@ public class PayOSService {
             payment.setCreatedDate(LocalDateTime.now());
             payment.setBooking(booking);
             payment.setUser(booking.getUser());
+            payment.setPaymentType(paymentType); // Set payment type directly
             paymentRepository.save(payment);
         }
     }
@@ -207,7 +202,7 @@ public class PayOSService {
         try {
             // Tìm payment theo orderCode
             Payment payment = paymentRepository.findByOrderCode(orderCode)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy thanh toán cho order: " + orderCode));
+                    .orElseThrow(() -> new RuntimeException("Payment not found for order: " + orderCode));
 
             // IDEMPOTENCY CHECK: Nếu payment đã được xử lý (status = Completed), không xử lý lại
             if (payment.getPaymentStatus() == Payment.PaymentStatus.Completed) {
@@ -217,85 +212,58 @@ public class PayOSService {
 
             Booking booking = payment.getBooking();
             BigDecimal paidAmount = BigDecimal.valueOf(amount);
-            
+
             logger.info("=== PAYMENT SUCCESS PROCESSING ===");
             logger.info("Amount from PayOS (VND): {}", amount);
             logger.info("Paid amount (VND): {}", paidAmount);
+            logger.info("Payment Type in DB: {}", payment.getPaymentType());
             logger.info("Deposit required (VND): {}", booking.getDepositAmountRequired());
             logger.info("Total amount (VND): {}", booking.getTotalAmount());
-            
-            // Xác định loại payment dựa trên số tiền thanh toán
-            if (paidAmount.compareTo(booking.getTotalAmount()) >= 0) {
-                // Thanh toán toàn bộ (100%) - XÓA payment cũ và tạo mới với TotalAmount
-                logger.info("Full payment detected - deleting old payment and creating new FinalPayment");
-                
-                // Xóa payment cũ
-                String oldPaymentId = payment.getPaymentId();
-                paymentRepository.delete(payment);
-                logger.info("Deleted old payment: {}", oldPaymentId);
-                
-                // Tạo payment mới với TotalAmount
-                Payment newPayment = new Payment();
-                newPayment.setPaymentId(UUID.randomUUID().toString());
-                newPayment.setOrderCode(orderCode);
-                newPayment.setAmount(booking.getTotalAmount());
-                newPayment.setPaymentMethod("PayOS");
-                newPayment.setPaymentStatus(Payment.PaymentStatus.Completed);
-                newPayment.setPaymentType(Payment.PaymentType.FinalPayment);
-                newPayment.setTransactionId(transactionId);
-                newPayment.setCreatedDate(LocalDateTime.now());
-                newPayment.setPaymentDate(LocalDateTime.now());
-                newPayment.setBooking(booking);
-                newPayment.setUser(booking.getUser());
-                paymentRepository.save(newPayment);
-                
-                logger.info("Created new FinalPayment with amount: {}", booking.getTotalAmount());
-                
-            } else if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
-                // Thanh toán cọc (20%) - chỉ tạo Deposit
-                logger.info("Deposit payment detected");
-                payment.setPaymentType(Payment.PaymentType.Deposit);
-                payment.setTransactionId(transactionId);
-                payment.setPaymentStatus(Payment.PaymentStatus.Completed);
-                payment.setPaymentDate(LocalDateTime.now());
-                paymentRepository.save(payment);
-            } else {
-                // Thanh toán không đủ
-                logger.warn("Payment amount insufficient");
-                payment.setPaymentStatus(Payment.PaymentStatus.Failed);
-                paymentRepository.save(payment);
-                return;
-            }
-            
+
+            // Update the existing payment record
+            payment.setAmount(paidAmount); // Ensure the stored amount is the actual paid amount
+            payment.setTransactionId(transactionId);
+            payment.setPaymentStatus(Payment.PaymentStatus.Completed);
+            payment.setPaymentDate(LocalDateTime.now());
+            paymentRepository.save(payment);
+            logger.info("Payment {} updated to Completed with amount {} and type {}", payment.getPaymentId(), paidAmount, payment.getPaymentType());
+
+
             // Cập nhật trạng thái booking
-            if (paidAmount.compareTo(booking.getDepositAmountRequired()) >= 0) {
+            if (payment.getPaymentType() == Payment.PaymentType.FinalPayment) {
                 booking.setStatus(Booking.BookingStatus.Confirmed);
                 booking.setPaymentConfirmedAt(LocalDateTime.now());
-                logger.info("Booking confirmed - payment amount sufficient");
+                booking.setDepositAmountRequired(booking.getTotalAmount()); // Set deposit to total if full payment
+                logger.info("Booking confirmed - full payment received.");
+            } else if (payment.getPaymentType() == Payment.PaymentType.Deposit) {
+                booking.setStatus(Booking.BookingStatus.AwaitingDeposit); // Or Confirmed if deposit is enough to confirm
+                booking.setPaymentConfirmedAt(LocalDateTime.now()); // Still set confirmation time for deposit
+                booking.setDepositAmountRequired(paidAmount); // Set deposit to actual paid deposit
+                logger.info("Booking awaiting deposit - deposit payment received.");
             }
             bookingRepository.save(booking);
 
         } catch (Exception e) {
-            logger.error("Error handling payment success", e);
-            throw new RuntimeException("Failed to handle payment success: " + e.getMessage());
+            logger.error("Error handling payment success for order {}", orderCode, e);
+            throw new RuntimeException("Failed to handle payment success for order " + orderCode + ": " + e.getMessage());
         }
     }
-    
+
     public String getPaymentInfo(String orderCode) {
         try {
             return payOSClient.getPaymentLinkInfo(orderCode);
         } catch (Exception e) {
-            logger.error("Error getting payment info", e);
-            throw new RuntimeException("Failed to get payment info: " + e.getMessage());
+            logger.error("Error getting payment info for order {}", orderCode, e);
+            throw new RuntimeException("Failed to get payment info for order " + orderCode + ": " + e.getMessage());
         }
     }
-    
+
     public String cancelPaymentLink(String orderCode) {
         try {
             return payOSClient.cancelPaymentLink(orderCode);
         } catch (Exception e) {
-            logger.error("Error canceling payment link", e);
-            throw new RuntimeException("Failed to cancel payment link: " + e.getMessage());
+            logger.error("Error canceling payment link for order {}", orderCode, e);
+            throw new RuntimeException("Failed to cancel payment link for order " + orderCode + ": " + e.getMessage());
         }
     }
 

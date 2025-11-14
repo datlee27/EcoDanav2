@@ -409,10 +409,6 @@ public class BookingService {
                         booking.setCancelReason(reason);
                         Booking updatedBooking = bookingRepository.save(booking);
                         updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
-                        
-                        // Gửi thông báo cho Owner về việc booking bị hủy
-                        notificationService.notifyOwnerBookingCancelled(booking, reason);
-                        
                         return updatedBooking;
                     } else {
                         // Nếu đã Confirmed (đã trả tiền), phải dùng logic cancelCar/processCancellationAndRefund

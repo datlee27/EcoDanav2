@@ -638,3 +638,12 @@ ALTER TABLE Booking
 
 ALTER TABLE Booking
     ADD COLUMN PaymentOption VARCHAR(20) NULL;
+
+-- First, update any existing Approved/Transferred/Completed records to Refunded
+UPDATE RefundRequest
+SET Status = 'Refunded'
+WHERE Status IN ('Approved', 'Transferred', 'Completed');
+
+-- Then modify the ENUM to only include: Pending, Rejected, Refunded
+ALTER TABLE RefundRequest
+    MODIFY COLUMN Status ENUM('Pending', 'Rejected', 'Refunded') NOT NULL DEFAULT 'Pending';

@@ -25,7 +25,7 @@ import java.util.Map;
 @RequestMapping("/api/payos")
 public class PayOSController {
     private static final Logger logger = LoggerFactory.getLogger(PayOSController.class);
-    
+
     @Autowired
     private PayOSService payOSService;
 
@@ -38,9 +38,9 @@ public class PayOSController {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    
+
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     /**
      * Webhook nhận thông báo từ PayOS khi có sự kiện thanh toán
      */
@@ -49,23 +49,23 @@ public class PayOSController {
         try {
             logger.info("=== WEBHOOK RECEIVED ===");
             logger.info("Payload: {}", payload);
-            
+
             // Xác thực webhook
             if (!payOSService.verifyWebhook(payload)) {
                 logger.warn("Invalid webhook signature");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(createErrorResponse("Invalid signature"));
             }
-            
+
             // Parse thông tin từ webhook
             JsonNode data = objectMapper.readTree(payload).get("data");
             String orderCode = data.get("orderCode").asText();
             long amount = data.get("amount").asLong();
             String transactionId = data.get("transactionId") != null ? data.get("transactionId").asText() : "";
             String status = data.get("status").asText();
-            
-            logger.info("Webhook Details - OrderCode: {}, Amount: {}, Status: {}, TransactionId: {}", 
+
+            logger.info("Webhook Details - OrderCode: {}, Amount: {}, Status: {}, TransactionId: {}",
                     orderCode, amount, status, transactionId);
-            
+
             // Xử lý theo trạng thái thanh toán
             if ("PAID".equals(status)) {
                 logger.info("Processing PAID status for order: {}", orderCode);
@@ -75,17 +75,17 @@ public class PayOSController {
                 // Xử lý khi thanh toán thất bại hoặc bị hủy
                 logger.warn("Payment failed or cancelled for order: {}", orderCode);
             }
-            
+
             logger.info("=== WEBHOOK PROCESSED ===");
             return ResponseEntity.ok(createSuccessResponse("Webhook processed successfully"));
-            
+
         } catch (Exception e) {
             logger.error("Error processing PayOS webhook", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(createErrorResponse("Error processing webhook: " + e.getMessage()));
         }
     }
-    
+
     /**
      * API để client gọi lấy thông tin thanh toán
      */
@@ -103,7 +103,7 @@ public class PayOSController {
                     .body(createErrorResponse("Error getting payment info: " + e.getMessage()));
         }
     }
-    
+
     /**
      * API để client gọi hoàn tiền
      */
@@ -124,7 +124,7 @@ public class PayOSController {
                     .body(createErrorResponse("Error processing refund: " + e.getMessage()));
         }
     }
-    
+
     /**
      * API để client hủy link thanh toán
      */
@@ -142,14 +142,14 @@ public class PayOSController {
                     .body(createErrorResponse("Error canceling payment link: " + e.getMessage()));
         }
     }
-    
+
     private Map<String, Object> createSuccessResponse(String message) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("message", message);
         return response;
     }
-    
+
     private Map<String, Object> createErrorResponse(String error) {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
