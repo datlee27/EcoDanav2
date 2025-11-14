@@ -40,4 +40,10 @@ public interface PaymentRepository extends JpaRepository<Payment, String> {
 
     @Query("SELECT p FROM Payment p WHERE p.paymentStatus = 'Pending'")
     List<Payment> findPendingPayments();
+
+    /**
+     * Tìm tất cả các khoản thanh toán liên quan đến các xe của một chủ sở hữu cụ thể.
+     */
+    @Query("SELECT p FROM Payment p JOIN p.booking b JOIN b.vehicle v WHERE v.ownerId = :ownerId")
+    List<Payment> findPaymentsByVehicleOwnerId(@Param("ownerId") String ownerId);
 }

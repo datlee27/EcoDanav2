@@ -6,6 +6,7 @@ import com.ecodana.evodanavn1.model.*;
 import com.ecodana.evodanavn1.repository.TransmissionTypeRepository;
 import com.ecodana.evodanavn1.repository.VehicleCategoriesRepository;
 import com.ecodana.evodanavn1.service.*;
+import com.ecodana.evodanavn1.service.PaymentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
@@ -48,6 +49,9 @@ public class OwnerController {
 
     @Autowired
     private BankAccountService bankAccountService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @Autowired
     private Cloudinary cloudinary;
@@ -203,21 +207,22 @@ public class OwnerController {
                 model.addAttribute("countRejected", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Rejected || b.getStatus() == Booking.BookingStatus.Cancelled).count());
                 break;
 
-            case "customers":
-                // Tải dữ liệu cho tab customers
-                List<Booking> allBookingsForCustomers = bookingService.getAllBookings(); // Cân nhắc lại nếu chỉ cần booking của owner
-                Map<User, Long> customerBookingCounts = allBookingsForCustomers.stream()
-                        .filter(b -> b.getUser() != null)
-                        .collect(Collectors.groupingBy(Booking::getUser, Collectors.counting()));
-                List<Map<String, Object>> customers = customerBookingCounts.entrySet().stream()
-                        .map(entry -> {
-                            Map<String, Object> customerMap = new HashMap<>();
-                            customerMap.put("user", entry.getKey());
-                            customerMap.put("bookingCount", entry.getValue());
-                            return customerMap;
-                        })
-                        .collect(Collectors.toList());
-                model.addAttribute("customers", customers);
+            case "payments":
+                // Tải dữ liệu cho tab payments
+                List<Payment> ownerPayments = paymentService.getPaymentsForOwner(ownerId);
+                model.addAttribute("payments", ownerPayments);
+
+                // Đếm số lượng cho các tab trạng thái
+                model.addAttribute("countCompleted", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed).count());
+                model.addAttribute("countRefunded", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Refunded).count());
+                // Giả định "Đã Hủy" tương ứng với "Failed" trong Payment model
+                model.addAttribute("countCancelled", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Failed).count());
+
+                // Tính toán doanh thu
+                Map<String, BigDecimal> revenueStats = paymentService.getOwnerPaymentStatistics(ownerId);
+                model.addAttribute("totalRevenue", revenueStats.getOrDefault("totalRevenue", BigDecimal.ZERO));
+                model.addAttribute("netRevenue", revenueStats.getOrDefault("netRevenue", BigDecimal.ZERO));
+
                 break;
 
             case "feedback":
@@ -265,10 +270,10 @@ public class OwnerController {
         return "redirect:/owner/dashboard?tab=bookings";
     }
 
-    @GetMapping("/customers")
-    public String customersPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
-        // Cập nhật: Chuyển hướng đến dashboard tab 'customers'
-        return "redirect:/owner/dashboard?tab=customers";
+    @GetMapping("/payments")
+    public String paymentsPage(Model model, HttpSession session, RedirectAttributes redirectAttributes) {
+        // Cập nhật: Chuyển hướng đến dashboard tab 'payments'
+        return "redirect:/owner/dashboard?tab=payments";
     }
 
     @GetMapping("/profile")

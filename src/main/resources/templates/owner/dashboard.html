@@ -258,8 +258,8 @@
                     <div th:if="${currentPage == 'bookings'}" th:replace="~{owner/bookings-management :: bookings-content}"></div>
                 </div>
 
-                <div id="customers-content" class="main-tab-content" th:classappend="${currentPage == 'customers' ? 'active' : ''}">
-                    <div th:if="${currentPage == 'customers'}" th:replace="~{owner/customers-management :: customers-content}"></div>
+                <div id="payments-content" class="main-tab-content" th:classappend="${currentPage == 'payments' ? 'active' : ''}">
+                    <div th:if="${currentPage == 'payments'}" th:replace="~{owner/owner-payment-management.html :: payments-content}"></div>
                 </div>
 
                 <div id="feedback-content" class="main-tab-content" th:classappend="${currentPage == 'feedback' ? 'active' : ''}">
@@ -288,7 +288,6 @@
 
 <div th:replace="~{owner/bookings-management :: booking-modals}"></div>
 <div th:replace="~{owner/cars-management :: car-modals}"></div>
-<div th:replace="~{owner/customers-management :: customer-modal}"></div>
 
 <div id="complete-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeModal('complete-modal')"></div>
