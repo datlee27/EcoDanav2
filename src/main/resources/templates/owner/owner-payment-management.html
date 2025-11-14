@@ -74,12 +74,17 @@
                 </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200" id="payment-list-body">
-                <tr th:each="payment : ${payments}"
-                    class="hover:bg-gray-50"
-                    th:attr="data-status=${payment.booking?.status?.name()},
-                             data-payment-status=${payment.paymentStatus?.name()},
+                <tr th:each="payment : ${payments}" class="hover:bg-gray-50"
+                    th:with="displayStatus=${payment.paymentStatus?.name() == 'Refunded' ? 'Refunded' : (payment.booking?.status?.name() ?: 'Unknown')},
+                             searchInfoBase = ${(payment.booking?.bookingCode ?: '') + ' ' +
+                                               (payment.booking?.user?.firstName ?: '') + ' ' +
+                                               (payment.booking?.user?.lastName ?: '') + ' ' +
+                                               (payment.booking?.vehicle?.vehicleModel ?: '') + ' ' +
+                                               (payment.booking?.vehicle?.licensePlate ?: '')}"
+                    th:attr="data-display-status=${displayStatus},
                              data-created-date=${payment.createdDate},
-                             data-amount=${payment.amount}">
+                             data-amount=${displayStatus == 'Refunded' ? payment.amount : payment.booking?.totalAmount},
+                             data-search-info=${searchInfoBase.toLowerCase()}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${payment.booking?.bookingCode}"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -98,21 +103,26 @@
                         <span th:text="${#temporals.format(payment.booking?.returnDateTime, 'dd/MM/yy HH:mm')}"></span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span th:switch="${payment.booking?.status?.name()}"
-                              th:classappend="${payment.booking?.status?.name() == 'Completed' ? 'bg-green-100 text-green-800' :
-                                               (payment.booking?.status?.name() == 'NoShow' ? 'bg-gray-200 text-gray-800' :
-                                               (payment.paymentStatus?.name() == 'Refunded' ? 'bg-yellow-100 text-yellow-800' :
-                                               (payment.booking?.status?.name() == 'Cancelled' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800')))}"
-                              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
+                        <span th:switch="${displayStatus}"
+                              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              th:classappend="${displayStatus == 'Completed' ? 'bg-green-100 text-green-800' :
+                                                 displayStatus == 'Refunded' ? 'bg-yellow-100 text-yellow-800' :
+                                                 displayStatus == 'NoShow' ? 'bg-red-100 text-red-800' :
+                                                 displayStatus == 'Cancelled' ? 'bg-gray-200 text-gray-800' :
+                                                 'bg-blue-100 text-blue-800'}">
                             <span th:case="'Completed'">Hoàn thành</span>
+                            <span th:case="'Refunded'">Đã hoàn tiền</span>
                             <span th:case="'NoShow'">Không đến</span>
-                            <span th:case="'Cancelled'" th:text="${payment.paymentStatus?.name() == 'Refunded' ? 'Đã hoàn tiền' : 'Đã hủy'}"></span>
-                            <span th:case="*">
-                                <span th:text="${payment.paymentStatus.name() == 'Refunded' or payment.paymentStatus.name() == 'Failed' ? 'Hoàn tiền' : 'N/A'}"></span>
-                            </span>
+                            <span th:case="'Cancelled'">Đã hủy</span>
+                            <span th:case="'Pending'">Chờ duyệt</span>
+                            <span th:case="'AwaitingDeposit'">Chờ cọc</span>
+                            <span th:case="'Confirmed'">Chờ nhận xe</span>
+                            <span th:case="*">[[${displayStatus}]]</span>
                         </span>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800" th:text="${#numbers.formatDecimal(payment.amount, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800"
+                        th:text="${#numbers.formatDecimal(displayStatus == 'Refunded' ? payment.amount : payment.booking?.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                    </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" th:text="${#temporals.format(payment.createdDate, 'dd/MM/yyyy HH:mm')}"></td>
                 </tr>
                 <tr th:if="${payments == null or #lists.isEmpty(payments)}">
@@ -128,91 +138,6 @@
         </div>
     </div>
 </div>
-<script th:inline="javascript">
-let paymentRows = [];
-let noDataRow;
-
-document.addEventListener('DOMContentLoaded', function() {
-    const tableBody = document.getElementById('payment-list-body');
-    // Lấy tất cả các dòng có dữ liệu
-    paymentRows = Array.from(tableBody.querySelectorAll('tr[data-status]'));
-    // Lấy dòng thông báo "Không có dữ liệu"
-    noDataRow = tableBody.querySelector('tr:not([data-status])');
-
-    // Kích hoạt bộ lọc lần đầu khi tải trang
-    filterAndSortPayments();
-});
-
-function changeStatusTab(element) {
-    // Bỏ class 'active' khỏi tất cả các tab
-    document.querySelectorAll('#status-tabs .status-tab').forEach(tab => tab.classList.remove('active'));
-    // Thêm class 'active' cho tab được click
-    element.classList.add('active');
-    // Chạy lại bộ lọc
-    filterAndSortPayments();
-}
-
-function filterAndSortPayments() {
-    // 1. Lấy các giá trị điều khiển
-    const activeStatusFilter = document.querySelector('.status-tab.active').getAttribute('data-status');
-    const filterType = document.querySelector('.status-tab.active').getAttribute('data-filter-type') || 'booking'; // Mặc định là lọc theo booking status
-    const statusArray = activeStatusFilter.split(','); // Xử lý trường hợp có nhiều status trong 1 tab
-    const searchTerm = document.getElementById('search-input').value.toLowerCase();
-    const sortValue = document.getElementById('sort-select').value;
-    const tableBody = document.getElementById('payment-list-body');
- 
-    let visibleRowCount = 0;
-    let rowsToShow = [];
- 
-    // 2. Lọc và quyết định dòng nào được hiển thị
-    paymentRows.forEach(row => {
-        const bookingStatus = row.getAttribute('data-status');
-        const paymentStatus = row.getAttribute('data-payment-status');
-        const rowText = row.textContent.toLowerCase();
- 
-        let statusMatch = false;
-        if (activeStatusFilter === '') {
-            statusMatch = true; // Tab "Tất cả"
-        } else if (filterType === 'payment') {
-            statusMatch = statusArray.includes(paymentStatus);
-        } else { // filterType === 'booking'
-            statusMatch = statusArray.includes(bookingStatus);
-        }
- 
-        const searchMatch = searchTerm === '' || rowText.includes(searchTerm);
-
-        if (statusMatch && searchMatch) {
-            row.style.display = ''; // Hiển thị dòng
-            rowsToShow.push(row);
-            visibleRowCount++;
-        } else {
-            row.style.display = 'none'; // Ẩn dòng
-        }
-    });
- 
-    // 3. Sắp xếp các dòng sẽ được hiển thị
-    rowsToShow.sort((a, b) => {
-        const dateA = new Date(a.dataset.createdDate);
-        const dateB = new Date(b.dataset.createdDate);
-        const amountA = parseFloat(a.dataset.amount);
-        const amountB = parseFloat(b.dataset.amount);
- 
-        switch (sortValue) {
-            case 'oldest': return dateA - dateB;
-            case 'amount-high': return amountB - amountA;
-            case 'amount-low': return amountA - amountB;
-            case 'newest':
-            default: return dateB - dateA;
-        }
-    });
- 
-    // 4. Cập nhật lại DOM theo thứ tự đã sắp xếp
-    rowsToShow.forEach(row => tableBody.appendChild(row));
-
-    // 5. Hiển thị/ẩn thông báo "Không có dữ liệu"
-    if (noDataRow) {
-        noDataRow.style.display = visibleRowCount === 0 ? '' : 'none';
-    }
-}
-</script>
+<!-- Tách JavaScript ra file riêng để dễ quản lý -->
+<script th:src="@{/js/owner-payment-management.js}"></script>
 </html>

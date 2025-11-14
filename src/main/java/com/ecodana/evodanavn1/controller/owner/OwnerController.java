@@ -201,22 +201,36 @@ public class OwnerController {
                 // Đếm số lượng cho các tab
                 model.addAttribute("countAll", allOwnerBookings.size());
                 model.addAttribute("countPending", pendingBookingsCount); // Đã tính
-                model.addAttribute("countApproved", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Approved || b.getStatus() == Booking.BookingStatus.AwaitingDeposit).count());
-                model.addAttribute("countOngoing", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed || b.getStatus() == Booking.BookingStatus.Ongoing).count());
+                model.addAttribute("countApproved", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Approved).count());
+                model.addAttribute("countAwaitingDeposit", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.AwaitingDeposit).count());
+                model.addAttribute("countConfirmed", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Confirmed).count());
+                model.addAttribute("countOngoing", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Ongoing).count());
                 model.addAttribute("countCompleted", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Completed).count());
-                model.addAttribute("countRejected", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Rejected || b.getStatus() == Booking.BookingStatus.Cancelled).count());
+                model.addAttribute("countCancelled", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.Rejected || b.getStatus() == Booking.BookingStatus.Cancelled).count()); // Đổi tên biến khớp với HTML
+                model.addAttribute("countNoShow", allOwnerBookings.stream().filter(b -> b.getStatus() == Booking.BookingStatus.NoShow).count());
                 break;
 
             case "payments":
                 // Tải dữ liệu cho tab payments
-                List<Payment> ownerPayments = paymentService.getPaymentsForOwner(ownerId);
-                model.addAttribute("payments", ownerPayments);
+                List<Payment> allOwnerPayments = paymentService.getPaymentsForOwner(ownerId);
+                model.addAttribute("payments", allOwnerPayments);
 
                 // Đếm số lượng cho các tab trạng thái
-                model.addAttribute("countCompleted", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed).count());
-                model.addAttribute("countRefunded", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Refunded).count());
-                // Giả định "Đã Hủy" tương ứng với "Failed" trong Payment model
-                model.addAttribute("countCancelled", ownerPayments.stream().filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Failed).count());
+                long completedCount = 0;
+                long refundedCount = 0;
+                long noShowCount = 0;
+
+                for (Payment p : allOwnerPayments) {
+                    String status = p.getPaymentStatus() == Payment.PaymentStatus.Refunded ? "Refunded" : (p.getBooking() != null ? p.getBooking().getStatus().name() : "Unknown");
+                    if ("Completed".equals(status)) completedCount++;
+                    if ("Refunded".equals(status)) refundedCount++;
+                    if ("NoShow".equals(status)) noShowCount++;
+                }
+
+                model.addAttribute("countAll", completedCount + refundedCount + noShowCount);
+                model.addAttribute("countCompleted", completedCount);
+                model.addAttribute("countRefunded", refundedCount);
+                model.addAttribute("countNoShow", noShowCount);
 
                 // Tính toán doanh thu
                 Map<String, BigDecimal> revenueStats = paymentService.getOwnerPaymentStatistics(ownerId);
