@@ -274,6 +274,18 @@
                   Đã đánh giá
                 </span>
 
+                <!-- View Transfer Proof Image for Refunded bookings -->
+                <button
+                  th:if="${booking.status.toString() == 'Refunded'}"
+                  type="button"
+                  onclick="viewRefundProofImage(this)"
+                  th:attr="data-booking-id=${booking.bookingId}"
+                  class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all text-sm font-medium"
+                >
+                  <i class="fas fa-image mr-1"></i>
+                  Xem ảnh xác minh
+                </button>
+
                 <!-- RefundPending Actions -->
                 <div th:if="${booking.status == 'RefundPending'}" class="flex flex-col sm:flex-row gap-3 mt-4 p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg">
                   <button
@@ -761,7 +773,7 @@
         const bookingId = button.getAttribute('data-booking-id');
         
         // Fetch refund request for this booking (customer API)
-        fetch('/api/refund-requests/by-booking/' + bookingId)
+        fetch('/booking/api/refund-info/' + bookingId)
           .then(response => {
             if (!response.ok) {
               throw new Error('Không tìm thấy thông tin hoàn tiền');

@@ -104,23 +104,24 @@ public class RefundRequestService {
     }
 
     private BigDecimal calculateRefundAmount(Booking booking) {
-        // Get all payments (Completed or Pending - both should be refunded)
+        // Get all payments
         List<Payment> payments = paymentRepository.findByBookingId(booking.getBookingId());
         System.out.println("DEBUG: Total payments found: " + payments.size());
         for (Payment p : payments) {
             System.out.println("  - Payment: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Status: " + p.getPaymentStatus() + ", Amount: " + p.getAmount());
         }
         
+        // ONLY refund payments that are actually COMPLETED (đã thanh toán thực sự)
+        // Do NOT include Pending payments - they haven't been paid yet!
         List<Payment> refundablePayments = payments.stream()
-                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
-                            p.getPaymentStatus() == Payment.PaymentStatus.Pending)
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
                 .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
                             p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .toList();
         
-        System.out.println("DEBUG: Refundable payments found: " + refundablePayments.size());
+        System.out.println("DEBUG: Refundable payments (COMPLETED only) found: " + refundablePayments.size());
         for (Payment p : refundablePayments) {
-            System.out.println("  - Refundable: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Amount: " + p.getAmount());
+            System.out.println("  - Refundable: " + p.getPaymentId() + ", Type: " + p.getPaymentType() + ", Status: " + p.getPaymentStatus() + ", Amount: " + p.getAmount());
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -207,6 +208,11 @@ public class RefundRequestService {
         return refundRequestRepository.findById(refundRequestId);
     }
 
+    public List<RefundRequest> getRefundRequestsByBookingId(String bookingId) {
+        Optional<RefundRequest> refundRequest = refundRequestRepository.findByBookingBookingId(bookingId);
+        return refundRequest.map(List::of).orElse(List.of());
+    }
+
     @Transactional
     public void approveRefundRequest(String refundRequestId, String adminUserId, String adminNotes) {
         RefundRequest refundRequest = refundRequestRepository.findById(refundRequestId)
@@ -219,7 +225,7 @@ public class RefundRequestService {
 
         refundRequestRepository.save(refundRequest);
 
-        // Update all existing payments (Deposit/FinalPayment) to Refunded status
+        // Update existing Payment: Completed -> Refunded, PayOS -> PayOS_Refund
         Booking booking = refundRequest.getBooking();
         List<Payment> existingPayments = paymentRepository.findByBookingId(booking.getBookingId());
         for (Payment payment : existingPayments) {
@@ -228,25 +234,13 @@ public class RefundRequestService {
                 (payment.getPaymentType() == Payment.PaymentType.Deposit || 
                  payment.getPaymentType() == Payment.PaymentType.FinalPayment)) {
                 payment.setPaymentStatus(Payment.PaymentStatus.Refunded);
-                payment.setNotes("Đã hoàn tiền - RefundRequest: " + refundRequestId);
+                payment.setPaymentMethod("PayOS_Refund"); // Change method to PayOS_Refund
+                payment.setPaymentDate(LocalDateTime.now()); // Set refund date
+                payment.setNotes("Đã hoàn tiền - RefundRequest: " + refundRequestId + " - " + adminNotes);
                 paymentRepository.save(payment);
-                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded status");
+                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded with PayOS_Refund");
             }
         }
-
-        // Create new Payment record with Refund type (negative amount)
-        Payment refundPayment = new Payment();
-        refundPayment.setPaymentId(UUID.randomUUID().toString());
-        refundPayment.setBooking(booking);
-        refundPayment.setUser(booking.getUser());
-        refundPayment.setAmount(refundRequest.getRefundAmount().negate()); // Số âm
-        refundPayment.setPaymentMethod("PayOS_Refund");
-        refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
-        refundPayment.setPaymentType(Payment.PaymentType.Refund);
-        refundPayment.setPaymentDate(LocalDateTime.now());
-        refundPayment.setNotes("Admin duyệt hoàn tiền: " + adminNotes);
-        paymentRepository.save(refundPayment);
-        System.out.println("Created refund payment: " + refundPayment.getPaymentId());
 
         // Update booking status to Refunded
         booking.setStatus(Booking.BookingStatus.Refunded);
@@ -278,7 +272,7 @@ public class RefundRequestService {
         refundRequest.setProcessedDate(LocalDateTime.now());
         refundRequestRepository.save(refundRequest);
 
-        // Update all existing payments (Deposit/FinalPayment) to Refunded status
+        // Update existing Payment: Completed -> Refunded, PayOS -> PayOS_Refund
         Booking booking = refundRequest.getBooking();
         List<Payment> existingPayments = paymentRepository.findByBookingId(booking.getBookingId());
         for (Payment payment : existingPayments) {
@@ -287,26 +281,13 @@ public class RefundRequestService {
                 (payment.getPaymentType() == Payment.PaymentType.Deposit || 
                  payment.getPaymentType() == Payment.PaymentType.FinalPayment)) {
                 payment.setPaymentStatus(Payment.PaymentStatus.Refunded);
-                payment.setNotes("Đã hoàn tiền - RefundRequest: " + refundRequestId);
+                payment.setPaymentMethod("PayOS_Refund"); // Change method to PayOS_Refund
+                payment.setPaymentDate(LocalDateTime.now()); // Set refund date
+                payment.setNotes("Đã hoàn tiền - Ảnh: " + transferProofImagePath);
                 paymentRepository.save(payment);
-                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded status");
+                System.out.println("Updated payment " + payment.getPaymentId() + " to Refunded with PayOS_Refund");
             }
         }
-
-        // Create Payment record with Refunded status
-        Payment refundPayment = new Payment();
-        refundPayment.setPaymentId(UUID.randomUUID().toString());
-        refundPayment.setBooking(booking);
-        refundPayment.setUser(booking.getUser());
-        refundPayment.setAmount(refundRequest.getRefundAmount().negate()); // Lưu số âm
-        refundPayment.setPaymentMethod("PayOS_Refund");
-        refundPayment.setPaymentStatus(Payment.PaymentStatus.Refunded);
-        refundPayment.setPaymentType(Payment.PaymentType.Refund);
-        refundPayment.setPaymentDate(LocalDateTime.now());
-        refundPayment.setNotes("Admin chuyển tiền hoàn lại");
-        paymentRepository.save(refundPayment);
-
-        System.out.println("Payment record created for refund: " + refundPayment.getPaymentId());
 
         // Update booking status to Refunded (đã hoàn tiền)
         booking.setStatus(Booking.BookingStatus.Refunded);

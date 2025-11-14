@@ -164,25 +164,18 @@ CREATE TABLE `Booking` (
                            `HandledBy` char(36) DEFAULT NULL,
                            `PickupDateTime` datetime NOT NULL,
                            `ReturnDateTime` datetime NOT NULL,
-                           `PickupLocation` varchar(500) DEFAULT NULL,
-                           `VehicleRentalFee` decimal(10,2) NOT NULL DEFAULT 0.00,
-                           `PlatformFee` decimal(10,2) NOT NULL DEFAULT 0.00,
-                           `OwnerPayout` decimal(10,2) NOT NULL DEFAULT 0.00,
                            `TotalAmount` decimal(10,2) NOT NULL,
-                           `DepositAmountRequired` decimal(10,2) NOT NULL DEFAULT 0.00,
-                           `RemainingAmount` decimal(10,2) NOT NULL DEFAULT 0.00,
-                           `PaymentConfirmedAt` datetime DEFAULT NULL,
-                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'Refunded', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
+                           `Status` ENUM('Pending', 'Approved', 'Rejected', 'Ongoing', 'Completed', 'Cancelled', 'AwaitingDeposit', 'Confirmed', 'RefundPending', 'LatePickup', 'NoShowReported') NOT NULL DEFAULT 'Pending',
                            `DiscountId` char(36) DEFAULT NULL,
                            `CreatedDate` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
                            `CancelReason` varchar(500) DEFAULT NULL,
+                           `CancellationType` varchar(50) DEFAULT NULL,
                            `BookingCode` varchar(20) NOT NULL,
                            `ExpectedPaymentMethod` varchar(50) DEFAULT NULL,
                            `RentalType` ENUM('hourly', 'daily', 'monthly') NOT NULL DEFAULT 'daily',
                            `TermsAgreed` tinyint(1) NOT NULL DEFAULT '0',
                            `TermsAgreedAt` datetime DEFAULT NULL,
                            `TermsVersion` varchar(10) DEFAULT 'v1.0',
-                           `return_notes` TEXT DEFAULT NULL,
                            PRIMARY KEY (`BookingId`),
                            UNIQUE KEY `BookingCode` (`BookingCode`),
                            KEY `UserId` (`UserId`),
@@ -613,19 +606,23 @@ ALTER TABLE Booking
     'Rejected',
     'Ongoing',
     'Completed',
-    'Cancelled'
+    'Cancelled',
+    'NoShow'
     ) NOT NULL DEFAULT 'Pending';
 
 ALTER TABLE RefundRequest
     MODIFY COLUMN Status ENUM(
     'Pending',
+    'Approved',
     'Rejected',
+    'Transferred',
+    'Completed',
     'Refunded'
     ) NOT NULL DEFAULT 'Pending';
 
 
--- Updated RefundRequest Status ENUM - removed Approved, Transferred, Completed
-ALTER TABLE RefundRequest MODIFY COLUMN Status ENUM('Pending', 'Rejected', 'Refunded') NOT NULL;
+-- Add Transferred status to RefundRequest Status ENUM
+ALTER TABLE RefundRequest MODIFY COLUMN Status ENUM('Pending', 'Approved', 'Rejected', 'Transferred', 'Completed', 'Refunded') NOT NULL;
 -- Add transfer proof image field to RefundRequest table
 ALTER TABLE RefundRequest ADD COLUMN TransferProofImagePath VARCHAR(500) NULL;
 

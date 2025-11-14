@@ -131,9 +131,19 @@
                     </div>
                 </div>
                 
-                <div class="flex justify-between items-center">
-                    <span class="text-lg font-semibold text-gray-700">Tổng tiền:</span>
-                    <span class="text-2xl font-bold text-green-500" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.231.937 ₫</span>
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-semibold text-gray-700">Tổng tiền:</span>
+                        <span class="text-2xl font-bold text-gray-700" th:text="${#numbers.formatDecimal(booking.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1.231.937 ₫</span>
+                    </div>
+                    <div th:if="${paidAmount != null && paidAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="flex justify-between items-center pt-2 border-t">
+                        <span class="text-sm font-medium text-green-700">Đã thanh toán:</span>
+                        <span class="text-lg font-bold text-green-600" th:text="${#numbers.formatDecimal(paidAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">220.000 ₫</span>
+                    </div>
+                    <div th:if="${remainingAmount != null && remainingAmount.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-orange-700">Còn lại (thanh toán khi nhận xe):</span>
+                        <span class="text-lg font-bold text-orange-600" th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">880.000 ₫</span>
+                    </div>
                 </div>
             </div>
 
@@ -167,9 +177,15 @@
                 <div th:if="${booking.status.name() == 'Confirmed'}" class="bg-green-50 border border-green-200 rounded-lg p-4">
                     <div class="flex items-center">
                         <i class="fas fa-check-double text-green-500 mr-3"></i>
-                        <div>
+                        <div class="flex-1">
                             <p class="font-semibold text-green-800">Trạng thái: Đã thanh toán</p>
-                            <p class="text-sm text-green-700">Đơn đặt xe đã được xác nhận. Chúc bạn có chuyến đi vui vẻ!</p>
+                            <p class="text-sm text-green-700" th:if="${paidAmount != null && paidAmount.compareTo(booking.totalAmount) >= 0}">
+                                Đơn đặt xe đã được xác nhận. Chúc bạn có chuyến đi vui vẻ!
+                            </p>
+                            <p class="text-sm text-green-700" th:if="${paidAmount != null && paidAmount.compareTo(booking.totalAmount) < 0}">
+                                Bạn đã thanh toán <strong th:text="${#numbers.formatDecimal(paidAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">220.000 ₫</strong> (cọc 20%).<br/>
+                                Vui lòng thanh toán số tiền còn lại <strong class="text-orange-600" th:text="${#numbers.formatDecimal(remainingAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">880.000 ₫</strong> khi nhận xe.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -469,21 +485,21 @@
         const daysBeforeTrip = (tripStartTime.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
 
         if (hoursSincePayment < 2) {
-            // 1. Hoàn 100%
-            refundAmount = bookingData.totalAmount;
-            policyText = "Hủy trong 2 giờ sau khi thanh toán: Hoàn 100%.";
+            // 1. Hoàn 100% số tiền đã thanh toán
+            refundAmount = totalPaid;
+            policyText = "Hủy trong 2 giờ sau khi thanh toán: Hoàn 100% số tiền đã thanh toán.";
 
         } else if (daysBeforeTrip >= 7) {
-            // 2. Mất 10%
-            const penalty = tripValue * 0.10;
-            refundAmount = tripValue - penalty;
-            policyText = `Hủy trước 7 ngày: Mất 10% giá trị chuyến (${formatCurrency(penalty)}).`;
+            // 2. Mất 10% số tiền đã thanh toán
+            const penalty = totalPaid * 0.10;
+            refundAmount = totalPaid - penalty;
+            policyText = `Hủy trước 7 ngày: Mất 10% số tiền đã thanh toán (${formatCurrency(penalty)}).`;
 
         } else {
-            // 3. Mất 40%
-            const penalty = tripValue * 0.40;
-            refundAmount = tripValue - penalty;
-            policyText = `Hủy trong 7 ngày: Mất 40% giá trị chuyến (${formatCurrency(penalty)}).`;
+            // 3. Mất 40% số tiền đã thanh toán
+            const penalty = totalPaid * 0.40;
+            refundAmount = totalPaid - penalty;
+            policyText = `Hủy trong 7 ngày: Mất 40% số tiền đã thanh toán (${formatCurrency(penalty)}).`;
         }
 
         // Đảm bảo không hoàn tiền âm

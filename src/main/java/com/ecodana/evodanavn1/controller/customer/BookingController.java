@@ -662,9 +662,41 @@ public class BookingController {
             model.addAttribute("vehicleOwner", owner);
         }
 
+        // Get payment information to show paid amount and remaining amount
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        
+        // DEBUG: Log all payments for this booking
+        System.out.println("=== BOOKING CONFIRMATION DEBUG ===");
+        System.out.println("BookingId: " + bookingId);
+        System.out.println("Total Amount: " + booking.getTotalAmount());
+        System.out.println("Deposit Required: " + booking.getDepositAmountRequired());
+        System.out.println("Total Payments Found: " + payments.size());
+        
+        for (Payment p : payments) {
+            System.out.println("Payment: ID=" + p.getPaymentId() + 
+                             ", Type=" + p.getPaymentType() + 
+                             ", Status=" + p.getPaymentStatus() + 
+                             ", Amount=" + p.getAmount() +
+                             ", OrderCode=" + p.getOrderCode());
+        }
+        BigDecimal paidAmount = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
+                            p.getPaymentType() == Payment.PaymentType.FinalPayment)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        System.out.println("Calculated Paid Amount: " + paidAmount);
+        
+        BigDecimal remainingAmount = booking.getTotalAmount().subtract(paidAmount);
+        System.out.println("Remaining Amount: " + remainingAmount);
+        System.out.println("=== END DEBUG ===");
+        
         model.addAttribute("booking", booking);
         model.addAttribute("vehicle", vehicle);
         model.addAttribute("currentUser", user);
+        model.addAttribute("paidAmount", paidAmount);
+        model.addAttribute("remainingAmount", remainingAmount);
 
         return "customer/booking-confirmation";
     }
@@ -1090,6 +1122,62 @@ public class BookingController {
             e.printStackTrace();
             model.addAttribute("error", "Error: " + e.getMessage());
             return "debug/booking-debug";
+        }
+    }
+
+    /**
+     * API endpoint to get refund request information for a booking
+     * Customer can view transfer proof image
+     */
+    @GetMapping("/api/refund-info/{bookingId}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ResponseEntity<?> getRefundInfo(@PathVariable String bookingId, HttpSession session) {
+        try {
+            // Check if user is logged in
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("status", "error", "message", "Vui lòng đăng nhập"));
+            }
+
+            // Get booking
+            Booking booking = bookingService.getBookingById(bookingId);
+            if (booking == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "error", "message", "Không tìm thấy booking"));
+            }
+
+            // Check if booking belongs to current user
+            if (!booking.getUser().getId().equals(currentUser.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("status", "error", "message", "Bạn không có quyền xem thông tin này"));
+            }
+
+            // Get refund request
+            List<RefundRequest> refundRequests = refundRequestService.getRefundRequestsByBookingId(bookingId);
+            if (refundRequests.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "error", "message", "Không tìm thấy yêu cầu hoàn tiền"));
+            }
+
+            RefundRequest refundRequest = refundRequests.get(0); // Get first refund request
+
+            // Return refund info
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "refundRequestId", refundRequest.getRefundRequestId(),
+                "refundAmount", refundRequest.getRefundAmount(),
+                "refundStatus", refundRequest.getStatus().toString(),
+                "transferProofImagePath", refundRequest.getTransferProofImagePath() != null ? 
+                    refundRequest.getTransferProofImagePath() : "",
+                "adminNotes", refundRequest.getAdminNotes() != null ? refundRequest.getAdminNotes() : "",
+                "processedDate", refundRequest.getProcessedDate() != null ? 
+                    refundRequest.getProcessedDate().toString() : ""
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("status", "error", "message", "Lỗi: " + e.getMessage()));
         }
     }
 }
