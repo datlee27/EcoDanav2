@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/customer/bank-accounts")
@@ -109,6 +110,23 @@ public class BankAccountController {
         try {
             bankAccountService.setAsDefault(id, user.getId());
             redirectAttributes.addFlashAttribute("bank_success", "Đã đặt làm tài khoản mặc định!");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
+        }
+
+        return "redirect:/profile#bank-accounts-section";
+    }
+    
+    @PostMapping("/unset-default/{id}")
+    public String unsetAsDefault(@PathVariable String id, HttpSession session, RedirectAttributes redirectAttributes) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return "redirect:/login";
+        }
+
+        try {
+            bankAccountService.unsetAsDefault(id, user.getId());
+            redirectAttributes.addFlashAttribute("bank_success", "Đã gỡ trạng thái mặc định!");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("bank_error", "Có lỗi xảy ra: " + e.getMessage());
         }
@@ -210,38 +228,31 @@ public class BankAccountController {
         }
     }
 
-    /**
-     * API endpoint for admin to get bank accounts of a specific customer
-     * Used in refund request modal to load customer's bank accounts
-     */
-    @GetMapping("/api/list-by-user/{userId}")
+    @GetMapping("/list-ajax")
     @ResponseBody
-    @Transactional(readOnly = true)
-    public ResponseEntity<?> getBankAccountsByUserIdApi(@PathVariable String userId, HttpSession session) {
+    public ResponseEntity<Map<String, Object>> getBankAccountsAjax(HttpSession session) {
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
         try {
-            User currentUser = (User) session.getAttribute("currentUser");
-            if (currentUser == null) {
-                Map<String, Object> error = new HashMap<>();
-                error.put("success", false);
-                error.put("message", "User not authenticated");
-                return ResponseEntity.status(401).body(error);
-            }
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
+            // Cần tạo DTO hoặc Map để tránh lỗi lazy loading
+            List<Map<String, Object>> accountsDto = bankAccounts.stream().map(acc -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("bankAccountId", acc.getBankAccountId());
+                map.put("bankName", acc.getBankName());
+                map.put("accountNumber", acc.getAccountNumber()); // Cần che số nếu muốn
+                map.put("accountHolderName", acc.getAccountHolderName());
+                map.put("isDefault", acc.isDefault());
+                map.put("qrCodeImagePath", acc.getQrCodeImagePath()); // Đường dẫn tương đối
+                return map;
+            }).collect(Collectors.toList());
 
-            // Check if current user is admin (optional - can be removed if not needed)
-            // For now, allow any authenticated user to view bank accounts
-
-            System.out.println("Getting bank accounts for user: " + userId);
-            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(userId);
-            System.out.println("Found " + bankAccounts.size() + " bank accounts");
-            
-            return ResponseEntity.ok(bankAccounts);
+            return ResponseEntity.ok(Map.of("success", true, "accounts", accountsDto));
         } catch (Exception e) {
-            e.printStackTrace();
-            Map<String, Object> error = new HashMap<>();
-            error.put("success", false);
-            error.put("message", e.getMessage());
-            error.put("error", e.getClass().getSimpleName());
-            return ResponseEntity.status(500).body(error);
+            return ResponseEntity.status(500).body(Map.of("success", false, "message", e.getMessage()));
         }
     }
 }

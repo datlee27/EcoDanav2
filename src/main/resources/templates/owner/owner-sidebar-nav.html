@@ -69,6 +69,17 @@
             <span>PROFILE</span>
           </a>
         </li>
+          <li>
+              <a
+                      th:href="@{/owner/dashboard(tab='bank-accounts')}"
+                      data-page="bank-accounts"
+                      class="sidebar-item flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 group"
+                      th:classappend="${currentPage == 'bank-accounts' ? 'active' : ''}"
+              >
+                  <i class="fas fa-university mr-3 text-lg"></i>
+                  <span>Tài khoản ngân hàng</span>
+              </a>
+          </li>
       </ul>
     </div>
   </body>

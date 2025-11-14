@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.controller.api;
 
+import com.ecodana.evodanavn1.service.BookingService;
 import com.ecodana.evodanavn1.service.PayOSService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +10,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.ecodana.evodanavn1.client.PayOSClient;
+import com.ecodana.evodanavn1.config.PayOSConfig;
+import com.ecodana.evodanavn1.model.Booking;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +25,13 @@ public class PayOSController {
     
     @Autowired
     private PayOSService payOSService;
+
+    @Autowired
+    private BookingService bookingService;
+
+    @Autowired
+    private PayOSClient payOSClient;
+
     
     private final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -137,5 +149,75 @@ public class PayOSController {
         response.put("success", false);
         response.put("error", error);
         return response;
+    }
+    /**
+     * API tạo QR code thanh toán phần còn lại (Dùng cho modal Chuyển khoản của Chủ xe)
+     */
+    @PostMapping("/create-completion-payment")
+    @ResponseBody
+    public ResponseEntity<?> createCompletionPaymentLink(@RequestBody Map<String, Object> payload) {
+        try {
+            String bookingId = (String) payload.get("bookingId");
+
+            // FIX 1: Kiểm tra NULL cho bookingId (Ngăn lỗi: The given id must not be null)
+            if (bookingId == null || bookingId.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("success", false, "message", "Thiếu Booking ID. Vui lòng thử lại."));
+            }
+
+            long amount;
+            Object amountObject = payload.get("amount");
+
+            // FIX 2: Chuyển đổi an toàn sang long (Ngăn lỗi: String cannot be cast to Number)
+            if (amountObject == null) {
+                amount = 0; // Nếu không có, gán 0 (Service sẽ kiểm tra và ném lỗi nếu <= 0)
+            } else if (amountObject instanceof Number) {
+                amount = ((Number) amountObject).longValue();
+            } else {
+                // Xử lý nếu là String (chuỗi số từ JS)
+                String amountString = String.valueOf(amountObject);
+                amount = Long.parseLong(amountString.trim());
+            }
+
+            String description = "Thanh toan hoan tat cho booking " + bookingId;
+
+            // Gọi service
+            Map<String, Object> result = payOSService.createCompletionPaymentLink(bookingId, amount, description);
+
+            return ResponseEntity.ok(result);
+        } catch (NumberFormatException e) {
+            logger.error("Number format error in createCompletionPaymentLink:", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("success", false, "message", "Lỗi định dạng số tiền. Vui lòng kiểm tra lại số dư còn lại."));
+        } catch (Exception e) {
+            logger.error("Lỗi khi tạo link thanh toán hoàn tất:", e);
+
+            // FIX 3: Trích xuất lỗi PayOS chi tiết
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("PayOS says:")) {
+                String payosDetail = errorMessage.substring(errorMessage.indexOf("PayOS says:") + 12);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("success", false, "message", "Lỗi PayOS: " + payosDetail));
+            }
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "message", "Lỗi tạo mã thanh toán: " + errorMessage));
+        }
+    }
+
+
+    /**
+     * Polling kiểm tra trạng thái thanh toán
+     */
+    @GetMapping("/check-payment-status/{orderCode}")
+    @ResponseBody
+    public ResponseEntity<?> checkPaymentStatus(@PathVariable String orderCode) {
+        try {
+            String status = payOSService.getPaymentStatus(orderCode); // Trả về PAID, PENDING, v.v.
+            return ResponseEntity.ok(Map.of("status", status));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(createErrorResponse("Lỗi check status: " + e.getMessage()));
+        }
     }
 }
