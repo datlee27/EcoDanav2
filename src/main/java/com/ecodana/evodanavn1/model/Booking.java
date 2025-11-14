@@ -212,7 +212,10 @@ public class Booking {
         Completed,        // Đã hoàn tất chuyến đi và thanh toán
         Cancelled,        // Đơn bị hủy
         RefundPending,    // Chờ hoàn tiền
-        NoShow            // Khách không đến
+        Refunded,         // Đã hoàn tiền
+        LatePickup,       // Quá thởi nhận xe
+        NoShow
+        // Owner báo cáo customer không đến
     }
 
     public enum RentalType {

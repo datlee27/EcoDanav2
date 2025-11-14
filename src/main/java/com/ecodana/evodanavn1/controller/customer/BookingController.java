@@ -8,7 +8,8 @@ import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
+import com.ecodana.evodanavn1.model.Discount;
+import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.dto.BookingRequest;
 import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,13 +44,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class BookingController {
 
     @Autowired
+    private DiscountService discountService;
+
+    @Autowired
     private BookingService bookingService;
 
     @Autowired
     private VehicleService vehicleService;
 
-    @Autowired
-    private DiscountService discountService;
+
 
     @Autowired
     private NotificationService notificationService;
@@ -194,11 +197,15 @@ public class BookingController {
             model.addAttribute("hourlyPrice", hourlyPrice);
             model.addAttribute("fullDays", fullDays);
             model.addAttribute("remainingHours", Math.ceil(remainingHours));
-            model.addAttribute("discountId", bookingRequest.getDiscountId()); // Vẫn gửi ID (code)
+            model.addAttribute("discountId", discountCode); // Vẫn gửi ID (code)
             model.addAttribute("discountCode", discountCode); // Tên mã
             model.addAttribute("discountAmount", discountAmount);
             model.addAttribute("totalAmount", totalAmount); // Sử dụng total đã tính
             model.addAttribute("currentUser", user);
+
+            // Lấy danh sách các mã giảm giá có sẵn và đang hoạt động
+            List<Discount> availableDiscounts = discountService.getAvailableDiscountsForCustomer();
+            model.addAttribute("availableDiscounts", availableDiscounts);
 
             return "customer/booking-checkout";
 
@@ -612,16 +619,25 @@ public class BookingController {
             @RequestParam(required = false) String bookingId,
             HttpSession session,
             Model model) {
-        
+
         User user = (User) session.getAttribute("currentUser");
-        if (user == null) {
-            return "redirect:/login";
+        // Nếu không có user trong session, thử lấy từ bookingId
+        if (user == null && bookingId != null) {
+            try {
+                Booking booking = bookingService.findById(bookingId).orElse(null);
+                if (booking != null) {
+                    user = booking.getUser();
+                }
+            } catch (Exception e) {
+                System.out.println("Could not retrieve user from bookingId on payment cancel: " + e.getMessage());
+            }
         }
 
         model.addAttribute("warning", true);
         model.addAttribute("message", "Bạn đã hủy thanh toán. Vui lòng thử lại khi sẵn sàng.");
         model.addAttribute("bookingId", bookingId);
-        
+        model.addAttribute("currentUser", user); // Thêm currentUser vào model
+
         return "customer/payos-return";
     }
 
@@ -658,9 +674,41 @@ public class BookingController {
             model.addAttribute("vehicleOwner", owner);
         }
 
+        // Get payment information to show paid amount and remaining amount
+        List<Payment> payments = paymentRepository.findByBookingId(bookingId);
+        
+        // DEBUG: Log all payments for this booking
+        System.out.println("=== BOOKING CONFIRMATION DEBUG ===");
+        System.out.println("BookingId: " + bookingId);
+        System.out.println("Total Amount: " + booking.getTotalAmount());
+        System.out.println("Deposit Required: " + booking.getDepositAmountRequired());
+        System.out.println("Total Payments Found: " + payments.size());
+        
+        for (Payment p : payments) {
+            System.out.println("Payment: ID=" + p.getPaymentId() + 
+                             ", Type=" + p.getPaymentType() + 
+                             ", Status=" + p.getPaymentStatus() + 
+                             ", Amount=" + p.getAmount() +
+                             ", OrderCode=" + p.getOrderCode());
+        }
+        BigDecimal paidAmount = payments.stream()
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
+                            p.getPaymentType() == Payment.PaymentType.FinalPayment)
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        System.out.println("Calculated Paid Amount: " + paidAmount);
+        
+        BigDecimal remainingAmount = booking.getTotalAmount().subtract(paidAmount);
+        System.out.println("Remaining Amount: " + remainingAmount);
+        System.out.println("=== END DEBUG ===");
+        
         model.addAttribute("booking", booking);
         model.addAttribute("vehicle", vehicle);
         model.addAttribute("currentUser", user);
+        model.addAttribute("paidAmount", paidAmount);
+        model.addAttribute("remainingAmount", remainingAmount);
 
         return "customer/booking-confirmation";
     }
@@ -1086,6 +1134,62 @@ public class BookingController {
             e.printStackTrace();
             model.addAttribute("error", "Error: " + e.getMessage());
             return "debug/booking-debug";
+        }
+    }
+
+    /**
+     * API endpoint to get refund request information for a booking
+     * Customer can view transfer proof image
+     */
+    @GetMapping("/api/refund-info/{bookingId}")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ResponseEntity<?> getRefundInfo(@PathVariable String bookingId, HttpSession session) {
+        try {
+            // Check if user is logged in
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("status", "error", "message", "Vui lòng đăng nhập"));
+            }
+
+            // Get booking
+            Booking booking = bookingService.getBookingById(bookingId);
+            if (booking == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "error", "message", "Không tìm thấy booking"));
+            }
+
+            // Check if booking belongs to current user
+            if (!booking.getUser().getId().equals(currentUser.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("status", "error", "message", "Bạn không có quyền xem thông tin này"));
+            }
+
+            // Get refund request
+            List<RefundRequest> refundRequests = refundRequestService.getRefundRequestsByBookingId(bookingId);
+            if (refundRequests.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of("status", "error", "message", "Không tìm thấy yêu cầu hoàn tiền"));
+            }
+
+            RefundRequest refundRequest = refundRequests.get(0); // Get first refund request
+
+            // Return refund info
+            return ResponseEntity.ok(Map.of(
+                "status", "success",
+                "refundRequestId", refundRequest.getRefundRequestId(),
+                "refundAmount", refundRequest.getRefundAmount(),
+                "refundStatus", refundRequest.getStatus().toString(),
+                "transferProofImagePath", refundRequest.getTransferProofImagePath() != null ? 
+                    refundRequest.getTransferProofImagePath() : "",
+                "adminNotes", refundRequest.getAdminNotes() != null ? refundRequest.getAdminNotes() : "",
+                "processedDate", refundRequest.getProcessedDate() != null ? 
+                    refundRequest.getProcessedDate().toString() : ""
+            ));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("status", "error", "message", "Lỗi: " + e.getMessage()));
         }
     }
 }

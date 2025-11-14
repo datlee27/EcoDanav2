@@ -558,7 +558,7 @@ public class BookingService {
     public Map<String, Long> getBookingCountsByStatus() {
         Map<String, Long> counts = new HashMap<>();
         List<Booking> allBookings = getAllBookings();
-        
+
         counts.put("pending", allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Pending).count());
         counts.put("approved", allBookings.stream()
@@ -571,7 +571,7 @@ public class BookingService {
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Rejected).count());
         counts.put("cancelled", allBookings.stream()
                 .filter(b -> b.getStatus() == Booking.BookingStatus.Cancelled).count());
-        
+
         return counts;
     }
 
@@ -655,31 +655,31 @@ public class BookingService {
         // Tìm tất cả payment (Completed hoặc Pending - cả hai đều có thể hoàn tiền)
         List<Payment> payments = paymentRepository.findByBookingId(bookingId); // Dòng này đã được thêm vào
         List<Payment> refundablePayments = payments.stream()
-                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed || 
-                            p.getPaymentStatus() == Payment.PaymentStatus.Pending)
-                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
-                            p.getPaymentType() == Payment.PaymentType.FinalPayment)
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed ||
+                        p.getPaymentStatus() == Payment.PaymentStatus.Pending)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit ||
+                        p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .toList();
 
         System.out.println("=== REFUND CALCULATION DEBUG ===");
         System.out.println("Booking ID: " + bookingId);
         System.out.println("Total payments found: " + payments.size());
         System.out.println("Refundable payments (Completed or Pending): " + refundablePayments.size());
-        
+
         for (Payment payment : refundablePayments) {
-            System.out.println("Payment: " + payment.getPaymentId() + ", Amount: " + payment.getAmount() + 
+            System.out.println("Payment: " + payment.getPaymentId() + ", Amount: " + payment.getAmount() +
                     ", Type: " + payment.getPaymentType() + ", Status: " + payment.getPaymentStatus());
         }
 
         if (refundablePayments.isEmpty()) {
             System.out.println("WARNING: No refundable payments found, but booking status is Confirmed");
-            
+
             // Fallback: Change to RefundPending for admin review
             booking.setStatus(Booking.BookingStatus.RefundPending);
             booking.setCancelReason(reason + " | Không tìm thấy giao dịch thanh toán. Chờ admin xử lý.");
             bookingRepository.save(booking);
             updateVehicleStatusOnBookingCompletionOrCancellation(booking.getVehicle());
-            
+
             // Tạo RefundRequest để admin xử lý (với refund amount = 0, admin sẽ xử lý thủ công)
             try {
                 RefundRequest refundRequest = refundRequestService.createRefundRequest(booking, canceller, reason, bankAccountId, BigDecimal.ZERO);
@@ -689,10 +689,10 @@ public class BookingService {
                 System.out.println("Error creating RefundRequest: " + e.getMessage());
                 e.printStackTrace();
             }
-            
+
             // Notify admin
             notificationService.notifyAdminRefundRequest(booking, BigDecimal.ZERO, "Không tìm thấy giao dịch thanh toán hoàn tất. Vui lòng kiểm tra và xử lý thủ công.");
-            
+
             result.put("success", true);
             result.put("message", "Đã gửi yêu cầu hủy xe đến admin để xử lý. Không tìm thấy giao dịch thanh toán để hoàn tiền.");
             return result;
@@ -721,7 +721,7 @@ public class BookingService {
             }
 
             totalRefundAmount = totalRefundAmount.add(paymentRefundAmount);
-            
+
             if (refundMessageBuilder.length() > 0) {
                 refundMessageBuilder.append("; ");
             }
