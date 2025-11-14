@@ -621,15 +621,24 @@ public class BookingController {
             @RequestParam(required = false) String bookingId,
             HttpSession session,
             Model model) {
-
+ 
         User user = (User) session.getAttribute("currentUser");
-        if (user == null) {
-            return "redirect:/login";
+        // Nếu không có user trong session, thử lấy từ bookingId
+        if (user == null && bookingId != null) {
+            try {
+                Booking booking = bookingService.findById(bookingId).orElse(null);
+                if (booking != null) {
+                    user = booking.getUser();
+                }
+            } catch (Exception e) {
+                System.out.println("Could not retrieve user from bookingId on payment cancel: " + e.getMessage());
+            }
         }
-
+ 
         model.addAttribute("warning", true);
         model.addAttribute("message", "Bạn đã hủy thanh toán. Vui lòng thử lại khi sẵn sàng.");
         model.addAttribute("bookingId", bookingId);
+        model.addAttribute("currentUser", user); // Thêm currentUser vào model
 
         return "customer/payos-return";
     }

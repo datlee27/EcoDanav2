@@ -479,14 +479,27 @@
                 <h1 class="result-title" style="color: #f59e0b;">Đã hủy thanh toán</h1>
                 <p class="result-message" th:text="${message}">Bạn đã hủy thanh toán.</p>
 
-                <div style="margin-top: 2rem;">
-                    <a th:href="@{/booking/payment/{id}(id=${bookingId})}" class="btn-primary" th:if="${bookingId != null}">
+                <!-- NEW: Booking Info for Cancelled Payment -->
+                <div class="booking-info" th:if="${bookingCode != null}">
+                    <div class="info-row">
+                        <span class="info-label">Mã đơn hàng</span>
+                        <span class="info-value" th:text="${bookingCode}">BK123456</span>
+                    </div>
+                    <div class="info-row" th:if="${orderCode != null}">
+                        <span class="info-label">Mã giao dịch PayOS</span>
+                        <span class="info-value" th:text="${orderCode}">PAYOS_CANCELLED</span>
+                    </div>
+                </div>
+                <!-- END NEW -->
+
+                <div class="button-group" style="margin-top: 2.5rem;">
+                    <a th:href="@{/booking/payment/{id}(id=${bookingId})}" class="btn-warning" th:if="${bookingId != null}">
                         <i class="fas fa-redo mr-2"></i>
                         Thanh toán lại
                     </a>
-                    <a th:href="@{/booking/my-bookings}" class="btn-secondary">
+                    <a th:href="@{/booking/my-bookings}" class="btn-secondary" style="color: #d97706; border-color: #d97706;">
                         <i class="fas fa-arrow-left mr-2"></i>
-                        Quay lại
+                        Về đơn hàng của tôi
                     </a>
                 </div>
             </div>

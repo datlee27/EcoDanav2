@@ -805,7 +805,7 @@
             <div class="space-y-4">
                 <div>
                     <label for="option-custom" class="flex items-center cursor-pointer">
-                        <input type="radio" name="delivery-option" id="option-custom" value="custom" class="w-4 h-4 text-primary focus:ring-primary" data-fee="50000">
+                        <input type="radio" name="delivery-option" id="option-custom" value="custom" class="w-4 h-4 text-primary focus:ring-primary" data-fee="0">
                         <span class="ml-2 font-semibold text-gray-800">Địa chỉ tùy chỉnh</span>
                     </label>
                     <div id="custom-address-panel" class="mt-2 pl-6 space-y-4" style="display: none;">
@@ -828,7 +828,7 @@
                             <i class="fas fa-location-arrow text-green-500"></i>
                             <p class="text-gray-700 font-semibold" id="currentLocationDisplay">Sử dụng vị trí hiện tại</p>
                         </div>
-                        <p class="text-xs text-gray-500">Phí giao xe tùy chỉnh (tạm tính): 50.000đ. Phí chính xác sẽ được tính dựa trên km.</p>
+                        <p class="text-xs text-gray-500">Phí giao xe tùy chỉnh: Miễn phí.</p>
                     </div>
                 </div>
 
@@ -839,14 +839,14 @@
                     </label>
                     <div id="airport-options-panel" class="hidden mt-2 space-y-2 pl-6">
                         <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="airport-location" value="Sân bay Quốc tế Đà Nẵng" class="w-4 h-4 text-primary focus:ring-primary" data-fee="50000">
+                            <input type="radio" name="airport-location" value="Sân bay Quốc tế Đà Nẵng" class="w-4 h-4 text-primary focus:ring-primary" data-fee="0">
                             <span class="ml-3">Sân bay Quốc tế Đà Nẵng</span>
-                            <span class="ml-auto font-semibold text-primary">50.000đ</span>
+                            <span class="ml-auto font-semibold text-primary">Miễn phí</span>
                         </label>
                         <label class="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                            <input type="radio" name="airport-location" value="Ga Đà Nẵng" class="w-4 h-4 text-primary focus:ring-primary" data-fee="30000">
+                            <input type="radio" name="airport-location" value="Ga Đà Nẵng" class="w-4 h-4 text-primary focus:ring-primary" data-fee="0">
                             <span class="ml-3">Ga Đà Nẵng</span>
-                            <span class="ml-auto font-semibold text-primary">30.000đ</span>
+                            <span class="ml-auto font-semibold text-primary">Miễn phí</span>
                         </label>
                     </div>
                 </div>
@@ -870,7 +870,7 @@
                 </div>
                 <div class="flex justify-between text-sm text-gray-600 mt-1">
                     <span>Phí giao nhận xe (2 chiều)</span>
-                    <span class="font-semibold">20.000đ/km</span>
+                    <span class="font-semibold">Miễn phí</span>
                 </div>
             </div>
 
@@ -1213,7 +1213,7 @@
             // Lấy phí từ 'data-fee' của radio 'custom'.
             // LƯU Ý: Đây là phí TẠM TÍNH. Tính toán phí theo km thực tế
             // đòi hỏi Google Directions API và logic phức tạp hơn.
-            chosenFee = parseFloat(selectedOption.dataset.fee || '0');
+            chosenFee = 0; // Luôn miễn phí
 
         } else if (value === 'airport') {
             const selectedAirport = document.querySelector('input[name="airport-location"]:checked');
@@ -1222,11 +1222,11 @@
                 return;
             }
             chosenAddress = selectedAirport.value;
-            chosenFee = parseFloat(selectedAirport.dataset.fee || '0'); // <-- Lấy phí từ data-fee
+            chosenFee = 0; // Luôn miễn phí
 
         } else if (value === 'free') {
             chosenAddress = "Nhận xe tại vị trí của xe";
-            chosenFee = parseFloat(selectedOption.dataset.fee || '0'); // <-- Lấy phí (0) từ data-fee
+            chosenFee = 0; // Luôn miễn phí
         }
 
         // Update main page text and hidden form input
