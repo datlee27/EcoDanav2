@@ -207,7 +207,7 @@
                         <input type="hidden" name="returnTime" th:value="${returnTime}">
                         <input type="hidden" name="pickupLocation" th:value="${pickupLocation}">
                         <input type="hidden" name="vehicleRentalFee" th:value="${rentalPrice}"> <input type="hidden" name="totalAmount" th:value="${totalAmount}"> <input type="hidden" name="rentalDays" th:value="${rentalDays}">
-                        <input type="hidden" name="discountId" th:value="${discountId}">
+                        <input type="hidden" name="discountCode" id="discountCodeInput" th:value="${discountCode}">
                         <input type="hidden" name="discountAmount" th:value="${discountAmount}">
                         <input type="hidden" name="paymentMethod" id="paymentMethodInput" value="Cash">
                         <h2 class="text-xl font-bold mb-4 flex items-center">
@@ -264,12 +264,12 @@
                             </div>
                         </div>
 
-                        <div th:if="${discountCode != null and discountCode != ''}" class="flex justify-between text-green-600">
+                        <div id="summaryDiscountRow" th:if="${discountCode != null and discountCode != ''}" class="flex justify-between text-green-600">
                             <span class="font-medium">
                                 <i class="fas fa-tag mr-1"></i>
                                 Giảm giá (<span id="summaryDiscountCode" th:text="${discountCode}">SUMMER2025</span>)
                             </span>
-                            <span class="font-semibold" th:text="'-' + ${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">-500.000 ₫</span>
+                            <span id="summaryDiscountAmount" class="font-semibold" th:text="'-' + ${#numbers.formatDecimal(discountAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">-500.000 ₫</span>
                         </div>
                     </div>
 
@@ -321,8 +321,8 @@
         returnTime: /*[[${returnTime}]]*/ '',
         rentalDays: /*[[${rentalDays}]]*/ 0,
         dailyPrice: /*[[${vehicle.getDailyPriceFromJson()}]]*/ 0,
-        discountId: /*[[${discountId}]]*/ '',
-        discountAmount: /*[[${discountAmount}]]*/ 0
+        rentalPrice: /*[[${rentalPrice}]]*/ 0,
+        allAvailableDiscounts: /*[[${availableDiscounts}]]*/ []
     };
 
     // Toggle edit time mode
@@ -423,20 +423,89 @@
         form.submit();
     }
 
-    // NEW: Apply selected discount from dropdown
+    // --- START: NEW DISCOUNT LOGIC ---
+    let appliedDiscount = null;
+
+    // Find the initially applied discount from the list
+    const initialDiscountCode = /*[[${discountCode}]]*/ null;
+    if (initialDiscountCode) {
+        appliedDiscount = initialData.allAvailableDiscounts.find(d => d.voucherCode === initialDiscountCode);
+    }
+
+    const formatCurrency = (amount) => {
+        if (isNaN(amount) || amount === null) return "0 ₫";
+        const roundedAmount = Math.round(amount);
+        return new Intl.NumberFormat("vi-VN").format(roundedAmount) + " ₫";
+    };
+
     function applySelectedDiscount() {
-        const selectedDiscountId = document.getElementById('discountSelect').value;
+        const selectedVoucherCode = document.getElementById('discountSelect').value;
 
-        // Update the hidden input for discountId
-        document.querySelector('input[name="discountId"]').value = selectedDiscountId;
+        if (!selectedVoucherCode) {
+            appliedDiscount = null;
+            showCheckoutDiscountMessage("Đã bỏ chọn mã giảm giá.", "info");
+            updateSummary();
+            return;
+        }
 
-        // Set discountAmount to 0, the backend will recalculate it
-        document.querySelector('input[name="discountAmount"]').value = '0';
+        const selectedDiscount = initialData.allAvailableDiscounts.find(d => d.voucherCode === selectedVoucherCode);
 
-        // Submit the form to reload the page with the new discount applied
-        const form = document.getElementById('checkoutForm');
-        form.action = '/booking/checkout';
-        form.submit();
+        if (!selectedDiscount) {
+            appliedDiscount = null;
+            showCheckoutDiscountMessage("Mã giảm giá không hợp lệ.", "error");
+            updateSummary();
+            return;
+        }
+
+        const rentalPrice = parseFloat(document.querySelector('input[name="vehicleRentalFee"]').value) || 0;
+
+        if (rentalPrice < selectedDiscount.minOrderAmount) {
+            appliedDiscount = null;
+            // Deselect from dropdown
+            document.getElementById('discountSelect').value = "";
+            showCheckoutDiscountMessage(`Đơn hàng chưa đủ ${formatCurrency(selectedDiscount.minOrderAmount)} để áp dụng mã này.`, "error");
+            updateSummary();
+            return;
+        }
+
+        appliedDiscount = selectedDiscount;
+        showCheckoutDiscountMessage(`Đã áp dụng mã: ${selectedDiscount.voucherCode}`, "success");
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const rentalPrice = parseFloat(document.querySelector('input[name="vehicleRentalFee"]').value) || 0;
+        let finalDiscountAmount = 0;
+
+        if (appliedDiscount) {
+            if (appliedDiscount.discountType === 'Percentage') {
+                finalDiscountAmount = rentalPrice * (appliedDiscount.discountValue / 100);
+            } else {
+                finalDiscountAmount = appliedDiscount.discountValue;
+            }
+
+            if (appliedDiscount.maxDiscountAmount != null && finalDiscountAmount > appliedDiscount.maxDiscountAmount) {
+                finalDiscountAmount = appliedDiscount.maxDiscountAmount;
+            }
+        }
+
+        const totalAmount = Math.max(0, rentalPrice - finalDiscountAmount);
+
+        // Update summary display
+        document.getElementById('summaryTotalAmount').textContent = formatCurrency(totalAmount);
+        const discountRow = document.getElementById('summaryDiscountRow');
+        if (finalDiscountAmount > 0 && appliedDiscount) {
+            document.getElementById('summaryDiscountCode').textContent = appliedDiscount.voucherCode;
+            document.getElementById('summaryDiscountAmount').textContent = '-' + formatCurrency(finalDiscountAmount);
+            discountRow.style.display = 'flex';
+        } else {
+            discountRow.style.display = 'none';
+        }
+
+        // Update hidden form inputs
+        document.querySelector('input[name="discountCode"]').value = appliedDiscount ? appliedDiscount.voucherCode : '';
+        document.querySelector('input[name="discountAmount"]').value = finalDiscountAmount;
+        document.querySelector('input[name="totalAmount"]').value = totalAmount;
     }
 
     function showCheckoutDiscountMessage(message, type) {
@@ -444,9 +513,20 @@
         messageEl.textContent = message;
         messageEl.className = 'mt-2 text-sm ' + (type === 'success' ? 'text-green-600' : 'text-red-600');
         messageEl.classList.remove('hidden');
+
+        // Clear message after 3 seconds
+        setTimeout(() => {
+            const currentMessage = document.getElementById('checkoutDiscountMessage');
+            if (currentMessage.textContent === message) {
+                 // Only hide if the message hasn't changed
+                 currentMessage.classList.add('hidden');
+            }
+        }, 3000);
     }
 
-    function selectPaymentMethod(method) {
+    // --- END: NEW DISCOUNT LOGIC ---
+
+     function selectPaymentMethod(method) {
         // Remove selected class from all
         document.querySelectorAll('.payment-method').forEach(el => {
             el.classList.remove('selected', 'border-green-500', 'bg-green-50');
@@ -501,6 +581,10 @@
                 returnDateInput.value = this.value;
             }
         });
+
+        // Initial update of summary in case a discount is pre-selected
+        updateSummary();
+
     });
 </script>
 
