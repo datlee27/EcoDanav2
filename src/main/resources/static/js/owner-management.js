@@ -17,7 +17,7 @@ function renderBookingItem(booking) {
         'completed': { text: 'Hoàn thành', class: 'status-completed', icon: 'fa-flag-checkered text-gray-500' },
         'rejected': { text: 'Từ chối', class: 'status-rejected', icon: 'fa-ban text-red-500' },
         'cancelled': { text: 'Đã hủy', class: 'status-cancelled', icon: 'fa-times-circle text-red-500' },
-        'unknown': { text: 'Không xác định', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' }
+        'noshow': { text: 'Không Đến', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' }
     };
     const statusInfo = statusMap[statusLower] || statusMap['unknown'];
 

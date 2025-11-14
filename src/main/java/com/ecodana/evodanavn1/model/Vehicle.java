@@ -223,7 +223,7 @@ public class Vehicle {
     public void setFeatures(String features) { this.features = features; }
 
     public enum VehicleStatus {
-        PendingApproval,  // Chờ admin duyệt
+        PendingApproval,  // Chờ admin duyệt (Trạng thái này có trong DB script nhưng thiếu ở đây)
         Available,        // Đã duyệt, sẵn sàng cho thuê
         Rented,          // Đang được thuê
         Maintenance,     // Đang bảo trì
