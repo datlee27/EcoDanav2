@@ -124,4 +124,12 @@ public class DiscountService {
         
         return discountAmount;
     }
+
+    /**
+     * Get available discounts for customers (active, within date range, not exceeded usage limit)
+     * @return list of available discounts
+     */
+    public List<Discount> getAvailableDiscountsForCustomer() {
+        return discountRepository.findAvailableDiscountsForCustomer(LocalDate.now());
+    }
 }

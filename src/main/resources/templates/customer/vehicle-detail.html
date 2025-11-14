@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
+    <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/ddwt6nl7s/image/upload/v1761906428/favicon_jlbemj.ico">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="${vehicle.vehicleModel} + ' - EcoDana'">Chi tiết xe - EcoDana</title>
@@ -19,6 +20,8 @@
         const auxiliaryImageUrls = /*[[${vehicle.getImageUrlsFromJson()}]]*/ [];
         // Tạo một mảng đầy đủ, đảm bảo ảnh chính luôn ở đầu và không bị lặp lại (nếu có trong auxiliary)
         const uniqueAuxUrls = auxiliaryImageUrls.filter((url) => url !== mainImageUrl);
+        // Lấy danh sách mã giảm giá từ model
+        const allAvailableDiscountsData = /*[[${availableDiscounts}]]*/ [];
         const allImageUrls = [mainImageUrl, ...uniqueAuxUrls].filter((url) => url); // Lọc bỏ null/undefined
         /*]]>*/
     </script>
@@ -630,16 +633,22 @@
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">
                                 <i class="fas fa-tag text-green-500 mr-1"></i>
-                                Mã giảm giá
+                                Các mã giảm giá hiện có
                             </label>
                             <div class="flex gap-2">
-                                <input
-                                        type="text"
-                                        id="discountCodeInput"
-                                        name="discountCode"
-                                        placeholder="Nhập mã giảm giá"
+                                <select
+                                        id="discountSelect"
+                                        name="discountId"
                                         class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                                />
+                                        onchange="applySelectedDiscount()"
+                                >
+                                    <option value=""> Mã giảm giá</option>
+                                    <option th:each="discount : ${availableDiscounts}"
+                                            th:value="${discount.voucherCode}"
+                                            th:text="${discount.discountName + ' (' + (discount.discountType == 'Percentage' ? #numbers.formatDecimal(discount.discountValue, 0, 'COMMA', 0, 'POINT') + '%' : #numbers.formatDecimal(discount.discountValue, 0, 'COMMA', 0, 'POINT') + ' VND') + ')'}">
+                                        Voucher Code (Value)
+                                    </option>
+                                </select>
                                 <button
                                         type="button"
                                         id="applyDiscountBtn"
@@ -1415,6 +1424,7 @@
         // Global variables for discount
         let appliedDiscount = null;
         let discountAmount = 0;
+        let allAvailableDiscounts = allAvailableDiscountsData; // Sử dụng dữ liệu từ Thymeleaf
 
         // Thêm định nghĩa hàm formatCurrency
         const formatCurrency = (amount) => {
@@ -1568,9 +1578,9 @@
                     discountAmount = finalDiscount;
                     discountRow.classList.remove("hidden");
                     discountNameEl.textContent = appliedDiscount.voucherCode;
-                    discountAmountEl.textContent = "-" + formatCurrency(finalDiscount);
+                    discountAmountEl.textContent = "-" + formatCurrency(finalDiscount); // Đã có formatCurrency
                     discountAmountInput.value = discountAmount;
-                    discountIdInput.value = appliedDiscount.voucherCode; // Lưu voucher code thay vì UUID
+                    discountIdInput.value = appliedDiscount.voucherCode; // Lưu voucherCode
                 } else {
                     appliedDiscount = null;
                     discountAmount = 0;
@@ -1607,64 +1617,69 @@
         // =================== END CHANGE ===================
 
 
-        // Apply discount function
-        const applyDiscount = async () => {
-            const discountCodeInput = document.getElementById("discountCodeInput");
-            const discountCode = discountCodeInput.value.trim();
+        // Hàm mới để áp dụng mã giảm giá từ dropdown
+        const applySelectedDiscount = () => {
+            const discountSelect = document.getElementById("discountSelect");
+            const selectedVoucherCode = discountSelect.value;
+
+            // Nếu người dùng chọn "Chọn mã giảm giá"
+            if (!selectedVoucherCode) {
+                appliedDiscount = null;
+                showDiscountMessage("Vui lòng chọn một mã giảm giá.", "info");
+                calculatePrice(); // Tính lại giá không có giảm giá
+                return;
+            }
+
+            // Tìm đối tượng discount đầy đủ từ mảng đã tải
+            const selectedDiscount = allAvailableDiscounts.find(d => d.voucherCode === selectedVoucherCode);
+
+            if (!selectedDiscount) {
+                appliedDiscount = null;
+                showDiscountMessage("Mã giảm giá không hợp lệ.", "error");
+                calculatePrice();
+                return;
+            }
+
+            // Kiểm tra điều kiện phía client (ví dụ: đơn hàng tối thiểu)
             const rentalDays = parseFloat(document.getElementById("rentalDaysInput").value || "0");
             const dailyPrice = parseFloat(document.getElementById("dailyPriceInput").value) || 0;
-            const rentalPrice = dailyPrice * rentalDays;
-            const amountForValidation = rentalPrice;
+            const amountForValidation = dailyPrice * rentalDays;
 
-            if (!discountCode) {
-                return showDiscountMessage("Vui lòng nhập mã giảm giá!", "error");
-            }
             if (isNaN(rentalDays) || rentalDays <= 0) {
                 return showDiscountMessage("Vui lòng chọn ngày thuê hợp lệ trước!", "error");
             }
 
-            try {
-                const response = await fetch(
-                    `/api/discounts/validate?code=${encodeURIComponent(discountCode)}&amount=${amountForValidation}`
-                );
-                if (!response.ok) {
-                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.message || errorMessage;
-                    } catch (e) {
-                        /* Ignore parsing error */
-                    }
-                    throw new Error(errorMessage);
-                }
-                const data = await response.json();
-                if (data.valid) {
-                    appliedDiscount = data.discount;
-                    appliedDiscount.calculatedAmount = data.calculatedAmount;
-                    appliedDiscount.discountId = data.discount.discountId;
-                    showDiscountMessage(
-                        `Áp dụng mã giảm giá thành công! Giảm ${formatCurrency(data.calculatedAmount)}`,
-                        "success"
-                    );
-                    calculatePrice();
-                } else {
-                    appliedDiscount = null;
-                    showDiscountMessage(data.message || "Mã giảm giá không hợp lệ hoặc không đủ điều kiện!", "error");
-                    calculatePrice();
-                }
-            } catch (error) {
-                console.error("Error applying discount:", error);
+            if (amountForValidation < selectedDiscount.minOrderAmount) {
                 appliedDiscount = null;
-                showDiscountMessage("Có lỗi xảy ra khi áp dụng mã giảm giá! Chi tiết: " + error.message, "error");
+                showDiscountMessage(`Đơn hàng chưa đủ ${formatCurrency(selectedDiscount.minOrderAmount)} để áp dụng mã này.`, "error");
                 calculatePrice();
+                return;
             }
+
+            // Nếu hợp lệ, gán đối tượng discount và tính lại giá
+            appliedDiscount = selectedDiscount;
+            showDiscountMessage(`Đã chọn mã giảm giá "${selectedDiscount.voucherCode}".`, "success");
+            calculatePrice();
         };
+
+        // Hàm applyDiscount cũ không còn cần thiết nếu chỉ dùng dropdown.
+        // Tuy nhiên, chúng ta có thể giữ lại nút "Áp dụng" và cho nó gọi hàm mới.
+        const applyDiscount = () => {
+            applySelectedDiscount();
+        };
+
 
         const showDiscountMessage = (message, type) => {
             const messageEl = document.getElementById("discountMessage");
             if (!messageEl) return;
             messageEl.textContent = message;
-            messageEl.className = "mt-2 text-sm " + (type === "success" ? "text-green-600" : "text-red-600");
+            let colorClass = "text-gray-600";
+            if (type === "success") {
+                colorClass = "text-green-600";
+            } else if (type === "error") {
+                colorClass = "text-red-600";
+            }
+            messageEl.className = "mt-2 text-sm " + colorClass;
             messageEl.classList.remove("hidden");
         };
 

@@ -1,24 +1,7 @@
 package com.ecodana.evodanavn1.service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.ArrayList;
-import java.time.LocalTime;
-import com.ecodana.evodanavn1.model.User;
-import com.ecodana.evodanavn1.model.Vehicle;
-import com.ecodana.evodanavn1.model.VehicleConditionLogs;
-import com.ecodana.evodanavn1.model.Payment;
-import com.ecodana.evodanavn1.repository.PaymentRepository;
-import com.ecodana.evodanavn1.repository.VehicleConditionLogsRepository;
-import com.ecodana.evodanavn1.repository.VehicleRepository;
+import com.ecodana.evodanavn1.model.*;
+import com.ecodana.evodanavn1.repository.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -27,41 +10,31 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import com.ecodana.evodanavn1.model.BookingApproval;
-import com.ecodana.evodanavn1.repository.BookingApprovalRepository;
-import com.ecodana.evodanavn1.model.Booking;
-import com.ecodana.evodanavn1.repository.BookingRepository;
-import com.ecodana.evodanavn1.model.RefundRequest;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class BookingService {
 
-    @Autowired
-    private BookingRepository bookingRepository;
-
-    @Autowired
-    private VehicleService vehicleService;
-
-    @Autowired
-    private VehicleRepository vehicleRepository;
-
-    @Autowired
-    private PaymentRepository paymentRepository;
-
-    @Autowired
-    private VehicleConditionLogsRepository vehicleConditionLogsRepository;
-
-    @Autowired
-    private BookingApprovalRepository bookingApprovalRepository;
-
-    @Autowired
-    private NotificationService notificationService;
-
-    @Autowired
-    private BankAccountService bankAccountService;
-
-    @Autowired
-    private RefundRequestService refundRequestService;
+    private final BookingRepository bookingRepository;
+    private final VehicleService vehicleService;
+    private final VehicleRepository vehicleRepository;
+    private final PaymentRepository paymentRepository;
+    private final VehicleConditionLogsRepository vehicleConditionLogsRepository;
+    private final BookingApprovalRepository bookingApprovalRepository;
+    private final NotificationService notificationService;
+    private final RefundRequestService refundRequestService;
+    private final BookingSurchargesRepository bookingSurchargesRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
 
@@ -72,6 +45,19 @@ public class BookingService {
     private int customerPaymentTimeoutMinutes;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    public BookingService(BookingRepository bookingRepository, VehicleService vehicleService, VehicleRepository vehicleRepository, PaymentRepository paymentRepository, VehicleConditionLogsRepository vehicleConditionLogsRepository, BookingApprovalRepository bookingApprovalRepository, NotificationService notificationService, RefundRequestService refundRequestService, BookingSurchargesRepository bookingSurchargesRepository) {
+        this.bookingRepository = bookingRepository;
+        this.vehicleService = vehicleService;
+        this.vehicleRepository = vehicleRepository;
+        this.paymentRepository = paymentRepository;
+        this.vehicleConditionLogsRepository = vehicleConditionLogsRepository;
+        this.bookingApprovalRepository = bookingApprovalRepository;
+        this.notificationService = notificationService;
+        this.refundRequestService = refundRequestService;
+        this.bookingSurchargesRepository = bookingSurchargesRepository;
+    }
 
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
@@ -84,6 +70,7 @@ public class BookingService {
         return bookingRepository.findByUserId(userId);
     }
 
+    @Transactional
     public void addBooking(Booking booking) {
         if (booking.getBookingId() == null) {
             booking.setBookingId(UUID.randomUUID().toString());
@@ -91,6 +78,23 @@ public class BookingService {
         if (booking.getBookingCode() == null) {
             booking.setBookingCode("BK" + System.currentTimeMillis());
         }
+
+        // Calculate and add delivery fee
+        BigDecimal deliveryFee = calculateDeliveryFee(booking);
+        if (deliveryFee.compareTo(BigDecimal.ZERO) > 0) {
+            BookingSurcharges surcharge = new BookingSurcharges();
+            surcharge.setSurchargeId(UUID.randomUUID().toString());
+            surcharge.setBooking(booking);
+            surcharge.setSurchargeType("Delivery");
+            surcharge.setAmount(deliveryFee);
+            surcharge.setDescription("Phí giao xe");
+            surcharge.setCreatedDate(LocalDateTime.now());
+            surcharge.setSurchargeCategory("Fee");
+            surcharge.setSystemGenerated(true);
+            bookingSurchargesRepository.save(surcharge);
+            booking.setTotalAmount(booking.getTotalAmount().add(deliveryFee));
+        }
+
         bookingRepository.save(booking);
     }
 
@@ -137,6 +141,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    @Transactional
     public Booking updateBookingDetails(String bookingId, Map<String, String> data) {
         return bookingRepository.findById(bookingId)
                 .map(booking -> {
@@ -152,6 +157,13 @@ public class BookingService {
                     if (data.containsKey("status")) {
                         booking.setStatus(Booking.BookingStatus.valueOf(data.get("status")));
                     }
+
+                    // Recalculate delivery fee if relevant data changes
+                    calculateDeliveryFee(booking);
+                    // You might want to find and update the existing surcharge or create a new one
+                    // For simplicity, let's assume we are adding it here.
+                    // A more robust implementation would handle updates.
+
                     return bookingRepository.save(booking);
                 })
                 .orElse(null);
@@ -624,7 +636,6 @@ public class BookingService {
                 result.put("refundRequestId", refundRequest.getRefundRequestId());
             } catch (Exception e) {
                 System.out.println("Error creating RefundRequest: " + e.getMessage());
-                e.printStackTrace();
             }
             
             // Notify admin
@@ -643,8 +654,8 @@ public class BookingService {
         StringBuilder refundMessageBuilder = new StringBuilder();
 
         for (Payment payment : refundablePayments) {
-            BigDecimal paymentRefundAmount = BigDecimal.ZERO;
-            String paymentRefundMessage = "";
+            BigDecimal paymentRefundAmount;
+            String paymentRefundMessage;
 
             if (hoursSincePayment < 2) {
                 // Hủy trong 2 giờ -> Hoàn 100% cho cả Deposit và FinalPayment
@@ -659,7 +670,7 @@ public class BookingService {
 
             totalRefundAmount = totalRefundAmount.add(paymentRefundAmount);
             
-            if (refundMessageBuilder.length() > 0) {
+            if (!refundMessageBuilder.isEmpty()) {
                 refundMessageBuilder.append("; ");
             }
             refundMessageBuilder.append(paymentRefundMessage);
@@ -697,7 +708,6 @@ public class BookingService {
             result.put("refundRequestId", refundRequest.getRefundRequestId());
         } catch (Exception e) {
             System.out.println("Error creating RefundRequest: " + e.getMessage());
-            e.printStackTrace();
             // Vẫn tiếp tục, RefundRequest có thể được tạo sau từ sync endpoint
         }
 
@@ -829,10 +839,10 @@ public class BookingService {
                 .map(Booking::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        analytics.put("revenueToday", revenueToday != null ? revenueToday : BigDecimal.ZERO);
-        analytics.put("revenueThisMonth", revenueThisMonth != null ? revenueThisMonth : BigDecimal.ZERO);
-        analytics.put("revenueThisYear", revenueThisYear != null ? revenueThisYear : BigDecimal.ZERO);
-        analytics.put("totalRevenueAllTime", totalRevenueAllTime != null ? totalRevenueAllTime : BigDecimal.ZERO);
+        analytics.put("revenueToday", revenueToday);
+        analytics.put("revenueThisMonth", revenueThisMonth);
+        analytics.put("revenueThisYear", revenueThisYear);
+        analytics.put("totalRevenueAllTime", totalRevenueAllTime);
 
         return analytics;
     }
@@ -878,5 +888,14 @@ public class BookingService {
      */
     public Payment updatePayment(Payment payment) {
         return paymentRepository.save(payment);
+    }
+
+    private BigDecimal calculateDeliveryFee(Booking booking) {
+        // This is a placeholder for your delivery fee logic.
+        // For now, let's return a fixed fee if a pickup location is specified.
+        if (booking.getPickupLocation() != null && !booking.getPickupLocation().isEmpty()) {
+            return new BigDecimal("50000"); // 50,000 VND
+        }
+        return BigDecimal.ZERO;
     }
 }

@@ -1,12 +1,7 @@
 package com.ecodana.evodanavn1.dto;
 
-
-
 import java.math.BigDecimal;
 
-// Sử dụng Lombok để code ngắn gọn hơn (tùy chọn)
-// import lombok.Data;
-// @Data
 public class BookingRequest {
     private String vehicleId;
     private String pickupDate;
@@ -19,9 +14,10 @@ public class BookingRequest {
     private Integer rentalDays;
     private String discountId;
     private BigDecimal discountAmount;
+    private BigDecimal deliveryFee;
     private String paymentMethod;
 
-    // Thêm getters và setters nếu không dùng Lombok
+    // Getters and Setters
     public String getVehicleId() { return vehicleId; }
     public void setVehicleId(String vehicleId) { this.vehicleId = vehicleId; }
     public String getPickupDate() { return pickupDate; }
@@ -42,6 +38,8 @@ public class BookingRequest {
     public void setDiscountId(String discountId) { this.discountId = discountId; }
     public BigDecimal getDiscountAmount() { return discountAmount; }
     public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public BigDecimal getDeliveryFee() { return deliveryFee; }
+    public void setDeliveryFee(BigDecimal deliveryFee) { this.deliveryFee = deliveryFee; }
     public String getPaymentMethod() { return paymentMethod; }
     public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public BigDecimal getVehicleRentalFee() { return vehicleRentalFee; }

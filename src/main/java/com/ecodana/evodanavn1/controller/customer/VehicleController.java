@@ -1,10 +1,12 @@
 package com.ecodana.evodanavn1.controller.customer;
 
+import com.ecodana.evodanavn1.model.Discount;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.UserFeedback;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.FavoriteService;
 import com.ecodana.evodanavn1.service.UserService;
+import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.service.VehicleService;
 import jakarta.servlet.http.HttpSession;
@@ -31,6 +33,9 @@ public class VehicleController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private DiscountService discountService;
 
     // Inject the Google API key from application.properties
     @Value("${google.api.key}")
@@ -138,6 +143,10 @@ public class VehicleController {
             boolean isFavorite = currentUser != null && favoriteService.isFavorite(currentUser, vehicle);
             model.addAttribute("isFavorite", isFavorite);
         } catch (Exception ignored) {}
+
+        // Lấy danh sách các mã giảm giá có sẵn và đang hoạt động
+        List<Discount> availableDiscounts = discountService.getAvailableDiscountsForCustomer();
+        model.addAttribute("availableDiscounts", availableDiscounts);
 
         return "customer/vehicle-detail";
     }
