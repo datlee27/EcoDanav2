@@ -11,14 +11,20 @@
         <button class="status-tab" data-status="Approved,AwaitingDeposit" onclick="changeStatusTab(this)">
             Đã duyệt/Chờ cọc <span class="count-badge" th:text="${countApproved ?: 0}">0</span>
         </button>
-        <button class="status-tab" data-status="Confirmed,Ongoing" onclick="changeStatusTab(this)">
+        <button class="status-tab" data-status="Confirmed" onclick="changeStatusTab(this)">
+            Chờ nhận xe <span class="count-badge" th:text="${countConfirmed ?: 0}">0</span>
+        </button>
+        <button class="status-tab" data-status="Ongoing" onclick="changeStatusTab(this)">
             Đang thuê <span class="count-badge" th:text="${countOngoing ?: 0}">0</span>
         </button>
         <button class="status-tab" data-status="Completed" onclick="changeStatusTab(this)">
             Hoàn thành <span class="count-badge" th:text="${countCompleted ?: 0}">0</span>
         </button>
         <button class="status-tab" data-status="Rejected,Cancelled" onclick="changeStatusTab(this)">
-            Đã hủy/Từ chối <span class="count-badge" th:text="${countRejected ?: 0}">0</span>
+            Đã hủy/Từ chối <span class="count-badge" th:text="${countCancelled ?: 0}">0</span>
+        </button>
+        <button class="status-tab" data-status="NoShow" onclick="changeStatusTab(this)">
+            Không đến <span class="count-badge" th:text="${countNoShow ?: 0}">0</span>
         </button>
     </div>
 
@@ -106,6 +112,26 @@
                     </button>
                     <button id="confirmRejectBtn" onclick="confirmReject()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
                         <i class="fas fa-times mr-2"></i>Từ chối
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="cancel-no-show-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="closeModal('cancel-no-show-modal')"></div>
+        <div class="modal-content max-w-md">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-gray-800">Hủy đơn do khách không đến</h3>
+                <button onclick="closeModal('cancel-no-show-modal')" class="text-gray-600 hover:text-gray-800">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-gray-700 mb-4">Bạn có chắc chắn muốn hủy đơn hàng này vì khách đã trễ hẹn nhận xe quá 3 giờ?</p>
+                <div class="flex justify-end space-x-3 mt-4">
+                    <button onclick="closeModal('cancel-no-show-modal')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Không</button>
+                    <button id="confirmCancelNoShowBtn" onclick="confirmCancelNoShow()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        <i class="fas fa-user-clock mr-2"></i>Xác nhận Hủy
                     </button>
                 </div>
             </div>
@@ -277,5 +303,59 @@
             </div>
         </div>
     </div>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+
+        // Lưu bookingId đang được xử lý
+        let currentNoShowBookingId = null;
+        
+        function openCancelNoShowModal(bookingId) {
+            currentNoShowBookingId = bookingId;
+            openModal('cancel-no-show-modal');
+        }
+
+        function confirmCancelNoShow() {
+            if (!currentNoShowBookingId) return;
+
+            const btn = document.getElementById('confirmCancelNoShowBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Đang xử lý...';
+
+            // Lấy CSRF token từ thẻ meta
+            const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
+            const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
+
+            fetch(`/api/owner/bookings/${currentNoShowBookingId}/no-show`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                }
+                return response.json().then(err => { throw new Error(err.message || 'Hủy đơn hàng thất bại.'); });
+            })
+            .then(data => {
+                showToast('success', 'Đã cập nhật trạng thái đơn hàng thành "Không đến".');
+                closeModal('cancel-no-show-modal');
+                loadBookingsForCurrentTab(); // Tải lại danh sách booking
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', error.message);
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-clock mr-2"></i>Xác nhận Hủy';
+                currentNoShowBookingId = null;
+            });
+        }
+
+        /*]]>*/
+    </script>
 </div>
 </html>

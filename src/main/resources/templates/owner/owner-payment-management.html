@@ -3,10 +3,13 @@
 <div th:fragment="payments-content">
     <!-- Status Tabs -->
     <div class="status-tab-container" id="status-tabs">
-        <button class="status-tab active" data-status="Completed" onclick="changeStatusTab(this)">
+        <button class="status-tab active" data-status="" onclick="changeStatusTab(this)">
+            Tất cả <span class="count-badge" th:text="${countAll ?: 0}">0</span>
+        </button>
+        <button class="status-tab" data-status="Completed" onclick="changeStatusTab(this)">
             Hoàn Thành <span class="count-badge" th:text="${countCompleted ?: 0}">0</span>
         </button>
-        <button class="status-tab" data-status="Refunded" onclick="changeStatusTab(this)">
+        <button class="status-tab" data-status="Refunded,Failed" onclick="changeStatusTab(this)">
             Hoàn Tiền <span class="count-badge" th:text="${countRefunded ?: 0}">0</span>
         </button>
         <button class="status-tab" data-status="Cancelled" onclick="changeStatusTab(this)">
@@ -73,7 +76,7 @@
                 <tbody class="bg-white divide-y divide-gray-200" id="payment-list-body">
                 <tr th:each="payment : ${payments}"
                     class="hover:bg-gray-50"
-                    th:attr="data-status=${payment.paymentStatus.name() == 'Failed' ? 'Cancelled' : payment.paymentStatus.name()},
+                    th:attr="data-status=${payment.paymentStatus.name()},
                              data-created-date=${payment.createdDate},
                              data-amount=${payment.amount}">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" th:text="${payment.booking?.bookingCode}"></td>
@@ -96,11 +99,11 @@
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span th:switch="${payment.paymentStatus.name()}"
                               th:classappend="${payment.paymentStatus.name() == 'Completed' ? 'bg-green-100 text-green-800' :
-                                               (payment.paymentStatus.name() == 'Refunded' ? 'bg-yellow-100 text-yellow-800' :
-                                               'bg-red-100 text-red-800')}"
+                                               (payment.paymentStatus.name() == 'Refunded' or payment.paymentStatus.name() == 'Failed' ? 'bg-yellow-100 text-yellow-800' :
+                                               (payment.paymentStatus.name() == 'Cancelled' ? 'bg-red-100 text-red-800' : ''))}"
                               class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full">
                             <span th:case="'Completed'">Hoàn Thành</span>
-                            <span th:case="'Refunded'">Hoàn Tiền</span>
+                            <span th:case="*{(payment.paymentStatus.name() == 'Refunded' or payment.paymentStatus.name() == 'Failed')}">Hoàn Tiền</span>
                             <span th:case="*">Đã Hủy</span>
                             <span th:case="*">N/A</span>
                         </span>
@@ -162,7 +165,7 @@ function filterAndSortPayments() {
         const rowText = row.textContent.toLowerCase();
 
         // Điều kiện lọc: Trạng thái phải khớp VÀ nội dung phải khớp với từ khóa tìm kiếm
-        const statusMatch = statusArray.includes(rowStatus);
+        const statusMatch = activeStatusFilter === '' || statusArray.includes(rowStatus);
         const searchMatch = searchTerm === '' || rowText.includes(searchTerm);
 
         if (statusMatch && searchMatch) {
