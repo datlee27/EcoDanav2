@@ -43,24 +43,29 @@ public class InappropriateWordAdminController {
             inappropriateWordRepository.save(w);
             inappropriateWordService.refreshCache();
         }
-        return "redirect:/admin/inappropriate-words";
+        return redirectToDashboard();
     }
 
     @PostMapping("/toggle")
-    public String toggle(@RequestParam String id, @RequestParam boolean active) {
+    public String toggle(@RequestParam String id,
+                         @RequestParam boolean active) {
         inappropriateWordRepository.findById(id).ifPresent(w -> {
             w.setActive(active);
             inappropriateWordRepository.save(w);
             inappropriateWordService.refreshCache();
         });
-        return "redirect:/admin/inappropriate-words";
+        return redirectToDashboard();
     }
 
     @PostMapping("/delete")
     public String delete(@RequestParam String id) {
         inappropriateWordRepository.deleteById(id);
         inappropriateWordService.refreshCache();
-        return "redirect:/admin/inappropriate-words";
+        return redirectToDashboard();
+    }
+
+    private String redirectToDashboard() {
+        return "redirect:/admin/dashboard?tab=inappropriateWords";
     }
 }
 
