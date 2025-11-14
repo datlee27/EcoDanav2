@@ -489,7 +489,157 @@
         setupImagePreview("gplx-back", "gplx-back-preview", "gplx-back-box");
 
         function loadDocuments() {
-            // ... (existing document loading logic)
+            fetch("/documents/type/CitizenId")
+                .then((response) => response.json())
+                .then((data) => {
+                    const statusDiv = document.getElementById("cccd-status");
+                    if (data.success && data.document) {
+                        const doc = data.document;
+                        statusDiv.innerHTML = `
+                            <div class="document-info ${doc.isVerified ? "verified" : "pending"}">
+                                <div class="doc-status-badge">
+                                    ${
+                            doc.isVerified
+                                ? '<i class="fa-solid fa-check-circle"></i> Đã xác minh'
+                                : '<i class="fa-solid fa-clock"></i> Chờ xác minh'
+                        }
+                                </div>
+                                <div class="doc-details">
+                                    <div class="doc-field">
+                                        <label><strong>Số CCCD:</strong></label>
+                                        <input type="text" id="cccd-number" value="${doc.documentNumber || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Họ tên:</strong></label>
+                                        <input type="text" id="cccd-name" value="${doc.fullName || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Ngày sinh:</strong></label>
+                                        <input type="date" id="cccd-dob" value="${doc.dob || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Ngày cấp:</strong></label>
+                                        <input type="date" id="cccd-issued-date" value="${doc.issuedDate || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Nơi cấp:</strong></label>
+                                        <input type="text" id="cccd-issued-place" value="${doc.issuedPlace || ""}">
+                                    </div>
+                                </div>
+                                ${
+                            doc.frontImageUrl
+                                ? `
+                                    <div class="doc-images">
+                                        <img src="${doc.frontImageUrl}" alt="CCCD mặt trước" onclick="window.open('${
+                                    doc.frontImageUrl
+                                }', '_blank')">
+                                        ${
+                                    doc.backImageUrl
+                                        ? `<img src="${doc.backImageUrl}" alt="CCCD mặt sau" onclick="window.open('${doc.backImageUrl}', '_blank')">`
+                                        : ""
+                                }
+                                    </div>
+                                `
+                                : ""
+                        }
+                                <div class="doc-actions">
+                                    <button class="btn btn-primary btn-sm" onclick="updateDocumentInfo('${
+                            doc.documentId
+                        }', 'cccd')">
+                                        <i class="fa-solid fa-save"></i> Cập nhật thông tin
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById("cccd-upload-btn").innerHTML =
+                            '<i class="fa-solid fa-rotate"></i> Cập nhật CCCD';
+                    } else {
+                        statusDiv.innerHTML = `
+                            <div class="no-doc-message-enhanced">
+                                <i class="fa-solid fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                                <p class="text-gray-600">Bạn chưa tải lên <strong>Căn cước công dân</strong>.</p>
+                                <p class="text-sm text-gray-500">Vui lòng tải lên để hoàn tất hồ sơ và đặt xe.</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch((error) => console.error("Error loading CCCD:", error));
+
+            fetch("/documents/type/DriverLicense")
+                .then((response) => response.json())
+                .then((data) => {
+                    const statusDiv = document.getElementById("gplx-status");
+                    if (data.success && data.document) {
+                        const doc = data.document;
+                        statusDiv.innerHTML = `
+                            <div class="document-info ${doc.isVerified ? "verified" : "pending"}">
+                                <div class="doc-status-badge">
+                                    ${
+                            doc.isVerified
+                                ? '<i class="fa-solid fa-check-circle"></i> Đã xác minh'
+                                : '<i class="fa-solid fa-clock"></i> Chờ xác minh'
+                        }
+                                </div>
+                                <div class="doc-details">
+                                    <div class="doc-field">
+                                        <label><strong>Số GPLX:</strong></label>
+                                        <input type="text" id="gplx-number" value="${doc.documentNumber || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Họ tên:</strong></label>
+                                        <input type="text" id="gplx-name" value="${doc.fullName || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Ngày sinh:</strong></label>
+                                        <input type="date" id="gplx-dob" value="${doc.dob || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Ngày cấp:</strong></label>
+                                        <input type="date" id="gplx-issued-date" value="${doc.issuedDate || ""}">
+                                    </div>
+                                    <div class="doc-field">
+                                        <label><strong>Nơi cấp:</strong></label>
+                                        <input type="text" id="gplx-issued-place" value="${doc.issuedPlace || ""}">
+                                    </div>
+                                </div>
+                                ${
+                            doc.frontImageUrl
+                                ? `
+                                    <div class="doc-images">
+                                        <img src="${doc.frontImageUrl}" alt="GPLX mặt trước" onclick="window.open('${
+                                    doc.frontImageUrl
+                                }', '_blank')">
+                                        ${
+                                    doc.backImageUrl
+                                        ? `<img src="${doc.backImageUrl}" alt="GPLX mặt sau" onclick="window.open('${doc.backImageUrl}', '_blank')">`
+                                        : ""
+                                }
+                                    </div>
+                                `
+                                : ""
+                        }
+                                <div class="doc-actions">
+                                    <button class="btn btn-primary btn-sm" onclick="updateDocumentInfo('${
+                            doc.documentId
+                        }', 'gplx')">
+                                        <i class="fa-solid fa-save"></i> Cập nhật thông tin
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById("gplx-upload-btn").innerHTML =
+                            '<i class="fa-solid fa-rotate"></i> Cập nhật GPLX';
+                    } else {
+                        statusDiv.innerHTML = `
+                            <div class="no-doc-message-enhanced">
+                                <i class="fa-solid fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                                <p class="text-gray-600">Bạn chưa tải lên <strong>Giấy phép lái xe</strong>.</p>
+                                <p class="text-sm text-gray-500">Vui lòng tải lên để hoàn tất hồ sơ và đặt xe.</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch((error) => console.error("Error loading GPLX:", error));
         }
 
         // Add loading state to upload buttons
@@ -507,9 +657,39 @@
     });
 
     function updateDocumentInfo(documentId, docType) {
-        // ... (existing document update logic)
+        const prefix = docType === "cccd" ? "cccd" : "gplx";
+
+        const data = {
+            documentNumber: document.getElementById(prefix + "-number").value,
+            fullName: document.getElementById(prefix + "-name").value,
+            dob: document.getElementById(prefix + "-dob").value,
+            issuedDate: document.getElementById(prefix + "-issued-date").value,
+            issuedPlace: document.getElementById(prefix + "-issued-place").value,
+        };
+
+        fetch(`/documents/${documentId}/update`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                // Thêm CSRF token vào đây
+                '[[${_csrf.headerName}]]': '[[${_csrf.token}]]'
+            },
+            body: JSON.stringify(data),
+        })
+            .then((response) => response.json())
+            .then((result) => {
+                if (result.success) {
+                    alert("Cập nhật thông tin thành công!");
+                } else {
+                    alert("Lỗi: " + (result.message || "Không thể cập nhật thông tin"));
+                }
+            })
+            .catch((error) => {
+                console.error("Error:", error);
+                alert("Có lỗi xảy ra khi cập nhật thông tin");
+            });
     }
-    /*]]>*/
+
 </script>
 </body>
 </html>
