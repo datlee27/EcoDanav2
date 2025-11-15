@@ -1,4 +1,5 @@
 package com.ecodana.evodanavn1.controller.admin;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -166,15 +167,15 @@ public class AdminController {
             model.addAttribute("totalPendingAmount", totalPendingAmount);
 
             // Add withdrawal requests data for withdrawal-requests tab
+            List<WithdrawalRequest> pendingWithdrawalRequests = new ArrayList<>();
             if ("withdrawal-requests".equals(tab)) {
                 try {
-                    List<WithdrawalRequest> pendingWithdrawalRequests = withdrawalRequestService.getAllPendingWithdrawalRequests();
-                    model.addAttribute("pendingWithdrawalRequests", pendingWithdrawalRequests);
+                    pendingWithdrawalRequests = withdrawalRequestService.getAllPendingWithdrawalRequests();
                 } catch (Exception e) {
                     logger.error("Error loading withdrawal requests: " + e.getMessage(), e);
-                    model.addAttribute("pendingWithdrawalRequests", List.of());
                 }
             }
+            model.addAttribute("pendingWithdrawalRequests", pendingWithdrawalRequests);
 
             logger.info("=== Admin Dashboard - Rendering template for tab: {} ===", tab);
             return "admin/admin-dashboard";
