@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kết quả thanh toán - EcoDana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         * {
-            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             margin: 0;
             padding: 0;
             box-sizing: border-box;
@@ -16,10 +21,45 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f766e 0%, #14b8a6 50%, #2dd4bf 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background Circles */
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 600px;
+            height: 600px;
+            background: white;
+            top: -300px;
+            right: -200px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        body::after {
+            width: 400px;
+            height: 400px;
+            background: white;
+            bottom: -200px;
+            left: -100px;
+            animation: float 15s ease-in-out infinite reverse;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(50px, 50px) rotate(180deg); }
         }
 
         main {
@@ -27,7 +67,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1rem;
+            padding: 6rem 1rem 2rem;
+            position: relative;
+            z-index: 1;
         }
 
         .result-container {
@@ -40,13 +82,15 @@
 
         .result-card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2);
-            padding: 3rem 2.5rem;
-            max-width: 550px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            padding: 3.5rem 3rem;
+            max-width: 580px;
             width: 100%;
             text-align: center;
-            animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            animation: slideUp 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            backdrop-filter: blur(10px);
         }
 
         @keyframes slideUp {
@@ -61,16 +105,43 @@
         }
 
         .success-icon {
-            width: 100px;
-            height: 100px;
+            width: 120px;
+            height: 120px;
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 2rem;
-            animation: scaleIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.35);
+            margin: 0 auto 2.5rem;
+            animation: scaleIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), pulse 2s ease-in-out infinite;
+            box-shadow: 0 20px 50px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(16, 185, 129, 0.4);
+            position: relative;
+        }
+
+        .success-icon::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            animation: ripple 2s ease-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 0.6;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
         }
 
         .error-icon {
@@ -111,23 +182,41 @@
         }
 
         .checkmark {
-            width: 50px;
-            height: 50px;
-            border: 5px solid white;
+            width: 60px;
+            height: 60px;
+            border: 6px solid white;
             border-radius: 50%;
             position: relative;
+            z-index: 1;
         }
 
         .checkmark::after {
             content: '';
             position: absolute;
-            left: 12px;
-            top: 4px;
-            width: 15px;
-            height: 28px;
+            left: 16px;
+            top: 6px;
+            width: 18px;
+            height: 32px;
             border: solid white;
-            border-width: 0 5px 5px 0;
+            border-width: 0 6px 6px 0;
             transform: rotate(45deg);
+            animation: checkmarkDraw 0.5s ease-in-out 0.3s forwards;
+            opacity: 0;
+        }
+
+        @keyframes checkmarkDraw {
+            0% {
+                height: 0;
+                opacity: 0;
+            }
+            50% {
+                height: 32px;
+                opacity: 1;
+            }
+            100% {
+                height: 32px;
+                opacity: 1;
+            }
         }
 
         .cross {
@@ -182,59 +271,101 @@
         }
 
         .result-title {
-            font-size: 2rem;
-            font-weight: 800;
+            font-size: 2.25rem;
+            font-weight: 900;
             margin-bottom: 1rem;
-            letter-spacing: -0.5px;
-            color: #1f2937;
+            letter-spacing: -1px;
+            color: #111827;
+            line-height: 1.2;
         }
 
         .result-message {
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: #6b7280;
             margin-bottom: 2rem;
-            line-height: 1.6;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        /* Progress Bar for Auto Redirect */
+        .progress-bar-container {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            width: 0%;
+            animation: progress 10s linear forwards;
+            border-radius: 2px;
+        }
+
+        @keyframes progress {
+            to { width: 100%; }
+        }
+
+        .redirect-text {
+            font-size: 0.875rem;
+            color: #9ca3af;
+            margin-top: 0.75rem;
+            font-weight: 500;
         }
 
         .amount-display {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            padding: 1.8rem;
-            border-radius: 14px;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            padding: 2rem;
+            border-radius: 16px;
             margin: 2rem 0;
-            border: 2px solid #bbf7d0;
+            border: 2px solid #a7f3d0;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.1);
         }
 
         .amount-label {
-            font-size: 0.9rem;
-            color: #6b7280;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
+            font-size: 0.875rem;
+            color: #059669;
+            margin-bottom: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         .amount-value {
-            font-size: 2.2rem;
-            font-weight: 800;
-            color: #059669;
-            letter-spacing: -1px;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #047857;
+            letter-spacing: -1.5px;
+            text-shadow: 0 2px 4px rgba(5, 150, 105, 0.1);
         }
 
         .booking-info {
-            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            padding: 1.8rem;
-            border-radius: 14px;
+            background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+            padding: 2rem;
+            border-radius: 16px;
             margin: 2rem 0;
             text-align: left;
             border: 1px solid #e5e7eb;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
         }
 
         .info-row {
             display: flex;
             justify-content: space-between;
-            padding: 0.9rem 0;
+            padding: 1rem 0;
             border-bottom: 1px solid #e5e7eb;
             align-items: center;
+            transition: background 0.2s;
+        }
+
+        .info-row:hover {
+            background: rgba(16, 185, 129, 0.02);
+            margin: 0 -1rem;
+            padding: 1rem;
+            border-radius: 8px;
         }
 
         .info-row:last-child {
@@ -245,6 +376,16 @@
             color: #6b7280;
             font-weight: 600;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .info-label::before {
+            content: '•';
+            color: #10b981;
+            font-size: 1.2rem;
+            font-weight: bold;
         }
 
         .info-value {
@@ -268,53 +409,72 @@
         .btn-primary {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
-            padding: 1rem 2rem;
-            border-radius: 10px;
+            padding: 1.1rem 2.5rem;
+            border-radius: 12px;
             border: none;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+            gap: 0.6rem;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
         }
 
         .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
         }
 
         .btn-primary:active {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         .btn-secondary {
             background: white;
             color: #10b981;
-            padding: 1rem 2rem;
-            border-radius: 10px;
+            padding: 1.1rem 2.5rem;
+            border-radius: 12px;
             border: 2px solid #10b981;
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
         }
 
         .btn-secondary:hover {
-            background: #f0fdf4;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.2);
+            background: #ecfdf5;
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+            border-color: #059669;
+            color: #059669;
         }
 
         .btn-secondary:active {
-            transform: translateY(-1px);
+            transform: translateY(-2px);
         }
 
         .btn-error {
@@ -362,53 +522,105 @@
         }
 
         @media (max-width: 640px) {
+            body::before,
+            body::after {
+                display: none;
+            }
+
             .result-card {
-                padding: 2rem 1.5rem;
+                padding: 2.5rem 1.75rem;
+                margin: 1rem;
             }
 
             .result-title {
-                font-size: 1.6rem;
+                font-size: 1.75rem;
+            }
+
+            .result-message {
+                font-size: 0.95rem;
             }
 
             .amount-value {
-                font-size: 1.8rem;
+                font-size: 2rem;
+            }
+
+            .amount-display,
+            .booking-info {
+                padding: 1.5rem;
             }
 
             .button-group {
                 flex-direction: column;
-                gap: 0.75rem;
+                gap: 0.875rem;
+                margin-top: 2rem;
             }
 
             .btn-primary, .btn-secondary, .btn-error, .btn-warning {
                 width: 100%;
                 justify-content: center;
+                padding: 1rem 1.5rem;
             }
 
             .info-row {
                 flex-direction: column;
                 align-items: flex-start;
+                padding: 0.875rem 0;
+            }
+
+            .info-row:hover {
+                margin: 0;
+                padding: 0.875rem 0;
             }
 
             .info-value {
                 text-align: left;
                 margin-left: 0;
                 margin-top: 0.5rem;
+                font-size: 0.9rem;
             }
 
             .success-icon, .error-icon, .warning-icon {
-                width: 80px;
-                height: 80px;
+                width: 100px;
+                height: 100px;
+                margin-bottom: 2rem;
+            }
+
+            .checkmark {
+                width: 45px;
+                height: 45px;
+            }
+
+            .checkmark::after {
+                left: 10px;
+                width: 13px;
+                height: 25px;
             }
         }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
 <!-- Navigation -->
-<div th:replace="~{fragments/nav :: nav}"></div>
+<nav class="bg-white shadow-sm border-b fixed top-0 left-0 right-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <div class="flex items-center">
+                <a href="/" class="flex items-center">
+                    <i class="fas fa-leaf text-green-600 text-2xl mr-2"></i>
+                    <span class="text-xl font-bold text-green-600">EcoDana</span>
+                </a>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="/" class="text-gray-700 hover:text-green-600 font-medium">Home</a>
+                <a href="/vehicles" class="text-gray-700 hover:text-green-600 font-medium">Vehicles</a>
+                <a href="/booking/my-bookings" class="text-gray-700 hover:text-green-600 font-medium">My Bookings</a>
+            </div>
+        </div>
+    </div>
+</nav>
 
 <!-- Main Content -->
-<main class="pt-20">
+<main>
     <div class="result-container">
         <div class="result-card">
             <!-- Success State -->
@@ -439,16 +651,24 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 2rem;">
+                <div class="button-group">
                     <a th:href="@{/booking/confirmation/{id}(id=${bookingId})}" class="btn-primary" th:if="${bookingId != null}">
-                        <i class="fas fa-check-circle mr-2"></i>
+                        <i class="fas fa-check-circle"></i>
                         Xem chi tiết đơn hàng
                     </a>
                     <a th:href="@{/booking/my-bookings}" class="btn-secondary">
-                        <i class="fas fa-list mr-2"></i>
+                        <i class="fas fa-list"></i>
                         Xem tất cả đơn hàng
                     </a>
                 </div>
+
+                <!-- Progress Bar for Auto Redirect -->
+                <div class="progress-bar-container" th:if="${bookingId != null}">
+                    <div class="progress-bar"></div>
+                </div>
+                <p class="redirect-text" th:if="${bookingId != null}">
+                    <i class="fas fa-info-circle"></i> Tự động chuyển đến trang chi tiết sau 10 giây...
+                </p>
             </div>
 
             <!-- Error State -->
@@ -507,10 +727,75 @@
     </div>
 </main>
 
-<!-- Footer -->
-<div th:replace="~{fragments/footer :: footer}"></div>
+<!-- Simple Footer -->
+<footer class="bg-gray-900 text-white py-8 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center">
+        <div class="flex items-center justify-center mb-4">
+            <i class="fas fa-leaf text-green-500 text-2xl mr-2"></i>
+            <span class="text-xl font-bold">EcoDana</span>
+        </div>
+        <p class="text-gray-400 text-sm">
+            EcoDana là nền tảng cho thuê xe điện hàng đầu, mang đến giải pháp di chuyển xanh, sạch và tiện lợi.
+        </p>
+        <div class="mt-4 text-gray-500 text-xs">
+            © 2025 EcoDana. All rights reserved.
+        </div>
+    </div>
+</footer>
 
 <script>
+    // Confetti Effect for Success
+    if (document.querySelector('.success-icon')) {
+        // Create confetti
+        function createConfetti() {
+            const confettiCount = 50;
+            const colors = ['#10b981', '#059669', '#34d399', '#6ee7b7', '#a7f3d0'];
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'fixed';
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.top = '-10px';
+                confetti.style.opacity = Math.random() + 0.5;
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.zIndex = '9999';
+                confetti.style.pointerEvents = 'none';
+                
+                document.body.appendChild(confetti);
+                
+                const duration = Math.random() * 3 + 2;
+                const delay = Math.random() * 0.5;
+                const rotation = Math.random() * 360;
+                const xMovement = (Math.random() - 0.5) * 100;
+                
+                confetti.animate([
+                    { 
+                        transform: `translateY(0) translateX(0) rotate(0deg)`,
+                        opacity: confetti.style.opacity
+                    },
+                    { 
+                        transform: `translateY(100vh) translateX(${xMovement}px) rotate(${rotation}deg)`,
+                        opacity: 0
+                    }
+                ], {
+                    duration: duration * 1000,
+                    delay: delay * 1000,
+                    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+                });
+                
+                setTimeout(() => {
+                    confetti.remove();
+                }, (duration + delay) * 1000);
+            }
+        }
+        
+        // Trigger confetti on page load
+        setTimeout(createConfetti, 300);
+    }
+
     // Auto redirect after 10 seconds for success
     if (document.querySelector('.success-icon')) {
         const bookingId = '[[${bookingId}]]';
