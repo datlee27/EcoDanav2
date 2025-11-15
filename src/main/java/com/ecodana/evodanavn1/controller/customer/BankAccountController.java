@@ -154,24 +154,45 @@ public class BankAccountController {
     @GetMapping("/api/list")
     @ResponseBody
     @Transactional(readOnly = true)
-    public ResponseEntity<?> getBankAccountsApi(HttpSession session) {
+    public ResponseEntity<?> getBankAccountsApi(
+            @RequestParam(required = false) String userId,
+            HttpSession session) {
         try {
-            User user = (User) session.getAttribute("currentUser");
-            if (user == null) {
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null) {
                 Map<String, Object> error = new HashMap<>();
                 error.put("success", false);
                 error.put("message", "User not authenticated");
                 return ResponseEntity.status(401).body(error);
             }
 
-            System.out.println("Getting bank accounts for user: " + user.getId());
-            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(user.getId());
+            // If userId is provided and current user is admin, get that user's accounts
+            // Otherwise, get current user's accounts
+            String targetUserId = userId;
+            if (targetUserId == null || targetUserId.isEmpty()) {
+                targetUserId = currentUser.getId();
+            }
+
+            System.out.println("Getting bank accounts for user: " + targetUserId);
+            List<BankAccount> bankAccounts = bankAccountService.getBankAccountsByUserId(targetUserId);
             System.out.println("Found " + bankAccounts.size() + " bank accounts");
+            
+            // Convert to DTO to avoid lazy loading issues
+            List<Map<String, Object>> accountsDto = bankAccounts.stream().map(acc -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("bankAccountId", acc.getBankAccountId());
+                map.put("bankName", acc.getBankName());
+                map.put("accountNumber", acc.getAccountNumber());
+                map.put("accountHolderName", acc.getAccountHolderName());
+                map.put("default", acc.isDefault());
+                map.put("qrCodeImagePath", acc.getQrCodeImagePath());
+                return map;
+            }).collect(Collectors.toList());
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("bankAccounts", bankAccounts);
-            response.put("count", bankAccounts.size());
+            response.put("bankAccounts", accountsDto);
+            response.put("count", accountsDto.size());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,6 +1,5 @@
 package com.ecodana.evodanavn1.service;
 
-import com.ecodana.evodanavn1.model.Booking;
 import com.ecodana.evodanavn1.model.Payment;
 import com.ecodana.evodanavn1.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +27,7 @@ public class PaymentService {
 
     /**
      * Tính toán các chỉ số thống kê thanh toán cho chủ xe.
-     * Total Revenue: Tổng tiền từ các booking đã 'Completed'.
+     * Total Revenue: Tổng tiền từ các payment đã 'Completed' (không phụ thuộc vào booking status).
      * Net Revenue: Total Revenue trừ đi các khoản đã 'Refunded'.
      * @param ownerId ID của chủ xe
      * @return Map chứa totalRevenue và netRevenue
@@ -36,9 +35,12 @@ public class PaymentService {
     public Map<String, BigDecimal> getOwnerPaymentStatistics(String ownerId) {
         List<Payment> ownerPayments = getPaymentsForOwner(ownerId);
 
-        // Doanh thu tổng là tổng các khoản thanh toán 'COMPLETED' từ các booking đã 'COMPLETED'.
+        // Doanh thu tổng là tổng các khoản thanh toán có payment status = 'Completed'
+        // Bao gồm cả Deposit và FinalPayment
         BigDecimal totalRevenue = ownerPayments.stream()
-                .filter(p -> p.getBooking() != null && p.getBooking().getStatus() == Booking.BookingStatus.Completed)
+                .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Completed)
+                .filter(p -> p.getPaymentType() == Payment.PaymentType.Deposit || 
+                           p.getPaymentType() == Payment.PaymentType.FinalPayment)
                 .map(Payment::getAmount)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -48,6 +50,7 @@ public class PaymentService {
                 .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Refunded)
                 .map(Payment::getAmount)
                 .filter(Objects::nonNull)
+                .map(BigDecimal::abs) // Đảm bảo giá trị dương
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // Doanh thu thực nhận = Doanh thu tổng - Tiền hoàn lại.

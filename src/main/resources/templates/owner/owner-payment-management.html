@@ -22,6 +22,126 @@
         </button>
     </div>
 
+    <script>
+        // formatCurrency is already defined globally in dashboard.html
+        
+        // Define parseVietnameseCurrency utility function
+        function parseVietnameseCurrency(currencyString) {
+            if (!currencyString) return 0;
+            // Remove currency symbol and trim
+            let cleanString = currencyString.replace(/₫/g, '').trim();
+            // Remove thousand separators (both dots and commas)
+            cleanString = cleanString.replace(/\./g, '');
+            cleanString = cleanString.replace(/,/g, '');
+            // Remove any spaces
+            cleanString = cleanString.replace(/\s/g, '');
+            // Parse as integer
+            return parseInt(cleanString, 10) || 0;
+        }
+
+        // Define withdrawal functions IMMEDIATELY before they're needed
+        window.requestWithdrawal = function() {
+            console.log('requestWithdrawal function called');
+            
+            const addBankAccountPanel = document.getElementById('add-bank-account-prompt');
+            if (addBankAccountPanel && !addBankAccountPanel.classList.contains('hidden')) {
+                if (confirm("Bạn chưa có tài khoản ngân hàng. Bạn có muốn thêm một tài khoản ngay bây giờ không?")) {
+                    window.location.href = '/owner/dashboard?tab=bank-accounts';
+                }
+                return;
+            }
+
+            const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
+            if (!withdrawableBalanceElement) {
+                console.error('Element #withdrawable-balance-value not found.');
+                alert('Không tìm thấy thông tin số dư có thể rút.');
+                return;
+            }
+
+            const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
+            console.log('=== DEBUG BALANCE ===');
+            console.log('Raw text:', withdrawableBalanceElement.innerText);
+            console.log('Parsed value:', currentWithdrawableBalance);
+            console.log('Formatted back:', formatCurrency(currentWithdrawableBalance));
+
+            if (currentWithdrawableBalance <= 0) {
+                alert('⚠️ Số dư không đủ!\n\nSố dư hiện tại: ' + formatCurrency(currentWithdrawableBalance) + '\n\nBạn cần có doanh thu để thực hiện yêu cầu rút tiền.');
+                return;
+            }
+
+            // Show modal and set balance
+            document.getElementById('modal-balance').innerText = formatCurrency(currentWithdrawableBalance);
+            document.getElementById('withdrawal-amount').setAttribute('max', currentWithdrawableBalance);
+            document.getElementById('withdrawal-modal').classList.remove('hidden');
+        }
+        console.log('window.requestWithdrawal defined');
+
+        window.closeWithdrawalModal = function() {
+            document.getElementById('withdrawal-modal').classList.add('hidden');
+            document.getElementById('withdrawal-form').reset();
+        }
+
+        window.submitWithdrawalRequest = function(event) {
+            event.preventDefault();
+            
+            const amount = parseFloat(document.getElementById('withdrawal-amount').value);
+            const note = document.getElementById('withdrawal-note').value;
+            const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
+            const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
+
+            if (amount > currentWithdrawableBalance) {
+                alert(`⚠️ Số tiền vượt quá số dư!\n\nSố tiền muốn rút: ${formatCurrency(amount)}\nSố dư khả dụng: ${formatCurrency(currentWithdrawableBalance)}\n\nVui lòng nhập số tiền nhỏ hơn hoặc bằng số dư khả dụng.`);
+                return;
+            }
+
+            if (!confirm(`Bạn có chắc chắn muốn gửi yêu cầu rút ${formatCurrency(amount)} không?`)) {
+                return;
+            }
+
+            // Get CSRF token from meta tags or Thymeleaf variable
+            const csrfMeta = document.querySelector('meta[name="_csrf"]');
+            const csrfHeaderMeta = document.querySelector('meta[name="_csrf_header"]');
+            
+            const csrfToken = csrfMeta ? csrfMeta.content : (window.csrfToken || '');
+            const csrfHeader = csrfHeaderMeta ? csrfHeaderMeta.content : 'X-CSRF-TOKEN';
+
+            console.log('Sending withdrawal request with amount:', amount);
+            console.log('CSRF Token:', csrfToken);
+            fetch('/owner/withdrawal-request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
+                body: JSON.stringify({ amount: amount })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        console.error('Backend error response:', errorData);
+                        throw new Error(errorData.message || 'Server error');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                alert(data.message);
+                if (data.success) {
+                    window.closeWithdrawalModal();
+                    // Reload page to refresh balance
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Đã xảy ra lỗi khi gửi yêu cầu: ' + error.message);
+            });
+        }
+
+        console.log('window.requestWithdrawal, closeWithdrawalModal, submitWithdrawalRequest defined');
+    </script>
+
     <!-- Statistic Panels -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" id="statistic-panels-container">
         <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4 statistic-panel" id="total-revenue-panel">
@@ -50,7 +170,24 @@
             <div>
                 <p class="text-sm text-gray-500">Số dư có thể rút</p>
                 <p class="text-2xl font-bold text-gray-800" id="withdrawable-balance-value" th:text="${#numbers.formatDecimal(withdrawableBalance, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</p>
-                <button id="request-withdrawal-button" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-dark transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">Yêu cầu rút tiền</button>
+                <button type="button" id="request-withdrawal-button" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-dark transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed relative z-10 pointer-events-auto" style="cursor: pointer;">Yêu cầu rút tiền</button>
+                <script>
+                    // Attach click handler immediately after button is rendered
+                    (function() {
+                        const btn = document.getElementById('request-withdrawal-button');
+                        if (btn) {
+                            btn.addEventListener('click', function() {
+                                console.log('Button clicked via inline script');
+                                if (typeof window.requestWithdrawal === 'function') {
+                                    window.requestWithdrawal();
+                                } else {
+                                    console.error('window.requestWithdrawal is not defined yet');
+                                }
+                            });
+                            console.log('Inline event listener attached to withdrawal button');
+                        }
+                    })();
+                </script>
             </div>
         </div>
         <!-- Add Bank Account Prompt - Initial visibility from server, dynamic from JS -->
@@ -163,9 +300,169 @@
             </table>
         </div>
     </div>
+
+    <!-- Withdrawal Request Modal -->
+    <div id="withdrawal-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">Yêu cầu rút tiền</h3>
+                    <button onclick="closeWithdrawalModal()" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="mt-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                        <p class="text-sm text-gray-600 mb-1">Số dư có thể rút</p>
+                        <p class="text-2xl font-bold text-blue-600" id="modal-balance">0 ₫</p>
+                    </div>
+
+                    <form id="withdrawal-form" onsubmit="submitWithdrawalRequest(event)">
+                        <div class="mb-4">
+                            <label for="withdrawal-amount" class="block text-sm font-medium text-gray-700 mb-2">
+                                Số tiền muốn rút <span class="text-red-500">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="withdrawal-amount" 
+                                name="amount"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Ví dụ: 10000 (không dùng dấu chấm)"
+                                min="1000"
+                                step="1000"
+                                required
+                            />
+                            <p class="mt-1 text-xs text-gray-500">⚠️ Nhập số không có dấu chấm. Ví dụ: 10000 (tối thiểu 1,000 ₫)</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="withdrawal-note" class="block text-sm font-medium text-gray-700 mb-2">
+                                Ghi chú (tùy chọn)
+                            </label>
+                            <textarea 
+                                id="withdrawal-note" 
+                                name="note"
+                                rows="3"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Nhập ghi chú nếu có..."
+                            ></textarea>
+                        </div>
+
+                        <div class="flex justify-end space-x-3">
+                            <button 
+                                type="button" 
+                                onclick="closeWithdrawalModal()"
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                            >
+                                Hủy
+                            </button>
+                            <button 
+                                type="submit" 
+                                class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+                            >
+                                <i class="fas fa-paper-plane mr-2"></i>Gửi yêu cầu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 <script th:inline="javascript">
     /*<![CDATA[*/
+    // Functions already defined at the top - no need to redefine
+
+    window.requestWithdrawal = function() {
+        console.log('requestWithdrawal function called');
+        
+        const addBankAccountPanel = document.getElementById('add-bank-account-prompt');
+        if (addBankAccountPanel && !addBankAccountPanel.classList.contains('hidden')) {
+            if (confirm("Bạn chưa có tài khoản ngân hàng. Bạn có muốn thêm một tài khoản ngay bây giờ không?")) {
+                window.location.href = '/owner/dashboard?tab=bank-accounts';
+            }
+            return;
+        }
+
+        const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
+        if (!withdrawableBalanceElement) {
+            console.error('Element #withdrawable-balance-value not found.');
+            alert('Không tìm thấy thông tin số dư có thể rút.');
+            return;
+        }
+
+        const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
+        console.log('Current withdrawable balance (parsed):', currentWithdrawableBalance);
+
+        if (currentWithdrawableBalance <= 0) {
+            alert('⚠️ Số dư không đủ!\n\nSố dư hiện tại: ' + formatCurrency(currentWithdrawableBalance) + '\n\nBạn cần có doanh thu để thực hiện yêu cầu rút tiền.');
+            return;
+        }
+
+        // Show modal and set balance
+        document.getElementById('modal-balance').innerText = formatCurrency(currentWithdrawableBalance);
+        document.getElementById('withdrawal-amount').setAttribute('max', currentWithdrawableBalance);
+        document.getElementById('withdrawal-modal').classList.remove('hidden');
+    }
+
+    window.closeWithdrawalModal = function() {
+        document.getElementById('withdrawal-modal').classList.add('hidden');
+        document.getElementById('withdrawal-form').reset();
+    }
+
+    window.submitWithdrawalRequest = function(event) {
+        event.preventDefault();
+        
+        const amount = parseFloat(document.getElementById('withdrawal-amount').value);
+        const note = document.getElementById('withdrawal-note').value;
+        const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
+        const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
+
+        if (amount > currentWithdrawableBalance) {
+            alert(`⚠️ Số tiền vượt quá số dư!\n\nSố tiền muốn rút: ${formatCurrency(amount)}\nSố dư khả dụng: ${formatCurrency(currentWithdrawableBalance)}\n\nVui lòng nhập số tiền nhỏ hơn hoặc bằng số dư khả dụng.`);
+            return;
+        }
+
+        if (!confirm(`Bạn có chắc chắn muốn gửi yêu cầu rút ${formatCurrency(amount)} không?`)) {
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        console.log('Sending withdrawal request with amount:', amount);
+        fetch('/owner/withdrawal-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ amount: amount })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    console.error('Backend error response:', errorData);
+                    throw new Error(errorData.message || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            alert(data.message);
+            if (data.success) {
+                closeWithdrawalModal();
+                fetchAndDisplayStatistics(); 
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('Đã xảy ra lỗi khi gửi yêu cầu: ' + error.message);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         console.log('DOM Content Loaded');
         filterAndSortPayments();
@@ -174,7 +471,11 @@
         const withdrawalButton = document.getElementById('request-withdrawal-button');
         if (withdrawalButton) {
             console.log('Withdrawal button found, attaching event listener.');
-            withdrawalButton.addEventListener('click', requestWithdrawal);
+            console.log('Button disabled:', withdrawalButton.disabled);
+            withdrawalButton.addEventListener('click', window.requestWithdrawal);
+            console.log('Event listener attached successfully');
+        } else {
+            console.error('Withdrawal button NOT found on DOMContentLoaded');
         }
     });
 
@@ -183,18 +484,6 @@
         tabElement.classList.add('active');
         filterAndSortPayments();
         fetchAndDisplayStatistics();
-    }
-
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    }
-
-    function parseVietnameseCurrency(currencyString) {
-        if (!currencyString) return 0;
-        let cleanString = currencyString.replace(/₫/g, '').trim();
-        cleanString = cleanString.replace(/\./g, '');
-        cleanString = cleanString.replace(/,/g, '.');
-        return parseFloat(cleanString);
     }
 
     function fetchAndDisplayStatistics() {
@@ -221,6 +510,12 @@
 
                     const balance = data.withdrawableBalance || 0;
                     const hasAccount = data.hasBankAccount;
+                    
+                    console.log('=== WITHDRAWAL BUTTON DEBUG ===');
+                    console.log('Balance:', balance);
+                    console.log('Has Bank Account:', hasAccount);
+                    console.log('Is All Tab:', isAllTab);
+                    console.log('Balance <= 0:', balance <= 0);
 
                     // --- DYNAMIC VISIBILITY AND STATE CONTROL ---
 
@@ -230,14 +525,20 @@
                             addBankAccountPanel.classList.add('hidden');
                             document.getElementById('withdrawable-balance-value').innerText = formatCurrency(balance);
                             withdrawalButton.disabled = balance <= 0;
+                            console.log('Button disabled status:', withdrawalButton.disabled);
+                            
+                            // Re-attach event listener to ensure it works after AJAX update
+                            withdrawalButton.onclick = window.requestWithdrawal;
                         } else {
                             withdrawablePanel.classList.add('hidden');
                             addBankAccountPanel.classList.remove('hidden');
+                            console.log('No bank account - showing prompt');
                         }
                     } else {
                         // Hide both panels if not on "All" tab
                         withdrawablePanel.classList.add('hidden');
                         addBankAccountPanel.classList.add('hidden');
+                        console.log('Not on All tab - hiding panels');
                     }
 
                 } else {
@@ -293,90 +594,6 @@
 
         rows.forEach(row => paymentListBody.appendChild(row));
         noPaymentsRow.style.display = visibleRows === 0 ? '' : 'none';
-    }
-
-    function requestWithdrawal() {
-        console.log('requestWithdrawal function called');
-        
-        const addBankAccountPanel = document.getElementById('add-bank-account-prompt');
-        // Check if the prompt is visible. If so, it means no bank account.
-        if (addBankAccountPanel && !addBankAccountPanel.classList.contains('hidden')) {
-            if (confirm("Bạn chưa có tài khoản ngân hàng. Bạn có muốn thêm một tài khoản ngay bây giờ không?")) {
-                window.location.href = '/owner/dashboard?tab=bank-accounts';
-            }
-            return;
-        }
-
-        const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
-        if (!withdrawableBalanceElement) {
-            console.error('Element #withdrawable-balance-value not found.');
-            alert('Không tìm thấy thông tin số dư có thể rút.');
-            return;
-        }
-
-        const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
-        console.log('Current withdrawable balance (parsed):', currentWithdrawableBalance);
-
-        if (currentWithdrawableBalance <= 0) {
-            alert('Số dư có thể rút của bạn không đủ để thực hiện yêu cầu (hiện tại là ' + formatCurrency(currentWithdrawableBalance) + ').');
-            console.log('Withdrawal aborted: balance is zero or less.');
-            return;
-        }
-
-        const amountStr = prompt(`Nhập số tiền bạn muốn rút (tối đa ${formatCurrency(currentWithdrawableBalance)}):`);
-        if (amountStr === null || amountStr.trim() === '') {
-            alert('Yêu cầu rút tiền đã bị hủy.');
-            return;
-        }
-
-        const amount = parseVietnameseCurrency(amountStr);
-        if (isNaN(amount) || amount <= 0) {
-            alert('Số tiền không hợp lệ. Vui lòng nhập một số dương.');
-            return;
-        }
-
-        if (amount > currentWithdrawableBalance) {
-            alert(`Số tiền bạn muốn rút (${formatCurrency(amount)}) vượt quá số dư khả dụng (${formatCurrency(currentWithdrawableBalance)}).`);
-            return;
-        }
-
-        if (!confirm(`Bạn có chắc chắn muốn gửi yêu cầu rút số tiền ${formatCurrency(amount)} không?`)) {
-            alert('Yêu cầu rút tiền đã bị hủy.');
-            return;
-        }
-
-        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
-
-        console.log('Sending withdrawal request with amount:', amount);
-        fetch('/owner/withdrawal-request', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                [csrfHeader]: csrfToken
-            },
-            body: JSON.stringify({ amount: amount })
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    console.error('Backend error response:', errorData);
-                    throw new Error(errorData.message || 'Server error');
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Response data:', data);
-            alert(data.message);
-            if (data.success) {
-                fetchAndDisplayStatistics(); 
-            }
-        })
-        .catch(error => {
-            console.error('Fetch error:', error);
-            alert('Đã xảy ra lỗi khi gửi yêu cầu: ' + error.message);
-        });
     }
     /*]]>*/
 </script>

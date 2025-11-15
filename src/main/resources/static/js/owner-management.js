@@ -133,6 +133,12 @@ function changeStatusTab(tabElement) {
 function filterAndSortBookings() {
     const statusFilterElement = document.querySelector('#status-tabs .status-tab.active');
     if (!statusFilterElement) return;
+    
+    // Check if allBookingsData is initialized
+    if (!allBookingsData || !Array.isArray(allBookingsData)) {
+        console.warn('allBookingsData not initialized yet');
+        return;
+    }
 
     const statusFilter = statusFilterElement.dataset.status;
     const searchInput = document.getElementById("search-input").value.toLowerCase();
@@ -645,5 +651,8 @@ document.addEventListener('DOMContentLoaded', function() {
         noBookingsMessage.classList.add('hidden');
     }
 
-    filterAndSortBookings();
+    // Only run filterAndSortBookings if we're on the bookings page
+    if (typeof allBookingsData !== 'undefined' && allBookingsData && Array.isArray(allBookingsData)) {
+        filterAndSortBookings();
+    }
 });

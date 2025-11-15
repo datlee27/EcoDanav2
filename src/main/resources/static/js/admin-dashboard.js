@@ -129,10 +129,20 @@ function switchTab(tabName, event) {
         targetTab.classList.add('active');
         console.log('Tab', tabName, 'is now active');
     } else {
-        console.error('Tab', tabName, 'not found!');
-        // List all available tabs for debugging
-        const allTabs = document.querySelectorAll('[id]');
-        console.log('Available elements with IDs:', Array.from(allTabs).map(el => el.id));
+        console.warn('Tab', tabName, 'not found! Will retry after fragment loads...');
+        // Retry after a short delay to allow Thymeleaf fragments to load
+        setTimeout(() => {
+            const retryTab = document.getElementById(tabName);
+            if (retryTab) {
+                retryTab.classList.add('active');
+                console.log('Tab', tabName, 'found on retry and is now active');
+            } else {
+                console.warn('Tab', tabName, 'still not found after retry');
+                // List all available tabs for debugging
+                const allTabs = document.querySelectorAll('[id]');
+                console.log('Available elements with IDs:', Array.from(allTabs).map(el => el.id));
+            }
+        }, 200);
     }
 
     // !!!!!!!!!!!! SỬA LỖI TẠI ĐÂY !!!!!!!!!!!!
@@ -170,8 +180,8 @@ function switchTab(tabName, event) {
     }
 
     // Dispatch tabChanged event for tab-specific scripts
-    const event = new CustomEvent('tabChanged', { detail: tabName });
-    window.dispatchEvent(event);
+    const customEvent = new CustomEvent('tabChanged', { detail: tabName });
+    window.dispatchEvent(customEvent);
     console.log('Dispatched tabChanged event for tab:', tabName);
 
     // Close sidebar on mobile after selection

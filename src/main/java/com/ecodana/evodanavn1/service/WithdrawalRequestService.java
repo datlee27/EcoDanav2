@@ -19,13 +19,15 @@ public class WithdrawalRequestService {
     private final UserService userService; // Để cập nhật số dư của owner
     private final PaymentService paymentService; // Để tính toán số dư khả dụng
     private final NotificationService notificationService; // Để gửi thông báo
+    private final BalanceService balanceService; // Để quản lý balance
 
     @Autowired
-    public WithdrawalRequestService(WithdrawalRequestRepository withdrawalRequestRepository, UserService userService, PaymentService paymentService, NotificationService notificationService) {
+    public WithdrawalRequestService(WithdrawalRequestRepository withdrawalRequestRepository, UserService userService, PaymentService paymentService, NotificationService notificationService, BalanceService balanceService) {
         this.withdrawalRequestRepository = withdrawalRequestRepository;
         this.userService = userService;
         this.paymentService = paymentService;
         this.notificationService = notificationService;
+        this.balanceService = balanceService;
     }
 
     @Transactional
@@ -94,9 +96,13 @@ public class WithdrawalRequestService {
             throw new IllegalStateException("Yêu cầu rút tiền này không ở trạng thái PENDING.");
         }
 
-        // Trừ tiền từ số dư của owner
+        // Trừ tiền từ số dư của owner using BalanceService
         User owner = request.getOwner();
-        userService.deductBalance(owner.getId(), request.getAmount()); // Trừ tiền từ balance của user
+        balanceService.debitBalance(
+            owner.getId(), 
+            request.getAmount(), 
+            "Withdrawal approved: " + requestId
+        );
 
         request.setStatus(WithdrawalRequest.WithdrawalStatus.APPROVED);
         request.setAdminNotes(adminNotes);

@@ -31,8 +31,21 @@
                         <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" th:text="${request.status.name()}">PENDING</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button th:data-request-id="${request.id}" onclick="approveWithdrawal(this)" class="text-green-600 hover:text-green-900 mr-3">Duyệt</button>
-                        <button th:data-request-id="${request.id}" onclick="rejectWithdrawal(this)" class="text-red-600 hover:text-red-900">Từ chối</button>
+                        <button type="button"
+                                onclick="showWithdrawalDetailModal(this)"
+                                th:data-request-id="${request.id}"
+                                th:data-amount="${request.amount}"
+                                th:data-owner-id="${request.owner.id}"
+                                th:data-owner-name="${request.owner.firstName + ' ' + request.owner.lastName}"
+                                th:data-owner-email="${request.owner.email}"
+                                th:data-owner-phone="${request.owner.phoneNumber}"
+                                th:data-owner-balance="${request.owner.balance}"
+                                th:data-status="${request.status.name()}"
+                                th:data-admin-notes="${request.adminNotes}"
+                                th:data-request-date="${#temporals.format(request.requestDate, 'dd/MM/yyyy HH:mm')}"
+                                class="text-blue-600 hover:text-blue-800 mr-3" title="Xem chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </td>
                 </tr>
                 <tr th:if="${pendingWithdrawalRequests.empty}">
@@ -42,139 +55,137 @@
             </table>
         </div>
     </div>
+
+    <!-- Withdrawal Detail Modal -->
+    <div id="withdrawalDetailModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-green-600 to-blue-600 p-6 text-white sticky top-0">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-2xl font-bold">Chi tiết yêu cầu rút tiền</h3>
+                        <p class="text-green-100 text-sm mt-1" id="modalRequestId">ID: -</p>
+                    </div>
+                    <button onclick="closeWithdrawalDetailModal()" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <div id="statusBadge" class="px-4 py-2 rounded-full text-sm font-semibold inline-block">-</div>
+
+                <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                    <p class="text-sm text-gray-600">Số tiền rút</p>
+                    <p class="text-3xl font-bold text-green-600" id="modalAmount">0 ₫</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-blue-50 p-4 rounded">
+                        <p class="text-sm text-gray-600">Số dư hiện tại</p>
+                        <p class="text-lg font-semibold text-gray-900" id="modalOwnerBalance">-</p>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded">
+                        <p class="text-sm text-gray-600">Ngày yêu cầu</p>
+                        <p class="text-lg font-semibold text-gray-900" id="modalRequestDate">-</p>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-semibold text-gray-900 mb-3">Thông tin chủ xe</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="text-sm text-gray-600">Tên</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalOwnerName">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="text-sm text-gray-600">Email</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalOwnerEmail">-</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded col-span-2">
+                            <p class="text-sm text-gray-600">Số điện thoại</p>
+                            <p class="text-lg font-semibold text-gray-900" id="modalOwnerPhone">-</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="adminNotesSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Ghi chú từ admin</h4>
+                    <div class="bg-gray-50 border-l-4 border-gray-500 p-4 rounded">
+                        <p class="text-gray-900" id="modalAdminNotes">-</p>
+                    </div>
+                </div>
+
+                <div id="rejectionReasonSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Lý do từ chối</h4>
+                    <textarea id="rejectionReason" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                              rows="3"
+                              placeholder="Nhập lý do từ chối..."></textarea>
+                </div>
+
+                <div id="approvalNotesSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Ghi chú duyệt (tùy chọn)</h4>
+                    <textarea id="approvalNotes" 
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                              rows="3"
+                              placeholder="Nhập ghi chú khi duyệt..."></textarea>
+                </div>
+
+                <div id="uploadTransferProofSection" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">Upload Ảnh Chuyển Khoản</h4>
+                    <input type="file" id="transferProofInput" accept="image/*" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+                    <p class="text-sm text-gray-500 mt-2">Upload ảnh chứng minh đã chuyển tiền cho chủ xe</p>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-between gap-3">
+                <div id="actionButtons" class="flex gap-3">
+                </div>
+                <div class="flex gap-3">
+                    <button id="viewBankAccountBtn" onclick="showOwnerBankAccountModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-university mr-2"></i>Xem Ngân Hàng
+                    </button>
+                    <button onclick="closeWithdrawalDetailModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                        <i class="fas fa-times mr-2"></i>Đóng
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bank Account Modal - Xem tài khoản ngân hàng của chủ xe -->
+    <div id="ownerBankAccountModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white sticky top-0">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h3 class="text-2xl font-bold">Tài Khoản Ngân Hàng Chủ Xe</h3>
+                        <p class="text-blue-100 text-sm mt-1">Tài khoản mặc định để chuyển tiền</p>
+                    </div>
+                    <button onclick="closeOwnerBankAccountModal()" class="text-white hover:text-gray-200 text-2xl">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div id="ownerBankAccountsList" class="space-y-3">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                        <p>Đang tải thông tin ngân hàng...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t flex justify-end">
+                <button onclick="closeOwnerBankAccountModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                    <i class="fas fa-times mr-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initial load of requests (if not already loaded by Thymeleaf)
-        // fetchPendingWithdrawalRequests(); // Thymeleaf already loads initial data, AJAX is for dynamic updates
-    });
-
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
-    }
-
-    // Function to get CSRF token from meta tags
-    function getCsrfToken() {
-        const token = document.querySelector('meta[name="_csrf"]').content;
-        const header = document.querySelector('meta[name="_csrf_header"]').content;
-        return { token, header };
-    }
-
-    function fetchPendingWithdrawalRequests() {
-        fetch('/admin/withdrawals/pending-ajax')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok ' + response.statusText);
-                }
-                return response.json();
-            })
-            .then(data => {
-                const tableBody = document.getElementById('withdrawal-requests-table-body');
-                tableBody.innerHTML = ''; // Clear existing rows
-
-                if (data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-4 text-center text-sm text-gray-500">Không có yêu cầu rút tiền nào đang chờ xử lý.</td></tr>';
-                    return;
-                }
-
-                data.forEach(request => {
-                    const row = `
-                        <tr id="request-row-${request.id}">
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${request.id}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${request.ownerName}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${request.ownerEmail}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-800">${formatCurrency(request.amount)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${formatCurrency(request.ownerBalance)}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(request.requestDate).toLocaleString('vi-VN')}</td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">${request.status}</span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <button data-request-id="${request.id}" onclick="approveWithdrawal(this)" class="text-green-600 hover:text-green-900 mr-3">Duyệt</button>
-                                <button data-request-id="${request.id}" onclick="rejectWithdrawal(this)" class="text-red-600 hover:text-red-900">Từ chối</button>
-                            </td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching pending withdrawal requests:', error);
-                alert('Lỗi khi tải danh sách yêu cầu rút tiền.');
-            });
-    }
-
-    function approveWithdrawal(button) {
-        const requestId = button.dataset.requestId;
-        if (!confirm('Bạn có chắc chắn muốn duyệt yêu cầu rút tiền này không?')) {
-            return;
-        }
-
-        const adminNotes = prompt('Nhập ghi chú (tùy chọn):');
-        const { token, header } = getCsrfToken();
-
-        fetch(`/admin/withdrawals/${requestId}/approve`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                [header]: token // Add CSRF token
-            },
-            body: JSON.stringify({ adminNotes: adminNotes || 'Approved' })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                fetchPendingWithdrawalRequests(); // Refresh the list
-            } else {
-                alert('Lỗi: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error approving withdrawal request:', error);
-            alert('Đã xảy ra lỗi khi duyệt yêu cầu rút tiền.');
-        });
-    }
-
-    function rejectWithdrawal(button) {
-        const requestId = button.dataset.requestId;
-        const adminNotes = prompt('Nhập lý do từ chối:');
-
-        if (adminNotes === null || adminNotes.trim() === '') {
-            alert('Lý do từ chối không được để trống.');
-            return;
-        }
-
-        if (!confirm('Bạn có chắc chắn muốn từ chối yêu cầu rút tiền này không?')) {
-            return;
-        }
-        
-        const { token, header } = getCsrfToken();
-
-        fetch(`/admin/withdrawals/${requestId}/reject`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                [header]: token // Add CSRF token
-            },
-            body: JSON.stringify({ adminNotes: adminNotes })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                fetchPendingWithdrawalRequests(); // Refresh the list
-            } else {
-                alert('Lỗi: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error rejecting withdrawal request:', error);
-            alert('Đã xảy ra lỗi khi từ chối yêu cầu rút tiền.');
-        });
-    }
-    /*]]>*/
-</script>
+<!-- JavaScript functions are now in /js/admin-withdrawal-requests-tab.js -->
 </html>

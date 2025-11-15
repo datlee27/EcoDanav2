@@ -54,6 +54,7 @@ public class AdminController {
     public String adminDashboard(@RequestParam(required = false) String tab, 
                                   @RequestParam(required = false) String roleFilter,
                                   HttpSession session, Model model, HttpServletResponse response) {
+        logger.info("=== Admin Dashboard Request - Tab: {} ===", tab);
         response.setHeader("Connection", "close");
         response.setHeader("Content-Encoding", "identity");
         User user = (User) session.getAttribute("currentUser");
@@ -102,7 +103,10 @@ public class AdminController {
             model.addAttribute("payments", List.of());
             model.addAttribute("notifications", List.of());
             model.addAttribute("user", userWithRole);
-            model.addAttribute("tab", tab != null ? tab : "overview");
+            // Ensure tab is never null
+            String activeTab = (tab != null && !tab.isEmpty()) ? tab : "overview";
+            model.addAttribute("tab", activeTab);
+            logger.info("Active tab set to: {}", activeTab);
             model.addAttribute("totalVehicles", allVehicles.size());
             model.addAttribute("totalBookings", allBookings.size());
             model.addAttribute("totalUsers", allUsers.size());
@@ -163,10 +167,16 @@ public class AdminController {
 
             // Add withdrawal requests data for withdrawal-requests tab
             if ("withdrawal-requests".equals(tab)) {
-                List<WithdrawalRequest> pendingWithdrawalRequests = withdrawalRequestService.getAllPendingWithdrawalRequests();
-                model.addAttribute("pendingWithdrawalRequests", pendingWithdrawalRequests);
+                try {
+                    List<WithdrawalRequest> pendingWithdrawalRequests = withdrawalRequestService.getAllPendingWithdrawalRequests();
+                    model.addAttribute("pendingWithdrawalRequests", pendingWithdrawalRequests);
+                } catch (Exception e) {
+                    logger.error("Error loading withdrawal requests: " + e.getMessage(), e);
+                    model.addAttribute("pendingWithdrawalRequests", List.of());
+                }
             }
 
+            logger.info("=== Admin Dashboard - Rendering template for tab: {} ===", tab);
             return "admin/admin-dashboard";
         } catch (Exception e) {
             logger.error("Error loading admin data: " + e.getMessage(), e);
@@ -193,7 +203,10 @@ public class AdminController {
             model.addAttribute("rejectedCount", 0);
             model.addAttribute("urgentCount", 0);
             model.addAttribute("totalPendingAmount", BigDecimal.ZERO);
-            model.addAttribute("tab", tab != null ? tab : "overview");
+            // Ensure tab is never null in fallback
+            String fallbackTab = (tab != null && !tab.isEmpty()) ? tab : "overview";
+            model.addAttribute("tab", fallbackTab);
+            logger.info("Fallback tab set to: {}", fallbackTab);
             model.addAttribute("analytics", new HashMap<>());
             return "admin/admin-dashboard";
         }

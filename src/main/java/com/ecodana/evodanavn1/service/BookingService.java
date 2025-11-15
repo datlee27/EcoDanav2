@@ -64,6 +64,9 @@ public class BookingService {
     @Autowired
     private RefundRequestService refundRequestService;
 
+    @Autowired
+    private BalanceService balanceService;
+
     private static final Logger logger = LoggerFactory.getLogger(BookingService.class);
 
     @Value("${booking.owner-approval-timeout-minutes}")
@@ -396,7 +399,30 @@ public class BookingService {
             // RemainingAmount is already set to totalAmount - totalPaid.
         }
 
-        // 8. Lưu booking đã cập nhật
+        // 8. Credit owner balance (owner payout = totalAmount - platform fee 5%)
+        String ownerId = vehicle.getOwnerId();
+        if (ownerId != null) {
+            BigDecimal platformFeeRate = new BigDecimal("0.05"); // 5% platform fee
+            BigDecimal ownerPayout = booking.getTotalAmount()
+                    .multiply(BigDecimal.ONE.subtract(platformFeeRate))
+                    .setScale(0, RoundingMode.HALF_UP);
+            
+            try {
+                balanceService.creditBalance(
+                    ownerId,
+                    ownerPayout,
+                    String.format("Booking completed: %s", booking.getBookingCode())
+                );
+                logger.info("Credited owner {} with {} for completed booking {}", 
+                    ownerId, ownerPayout, booking.getBookingCode());
+            } catch (Exception e) {
+                logger.error("Failed to credit owner balance for booking {}: {}", 
+                    bookingId, e.getMessage());
+                // Don't fail the booking completion if balance update fails
+            }
+        }
+
+        // 9. Lưu booking đã cập nhật
         return bookingRepository.save(booking);
     }
 
