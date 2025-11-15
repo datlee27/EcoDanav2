@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -38,6 +39,7 @@ public class OwnerController {
     private final EmailService emailService;
     private final BankAccountService bankAccountService;
     private final PaymentService paymentService;
+    private final WithdrawalRequestService withdrawalRequestService; // Thêm WithdrawalRequestService
     private final Cloudinary cloudinary;
 
 
@@ -55,7 +57,8 @@ public class OwnerController {
     public OwnerController(UserService userService, VehicleService vehicleService, BookingService bookingService,
                            TransmissionTypeRepository transmissionTypeRepository, VehicleCategoriesRepository vehicleCategoriesRepository,
                            NotificationService notificationService, UserFeedbackService userFeedbackService,
-                           EmailService emailService, BankAccountService bankAccountService, PaymentService paymentService, Cloudinary cloudinary) {
+                           EmailService emailService, BankAccountService bankAccountService, PaymentService paymentService,
+                           WithdrawalRequestService withdrawalRequestService, Cloudinary cloudinary) { // Thêm vào constructor
         this.userService = userService;
         this.vehicleService = vehicleService;
         this.bookingService = bookingService;
@@ -66,6 +69,7 @@ public class OwnerController {
         this.emailService = emailService;
         this.bankAccountService = bankAccountService;
         this.paymentService = paymentService;
+        this.withdrawalRequestService = withdrawalRequestService; // Khởi tạo
         this.cloudinary = cloudinary;
     }
 
@@ -112,6 +116,10 @@ public class OwnerController {
                 .count();
         model.addAttribute("pendingBookings", pendingBookingsCount);
         Map<String, Object> revenueAnalytics = bookingService.getOwnerRevenueAnalytics(ownerId);
+        
+        // Luôn kiểm tra xem owner có tài khoản ngân hàng nào không
+        boolean hasBankAccount = !bankAccountService.getBankAccountsByUserId(ownerId).isEmpty();
+        model.addAttribute("hasBankAccount", hasBankAccount);
 
         // Tải dữ liệu dựa trên tab được yêu cầu
         switch (tab) {
@@ -245,6 +253,16 @@ public class OwnerController {
                 }
                 model.addAttribute("totalRevenue", totalRevenue); // Gán Doanh Thu Gốc
                 model.addAttribute("netRevenue", netRevenue);   // Gán Doanh Thu Thực Nhận
+
+                // === Bổ sung cho yêu cầu mới ===
+                // Tính toán số dư có thể rút: netRevenue - các yêu cầu rút tiền đang chờ xử lý
+                BigDecimal pendingWithdrawals = withdrawalRequestService.getPendingWithdrawalRequestsForOwner(ownerId).stream()
+                        .map(WithdrawalRequest::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal withdrawableBalance = netRevenue.subtract(pendingWithdrawals);
+                model.addAttribute("withdrawableBalance", withdrawableBalance);
+                
+                // === Kết thúc bổ sung ===
 
                 break;
 
@@ -813,22 +831,22 @@ public class OwnerController {
             if (booking != null) {
                 // Gửi thông báo cho khách hàng
                 notificationService.notifyCustomerBookingApproved(booking);
-                
+
                 // Gửi email yêu cầu thanh toán cho Customer
                 try {
                     User customer = booking.getUser();
                     if (customer != null && customer.getEmail() != null) {
-                        String customerName = (customer.getFirstName() != null) ? 
+                        String customerName = (customer.getFirstName() != null) ?
                             (customer.getFirstName() + " " + customer.getLastName()) : customer.getUsername();
                         String vehicleName = booking.getVehicle() != null ? booking.getVehicle().getVehicleModel() : "N/A";
-                        String totalAmount = booking.getTotalAmount() != null ? 
+                        String totalAmount = booking.getTotalAmount() != null ?
                             String.format("%,d", booking.getTotalAmount().longValue()) : "0";
-                        String depositAmount = booking.getDepositAmountRequired() != null ? 
+                        String depositAmount = booking.getDepositAmountRequired() != null ?
                             String.format("%,d", booking.getDepositAmountRequired().longValue()) : "0";
-                        
+
                         // Tạo URL thanh toán - giả sử có endpoint /booking/payment/{bookingId}
                         String paymentUrl = "http://localhost:8080/booking/payment/" + booking.getBookingId();
-                        
+
                         emailService.sendPaymentRequestToCustomer(
                             customer.getEmail(),
                             customerName,
@@ -842,7 +860,7 @@ public class OwnerController {
                 } catch (Exception emailError) {
                     logger.warn("Failed to send payment request email: " + emailError.getMessage());
                 }
-                
+
                 return ResponseEntity.ok(Map.of("success", true, "message", "Booking approved successfully"));
             } else {
                 return ResponseEntity.status(404).body(Map.of("success", false, "message", "Booking not found"));
@@ -1197,6 +1215,154 @@ public class OwnerController {
             redirectAttributes.addFlashAttribute("bank_error", "Lỗi: " + e.getMessage());
         }
         return "redirect:/owner/dashboard?tab=bank-accounts";
+    }
+
+    // =================================================================================================================
+    // NEW AJAX ENDPOINTS FOR PAYMENT MANAGEMENT
+    // =================================================================================================================
+
+    /**
+     * API AJAX để lấy dữ liệu thống kê thanh toán cho owner dựa trên trạng thái.
+     * @param session HttpSession để lấy thông tin người dùng hiện tại.
+     * @param statusFilter Trạng thái thanh toán để lọc (ví dụ: "Completed", "Refunded", "NoShow", hoặc rỗng cho tất cả).
+     * @return ResponseEntity chứa dữ liệu thống kê.
+     */
+    @GetMapping("/payments/statistics-ajax")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getPaymentStatisticsAjax(
+            HttpSession session,
+            @RequestParam(value = "status", required = false) String statusFilter) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null || !userService.isOwner(currentUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        String ownerId = currentUser.getId();
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<Payment> allOwnerPayments = paymentService.getPaymentsForOwner(ownerId);
+
+            // Lọc payments dựa trên statusFilter
+            List<Payment> filteredPayments = allOwnerPayments.stream()
+                    .filter(p -> {
+                        if (statusFilter == null || statusFilter.isEmpty()) {
+                            // Nếu không có filter, chỉ lấy các trạng thái liên quan đến thanh toán
+                            String currentStatus = p.getPaymentStatus() == Payment.PaymentStatus.Refunded ? "Refunded"
+                                    : (p.getBooking() != null ? p.getBooking().getStatus().name() : "Unknown");
+                            return "Completed".equals(currentStatus) || "Refunded".equals(currentStatus) || "NoShow".equals(currentStatus);
+                        } else {
+                            String currentStatus = p.getPaymentStatus() == Payment.PaymentStatus.Refunded ? "Refunded"
+                                    : (p.getBooking() != null ? p.getBooking().getStatus().name() : "Unknown");
+                            return statusFilter.equals(currentStatus);
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            // Tính toán totalRevenue và netRevenue dựa trên filteredPayments
+            BigDecimal totalRevenue = filteredPayments.stream()
+                    .filter(p -> p.getBooking() != null && p.getBooking().getStatus() == Booking.BookingStatus.Completed)
+                    .map(Payment::getAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal totalRefunds = filteredPayments.stream()
+                    .filter(p -> p.getPaymentStatus() == Payment.PaymentStatus.Refunded)
+                    .map(Payment::getAmount)
+                    .filter(Objects::nonNull)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal netRevenue = totalRevenue.subtract(totalRefunds);
+
+            response.put("totalRevenue", totalRevenue);
+            response.put("netRevenue", netRevenue);
+
+            // Tính toán số dư có thể rút (chỉ hiển thị khi tab là "Tất cả" hoặc không có filter)
+            // Và chỉ khi owner có tài khoản ngân hàng
+            if (statusFilter == null || statusFilter.isEmpty()) {
+                BigDecimal totalNetRevenueAllTime = paymentService.calculateNetRevenueForOwner(ownerId);
+                BigDecimal pendingWithdrawals = withdrawalRequestService.getPendingWithdrawalRequestsForOwner(ownerId).stream()
+                        .map(WithdrawalRequest::getAmount)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                BigDecimal withdrawableBalance = totalNetRevenueAllTime.subtract(pendingWithdrawals);
+                response.put("withdrawableBalance", withdrawableBalance);
+                response.put("hasBankAccount", !bankAccountService.getBankAccountsByUserId(ownerId).isEmpty());
+            } else {
+                response.put("withdrawableBalance", BigDecimal.ZERO); // Không hiển thị khi lọc theo trạng thái cụ thể
+                response.put("hasBankAccount", false); // Không hiển thị khi lọc theo trạng thái cụ thể
+            }
+
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching payment statistics via AJAX for owner {}", ownerId, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "message", "Failed to fetch statistics: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API AJAX để gửi yêu cầu rút tiền từ owner.
+     * @param session HttpSession để lấy thông tin người dùng hiện tại.
+     * @param requestBody Map chứa số tiền muốn rút ("amount").
+     * @return ResponseEntity chứa kết quả của yêu cầu.
+     */
+    @PostMapping("/withdrawal-request")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createWithdrawalRequest(
+            HttpSession session,
+            @RequestBody Map<String, BigDecimal> requestBody) {
+
+        User currentUser = (User) session.getAttribute("currentUser");
+        if (currentUser == null || !userService.isOwner(currentUser)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("success", false, "message", "Unauthorized"));
+        }
+
+        BigDecimal amount = requestBody.get("amount");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Số tiền rút không hợp lệ."));
+        }
+
+        try {
+            String ownerId = currentUser.getId();
+
+            // Kiểm tra xem owner đã có tài khoản ngân hàng chưa
+            if (bankAccountService.getBankAccountsByUserId(ownerId).isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", "Vui lòng thêm tài khoản ngân hàng trước khi gửi yêu cầu rút tiền."));
+            }
+
+            // === SERVER-SIDE VALIDATION ===
+            // 1. Tính toán tổng doanh thu ròng của chủ xe.
+            BigDecimal totalNetRevenue = paymentService.calculateNetRevenueForOwner(ownerId);
+
+            // 2. Tính toán tổng số tiền của các yêu cầu rút tiền đang chờ xử lý.
+            BigDecimal pendingWithdrawals = withdrawalRequestService.getPendingWithdrawalRequestsForOwner(ownerId).stream()
+                    .map(WithdrawalRequest::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // 3. Tính toán số dư có thể rút thực tế.
+            BigDecimal withdrawableBalance = totalNetRevenue.subtract(pendingWithdrawals);
+
+            // 4. Kiểm tra xem số tiền yêu cầu có hợp lệ không.
+            if (amount.compareTo(withdrawableBalance) > 0) {
+                String errorMessage = String.format(
+                    "Số tiền yêu cầu (%,.0f₫) vượt quá số dư có thể rút của bạn (%,.0f₫).",
+                    amount,
+                    withdrawableBalance
+                );
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", errorMessage));
+            }
+            // === END SERVER-SIDE VALIDATION ===
+
+            withdrawalRequestService.createWithdrawalRequest(currentUser, amount);
+            return ResponseEntity.ok(Map.of("success", true, "message", "Yêu cầu rút tiền đã được gửi thành công. Vui lòng chờ quản trị viên xử lý."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("success", false, "message", e.getMessage()));
+        } catch (Exception e) {
+            logger.error("Error creating withdrawal request for owner {}", currentUser.getId(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("success", false, "message", "Đã xảy ra lỗi khi gửi yêu cầu rút tiền: " + e.getMessage()));
+        }
     }
 
 

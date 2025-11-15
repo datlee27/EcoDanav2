@@ -55,4 +55,15 @@ public class PaymentService {
 
         return Map.of("totalRevenue", totalRevenue, "netRevenue", netRevenue);
     }
+
+    /**
+     * Tính toán tổng doanh thu thực nhận (net revenue) cho một chủ xe.
+     * Đây là số tiền mà chủ xe thực sự nhận được sau khi trừ đi các khoản hoàn tiền.
+     * @param ownerId ID của chủ xe
+     * @return Tổng doanh thu thực nhận
+     */
+    public BigDecimal calculateNetRevenueForOwner(String ownerId) {
+        Map<String, BigDecimal> stats = getOwnerPaymentStatistics(ownerId);
+        return stats.getOrDefault("netRevenue", BigDecimal.ZERO);
+    }
 }

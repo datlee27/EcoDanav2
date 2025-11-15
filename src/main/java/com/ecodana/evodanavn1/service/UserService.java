@@ -8,12 +8,14 @@ import com.ecodana.evodanavn1.repository.PasswordResetTokenRepository;
 import com.ecodana.evodanavn1.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import com.ecodana.evodanavn1.model.UserLogins;
 import com.ecodana.evodanavn1.repository.UserLoginsRepository;
+import com.ecodana.evodanavn1.repository.RoleRepository;
+
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -34,28 +36,27 @@ public class UserService {
         USED
     }
 
-    @Autowired
-    private UserLoginsRepository userLoginsRepository;
+    private final UserLoginsRepository userLoginsRepository;
+    private final UserRepository userRepository;
+    private final PasswordResetTokenRepository tokenRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final RoleService roleService;
+    private final RoleRepository roleRepository;
+    private final EmailService emailService;
 
-    @Autowired
-    private UserRepository userRepository;
+    public UserService(UserLoginsRepository userLoginsRepository, UserRepository userRepository,
+                       PasswordResetTokenRepository tokenRepository, PasswordEncoder passwordEncoder,
+                       RoleService roleService, RoleRepository roleRepository, EmailService emailService) {
+        this.userLoginsRepository = userLoginsRepository;
+        this.userRepository = userRepository;
+        this.tokenRepository = tokenRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.roleService = roleService;
+        this.roleRepository = roleRepository;
+        this.emailService = emailService;
+    }
 
-    @Autowired
-    private PasswordResetTokenRepository tokenRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private com.ecodana.evodanavn1.service.RoleService roleService;
-
-    @Autowired
-    private com.ecodana.evodanavn1.repository.RoleRepository roleRepository;
-
-    @Autowired
-    private com.ecodana.evodanavn1.service.EmailService emailService;
-
-    public User login(String username, String password, String secretKey) {
+    public User login(String username, String password) { // Removed secretKey parameter
         Optional<User> userOpt = userRepository.findByUsername(username);
 
         if (userOpt.isEmpty()) {
@@ -82,6 +83,8 @@ public class UserService {
             if (passwordMatches) {
                 user.getRole(); // Eager load role
                 return user;
+            } else {
+                return null;
             }
         }
         return null;
@@ -130,13 +133,14 @@ public class UserService {
             user.setLockoutEnabled(false);
             user.setAccessFailedCount(0);
             user.setCreatedDate(java.time.LocalDateTime.now());
+            user.setBalance(BigDecimal.ZERO); // Initialize balance for new users
 
             user.setPassword(passwordEncoder.encode(user.getPassword()));
 
             userRepository.save(user);
             return true;
         } catch (Exception e) {
-            logger.error("Error in UserService.register(): " + e.getMessage(), e);
+            logger.error("Error in UserService.register(): {}", e.getMessage(), e); // Fixed logging
             return false;
         }
     }
@@ -188,7 +192,8 @@ public class UserService {
                 }
             }
         } catch (Exception e) {
-            logger.error("Lỗi khi kiểm tra UserLogins: " + e.getMessage());
+            logger.error("Lỗi khi kiểm tra UserLogins: {}", e.getMessage(), e); // Fixed logging
+            return false;
         }
         return false;
     }
@@ -212,8 +217,7 @@ public class UserService {
             List<UserLogins> logins = userLoginsRepository.findByUser_Id(user.getId());
             return logins.isEmpty(); // Nếu không có liên kết nào, đó là tài khoản mật khẩu
         } catch (Exception e) {
-            logger.error("Lỗi khi kiểm tra UserLogins: " + e.getMessage());
-            // An toàn nhất là giả định là tài khoản mật khẩu nếu có lỗi
+            logger.error("Lỗi khi kiểm tra UserLogins: {}", e.getMessage(), e); // Fixed logging
             return true;
         }
     }
@@ -286,7 +290,7 @@ public class UserService {
         try {
             return userRepository.findAllWithRoles();
         } catch (Exception e) {
-            logger.error("Error loading users with roles: " + e.getMessage(), e);
+            logger.error("Error loading users with roles: {}", e.getMessage(), e); // Fixed logging
             return userRepository.findAll();
         }
     }
@@ -307,7 +311,7 @@ public class UserService {
                     user.setGender(Gender.valueOf(gender));
                 }
             } catch (IllegalArgumentException e) {
-                logger.warn("Invalid gender value provided for user update: " + gender);
+                logger.warn("Invalid gender value provided for user update: {}", gender); // Fixed logging
                 // Optionally handle the error, e.g., by setting a default or leaving it unchanged
             }
             user.setPhoneNumber(phoneNumber);
@@ -364,7 +368,7 @@ public class UserService {
                 return false;
             }
         } catch (Exception e) {
-            logger.error("Error deleting user: " + e.getMessage(), e);
+            logger.error("Error deleting user: {}", e.getMessage(), e); // Fixed logging
             return false;
         }
     }
@@ -375,38 +379,40 @@ public class UserService {
         }
 
         return userRepository.findById(userId).map(user -> {
-            // Check if role is being changed to Owner
             String oldRoleId = user.getRoleId();
-            boolean roleChangedToOwner = false;
-            
-            if (!oldRoleId.equals(roleId)) {
-                // Get the new role to check if it's Owner
-                com.ecodana.evodanavn1.model.Role newRole = roleRepository.findById(roleId).orElse(null);
-                if (newRole != null && "Owner".equalsIgnoreCase(newRole.getRoleName())) {
-                    roleChangedToOwner = true;
-                }
-            }
-            
             user.setRoleId(roleId);
             User savedUser = userRepository.save(user);
-            
-            // Send email if role changed to Owner
-            if (roleChangedToOwner && savedUser.getEmail() != null) {
-                try {
-                    String userName = (savedUser.getFirstName() != null) ? 
-                        (savedUser.getFirstName() + " " + savedUser.getLastName()) : savedUser.getUsername();
-                    emailService.sendOwnerApprovalNotification(savedUser.getEmail(), userName);
-                    logger.info("Owner approval email sent to user: {}", savedUser.getEmail());
-                } catch (Exception emailError) {
-                    logger.warn("Failed to send owner approval email to {}: {}", 
-                        savedUser.getEmail(), emailError.getMessage());
-                }
+
+            // Check if role was changed to Owner and send email
+            if (!oldRoleId.equals(roleId)) {
+                roleRepository.findById(roleId).ifPresent(newRole -> {
+                    if ("Owner".equalsIgnoreCase(newRole.getRoleName())) {
+                        sendOwnerApprovalEmail(savedUser);
+                    }
+                });
             }
             
             return true;
         }).orElse(false);
     }
 
+    private void sendOwnerApprovalEmail(User user) {
+        if (user.getEmail() != null) {
+            sendEmailNotification(user.getEmail(), user.getFirstName(), user.getLastName(), user.getUsername());
+        }
+    }
+
+    private void sendEmailNotification(String email, String firstName, String lastName, String username) {
+        try {
+            String userName = (firstName != null) ? 
+                (firstName + " " + lastName) : username;
+            emailService.sendOwnerApprovalNotification(email, userName);
+            logger.info("Owner approval email sent to user: {}", email);
+        } catch (Exception emailError) {
+            logger.warn("Failed to send owner approval email to {}: {}", 
+                email, emailError.getMessage());
+        }
+    }
 
     public Optional<User> findUserByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -531,8 +537,8 @@ public class UserService {
             logger.info("Rows updated: {}", rowsUpdated);
             return rowsUpdated > 0;
         } catch (Exception e) {
-            logger.error("Error updating user status: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to update user status: " + e.getMessage(), e);
+            logger.error("Error updating user status for user ID {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update user status for user ID: " + userId, e);
         }
     }
 
@@ -545,9 +551,6 @@ public class UserService {
             // Delete dependent PasswordResetToken first
             Optional<PasswordResetToken> tokenOptional = tokenRepository.findByUser(user);
             tokenOptional.ifPresent(tokenRepository::delete);
-
-            // NOTE: Add deletion for other dependent entities here in the future
-            // For example: bookingRepository.deleteByUser(user);
 
             // Finally, delete the user
             userRepository.delete(user);
@@ -562,5 +565,48 @@ public class UserService {
 
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    /**
+     * Cộng tiền vào số dư của người dùng.
+     * @param userId ID của người dùng
+     * @param amount Số tiền cần cộng
+     * @return User đã được cập nhật
+     * @throws IllegalArgumentException nếu số tiền âm
+     */
+    @Transactional
+    public User addBalance(String userId, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Số tiền cộng vào không thể âm.");
+        }
+        User user = findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId);
+        }
+        user.setBalance(user.getBalance().add(amount));
+        return userRepository.save(user);
+    }
+
+    /**
+     * Trừ tiền khỏi số dư của người dùng.
+     * @param userId ID của người dùng
+     * @param amount Số tiền cần trừ
+     * @return User đã được cập nhật
+     * @throws IllegalArgumentException nếu số tiền âm hoặc số dư không đủ
+     */
+    @Transactional
+    public User deductBalance(String userId, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Số tiền trừ đi không thể âm.");
+        }
+        User user = findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId);
+        }
+        if (user.getBalance().compareTo(amount) < 0) {
+            throw new IllegalArgumentException("Số dư không đủ để thực hiện giao dịch.");
+        }
+        user.setBalance(user.getBalance().subtract(amount));
+        return userRepository.save(user);
     }
 }

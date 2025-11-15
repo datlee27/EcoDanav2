@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <!-- ... other head elements ... -->
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
 <div th:fragment="payments-content">
     <!-- Status Tabs -->
     <div class="status-tab-container" id="status-tabs">
@@ -18,23 +23,45 @@
     </div>
 
     <!-- Statistic Panels -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6" id="statistic-panels-container">
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4 statistic-panel" id="total-revenue-panel">
             <div class="bg-green-100 p-3 rounded-full">
                 <i class="fas fa-chart-line text-2xl text-green-600"></i>
             </div>
             <div>
                 <p class="text-sm text-gray-500">Tổng doanh thu</p>
-                <p class="text-2xl font-bold text-gray-800" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">150.000.000 ₫</p>
+                <p class="text-2xl font-bold text-gray-800" id="total-revenue-value" th:text="${#numbers.formatDecimal(totalRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">150.000.000 ₫</p>
             </div>
         </div>
-        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4">
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4 statistic-panel" id="net-revenue-panel">
             <div class="bg-blue-100 p-3 rounded-full">
                 <i class="fas fa-wallet text-2xl text-blue-600"></i>
             </div>
             <div>
                 <p class="text-sm text-gray-500">Tiền thực nhận</p>
-                <p class="text-2xl font-bold text-gray-800" th:text="${#numbers.formatDecimal(netRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">145.000.000 ₫</p>
+                <p class="text-2xl font-bold text-gray-800" id="net-revenue-value" th:text="${#numbers.formatDecimal(netRevenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">145.000.000 ₫</p>
+            </div>
+        </div>
+        <!-- Withdrawable Balance Panel - Shown if bank account exists -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4 statistic-panel" id="withdrawable-balance-panel" th:if="${hasBankAccount}">
+            <div class="bg-purple-100 p-3 rounded-full">
+                <i class="fas fa-money-bill-wave text-2xl text-purple-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Số dư có thể rút</p>
+                <p class="text-2xl font-bold text-gray-800" id="withdrawable-balance-value" th:text="${#numbers.formatDecimal(withdrawableBalance, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</p>
+                <button id="request-withdrawal-button" class="mt-2 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-primary-dark transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed">Yêu cầu rút tiền</button>
+            </div>
+        </div>
+        <!-- Add Bank Account Prompt - Shown if no bank account exists -->
+        <div class="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4 statistic-panel" id="add-bank-account-prompt" th:if="${!hasBankAccount}">
+            <div class="bg-yellow-100 p-3 rounded-full">
+                <i class="fas fa-university text-2xl text-yellow-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Thiết lập thanh toán</p>
+                <p class="text-md font-bold text-gray-800">Bạn chưa có tài khoản ngân hàng.</p>
+                <a th:href="@{/owner/dashboard(tab='bank-accounts')}" class="mt-2 inline-block px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm hover:bg-yellow-600 transition-colors duration-200">Thêm tài khoản</a>
             </div>
         </div>
     </div>
@@ -139,15 +166,109 @@
 </div>
 <script th:inline="javascript">
     /*<![CDATA[*/
+    const hasBankAccount = /*[[${hasBankAccount}]]*/ false;
+
     document.addEventListener('DOMContentLoaded', function () {
+        console.log('DOM Content Loaded');
         filterAndSortPayments();
+        fetchAndDisplayStatistics();
+
+        const withdrawalButton = document.getElementById('request-withdrawal-button');
+        if (withdrawalButton) {
+            console.log('Withdrawal button found, attaching event listener.');
+            withdrawalButton.addEventListener('click', requestWithdrawal);
+        } else {
+            // This is expected if hasBankAccount is false, so a simple log is enough.
+            console.log('Withdrawal button not found, likely because no bank account is set up.');
+        }
     });
 
     function changeStatusTab(tabElement) {
         document.querySelectorAll('.status-tab').forEach(tab => tab.classList.remove('active'));
         tabElement.classList.add('active');
         filterAndSortPayments();
+        fetchAndDisplayStatistics();
     }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    }
+
+    function parseVietnameseCurrency(currencyString) {
+        if (!currencyString) return 0;
+        let cleanString = currencyString.replace(/₫/g, '').trim();
+        cleanString = cleanString.replace(/\./g, '');
+        cleanString = cleanString.replace(/,/g, '.');
+        return parseFloat(cleanString);
+    }
+
+    function fetchAndDisplayStatistics() {
+        console.log('fetchAndDisplayStatistics called.');
+        const activeStatus = document.querySelector('.status-tab.active').dataset.status;
+        const isAllTab = activeStatus === null || activeStatus === '';
+
+        const withdrawablePanel = document.getElementById('withdrawable-balance-panel');
+        const addBankAccountPanel = document.getElementById('add-bank-account-prompt');
+        const withdrawalButton = document.getElementById('request-withdrawal-button');
+
+        fetch(`/owner/payments/statistics-ajax?status=${activeStatus}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Data from statistics-ajax:', data);
+                if (data.success) {
+                    document.getElementById('total-revenue-value').innerText = formatCurrency(data.totalRevenue);
+                    document.getElementById('net-revenue-value').innerText = formatCurrency(data.netRevenue);
+
+                    const balance = data.withdrawableBalance || 0;
+
+                    // --- ROBUST VISIBILITY AND STATE CONTROL ---
+
+                    // 1. Control Withdrawable Panel
+                    if (withdrawablePanel) {
+                        if (isAllTab) {
+                            withdrawablePanel.classList.remove('hidden');
+                        } else {
+                            withdrawablePanel.classList.add('hidden');
+                        }
+                        // Always update the balance value for consistency
+                        document.getElementById('withdrawable-balance-value').innerText = formatCurrency(balance);
+                    }
+
+                    // 2. Control Withdrawal Button State
+                    if (withdrawalButton) {
+                        // Disable if NOT on the "All" tab OR if the balance is zero or less.
+                        if (isAllTab && balance > 0) {
+                            withdrawalButton.disabled = false;
+                        } else {
+                            withdrawalButton.disabled = true;
+                        }
+                    }
+
+                    // 3. Control "Add Bank Account" Prompt
+                    if (addBankAccountPanel) {
+                        if (isAllTab) {
+                            addBankAccountPanel.classList.remove('hidden');
+                        } else {
+                            addBankAccountPanel.classList.add('hidden');
+                        }
+                    }
+
+                } else {
+                    console.error('Failed to fetch statistics:', data.message);
+                    alert('Lỗi khi tải thống kê: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching statistics:', error);
+                alert('Đã xảy ra lỗi khi tải thống kê.');
+            });
+    }
+
 
     function filterAndSortPayments() {
         const statusFilter = document.querySelector('.status-tab.active').dataset.status;
@@ -162,8 +283,7 @@
         rows.forEach(row => {
             const displayStatus = row.dataset.displayStatus;
             const searchInfo = row.dataset.searchInfo;
-
-            const statusMatch = !statusFilter || statusFilter.split(',').includes(displayStatus);
+            const statusMatch = !statusFilter || displayStatus === statusFilter;
             const searchMatch = searchInfo.includes(searchInput);
 
             if (statusMatch && searchMatch) {
@@ -181,26 +301,100 @@
             const bAmount = parseFloat(b.dataset.amount);
 
             switch (sortValue) {
-                case 'newest':
-                    return bDate - aDate;
-                case 'oldest':
-                    return aDate - bDate;
-                case 'amount-high':
-                    return bAmount - aAmount;
-                case 'amount-low':
-                    return aAmount - bAmount;
-                default:
-                    return 0;
+                case 'newest': return bDate - aDate;
+                case 'oldest': return aDate - bDate;
+                case 'amount-high': return bAmount - aAmount;
+                case 'amount-low': return aAmount - bAmount;
+                default: return 0;
             }
         });
 
         rows.forEach(row => paymentListBody.appendChild(row));
+        noPaymentsRow.style.display = visibleRows === 0 ? '' : 'none';
+    }
 
-        if (visibleRows === 0) {
-            noPaymentsRow.style.display = '';
-        } else {
-            noPaymentsRow.style.display = 'none';
+    function requestWithdrawal() {
+        console.log('requestWithdrawal function called');
+
+        if (!hasBankAccount) {
+            if (confirm("Bạn chưa có tài khoản ngân hàng. Bạn có muốn thêm một tài khoản ngay bây giờ không?")) {
+                // Redirect to the bank accounts tab
+                window.location.href = '/owner/dashboard?tab=bank-accounts';
+            }
+            return;
         }
+
+        const withdrawableBalanceElement = document.getElementById('withdrawable-balance-value');
+        if (!withdrawableBalanceElement) {
+            console.error('Element #withdrawable-balance-value not found.');
+            alert('Không tìm thấy thông tin số dư có thể rút.');
+            return;
+        }
+
+        const currentWithdrawableBalance = parseVietnameseCurrency(withdrawableBalanceElement.innerText);
+        console.log('Current withdrawable balance (parsed):', currentWithdrawableBalance);
+
+        if (currentWithdrawableBalance <= 0) {
+            alert('Số dư có thể rút của bạn không đủ để thực hiện yêu cầu (hiện tại là ' + formatCurrency(currentWithdrawableBalance) + ').');
+            console.log('Withdrawal aborted: balance is zero or less.');
+            return;
+        }
+
+        const amountStr = prompt(`Nhập số tiền bạn muốn rút (tối đa ${formatCurrency(currentWithdrawableBalance)}):`);
+        if (amountStr === null || amountStr.trim() === '') {
+            alert('Yêu cầu rút tiền đã bị hủy.');
+            return;
+        }
+
+        const amount = parseVietnameseCurrency(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            alert('Số tiền không hợp lệ. Vui lòng nhập một số dương.');
+            return;
+        }
+
+        if (amount > currentWithdrawableBalance) {
+            alert(`Số tiền bạn muốn rút (${formatCurrency(amount)}) vượt quá số dư khả dụng (${formatCurrency(currentWithdrawableBalance)}).`);
+            return;
+        }
+
+        if (!confirm(`Bạn có chắc chắn muốn gửi yêu cầu rút số tiền ${formatCurrency(amount)} không?`)) {
+            alert('Yêu cầu rút tiền đã bị hủy.');
+            return;
+        }
+
+        const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+        const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+
+        console.log('Sending withdrawal request with amount:', amount);
+        fetch('/owner/withdrawal-request', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({ amount: amount })
+        })
+        .then(response => {
+            // Log full error response if not OK
+            if (!response.ok) {
+                return response.json().then(errorData => {
+                    console.error('Backend error response:', errorData);
+                    throw new Error(errorData.message || 'Server error');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            alert(data.message); // Show success or specific error from backend
+            if (data.success) {
+                fetchAndDisplayStatistics(); // Refresh stats on success
+            }
+        })
+        .catch(error => {
+            console.error('Fetch error:', error);
+            alert('Đã xảy ra lỗi khi gửi yêu cầu: ' + error.message);
+        });
     }
     /*]]>*/
 </script>

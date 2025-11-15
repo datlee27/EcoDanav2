@@ -284,6 +284,7 @@
 
 <script th:src="@{/js/sidebar-common.js}"></script>
 <script th:src="@{/js/owner-dashboard.js}"></script> <!-- Chỉ cần file này -->
+<script th:src="@{/js/bank-account-management.js}"></script> <!-- ADDED THIS LINE -->
 
 <div th:replace="~{owner/bookings-management :: booking-modals}"></div>
 <div th:replace="~{owner/cars-management :: car-modals}"></div>
@@ -555,7 +556,7 @@
                 if(addAuxError) addAuxError.classList.add('hidden');
 
             } else if (modalId === 'edit-car-modal') {
-                const editPreview = document.getElementById('edit-mainImagePreview');
+                const editPreview = document.getElementById('edit-currentMainImage');
                 if(editPreview) {
                     const currentImg = editPreview.querySelector('#edit-currentMainImage');
                     if(currentImg) currentImg.src = '';
@@ -798,7 +799,7 @@
                     <div>
                         <h4 class="text-xl font-bold text-gray-900">${customer.fullName || 'N/A'}</h4>
                         <p class="text-sm text-gray-600">${customer.email || 'N/A'}</p>
-                         <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${customer.status || 'Unknown'}</span>
+                         <span class="mt-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${customer.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${customer.status === 'Active' ? 'Active' : 'Inactive'}</span>
                     </div>
                 </div>`;
             // Details Grid

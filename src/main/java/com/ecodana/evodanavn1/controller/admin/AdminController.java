@@ -5,6 +5,7 @@ import java.util.Map;
 import com.ecodana.evodanavn1.model.User;
 import com.ecodana.evodanavn1.model.Vehicle;
 import com.ecodana.evodanavn1.model.RefundRequest;
+import com.ecodana.evodanavn1.model.WithdrawalRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,7 @@ import com.ecodana.evodanavn1.service.UserService;
 import com.ecodana.evodanavn1.service.VehicleService;
 import com.ecodana.evodanavn1.service.UserFeedbackService;
 import com.ecodana.evodanavn1.service.FeedbackReportService;
+import com.ecodana.evodanavn1.service.WithdrawalRequestService; // Import WithdrawalRequestService
 import com.ecodana.evodanavn1.repository.InappropriateWordRepository;
 import com.ecodana.evodanavn1.repository.RefundRequestRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -45,6 +47,9 @@ public class AdminController {
     private InappropriateWordRepository inappropriateWordRepository;
     @Autowired
     private RefundRequestRepository refundRequestRepository;
+    @Autowired
+    private WithdrawalRequestService withdrawalRequestService; // Autowire WithdrawalRequestService
+
     @GetMapping({"/admin", "/admin/dashboard"})
     public String adminDashboard(@RequestParam(required = false) String tab, 
                                   @RequestParam(required = false) String roleFilter,
@@ -155,6 +160,12 @@ public class AdminController {
             model.addAttribute("rejectedCount", rejectedRefundCount);
             model.addAttribute("urgentCount", urgentRefundCount);
             model.addAttribute("totalPendingAmount", totalPendingAmount);
+
+            // Add withdrawal requests data for withdrawal-requests tab
+            if ("withdrawal-requests".equals(tab)) {
+                List<WithdrawalRequest> pendingWithdrawalRequests = withdrawalRequestService.getAllPendingWithdrawalRequests();
+                model.addAttribute("pendingWithdrawalRequests", pendingWithdrawalRequests);
+            }
 
             return "admin/admin-dashboard";
         } catch (Exception e) {

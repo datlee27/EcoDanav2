@@ -1,5 +1,6 @@
 package com.ecodana.evodanavn1.model;
 
+import java.math.BigDecimal; // Import BigDecimal
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -100,6 +101,10 @@ public class User {
     @Column(name = "AccessFailedCount", nullable = false)
     private int accessFailedCount = 0;
 
+    // New field for user balance
+    @Column(name = "Balance", nullable = false, precision = 19, scale = 2) // Assuming currency, 19 digits total, 2 after decimal
+    private BigDecimal balance;
+
     @Transient
     private boolean hasLicense = false;
 
@@ -111,6 +116,7 @@ public class User {
         this.twoFactorEnabled = false;
         this.lockoutEnabled = false;
         this.accessFailedCount = 0;
+        this.balance = BigDecimal.ZERO; // Initialize balance
     }
 
     public User(String username, String email, String password, String phoneNumber) {
@@ -189,6 +195,10 @@ public class User {
     public int getAccessFailedCount() { return accessFailedCount; }
     public void setAccessFailedCount(int accessFailedCount) { this.accessFailedCount = accessFailedCount; }
 
+    // Getter and Setter for balance
+    public BigDecimal getBalance() { return balance; }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
+
     public boolean isHasLicense() { return hasLicense; }
     public void setHasLicense(boolean hasLicense) { this.hasLicense = hasLicense; }
 
@@ -233,6 +243,7 @@ public class User {
                 ", firstName='" + firstName + '\'' +
                 ", lastName='" + lastName + '\'' +
                 ", roleName='" + getRoleName() + '\'' +
+                ", balance=" + balance + // Include balance in toString
                 '}';
     }
 }

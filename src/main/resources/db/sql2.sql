@@ -647,3 +647,22 @@ WHERE Status IN ('Approved', 'Transferred', 'Completed');
 -- Then modify the ENUM to only include: Pending, Rejected, Refunded
 ALTER TABLE RefundRequest
     MODIFY COLUMN Status ENUM('Pending', 'Rejected', 'Refunded') NOT NULL DEFAULT 'Pending';
+
+
+CREATE TABLE withdrawal_requests
+(
+    id             VARCHAR(255) NOT NULL,
+    owner_id       VARCHAR(36)  NOT NULL,
+    amount         DECIMAL      NOT NULL,
+    request_date   datetime     NOT NULL,
+    status         VARCHAR(255) NOT NULL,
+    admin_notes    TEXT         NULL,
+    processed_date datetime     NULL,
+    CONSTRAINT pk_withdrawal_requests PRIMARY KEY (id)
+);
+
+ALTER TABLE withdrawal_requests
+    ADD CONSTRAINT FK_WITHDRAWAL_REQUESTS_ON_OWNER FOREIGN KEY (owner_id) REFERENCES users (UserId);
+
+ALTER TABLE `Users`
+    ADD COLUMN `Balance` DECIMAL(19,2) NOT NULL DEFAULT 0.00;
