@@ -16,7 +16,7 @@ public class BookingScheduler {
     private static final Logger logger = LoggerFactory.getLogger(BookingScheduler.class);
 
     // Thời gian trễ cho phép trước khi chuyển sang NoShow (5 phút)
-    private static final int NO_SHOW_GRACE_PERIOD_MINUTES = 5;
+    private static final int NO_SHOW_GRACE_PERIOD_MINUTES = 2;
 
     @Autowired
     private BookingService bookingService;
@@ -29,7 +29,7 @@ public class BookingScheduler {
      * - Quét các đơn hàng có trạng thái 'Confirmed'.
      * - Nếu thời gian hiện tại > (thời gian nhận xe + 5 phút), chuyển trạng thái sang 'NoShow'.
      */
-    @Scheduled(fixedRate = 60000) // Chạy mỗi 60 giây
+    @Scheduled(fixedRate = 15000) // Chạy mỗi 60 giây
     public void checkForNoShowBookings() {
         logger.debug("Bắt đầu tác vụ quét đơn hàng trễ hẹn (No-Show)...");
         bookingService.processNoShowBookings(NO_SHOW_GRACE_PERIOD_MINUTES);

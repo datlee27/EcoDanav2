@@ -111,4 +111,14 @@ public interface BookingRepository extends JpaRepository<Booking, String> {
      * @return Danh sách các booking thỏa mãn điều kiện.
      */
     List<Booking> findByStatusAndPickupDateTimeBefore(Booking.BookingStatus status, LocalDateTime deadline);
+
+    /**
+     * Tìm các booking theo trạng thái, có thời gian nhận xe trước một mốc thời gian cụ thể,
+     * và có paymentOption cụ thể.
+     * @param status Trạng thái booking cần tìm (ví dụ: Confirmed).
+     * @param deadline Mốc thời gian giới hạn (ví dụ: now - 3 giờ).
+     * @param paymentOption Tùy chọn thanh toán (ví dụ: "CASH").
+     * @return Danh sách các booking thỏa mãn điều kiện.
+     */
+    List<Booking> findByStatusAndPickupDateTimeBeforeAndPaymentOption(Booking.BookingStatus status, LocalDateTime deadline, String paymentOption);
 }

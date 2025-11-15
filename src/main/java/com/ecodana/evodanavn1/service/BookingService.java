@@ -973,13 +973,18 @@ public class BookingService {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(gracePeriodInMinutes);
 
         // 2. Tìm các đơn hàng 'Confirmed' có thời gian nhận xe đã qua mốc giới hạn
-        List<Booking> lateBookings = bookingRepository.findByStatusAndPickupDateTimeBefore(Booking.BookingStatus.Confirmed, threshold);
+        //    và có paymentOption là "CASH"
+        List<Booking> lateBookings = bookingRepository.findByStatusAndPickupDateTimeBeforeAndPaymentOption(
+                Booking.BookingStatus.Confirmed,
+                threshold,
+                "CASH"
+        );
 
         if (lateBookings.isEmpty()) {
             return; // Không có đơn hàng nào cần xử lý
         }
 
-        logger.info("Tìm thấy {} đơn hàng trễ hẹn (No-Show). Bắt đầu xử lý...", lateBookings.size());
+        logger.info("Tìm thấy {} đơn hàng trễ hẹn (No-Show) với tùy chọn thanh toán CASH. Bắt đầu xử lý...", lateBookings.size());
 
         for (Booking booking : lateBookings) {
             try {

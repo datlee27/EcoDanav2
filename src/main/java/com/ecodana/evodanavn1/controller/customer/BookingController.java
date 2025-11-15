@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import com.ecodana.evodanavn1.model.Discount;
-import com.ecodana.evodanavn1.service.DiscountService;
 import com.ecodana.evodanavn1.dto.BookingRequest;
 import com.ecodana.evodanavn1.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -332,7 +330,12 @@ public class BookingController {
             // Tổng tiền khách trả (đã bao gồm discount)
             BigDecimal totalAmount = bookingRequest.getTotalAmount();
 
-            booking.setPaymentOption(bookingRequest.getPaymentMethod());
+            // The paymentOption will be set to "CASH" or "FULL" in processPayment method
+            // based on user's choice (deposit or full payment).
+            // For now, we can set an initial value or leave it null if the column allows.
+            // Let's set it to the expected payment method from the request as a default.
+            booking.setPaymentOption(bookingRequest.getPaymentMethod() != null ? bookingRequest.getPaymentMethod() : "UNKNOWN");
+
 
             // Set các giá trị phí vào booking
             booking.setVehicleRentalFee(vehicleRentalFee);
@@ -499,21 +502,25 @@ public class BookingController {
             long amount;
             String orderInfo;
 
+            // Update booking's paymentOption based on paymentType
             if ("deposit".equals(paymentType)) {
-                // Thanh toán 20% cọc - không nhân 1000 vì đã là VND
+                booking.setPaymentOption("CASH"); // Map deposit payment to CASH for no-show logic
                 amount = booking.getDepositAmountRequired().longValue(); // Already in VND
                 orderInfo = "Coc 20% " + booking.getBookingCode(); // Max 25 chars
                 System.out.println("=== DEPOSIT PAYMENT ===");
                 System.out.println("Deposit Required (VND): " + booking.getDepositAmountRequired());
                 System.out.println("Amount to PayOS (VND): " + amount);
-            } else {
-                // Thanh toán 100% - không nhân 1000 vì đã là VND
+            } else { // Full payment
+                booking.setPaymentOption("FULL"); // Map full payment to FULL for no-show logic
                 amount = booking.getTotalAmount().longValue(); // Already in VND
                 orderInfo = "Toan bo " + booking.getBookingCode(); // Max 25 chars
                 System.out.println("=== FULL PAYMENT ===");
                 System.out.println("Total Amount (VND): " + booking.getTotalAmount());
                 System.out.println("Amount to PayOS (VND): " + amount);
             }
+
+            // Save the updated booking with the correct paymentOption
+            bookingService.updateBooking(booking);
 
             // Tạo link thanh toán PayOS
             String paymentUrl = payOSService.createPaymentLink(amount, orderInfo, bookingId, paymentType, request);
