@@ -17,7 +17,11 @@ function renderBookingItem(booking) {
         'completed': { text: 'Hoàn thành', class: 'status-completed', icon: 'fa-flag-checkered text-gray-500' },
         'rejected': { text: 'Từ chối', class: 'status-rejected', icon: 'fa-ban text-red-500' },
         'cancelled': { text: 'Đã hủy', class: 'status-cancelled', icon: 'fa-times-circle text-red-500' },
-        'noshow': { text: 'Không Đến', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' }
+        'refundpending': { text: 'Chờ hoàn tiền', class: 'status-pending', icon: 'fa-hourglass-half text-yellow-500' },
+        'refunded': { text: 'Đã hoàn tiền', class: 'status-completed', icon: 'fa-money-bill-wave text-green-500' },
+        'latepickup': { text: 'Quá thời nhận xe', class: 'status-cancelled', icon: 'fa-exclamation-triangle text-red-500' },
+        'noshow': { text: 'Không Đến', class: 'status-cancelled', icon: 'fa-question-circle text-gray-500' },
+        'unknown': { text: 'Không xác định', class: 'status-pending', icon: 'fa-question text-gray-400' }
     };
     const statusInfo = statusMap[statusLower] || statusMap['unknown'];
 
@@ -63,6 +67,15 @@ function renderBookingItem(booking) {
             <button onclick="openCompleteTripModal('${booking.bookingId}')"
                     class="text-blue-600 hover:text-blue-800 transition-colors ml-3" title="Hoàn thành chuyến đi">
                 <i class="fas fa-flag-checkered text-lg"></i>
+            </button>
+        `;
+    }
+
+    if (statusLower === 'latepickup') {
+        actionsHtml += `
+            <button onclick="reportNoShow('${booking.bookingId}', '${booking.bookingCode}', '${vehicleInfo}')"
+                    class="text-red-600 hover:text-red-800 transition-colors ml-3" title="Báo cáo không đến">
+                <i class="fas fa-exclamation-triangle text-lg"></i>
             </button>
         `;
     }
@@ -611,6 +624,11 @@ async function processTripCompletion(finalStatus) {
     }
 }
 
+// --- Báo cáo No-Show ---
+function reportNoShow(bookingId, bookingCode, vehicleModel) {
+    // Redirect to no-show tab with booking data
+    window.location.href = `/owner/dashboard?tab=no-show&bookingId=${bookingId}&bookingCode=${encodeURIComponent(bookingCode)}&vehicleModel=${encodeURIComponent(vehicleModel)}`;
+}
 
 // --- Khởi chạy ---
 document.addEventListener('DOMContentLoaded', function() {

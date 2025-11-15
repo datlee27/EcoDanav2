@@ -24,7 +24,7 @@ public class RefundRequest {
     private User user;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "BankAccountId", nullable = true)
+    @JoinColumn(name = "BankAccountId", nullable = false)
     private BankAccount bankAccount;
 
     @Column(name = "RefundAmount", precision = 10, scale = 2, nullable = false)

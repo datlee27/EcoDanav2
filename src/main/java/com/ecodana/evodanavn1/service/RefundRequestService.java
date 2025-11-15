@@ -54,15 +54,23 @@ public class RefundRequestService {
             throw new IllegalStateException("Yêu cầu hoàn tiền cho đơn hàng này đã tồn tại!");
         }
 
-        // Get bank account - use provided ID or default
+        // Get bank account - REQUIRED
         Optional<BankAccount> selectedBankAccount = Optional.empty();
         
         if (bankAccountId != null && !bankAccountId.isEmpty()) {
             // Use the provided bank account ID
             selectedBankAccount = bankAccountRepository.findById(bankAccountId);
+            if (!selectedBankAccount.isPresent()) {
+                throw new IllegalStateException("Tài khoản ngân hàng không tồn tại!");
+            }
         } else {
             // Fall back to default bank account
             selectedBankAccount = bankAccountService.getDefaultBankAccount(user.getId());
+        }
+        
+        // Bank account is REQUIRED - throw error if not found
+        if (!selectedBankAccount.isPresent()) {
+            throw new IllegalStateException("Vui lòng thêm tài khoản ngân hàng để nhận hoàn tiền! Bạn có thể thêm tài khoản tại trang Quản lý tài khoản ngân hàng.");
         }
 
         // Calculate refund amount - use custom amount if provided, otherwise calculate
@@ -76,11 +84,7 @@ public class RefundRequestService {
         refundRequest.setRefundRequestId(UUID.randomUUID().toString());
         refundRequest.setBooking(booking);
         refundRequest.setUser(user);
-        
-        // Set bank account if available, otherwise leave null (admin can add later)
-        if (selectedBankAccount.isPresent()) {
-            refundRequest.setBankAccount(selectedBankAccount.get());
-        }
+        refundRequest.setBankAccount(selectedBankAccount.get()); // Bank account is required
         
         refundRequest.setRefundAmount(refundAmount);
         refundRequest.setCancelReason(cancelReason);

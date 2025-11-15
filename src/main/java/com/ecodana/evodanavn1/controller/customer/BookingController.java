@@ -888,6 +888,66 @@ public class BookingController {
     }
 
     /**
+     * Cancel pending booking (for Pending/AwaitingDeposit bookings - chưa thanh toán)
+     */
+    @PostMapping("/cancel-pending/{bookingId}")
+    public String cancelPendingBooking(@PathVariable String bookingId,
+                                       @RequestParam(required = false) String cancelReason,
+                                       HttpSession session,
+                                       RedirectAttributes redirectAttributes) {
+
+        System.out.println("=== Cancel Pending Booking Request ===");
+        System.out.println("Booking ID: " + bookingId);
+        System.out.println("Cancel Reason: " + cancelReason);
+
+        User user = (User) session.getAttribute("currentUser");
+        if (user == null) {
+            System.out.println("ERROR: User not logged in");
+            return "redirect:/login";
+        }
+
+        try {
+            Booking booking = bookingService.findById(bookingId).orElse(null);
+            if (booking == null) {
+                System.out.println("ERROR: Booking not found");
+                redirectAttributes.addFlashAttribute("error", "Không tìm thấy booking!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Check ownership
+            if (!booking.getUser().getId().equals(user.getId())) {
+                System.out.println("ERROR: User does not own this booking");
+                redirectAttributes.addFlashAttribute("error", "Không có quyền hủy booking này!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Only allow cancellation for Pending or AwaitingDeposit bookings
+            if (booking.getStatus() != Booking.BookingStatus.Pending &&
+                booking.getStatus() != Booking.BookingStatus.AwaitingDeposit) {
+                System.out.println("ERROR: Cannot cancel booking. Current status: " + booking.getStatus());
+                redirectAttributes.addFlashAttribute("error", "Chỉ có thể hủy booking chưa thanh toán!");
+                return "redirect:/booking/my-bookings";
+            }
+
+            // Simply cancel the booking without refund process
+            booking.setStatus(Booking.BookingStatus.Cancelled);
+            booking.setCancelReason(cancelReason != null ? cancelReason : "Khách hàng hủy booking");
+            bookingService.updateBooking(booking);
+
+            System.out.println("Booking cancelled successfully. New status: " + booking.getStatus());
+
+            redirectAttributes.addFlashAttribute("success", "Đã hủy booking thành công!");
+            return "redirect:/booking/my-bookings";
+
+        } catch (Exception e) {
+            System.out.println("ERROR in cancelPendingBooking: " + e.getMessage());
+            e.printStackTrace(System.out);
+            redirectAttributes.addFlashAttribute("error", "Có lỗi xảy ra: " + e.getMessage());
+            return "redirect:/booking/my-bookings";
+        }
+    }
+
+    /**
      * Cancel car (for confirmed bookings - đã thanh toán)
      */
     @PostMapping("/cancel-car/{bookingId}")
