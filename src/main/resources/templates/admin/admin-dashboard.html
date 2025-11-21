@@ -257,7 +257,7 @@
                         <dd
                           class="text-2xl font-semibold text-gray-900"
                           data-stat="vehicles"
-                          th:text="${analytics?.totalVehicles ?: 0}"
+                          th:text="${analytics['totalVehicles'] ?: 0}"
                         >
                           0
                         </dd>
@@ -280,7 +280,7 @@
                         <dd
                           class="text-2xl font-semibold text-gray-900"
                           data-stat="bookings"
-                          th:text="${analytics?.totalBookings ?: 0}"
+                          th:text="${analytics['totalBookings'] ?: 0}"
                         >
                           0
                         </dd>
@@ -303,7 +303,7 @@
                         <dd
                           class="text-2xl font-semibold text-gray-900"
                           data-stat="revenue"
-                          th:text="${analytics?.totalRevenue ?: 0}"
+                          th:text="${#numbers.formatDecimal(analytics['totalRevenue'] ?: 0, 0, 'COMMA', 0, 'POINT') + ' VND'}"
                         >
                           0 VND
                         </dd>
