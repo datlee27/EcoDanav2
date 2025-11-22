@@ -3,9 +3,49 @@
 
 <head th:replace="~{fragments/layout :: head}">
     <link rel="icon" type="image/x-icon" href="https://res.cloudinary.com/ddwt6nl7s/image/upload/v1761906428/favicon_jlbemj.ico">
+    <style>
+        /* Preloader Styles */
+        #preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #ffffff;
+            z-index: 99999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.75s ease, visibility 0.75s ease;
+        }
+
+        #preloader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .spinner {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #4CAF50; /* Primary color from your theme */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 
 <body>
+<!-- Preloader -->
+<div id="preloader">
+    <div class="spinner"></div>
+</div>
+
 <div th:replace="~{fragments/nav :: nav}"></div>
 
 <div th:if="${success}" id="success-notification" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform duration-300">
@@ -452,6 +492,13 @@
 </script>
 
 <script>
+    // --- Preloader Logic ---
+    window.onload = function() {
+        const preloader = document.getElementById('preloader');
+        if (preloader) {
+            preloader.classList.add('hidden');
+        }
+    };
     // Google Maps variables
     let map, marker, geocoder, autocomplete;
 
