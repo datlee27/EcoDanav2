@@ -82,7 +82,7 @@ public class EmailService {
         helper.setTo(to);
         helper.setSubject("EcoDana - Yêu cầu đặt lại mật khẩu của bạn");
 
-        // Tạo URL reset từ baseUrl đã được truyền vào
+
         String resetUrl = baseUrl + "/reset-password?token=" + token;
 
         String htmlContent = buildPasswordResetHtmlContent(resetUrl);
@@ -336,7 +336,7 @@ public class EmailService {
                 + "</div>"
                 + "<p class='message'>Hãy đăng nhập vào tài khoản của bạn và bắt đầu đăng ký xe để cho thuê ngay hôm nay!</p>"
                 + "<div style='text-align: center;'>"
-                + "<a href='http://localhost:8080/owner/dashboard' class='btn'>Truy cập Owner Dashboard</a>"
+                + "<a href='https://ecodanav2.onrender.com/owner/dashboard' class='btn'>Truy cập Owner Dashboard</a>"
                 + "</div>"
                 + "<p class='message' style='font-size: 14px; color: #666;'>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.</p>"
                 + "<p class='footer'>© 2025 EcoDana. All rights reserved.</p>"

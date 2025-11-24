@@ -827,7 +827,7 @@ public class OwnerController {
                             String.format("%,d", booking.getDepositAmountRequired().longValue()) : "0";
                         
                         // Tạo URL thanh toán - giả sử có endpoint /booking/payment/{bookingId}
-                        String paymentUrl = "http://localhost:8080/booking/payment/" + booking.getBookingId();
+                        String paymentUrl = "https://ecodanav2.onrender.com/booking/payment/" + booking.getBookingId();
                         
                         emailService.sendPaymentRequestToCustomer(
                             customer.getEmail(),
