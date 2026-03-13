@@ -2,7 +2,6 @@ package com.ecodana.evodanavn1.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import org.springframework.format.annotation.DateTimeFormat;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +14,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 @Entity
@@ -25,7 +23,7 @@ public class User {
     @Column(name = "UserId", length = 36)
     private String id;
 
-    @Column(name = "Username", unique = true, nullable = false, length=100)
+    @Column(name = "Username", unique = true, nullable = false, length = 100)
     private String username;
 
     @Column(name = "UserDOB")
@@ -123,84 +121,205 @@ public class User {
     }
 
     // Getters/Setters
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    public String getId() {
+        return id;
+    }
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public LocalDate getUserDOB() { return userDOB; }
-    public void setUserDOB(LocalDate userDOB) { this.userDOB = userDOB; }
+    public String getUsername() {
+        return username;
+    }
 
-    public String getPhoneNumber() { return phoneNumber; }
-    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
-    public String getAvatarUrl() { return avatarUrl; }
-    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
+    public LocalDate getUserDOB() {
+        return userDOB;
+    }
 
-    public Gender getGender() { return gender; }
-    public void setGender(Gender gender) { this.gender = gender; }
+    public void setUserDOB(LocalDate userDOB) {
+        this.userDOB = userDOB;
+    }
 
-    public String getFirstName() { return firstName; }
-    public void setFirstName(String firstName) { this.firstName = firstName; }
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
 
-    public String getLastName() { return lastName; }
-    public void setLastName(String lastName) { this.lastName = lastName; }
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
 
-    public UserStatus getStatus() { return status; }
-    public void setStatus(UserStatus status) { this.status = status; }
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
 
-    public String getRoleId() { return roleId; }
-    public void setRoleId(String roleId) { this.roleId = roleId; }
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
 
-    public LocalDateTime getCreatedDate() { return createdDate; }
-    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+    public Gender getGender() {
+        return gender;
+    }
 
-    public String getNormalizedUserName() { return normalizedUserName; }
-    public void setNormalizedUserName(String normalizedUserName) { this.normalizedUserName = normalizedUserName; }
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
 
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    public String getFirstName() {
+        return firstName;
+    }
 
-    public String getNormalizedEmail() { return normalizedEmail; }
-    public void setNormalizedEmail(String normalizedEmail) { this.normalizedEmail = normalizedEmail; }
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
 
-    public boolean isEmailVerifed() { return emailVerifed; }
-    public void setEmailVerifed(boolean emailVerifed) { this.emailVerifed = emailVerifed; }
+    public String getLastName() {
+        return lastName;
+    }
 
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
 
-    public String getSecurityStamp() { return securityStamp; }
-    public void setSecurityStamp(String securityStamp) { this.securityStamp = securityStamp; }
+    public UserStatus getStatus() {
+        return status;
+    }
 
-    public String getConcurrencyStamp() { return concurrencyStamp; }
-    public void setConcurrencyStamp(String concurrencyStamp) { this.concurrencyStamp = concurrencyStamp; }
+    public void setStatus(UserStatus status) {
+        this.status = status;
+    }
 
-    public boolean isTwoFactorEnabled() { return twoFactorEnabled; }
-    public void setTwoFactorEnabled(boolean twoFactorEnabled) { this.twoFactorEnabled = twoFactorEnabled; }
+    public String getRoleId() {
+        return roleId;
+    }
 
-    public LocalDateTime getLockoutEnd() { return lockoutEnd; }
-    public void setLockoutEnd(LocalDateTime lockoutEnd) { this.lockoutEnd = lockoutEnd; }
+    public void setRoleId(String roleId) {
+        this.roleId = roleId;
+    }
 
-    public boolean isLockoutEnabled() { return lockoutEnabled; }
-    public void setLockoutEnabled(boolean lockoutEnabled) { this.lockoutEnabled = lockoutEnabled; }
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
 
-    public int getAccessFailedCount() { return accessFailedCount; }
-    public void setAccessFailedCount(int accessFailedCount) { this.accessFailedCount = accessFailedCount; }
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
 
-    public boolean isHasLicense() { return hasLicense; }
-    public void setHasLicense(boolean hasLicense) { this.hasLicense = hasLicense; }
+    public String getNormalizedUserName() {
+        return normalizedUserName;
+    }
+
+    public void setNormalizedUserName(String normalizedUserName) {
+        this.normalizedUserName = normalizedUserName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getNormalizedEmail() {
+        return normalizedEmail;
+    }
+
+    public void setNormalizedEmail(String normalizedEmail) {
+        this.normalizedEmail = normalizedEmail;
+    }
+
+    public boolean isEmailVerifed() {
+        return emailVerifed;
+    }
+
+    public void setEmailVerifed(boolean emailVerifed) {
+        this.emailVerifed = emailVerifed;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getSecurityStamp() {
+        return securityStamp;
+    }
+
+    public void setSecurityStamp(String securityStamp) {
+        this.securityStamp = securityStamp;
+    }
+
+    public String getConcurrencyStamp() {
+        return concurrencyStamp;
+    }
+
+    public void setConcurrencyStamp(String concurrencyStamp) {
+        this.concurrencyStamp = concurrencyStamp;
+    }
+
+    public boolean isTwoFactorEnabled() {
+        return twoFactorEnabled;
+    }
+
+    public void setTwoFactorEnabled(boolean twoFactorEnabled) {
+        this.twoFactorEnabled = twoFactorEnabled;
+    }
+
+    public LocalDateTime getLockoutEnd() {
+        return lockoutEnd;
+    }
+
+    public void setLockoutEnd(LocalDateTime lockoutEnd) {
+        this.lockoutEnd = lockoutEnd;
+    }
+
+    public boolean isLockoutEnabled() {
+        return lockoutEnabled;
+    }
+
+    public void setLockoutEnabled(boolean lockoutEnabled) {
+        this.lockoutEnabled = lockoutEnabled;
+    }
+
+    public int getAccessFailedCount() {
+        return accessFailedCount;
+    }
+
+    public void setAccessFailedCount(int accessFailedCount) {
+        this.accessFailedCount = accessFailedCount;
+    }
+
+    public boolean isHasLicense() {
+        return hasLicense;
+    }
+
+    public void setHasLicense(boolean hasLicense) {
+        this.hasLicense = hasLicense;
+    }
 
     public boolean isActive() {
         return UserStatus.Active.equals(this.status);
     }
+
     public void setActive(boolean active) {
         this.status = active ? UserStatus.Active : UserStatus.Inactive;
     }
 
-    public Role getRole() { return role; }
-    public void setRole(Role role) { this.role = role; }
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 
     public String getRoleName() {
         if (role != null) {
