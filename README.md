@@ -23,7 +23,7 @@ EcoDana is a web application built with Spring Boot, designed to connect vehicle
     *   Spring Security
     *   Spring Mail
 *   **Frontend:**
-    *   Thymeleaf
+    *   Thymeleaf (legacy SSR)
 *   **Database:**
     *   MySQL
 *   **Image Storage:**
@@ -64,5 +64,14 @@ This project was developed by a dedicated team of developers.
     ```bash
     ./mvnw spring-boot:run
     ```
+
+## Swagger API
+
+After running backend, open:
+- `http://localhost:8080/swagger-ui/index.html`
+- OpenAPI spec: `http://localhost:8080/v3/api-docs`
+
+Detailed API-first guide:
+- `docs/SWAGGER_API_GUIDE.md`
 
 Thank you for considering our project!

@@ -12,7 +12,6 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -108,7 +107,8 @@ public class AIService {
 
         String url = "/vehicles?" + String.join("&", query);
         String description = "Đã tìm thấy xe " + String.join(" và ", desc) + ". Bạn có thể ";
-        String linkHtml = "<a href='" + url + "' style='color:#007bff;text-decoration:underline;font-weight:bold;'>xem tại đây</a>.";
+        String linkHtml = "<a href='" + url
+                + "' style='color:#007bff;text-decoration:underline;font-weight:bold;'>xem tại đây</a>.";
         return "<p>" + description + linkHtml + "</p>";
     }
 
@@ -186,7 +186,8 @@ public class AIService {
                         } else {
                             responseMessage = "Chắc chắn rồi! Bạn có thể ";
                         }
-                        String linkHtml = "<a href='" + redirectUrl + "' style='color:#007bff;text-decoration:underline;font-weight:bold;'>xem tại đây</a>.";
+                        String linkHtml = "<a href='" + redirectUrl
+                                + "' style='color:#007bff;text-decoration:underline;font-weight:bold;'>xem tại đây</a>.";
                         return "<p>" + responseMessage + linkHtml + "</p>";
                     }
 
@@ -196,9 +197,11 @@ public class AIService {
                 }
             }
 
-            // Fallback: Nếu AI trả về văn bản thường (theo quy tắc 3) hoặc không tìm thấy JSON hợp lệ
+            // Fallback: Nếu AI trả về văn bản thường (theo quy tắc 3) hoặc không tìm thấy
+            // JSON hợp lệ
             // *** SỬA LỖI LOGIC FALLBACK ***
-            // Chỉ trả về thông báo lỗi nếu câu trả lời của AI trống hoặc quá ngắn, thay vì kiểm tra thẻ HTML.
+            // Chỉ trả về thông báo lỗi nếu câu trả lời của AI trống hoặc quá ngắn, thay vì
+            // kiểm tra thẻ HTML.
             if (raw == null || raw.isBlank() || raw.length() < 10) {
                 logger.warn("AI không trả về JSON hoặc HTML, câu hỏi có thể chưa được xử lý: '{}'", message);
                 return "Xin lỗi, tôi chưa hiểu rõ câu hỏi của bạn. Để được hỗ trợ tốt nhất, bạn vui lòng <a href='/contact' style='color:#007bff;text-decoration:underline;font-weight:bold;'>liên hệ trực tiếp</a> với chúng tôi nhé.";
